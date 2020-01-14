@@ -1,0 +1,8 @@
+DOT {{tmp}}/dataset.dag.dot UPDATE
+JOB SAM_START {{tmp}}/dagbegin.cmd
+{%for i in xrange(N) %}
+JOB WORKER_{{i}} {{tmp}}/simple.cmd 
+PARENT SAM_START WORKER_{{i}} 
+PARENT WORKER_{{i}} SAM_END
+{%endfor%}
+JOB SAM_END {{tmp}}/dagend.cmd
