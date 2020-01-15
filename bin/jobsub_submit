@@ -8,41 +8,54 @@ import argparse
 import jinja2 as jinja
 
 
-def parse_dagnabbit(parser, dir, values, dest):
-    # rough outline, needs bookkeeping etc.
+def parse_dagnabbit(parser, srcdir, values, dest):
+    jinja_env = jinja.Environment(loader=FileSystemLoader(srcdir))
     count = 0
     df = open(values['dag'], 'r')
     of = open("%s/dag.dag" % dest, "w")
+    of.write("DOT %s/dag.dot UPDATE\n" % dest)
+    in_parallel = False
+    in_serial = False
     for line in df:
         if line == '<parallel>':
-            of.write("paralel bits ")
+            in_parallel = True
+            parallel_l = []
         elif line == '</parallel>':
-            of.write("end parallel bits ")
+            in_parallel = False
+            parallels = " ".join(parallel_l)
+            of.write("PARENT %s CHILD %s\n" % (last_serial, parallels))
+            last_serial = parallels
         elif line == '<serial>':
-            of.write("serial bits ")
+            in_serial = True
         elif line == '</serial>':
-            of.write("end serial bits ")
+            in_serial = False
         else:
             count = count + 1
             name = "stage_%d" % count
-            res = parser.parse_args(line.split(' '))
+            res = parser.parse_args(line.strip().split(' ')[1:])
+            thesevalues = values.copy()
+            thesevalues.update(res)
             cf = open("%s/%s.cmd" % (dest, name), "w")
             csf = open("%s/%s.sh" % (dest, name), "w")
             cf.write(jinja_env.get_template('simple.cmd').render(**values))
             csf.write(jinja_env.get_template('simple.sh').render(**values))
             cf.close()
-            of.write("JOB %s" % name)
+            of.write("JOB %s %s.cmd\n" % (name,name))
+            if in_serial:
+                of.write("PARENT %s CHILD %s\n" % (last_serial, name))
+                last_serial = name
+            if in_parallel:
+                parallel_l.append(name)
     of.close()
-
 
 def do_tarballs(values):
     # mooch from current code
     pass
 
 
-def render_files(dir, values, dest):
+def render_files(srcdir, values, dest):
 
-    jinja_env = jinja.Environment(loader=FileSystemLoader(d))
+    jinja_env = jinja.Environment(loader=FileSystemLoader(srcdir))
     flist = glob.glob('%s/*' % dir)
 
     # add destination dir to values for template
@@ -66,14 +79,15 @@ def submit_dag(f):
     schedd, pool = get_schedd()
     os.system("condor_submit_dag %s" % (schedd, pool, f))
 
+def get_principal():
+    pass
 
 def set_extras(args):
     args['user'] = os.environ['USER']
     args['ipaddr'] = socket.getwhatever()
     args['jobsub_version'] = 'lite_v1_0'
-    args['kerberos_principal'] =
-    args['usage_model'] =
-
+    args['kerberos_principal'] = get_principal()
+    args['usage_model'] = 'ONSITE'
 
 def main():
     parser = argparse.ArgumentParser()
@@ -94,14 +108,14 @@ def main():
                         os.environ["USER"], help="email address to send job reports/summaries to (default is $USER@fnal.gov)")
     parser.add_argument("-e", "--environment", help=" -e ADDED_ENVIRONMENT exports this variable with its local value to worker node environment. For example export FOO='BAR'; jobsub -e FOO <more stuff> guarantees that the value of $FOO on the worker node is 'BAR' . Alternate format which does not require setting the env var first is the -e VAR=VAL, idiom which sets the value of $VAR to 'VAL' in the worker environment. The -e option can be used as many times in one jobsub_submit invocation as desired.")
     parser.add_argument("--expected-lifetime", help=" 'short'|'medium'|'long'|NUMBER[UNITS] Expected lifetime of the job. Used to match against resources advertising that they have REMAINING_LIFETIME seconds left. The shorter your EXPECTED_LIFTIME is, the more resources (aka slots, cpus) your job can potentially match against and the quicker it should start. If your job runs longer than EXPECTED_LIFETIME it *may* be killed by the batch system. If your specified EXPECTED_LIFETIME is too long your job may take a long time to match against a resource a sufficiently long REMAINING_LIFETIME. Valid inputs for this parameter are 'short', 'medium', IF [UNITS] is omitted, value is NUMBER seconds. Allowed values for UNITS are 's', 'm', 'h', 'd' representing seconds, minutes, etc.The values for 'short','medium',and 'long' are configurable by Grid Operations, they currently are '3h' , '8h' , and '85200s' but this may change in the future. Default value of EXPECTED_LIFETIME is currently '8h'.")
-    parser.add_argument("-f", default=[], action="append", help="INPUT_FILE at runtime, INPUT_FILE will be copied to directory $CONDOR_DIR_INPUT on the execution node. Example :-f /grid/data/minerva/my/input/file.xxx will be copied to $CONDOR_DIR_INPUT/file.xxx Specify as many -f INPUT_FILE_1 -f INPUT_FILE_2 args as you need. To copy file at submission time instead of run time, use -f dropbox://INPUT_FILE to copy the file.")
+    parser.add_argument("-f", dest="input_file", default=[], action="append", help="INPUT_FILE at runtime, INPUT_FILE will be copied to directory $CONDOR_DIR_INPUT on the execution node. Example :-f /grid/data/minerva/my/input/file.xxx will be copied to $CONDOR_DIR_INPUT/file.xxx Specify as many -f INPUT_FILE_1 -f INPUT_FILE_2 args as you need. To copy file at submission time instead of run time, use -f dropbox://INPUT_FILE to copy the file.")
     parser.add_argument("--generate-email-summary", help="")
     parser.add_argument(
         "-G", "--group", help="Group/Experiment/Subgroup for priorities and accounting")
     parser.add_argument("-L", "--log_file",
                         help="Log file to hold log output from job.")
     parser.add_argument(
-        "-l", "--lines", help="Log file to hold log output from job.")
+        "-l", "--lines", action="append", default=[""],help="Log file to hold log output from job.")
     parser.add_argument("-Q", "--mail_never", dest="mail", action="store_const",
                         const="never", default="never", help="never send mail about job results (default)")
 
@@ -118,7 +132,7 @@ def main():
         "--OS", default=None, help="specify OS version of worker node. Example --OS=SL5 Comma seperated list '--OS=SL4,SL5,SL6' works as well . Default is any available OS")
     parser.add_argument("--overwrite_condor_requirements",
                         help="overwrite default condor requirements with supplied requirements")
-    parser.add_argument("--resource-provides", help="request specific resources by changing condor jdf file. For example: --resource-provides=CVMFS=OSG will add +CVMFS=\"OSG\" to the job classad attributes and '&&(CVMFS==\"OSG\")' to the job requirements")
+    parser.add_argument("--resource-provides", action="append", default=[""], help="request specific resources by changing condor jdf file. For example: --resource-provides=CVMFS=OSG will add +DESIRED_CVMFS=\"OSG\" to the job classad attributes and '&&(CVMFS==\"OSG\")' to the job requirements")
     parser.add_argument(
         "--role", help="VOMS Role for priorities and accounting")
     parser.add_argument(
