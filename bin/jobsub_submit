@@ -8,9 +8,16 @@ import argparse
 import jinja2 as jinja
 import ifdh
 import requests
+import random
 
+random.seed()
 
 def parse_dagnabbit(parser, srcdir, values, dest):
+    ''' 
+         parse a dagnabbit dag file generating a .dag file and .cmd files 
+         in the dest directory, using global cmdline options from values
+         along with ones parsed from dagnabbit file
+    '''
     jinja_env = jinja.Environment(loader=FileSystemLoader(srcdir))
     count = 0
     df = open(values['dag'], 'r')
@@ -39,8 +46,8 @@ def parse_dagnabbit(parser, srcdir, values, dest):
             thesevalues.update(res)
             cf = open("%s/%s.cmd" % (dest, name), "w")
             csf = open("%s/%s.sh" % (dest, name), "w")
-            cf.write(jinja_env.get_template('simple.cmd').render(**values))
-            csf.write(jinja_env.get_template('simple.sh').render(**values))
+            cf.write(jinja_env.get_template('simple.cmd').render(**thesevalues))
+            csf.write(jinja_env.get_template('simple.sh').render(**thesevalues))
             cf.close()
             of.write("JOB %s %s.cmd\n" % (name,name))
             if in_serial:
@@ -51,6 +58,7 @@ def parse_dagnabbit(parser, srcdir, values, dest):
     of.close()
 
 def tar_up(directory, excludes):
+    ''' build path/to/directory.tar from path/to/directory '''
     tarfile = "%s.tar.gz" % directory
     if not excludes:
         excludes = os.path.dirname(__FILE__) + '/../etc/default_excludes'
@@ -58,41 +66,76 @@ def tar_up(directory, excludes):
     os.system("tar czvf %s %s %s" % (tarfile, excludes, directory))
     return tarfile
 
-DROPBOX_SERVERS=("server1.fnal.gov", "server2.fnal.gov")
+def slurp_file(fname):
+     ''' pull in a tarfile while computing its hash '''
+     h = hashlib.sha256()
+     tfl=[]
+     with open(fname,"r") as f:
+         tff = f.read(4096)
+         h.update(tff)
+         tfl.append(tff)
+         while tff:
+             tff = f.read(4096)
+             h.update(tff)
+             tfl.append(tff)
+     return h.hexdigest(), ''.join(tfl)
 
 def do_tarballs(args):
+    ''' handle tarfile argument;  we could have: 
+           a directory with tardir: prefix to tar up and upload
+           a tarfile with dropbox: prefix to upload
+           a plain path to just use
+        we convert the argument to the next type as we go...
+    '''
    
     if args.tar_file_name.startswith("tardir:"):
          # tar it up, pretend they gave us dropbox:
-
          tarfile = tar_up(args.tar_file_name[7:], args.tarball_exclusion_file)
          args.tar_file_name = "dropbox:%s" % tarfile
 
     if args.tar_file_name.startswith("dropbox:"):
          # move it to dropbox area, pretend they gave us plain path
          
-         dropbox_server = choose(DROPBOX_SERVERS)
-         h = hashlib.sha256()
-         with open(args.tar_file_name[8:],"r") as f:
-             tf = f.read()
-             h.update(tf)
-         digest = h.hexdigest()
-         url = "https://%s/jobsub/acctgroups/%s/dropboxlocation/" % (dropbox_server, args.group)
-         args = { 'tarfile': args.tar_file_name[8:], 'sha': h.hexdigest() }
+         digest,tf = slurp_file(args.tar_file_name[8])
+         
          ih = ifdh.ifdh()
          proxy = ih.getProxy()
-         res = requests.POST(url, args, cert=(proxy,proxy))
-         if res.json()['location']:
-             uargs.tar_file_name = res.json()['location']
-         else:
-             url = "https://%s/pubapi/publish?cid=%s/%s" % (dropbox_server, args.group, digest)
 
-             res = requests.POST(url, args, cert=(proxy,proxy), data=tf)
+         cid = ''.join( (args.group, '%2F', digest) )
+         location = pubapi_update(cid, proxy)
+         if not location:
+             location = pubapi_publish(cid, tf, proxy)
 
-    return
+         args.tar_file_name = location
+
+DROPBOX_SERVERS=("rcds01.fnal.gov", "rcds02.fnal.gov")
+
+def pubapi_update(cid, proxy):
+    ''' make pubapi update call to check if we already have this tarfile,
+        return path.
+    '''
+    dropbox_server = random.choice(DROPBOX_SERVERS)
+    url = "https://%s/pubapi/update?cid=%s" % (dropbox_server, cid)
+    res = requests.GET(url, args, cert=(proxy,proxy))
+    if res.text()[:8] == 'PRESENT:'
+        return res.text()[8:]
+    else
+        return None
+
+def pubapi_publish(cid, tf, proxy):
+    ''' make pubapi publish call to upload this tarfile, return path'''
+    dropbox_server = random.choice(DROPBOX_SERVERS)
+    url = "https://%s/pubapi/publish?cid=%s" % (dropbox_server, cid)
+    res = requests.POST(url, cert=(proxy,proxy), data=tf)
+    if res.text()[:8] == 'PRESENT:'
+        return res.text()[8:]
+    else
+        return None
 
 def render_files(srcdir, values, dest):
-
+    ''' use jinja to render the templates from srcdir into the dest directory
+        using values dict for substitutions
+    '''
     jinja_env = jinja.Environment(loader=FileSystemLoader(srcdir))
     flist = glob.glob('%s/*' % dir)
 
@@ -105,12 +148,10 @@ def render_files(srcdir, values, dest):
         of.write(jinja_env.get_template(bf).render(**values))
         of.close()
 
-
 def submit(f):
     f = glob.glob(f)[0]
     schedd, pool = get_schedd()
     os.system("condor_submit -name %s -pool %s %s" % (schedd, pool, f))
-
 
 def submit_dag(f):
     f = glob.glob(f)[0]
@@ -129,7 +170,7 @@ def get_principal():
 
 def set_extras(args):
     args['user'] = os.environ['USER']
-    args['ipaddr'] = socket.getwhatever()
+    args['ipaddr'] = socket.gethostbyname_ex()[2][0]
     args['jobsub_version'] = 'lite_v1_0'
     args['kerberos_principal'] = get_principal()
     args['usage_model'] = 'ONSITE'
