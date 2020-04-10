@@ -6,6 +6,8 @@ import sys
 import glob
 import argparse
 import jinja2 as jinja
+import ifdh
+import requests
 
 
 def parse_dagnabbit(parser, srcdir, values, dest):
@@ -48,10 +50,46 @@ def parse_dagnabbit(parser, srcdir, values, dest):
                 parallel_l.append(name)
     of.close()
 
-def do_tarballs(values):
-    # mooch from current code
-    pass
+def tar_up(directory, excludes):
+    tarfile = "%s.tar.gz" % directory
+    if not excludes:
+        excludes = os.path.dirname(__FILE__) + '/../etc/default_excludes'
+    excludes = "--exclude-from %s" % excludes
+    os.system("tar czvf %s %s %s" % (tarfile, excludes, directory))
+    return tarfile
 
+DROPBOX_SERVERS=("server1.fnal.gov", "server2.fnal.gov")
+
+def do_tarballs(args):
+   
+    if args.tar_file_name.startswith("tardir:"):
+         # tar it up, pretend they gave us dropbox:
+
+         tarfile = tar_up(args.tar_file_name[7:], args.tarball_exclusion_file)
+         args.tar_file_name = "dropbox:%s" % tarfile
+
+    if args.tar_file_name.startswith("dropbox:"):
+         # move it to dropbox area, pretend they gave us plain path
+         
+         dropbox_server = choose(DROPBOX_SERVERS)
+         h = hashlib.sha256()
+         with open(args.tar_file_name[8:],"r") as f:
+             tf = f.read()
+             h.update(tf)
+         digest = h.hexdigest()
+         url = "https://%s/jobsub/acctgroups/%s/dropboxlocation/" % (dropbox_server, args.group)
+         args = { 'tarfile': args.tar_file_name[8:], 'sha': h.hexdigest() }
+         ih = ifdh.ifdh()
+         proxy = ih.getProxy()
+         res = requests.POST(url, args, cert=(proxy,proxy))
+         if res.json()['location']:
+             uargs.tar_file_name = res.json()['location']
+         else:
+             url = "https://%s/pubapi/publish?cid=%s/%s" % (dropbox_server, args.group, digest)
+
+             res = requests.POST(url, args, cert=(proxy,proxy), data=tf)
+
+    return
 
 def render_files(srcdir, values, dest):
 
@@ -80,7 +118,14 @@ def submit_dag(f):
     os.system("condor_submit_dag %s" % (schedd, pool, f))
 
 def get_principal():
-    pass
+    princ = None
+    p = subprocess.Popen(["/usr/bin/klist"], stdout=subprocess.PIPE)
+    line = p.stdout.readline()
+    line = p.stdout.readline()
+    princ = line[line.find(":")+2:-1]
+    p.stdout.close()
+    p.wait()
+    return princ
 
 def set_extras(args):
     args['user'] = os.environ['USER']
@@ -94,7 +139,7 @@ def main():
     parser.add_argument("--append_condor_requirements",
                         help="append condor requirements")
     parser.add_argument(
-        "--blacklist", help="ensure that jobs do not land at these sites")
+        "--blacklist", help="enusure that jobs do not land at these sites")
     parser.add_argument(
         "--cpu", help="request worker nodes have at least NUMBER cpus")
     parser.add_argument("--dag", help="submit and run a dagNabbit input file")
@@ -139,6 +184,7 @@ def main():
         "--site", help="submit jobs to these (comma-separated) sites")
     parser.add_argument("--subgroup", help=" Subgroup for priorities and accounting. See https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/ Jobsub_submit#Groups-Subgroups-Quotas-Priorities for more documentation on using --subgroup to set job quotas and priorities")
     parser.add_argument("--tar_file_name", default=[], action='append', help="                              d\ndropbox://PATH/TO/TAR_FILE\n tardir://PATH/TO/DIRECTORY \nspecify TAR_FILE or DIRECTORY to be transferred to worker node. TAR_FILE will be copied to an area specified in the jobsub server configuration, transferred to the job and unpacked there. TAR_FILE will be accessible to the user job on the worker node via the environment variable $INPUT_TAR_FILE. The unpacked contents will be in the same directory as $INPUT_TAR_FILE.")
+    parser.add_argument("--tarball-exclusion-file", default=None, help="File with patterns to exclude from tarffile creation")
     parser.add_argument(
         "--timeout", help="kill user job if still running after NUMBER[UNITS] of time . UNITS may be `s' for seconds (the default), `m' for minutes, `h' for hours or `d' h for days.")
     parser.add_argument("--use-cvmfs-dropbox",

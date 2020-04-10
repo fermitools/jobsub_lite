@@ -1,0 +1,35 @@
+jobsub_submit  \
+                 --append_condor_requirements "xyz==1" \
+                 --blacklist FZU \
+                 --cpu 123 \
+                 --debug 4 \
+                 --disk 100M  \
+                 -d D \
+                 --email-to mengel@fnal.gov \
+                 -e FRED \
+                 -e JOE=5 \
+                 --expected-lifetime 567 \
+                 -f input_1.txt \
+                 -f input_2.txt \
+                 --generate-email-summary 1 \
+                 -G fermilab \
+                 -L /tmp/submit.log  \
+                 -l '+apple=1' \
+                 -l '+orange=2' \
+                 -Q \
+                 --mail_on_error \
+                 --mail_always \
+                 --memory 986M \
+                 -N 2 \
+                 --OS sl7 \
+                 --overwrite_condor_requirements "abc==2" \
+                 --resource-provides usage_model=OPPORTUNISTIC,DEDICATED \
+                 --role Analysis \
+                 --site Fermigrid \
+                 --subgroup Silly \
+                 --tar_file_name tardir:/tmp/stuff \
+                 --tarball-exclusion-file /tmp/excludes \
+                 --timeout TIMEOUT 3500 \
+                 --use-cvmfs-dropbox 1 \
+                 --verbose 1 \
+                 file:////usr/bin/printenv  
