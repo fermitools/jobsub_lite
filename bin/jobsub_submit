@@ -9,6 +9,10 @@ import jinja2 as jinja
 import ifdh
 import requests
 import random
+import socket
+import subprocess
+import datetime
+import uuid
 
 random.seed()
 
@@ -18,7 +22,7 @@ def parse_dagnabbit(parser, srcdir, values, dest):
          in the dest directory, using global cmdline options from values
          along with ones parsed from dagnabbit file
     '''
-    jinja_env = jinja.Environment(loader=FileSystemLoader(srcdir))
+    jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
     count = 0
     df = open(values['dag'], 'r')
     of = open("%s/dag.dag" % dest, "w")
@@ -80,6 +84,13 @@ def slurp_file(fname):
              tfl.append(tff)
      return h.hexdigest(), ''.join(tfl)
 
+ih = None
+def get_creds():
+     global ih
+     if not ih:
+         ih = ifdh.ifdh()
+     return ih.getProxy()
+
 def do_tarballs(args):
     ''' handle tarfile argument;  we could have: 
            a directory with tardir: prefix to tar up and upload
@@ -88,25 +99,27 @@ def do_tarballs(args):
         we convert the argument to the next type as we go...
     '''
    
-    if args.tar_file_name.startswith("tardir:"):
-         # tar it up, pretend they gave us dropbox:
-         tarfile = tar_up(args.tar_file_name[7:], args.tarball_exclusion_file)
-         args.tar_file_name = "dropbox:%s" % tarfile
+    res = []
+    for tfn in args.tar_file_name:
+        if tfn.startswith("tardir:"):
+             # tar it up, pretend they gave us dropbox:
+             tarfile = tar_up(args.tar_file_name[7:], args.tarball_exclusion_file)
+             tfn = "dropbox:%s" % tarfile
 
-    if args.tar_file_name.startswith("dropbox:"):
-         # move it to dropbox area, pretend they gave us plain path
-         
-         digest,tf = slurp_file(args.tar_file_name[8])
-         
-         ih = ifdh.ifdh()
-         proxy = ih.getProxy()
+        if tfn.startswith("dropbox:"):
+             # move it to dropbox area, pretend they gave us plain path
+             
+             digest,tf = slurp_file(args.tar_file_name[8])
+             proxy = get_creds()
 
-         cid = ''.join( (args.group, '%2F', digest) )
-         location = pubapi_update(cid, proxy)
-         if not location:
-             location = pubapi_publish(cid, tf, proxy)
+             cid = ''.join( (args.group, '%2F', digest) )
+             location = pubapi_update(cid, proxy)
+             if not location:
+                 location = pubapi_publish(cid, tf, proxy)
 
-         args.tar_file_name = location
+             tfn = location
+        res.append(tfn)
+    args.tar_file_name = res 
 
 DROPBOX_SERVERS=("rcds01.fnal.gov", "rcds02.fnal.gov")
 
@@ -117,9 +130,9 @@ def pubapi_update(cid, proxy):
     dropbox_server = random.choice(DROPBOX_SERVERS)
     url = "https://%s/pubapi/update?cid=%s" % (dropbox_server, cid)
     res = requests.GET(url, args, cert=(proxy,proxy))
-    if res.text()[:8] == 'PRESENT:'
+    if res.text()[:8] == 'PRESENT:':
         return res.text()[8:]
-    else
+    else:
         return None
 
 def pubapi_publish(cid, tf, proxy):
@@ -127,36 +140,54 @@ def pubapi_publish(cid, tf, proxy):
     dropbox_server = random.choice(DROPBOX_SERVERS)
     url = "https://%s/pubapi/publish?cid=%s" % (dropbox_server, cid)
     res = requests.POST(url, cert=(proxy,proxy), data=tf)
-    if res.text()[:8] == 'PRESENT:'
+    if res.text()[:8] == 'PRESENT:':
         return res.text()[8:]
-    else
+    else:
         return None
 
 def render_files(srcdir, values, dest):
     ''' use jinja to render the templates from srcdir into the dest directory
         using values dict for substitutions
     '''
-    jinja_env = jinja.Environment(loader=FileSystemLoader(srcdir))
-    flist = glob.glob('%s/*' % dir)
+    print("trying to render files from %s\n" % srcdir)
+    jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
+    flist = glob.glob('%s/*' % srcdir)
 
     # add destination dir to values for template
     values['cwd'] = dest
 
     for f in flist:
+        print("rendering: %s" % f)
         bf = os.path.basename(f)
         of = open("%s/%s" % (dest, bf), "w")
         of.write(jinja_env.get_template(bf).render(**values))
         of.close()
 
+SCHEDDS = (("jobsub01.fnal.gov","default"),("jobsub02.fnal.gov","default"))
+def get_schedd():
+    ''' FIXME: this picks a schedd and pool. it should be smarter somehow '''
+    return random.choice(SCHEDDS)
+
 def submit(f):
-    f = glob.glob(f)[0]
+    ''' Actually submit the job '''
+    print("submitting: %s" % f)
+    fl = glob.glob(f)
+    if fl:
+        f = fl[0]
     schedd, pool = get_schedd()
-    os.system("condor_submit -name %s -pool %s %s" % (schedd, pool, f))
+    os.system("echo condor_submit -name %s -pool %s %s" % (schedd, pool, f))
 
 def submit_dag(f):
-    f = glob.glob(f)[0]
+    ''' Actually submit the dag '''
+    fl = glob.glob(f)
+    if fl:
+        f = fl[0]
     schedd, pool = get_schedd()
-    os.system("condor_submit_dag %s" % (schedd, pool, f))
+    os.system("echo condor_submit_dag %s" % (schedd, pool, f))
+
+def cleanup(tmp):
+    print("remember to clean up %s" % tmp)
+    #os.system("rm -rf %s" % tmp)
 
 def get_principal():
     princ = None
@@ -169,11 +200,17 @@ def get_principal():
     return princ
 
 def set_extras(args):
-    args['user'] = os.environ['USER']
-    args['ipaddr'] = socket.gethostbyname_ex()[2][0]
-    args['jobsub_version'] = 'lite_v1_0'
-    args['kerberos_principal'] = get_principal()
-    args['usage_model'] = 'ONSITE'
+    args.user = os.environ['USER']
+    ai = socket.getaddrinfo(socket.gethostname(),80)
+    if ai:
+        args.ipaddr = ai[-1][-1][0]
+    else:
+        args.ipaddr = 'unknown'
+    args.jobsub_version = 'lite_v1_0'
+    args.kerberos_principal = get_principal()
+    args.usage_model = 'ONSITE'
+    args.uuid = str(uuid.uuid4())
+    args.date = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -213,7 +250,7 @@ def main():
     parser.add_argument("--maxConcurrent", help="max number of jobs running concurrently at given time.  Use in conjunction with -N option to protect a shared resource. Example: jobsub -N 1000 -maxConcurrent 20 will only run 20 jobs at a time until all 1000 have completed. This is implemented by running the jobs in a DAG. Normally when jobs are run with the -N option, they all have the same $CLUSTER number and differing, sequential $PROCESS numbers, and many submission scripts take advantage of this. When jobs are run with this option in a DAG each job has a different $CLUSTER number and a $PROCESS number of 0, which may break scripts that rely on the normal -N numbering scheme for $CLUSTER and $PROCESS. Groups of jobs run with this option will have the same $JOBSUBPARENTJOBID, each individual job will have a unique and sequential $JOBSUBJOBSECTION. Scripts may need modification to take this into account")
     parser.add_argument(
         "--memory", help="Request worker nodes have at least NUMBER[UNITS] of memory. If UNITS is not specified default is 'MB'.  Allowed values for UNITS are 'KB','MB','GB', and 'TB'")
-    parser.add_argument("-N", help="submit N copies of this job. Each job will have access to the environment variable $PROCESS that provides the job number (0 to NUM-1), equivalent to the number following the decimal point in the job ID (the '2' in 134567.2).")
+    parser.add_argument("-N", default=1, help="submit N copies of this job. Each job will have access to the environment variable $PROCESS that provides the job number (0 to NUM-1), equivalent to the number following the decimal point in the job ID (the '2' in 134567.2).")
     parser.add_argument(
         "--OS", default=None, help="specify OS version of worker node. Example --OS=SL5 Comma seperated list '--OS=SL4,SL5,SL6' works as well . Default is any available OS")
     parser.add_argument("--overwrite_condor_requirements",
@@ -235,30 +272,36 @@ def main():
 
     parser.add_argument(
         "executable", help="executable to run, should be a file:///path/to/script url")
-    parser.add_argument("arguments", default=[], nargs="+",
+    parser.add_argument("arguments", default=[], nargs="*",
                         action="append", help="arguments to executable")
     args = parser.parse_args()
-    tmp = get_tempdir()
+    tmp = "%s/js%d" % (os.environ.get('TMPDIR','/tmp'), os.getpid())
+    if not os.path.isdir(tmp):
+        os.makedirs(tmp)
     get_creds()
     do_tarballs(args)
     set_extras(args)
+    
+    # we are in prefix/bin/jobsub_submit...
+    # so prefix is:
+    prefix = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     if args.dag:
-        d = '%s/templates/dag' % location
+        d = '%s/templates/dag' % prefix
         parse_dagnabbit(parser, d, args.__dict__, tmp)
         submit_dag('%s/*.dag' % tmp)
     elif args.dataset_definition:
-        d = '%s/templates/datset_dag' % location
+        d = '%s/templates/datset_dag' % prefix
         render_files(d, args.__dict__, tmp)
         submit_dag('%s/*.dag' % tmp)
     elif args.maxConcurrent:
-        d = '%s/templates/maxconcurrent_dag' % location
+        d = '%s/templates/maxconcurrent_dag' % prefix
         render_files(d, args.__dict__, tmp)
         submit_dag('%s/*.dag' % tmp)
     else:
-        d = '%s/templates/simple' % location
+        d = '%s/templates/simple' % prefix
         render_files(d, args.__dict__, tmp)
-        submit('%s/*.sub' % tmp)
+        submit('%s/*.cmd' % tmp)
     cleanup(tmp)
 
 
