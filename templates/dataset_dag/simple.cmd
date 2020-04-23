@@ -1,8 +1,8 @@
 universe           = vanilla
 executable         = {{executable}}
 arguments          = {{args|join(" ")}}
-{%set dir="/fife/local/scratch/uploads/{{group}}/{{user}}/{{date}}.{{uuid}}"%}
-{%set filebase="{{dir}}/{{dir}}{{executable_basename}}{{datestamp}}{{uuid}cluster.$(Cluster).$(Process)" %}
+{% set dir %}/fife/local/scratch/uploads/{{group}}/{{user}}/{{date}}.{{uuid}}{% endset %}
+{%set filebase %}{{dir}}/{{dir}}{{executable_basename}}{{datestamp}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
 output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
@@ -16,7 +16,7 @@ transfer_executable= True
 transfer_input_files = {{dir}}/{{executable_basename}}
 when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_output_files = .empty_file
-{%if {{OS}} %}
+{%if OS %}
 +DesiredOS={{OS}}
 {%endif%}
 +JobsubClientDN="{{clientdn}}

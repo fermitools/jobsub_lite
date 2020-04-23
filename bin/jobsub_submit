@@ -183,7 +183,7 @@ def submit_dag(f):
     if fl:
         f = fl[0]
     schedd, pool = get_schedd()
-    os.system("echo condor_submit_dag %s" % (schedd, pool, f))
+    os.system("echo condor_submit_dag -name %s -pool %s %s" % (schedd, pool, f))
 
 def cleanup(tmp):
     print("remember to clean up %s" % tmp)
@@ -199,7 +199,7 @@ def get_principal():
     p.wait()
     return princ
 
-def set_extras(args):
+def set_extras(args, tmpdir):
     args.user = os.environ['USER']
     ai = socket.getaddrinfo(socket.gethostname(),80)
     if ai:
@@ -211,6 +211,7 @@ def set_extras(args):
     args.usage_model = 'ONSITE'
     args.uuid = str(uuid.uuid4())
     args.date = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
+    args.tmp = tmpdir
 
 def main():
     parser = argparse.ArgumentParser()
@@ -250,7 +251,7 @@ def main():
     parser.add_argument("--maxConcurrent", help="max number of jobs running concurrently at given time.  Use in conjunction with -N option to protect a shared resource. Example: jobsub -N 1000 -maxConcurrent 20 will only run 20 jobs at a time until all 1000 have completed. This is implemented by running the jobs in a DAG. Normally when jobs are run with the -N option, they all have the same $CLUSTER number and differing, sequential $PROCESS numbers, and many submission scripts take advantage of this. When jobs are run with this option in a DAG each job has a different $CLUSTER number and a $PROCESS number of 0, which may break scripts that rely on the normal -N numbering scheme for $CLUSTER and $PROCESS. Groups of jobs run with this option will have the same $JOBSUBPARENTJOBID, each individual job will have a unique and sequential $JOBSUBJOBSECTION. Scripts may need modification to take this into account")
     parser.add_argument(
         "--memory", help="Request worker nodes have at least NUMBER[UNITS] of memory. If UNITS is not specified default is 'MB'.  Allowed values for UNITS are 'KB','MB','GB', and 'TB'")
-    parser.add_argument("-N", default=1, help="submit N copies of this job. Each job will have access to the environment variable $PROCESS that provides the job number (0 to NUM-1), equivalent to the number following the decimal point in the job ID (the '2' in 134567.2).")
+    parser.add_argument("-N", default=1, type=int, help="submit N copies of this job. Each job will have access to the environment variable $PROCESS that provides the job number (0 to NUM-1), equivalent to the number following the decimal point in the job ID (the '2' in 134567.2).")
     parser.add_argument(
         "--OS", default=None, help="specify OS version of worker node. Example --OS=SL5 Comma seperated list '--OS=SL4,SL5,SL6' works as well . Default is any available OS")
     parser.add_argument("--overwrite_condor_requirements",
@@ -280,7 +281,7 @@ def main():
         os.makedirs(tmp)
     get_creds()
     do_tarballs(args)
-    set_extras(args)
+    set_extras(args, tmp)
     
     # we are in prefix/bin/jobsub_submit...
     # so prefix is:
@@ -291,7 +292,7 @@ def main():
         parse_dagnabbit(parser, d, args.__dict__, tmp)
         submit_dag('%s/*.dag' % tmp)
     elif args.dataset_definition:
-        d = '%s/templates/datset_dag' % prefix
+        d = '%s/templates/dataset_dag' % prefix
         render_files(d, args.__dict__, tmp)
         submit_dag('%s/*.dag' % tmp)
     elif args.maxConcurrent:
