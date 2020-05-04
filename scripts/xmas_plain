@@ -1,6 +1,13 @@
+
+printf "core\n.git\n" > /tmp/excludes
+[ -d /tmp/stuff ] || mkdir /tmp/stuff
+echo > /tmp/stuff/a
+echo > /tmp/stuff/b
+
 jobsub_submit  \
                  --append_condor_requirements "xyz==1" \
                  --blacklist FZU \
+                 --blacklist Cornell \
                  --cpu 123 \
                  --debug 4 \
                  --disk 100M  \
@@ -32,4 +39,8 @@ jobsub_submit  \
                  --timeout TIMEOUT 3500 \
                  --use-cvmfs-dropbox 1 \
                  --verbose 1 \
-                 file:////usr/bin/printenv  
+                 file:////usr/bin/printenv \
+                 PATH \
+                 HOME \
+                 TMPDIR
+

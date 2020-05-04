@@ -1,0 +1,4 @@
+core*
+.git
+CVS
+*.root
