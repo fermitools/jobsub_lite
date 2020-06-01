@@ -17,7 +17,7 @@ import hashlib
 
 random.seed()
 
-def parse_dagnabbit(parser, srcdir, values, dest):
+def parse_dagnabbit(parser, srcdir, values, dest, debug_comments=True):
     ''' 
          parse a dagnabbit dag file generating a .dag file and .cmd files 
          in the dest directory, using global cmdline options from values
@@ -25,32 +25,45 @@ def parse_dagnabbit(parser, srcdir, values, dest):
     '''
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
     count = 0
+    linenum = 0
     df = open(values['dag'], 'r')
     of = open("%s/dag.dag" % dest, "w")
     of.write("DOT %s/dag.dot UPDATE\n" % dest)
     in_parallel = False
     in_serial = False
+    last_serial = None
+    parallel_l = []
     for line in df:
+        line = line.strip()
         line = os.path.expandvars(line)
-        if line == '<parallel>':
+        linenum = linenum + 1
+        if debug_comments: 
+            of.write("# line: %s\n" % line)
+            of.write("# in_parallel: %s in_serial: %s last_serial: %s parallel_l: %s\n" %
+                (in_parallel, in_serial, last_serial, parallel_l)
+            )
+
+        if line.find('<parallel>')>=0:
             in_parallel = True
             parallel_l = []
-        elif line == '</parallel>':
+        elif line.find('</parallel>')>=0:
             in_parallel = False
             parallels = " ".join(parallel_l)
             of.write("PARENT %s CHILD %s\n" % (last_serial, parallels))
             last_serial = parallels
-        elif line == '<serial>':
+        elif line.find('<serial>')>= 0:
             in_serial = True
-        elif line == '</serial>':
+        elif line.find('</serial>')>=0:
             in_serial = False
-        else:
+        elif line.find("jobsub")>=0:
+            if not in_serial and not in_parallel:
+                sys.stderr.write("Syntax Error: job not in <serial> or <parallel block> at line %d\n" % linenum)
             count = count + 1
             name = "stage_%d" % count
             res = parser.parse_args(line.strip().split(' ')[1:])
             thesevalues = values.copy()
-            thesevalues.N = 1
-            thesevalues.__dict __= update(res.__dict__)
+            thesevalues['N'] = 1
+            thesevalues.update(res.__dict__)
             cf = open("%s/%s.cmd" % (dest, name), "w")
             csf = open("%s/%s.sh" % (dest, name), "w")
             cf.write(jinja_env.get_template('simple.cmd').render(**thesevalues))
@@ -58,10 +71,17 @@ def parse_dagnabbit(parser, srcdir, values, dest):
             cf.close()
             of.write("JOB %s %s.cmd\n" % (name,name))
             if in_serial:
-                of.write("PARENT %s CHILD %s\n" % (last_serial, name))
+                if last_serial:
+                    of.write("PARENT %s CHILD %s\n" % (last_serial, name))
                 last_serial = name
             if in_parallel:
                 parallel_l.append(name)
+        elif not line:
+            # blank lines are fine
+            pass 
+        else:
+            sys.stderr.write("Syntax Error: ignoring %s at line %d\n" % (line, linenum))
+       
     of.close()
 
 def tar_up(directory, excludes):
@@ -233,7 +253,7 @@ def main():
     parser.add_argument("-d", help="-d <tag> <dir> Writable directory $CONDOR_DIR_<tag> will exist on the execution node. After job completion, its contents will be moved to <dir> automatically Specify as many <tag>/<dir> pairs as you need.")
     parser.add_argument("--email-to", default="%s@fnal.gov" %
                         os.environ["USER"], help="email address to send job reports/summaries to (default is $USER@fnal.gov)")
-    parser.add_argument("-e", "--environment", help=" -e ADDED_ENVIRONMENT exports this variable with its local value to worker node environment. For example export FOO='BAR'; jobsub -e FOO <more stuff> guarantees that the value of $FOO on the worker node is 'BAR' . Alternate format which does not require setting the env var first is the -e VAR=VAL, idiom which sets the value of $VAR to 'VAL' in the worker environment. The -e option can be used as many times in one jobsub_submit invocation as desired.")
+    parser.add_argument("-e", "--environment", default=[], action="append", help=" -e ADDED_ENVIRONMENT exports this variable with its local value to worker node environment. For example export FOO='BAR'; jobsub -e FOO <more stuff> guarantees that the value of $FOO on the worker node is 'BAR' . Alternate format which does not require setting the env var first is the -e VAR=VAL, idiom which sets the value of $VAR to 'VAL' in the worker environment. The -e option can be used as many times in one jobsub_submit invocation as desired.")
     parser.add_argument("--expected-lifetime", help=" 'short'|'medium'|'long'|NUMBER[UNITS] Expected lifetime of the job. Used to match against resources advertising that they have REMAINING_LIFETIME seconds left. The shorter your EXPECTED_LIFTIME is, the more resources (aka slots, cpus) your job can potentially match against and the quicker it should start. If your job runs longer than EXPECTED_LIFETIME it *may* be killed by the batch system. If your specified EXPECTED_LIFETIME is too long your job may take a long time to match against a resource a sufficiently long REMAINING_LIFETIME. Valid inputs for this parameter are 'short', 'medium', IF [UNITS] is omitted, value is NUMBER seconds. Allowed values for UNITS are 's', 'm', 'h', 'd' representing seconds, minutes, etc.The values for 'short','medium',and 'long' are configurable by Grid Operations, they currently are '3h' , '8h' , and '85200s' but this may change in the future. Default value of EXPECTED_LIFETIME is currently '8h'.")
     parser.add_argument("-f", dest="input_file", default=[], action="append", help="INPUT_FILE at runtime, INPUT_FILE will be copied to directory $CONDOR_DIR_INPUT on the execution node. Example :-f /grid/data/minerva/my/input/file.xxx will be copied to $CONDOR_DIR_INPUT/file.xxx Specify as many -f INPUT_FILE_1 -f INPUT_FILE_2 args as you need. To copy file at submission time instead of run time, use -f dropbox://INPUT_FILE to copy the file.")
     parser.add_argument("--generate-email-summary", help="")
@@ -255,6 +275,7 @@ def main():
     parser.add_argument(
         "--memory", help="Request worker nodes have at least NUMBER[UNITS] of memory. If UNITS is not specified default is 'MB'.  Allowed values for UNITS are 'KB','MB','GB', and 'TB'")
     parser.add_argument("-N", default=1, type=int, help="submit N copies of this job. Each job will have access to the environment variable $PROCESS that provides the job number (0 to NUM-1), equivalent to the number following the decimal point in the job ID (the '2' in 134567.2).")
+    parser.add_argument("-n","--no_submit", default=False, action="store_true", help="generate condor_command file but do not submit")
     parser.add_argument(
         "--OS", default=None, help="specify OS version of worker node. Example --OS=SL5 Comma seperated list '--OS=SL4,SL5,SL6' works as well . Default is any available OS")
     parser.add_argument("--overwrite_condor_requirements",
@@ -274,13 +295,14 @@ def main():
     parser.add_argument(
         "--verbose", help="dump internal state of program (useful for debugging)")
 
-    parser.add_argument("executable", default=None,
+    parser.add_argument("executable", default=None, nargs='?',
                          help="executable for job to run")
 
     parser.add_argument("arguments", default=[], nargs=argparse.REMAINDER,
                         action="append", help="arguments to executable")
 
     args = parser.parse_args()
+
     tmp = "%s/js%d" % (os.environ.get('TMPDIR','/tmp'), os.getpid())
     if not os.path.isdir(tmp):
         os.makedirs(tmp)
