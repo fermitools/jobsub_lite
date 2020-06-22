@@ -1,4 +1,30 @@
-core*
-.git
-CVS
-*.root
+# default jobsub tarball exclusion rule file
+#
+# exclude any file in a .git/  or .svn/ directory
+\.git/
+\.svn/
+#exclude .core files
+\.core$
+# exclude emacs backups
+\~.*$
+# exclude pdfs and eps files
+\.pdf$
+\.eps$
+# NO PICTURES OF CATS
+\.png$
+\.PNG$
+\.gif$
+\.GIF$
+\.jpg$
+\.jpeg$
+\.JPG$
+\.JPEG$
+# no .log .out or .err files
+\.log$
+\.err$
+\.out$
+# no tarfiles or zipfiles
+\.tar$
+\.tgz$
+\.zip$
+\.gz$
