@@ -200,7 +200,7 @@ export poms_data='{"campaign_id":"'$CAMPAIGN_ID'","task_definition_id":"'$TASK_D
 ${JSB_TMP}/ifdh.sh log poms_data=$poms_data
 echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT  --exe /usr/bin/printenv --  
 >&2 echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT  --exe /usr/bin/printenv --  
-timeout 1h $JOBSUB_EXE_SCRIPT --exe {{executable}} -- {{arguments}}
+timeout 1h $JOBSUB_EXE_SCRIPT --exe {{executable_basename}} -- {{exe_arguments}}
 JOB_RET_STATUS=$?
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS 1>&2

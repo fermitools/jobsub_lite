@@ -1,5 +1,5 @@
 universe          = vanilla
-executable        = /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.samend.sh
+executable        = {{submitdir}}/samend.sh
 arguments         = mengel-fife_wrap_20200114_162957_3316054 
 output                = /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/samend-fife_wrap_20200114_162957_3316054.out
 error                 = /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/samend-fife_wrap_20200114_162957_3316054.err

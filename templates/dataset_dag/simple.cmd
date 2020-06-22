@@ -1,5 +1,5 @@
 universe           = vanilla
-executable         = {{executable}}
+executable         = {{full_executable}}
 arguments          = {{args|join(" ")}}
 {% set dir %}/fife/local/scratch/uploads/{{group}}/{{user}}/{{date}}.{{uuid}}{% endset %}
 {%set filebase %}{{dir}}/{{dir}}{{executable_basename}}{{datestamp}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}

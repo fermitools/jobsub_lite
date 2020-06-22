@@ -17,7 +17,7 @@ import hashlib
 
 random.seed()
 
-def parse_dagnabbit(parser, srcdir, values, dest, debug_comments=True):
+def parse_dagnabbit( srcdir, values, dest, debug_comments=True):
     ''' 
          parse a dagnabbit dag file generating a .dag file and .cmd files 
          in the dest directory, using global cmdline options from values
@@ -53,6 +53,12 @@ def parse_dagnabbit(parser, srcdir, values, dest, debug_comments=True):
             last_serial = parallels
         elif line.find('<serial>')>= 0:
             in_serial = True
+            if in_parallel:
+                # to make this work we need a stack to remember we were
+                # in a parallel, and our parallel_l would need a start
+                # and end for each chain...
+                sys.stderr.write("Error: file %s line %d: <serial> inside <parallel> not currently supported\n" % (values[dag],linenum))
+                sys.exit(1)
         elif line.find('</serial>')>=0:
             in_serial = False
         elif line.find("jobsub")>=0:
@@ -60,16 +66,26 @@ def parse_dagnabbit(parser, srcdir, values, dest, debug_comments=True):
                 sys.stderr.write("Syntax Error: job not in <serial> or <parallel block> at line %d\n" % linenum)
             count = count + 1
             name = "stage_%d" % count
-            res = parser.parse_args(line.strip().split(' ')[1:])
+            parser = get_parser()
+            try:
+                res = parser.parse_args(line.strip().split()[1:])
+            except:
+                sys.stderr.write("Error at file %s line %s\n" %(values['dag'],linenum))
+                sys.stderr.write("parsing: %s\n" % line.strip.split())
+                sys.stderr.flush()
+                raise
+            print("res.__dict__: %s" % repr(res.__dict__))
             thesevalues = values.copy()
             thesevalues['N'] = 1
+            thesevalues['dag'] = None
             thesevalues.update(res.__dict__)
             cf = open("%s/%s.cmd" % (dest, name), "w")
             csf = open("%s/%s.sh" % (dest, name), "w")
+            set_extras_n_fix_units(thesevalues,dest)
             cf.write(jinja_env.get_template('simple.cmd').render(**thesevalues))
             csf.write(jinja_env.get_template('simple.sh').render(**thesevalues))
             cf.close()
-            of.write("JOB %s %s.cmd\n" % (name,name))
+            of.write("JOB %s %s/%s.cmd\n" % (name,dest,name))
             if in_serial:
                 if last_serial:
                     of.write("PARENT %s CHILD %s\n" % (last_serial, name))
@@ -198,7 +214,7 @@ def submit(f):
     if fl:
         f = fl[0]
     schedd, pool = get_schedd()
-    os.system("echo condor_submit -name %s -pool %s %s" % (schedd, pool, f))
+    os.system("echo condor_submit -name %s -remote %s %s" % (schedd, pool, f))
 
 def submit_dag(f):
     ''' Actually submit the dag '''
@@ -206,7 +222,7 @@ def submit_dag(f):
     if fl:
         f = fl[0]
     schedd, pool = get_schedd()
-    os.system("echo condor_submit_dag -name %s -pool %s %s" % (schedd, pool, f))
+    os.system("echo condor_submit_dag -name %s -remote %s %s" % (schedd, pool, f))
 
 def cleanup(tmp):
     print("remember to clean up %s" % tmp)
@@ -222,21 +238,52 @@ def get_principal():
     p.wait()
     return princ
 
-def set_extras(args, tmpdir):
-    args.user = os.environ['USER']
+
+def set_extras_n_fix_units(args, submitdir):
+
+    args['user'] = os.environ['USER']
+    args['submitdir'] = submitdir
     ai = socket.getaddrinfo(socket.gethostname(),80)
     if ai:
-        args.ipaddr = ai[-1][-1][0]
+        args['ipaddr'] = ai[-1][-1][0]
     else:
-        args.ipaddr = 'unknown'
-    args.jobsub_version = 'lite_v1_0'
-    args.kerberos_principal = get_principal()
-    args.usage_model = 'ONSITE'
-    args.uuid = str(uuid.uuid4())
-    args.date = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
-    args.tmp = tmpdir
+        args['ipaddr'] = 'unknown'
+    args['jobsub_version'] = 'lite_v1_0'
+    args['kerberos_principal'] = get_principal()
+    args['usage_model'] = 'ONSITE'
+    args['uuid'] = str(uuid.uuid4())
+    args['date'] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
+    print("executable: %s" % repr(args['executable']))
+    print("exe_arguments: %s" % repr(args['exe_arguments']))
+    if not args['executable'] and args['exe_arguments']:
+        args['executable'] = args['exe_arguments'][-1]
+        args['exe_arguments'] = args['exe_arguments'][:-1]
+    print("executable: %s" % repr(args['executable']))
+    print("exe_arguments: %s" % repr(args['exe_arguments']))
+    args['full_executable'] = args['executable'].replace('file://','')
+    if args['full_executable'][0] != '/':
+        args['full_executable'] = os.path.join(os.getcwd(), args['full_executable'])
+    args['executable_basename'] = os.path.basename(args['full_executable'])
 
-def main():
+    # conversion factors for memory suffixes
+    dsktable={"k": 1, "m": 1024, "g": 1024*1024, "t": 1024*1024*1024}
+
+    memtable={"k": 1.0/1024, "m": 1, "g": 1024, "t": 1024*1024}
+    timtable={'s': 1, 'm': 60, 'h': 60*60, 'd': 60*60*24}
+
+    fix_unit(args, 'disk',dsktable, -1, 'bB', -2)
+    fix_unit(args, 'memory',memtable, -1, 'bB', -2)
+    fix_unit(args, 'expected_lifetime',timtable, -1, 'smhd', -1)
+    fix_unit(args, 'expected_timeout', timtable, -1, 'smhd', -1)
+
+def fix_unit(args, name, table, s_offset, s_list, c_offset):
+    if args[name] and  args[name].[s_offset].lower in s_list:
+        cf = memtable[args[name][c_offset].lower()]
+        args[name] = float(args[name][:c_offset]) * cf
+    else:
+        args[name] = float(args[name])
+
+def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--append_condor_requirements",
                         help="append condor requirements")
@@ -273,7 +320,7 @@ def main():
 
     parser.add_argument("--maxConcurrent", help="max number of jobs running concurrently at given time.  Use in conjunction with -N option to protect a shared resource. Example: jobsub -N 1000 -maxConcurrent 20 will only run 20 jobs at a time until all 1000 have completed. This is implemented by running the jobs in a DAG. Normally when jobs are run with the -N option, they all have the same $CLUSTER number and differing, sequential $PROCESS numbers, and many submission scripts take advantage of this. When jobs are run with this option in a DAG each job has a different $CLUSTER number and a $PROCESS number of 0, which may break scripts that rely on the normal -N numbering scheme for $CLUSTER and $PROCESS. Groups of jobs run with this option will have the same $JOBSUBPARENTJOBID, each individual job will have a unique and sequential $JOBSUBJOBSECTION. Scripts may need modification to take this into account")
     parser.add_argument(
-        "--memory", help="Request worker nodes have at least NUMBER[UNITS] of memory. If UNITS is not specified default is 'MB'.  Allowed values for UNITS are 'KB','MB','GB', and 'TB'")
+        "--memory", default=None, help="Request worker nodes have at least NUMBER[UNITS] of memory. If UNITS is not specified default is 'MB'.  Allowed values for UNITS are 'KB','MB','GB', and 'TB'")
     parser.add_argument("-N", default=1, type=int, help="submit N copies of this job. Each job will have access to the environment variable $PROCESS that provides the job number (0 to NUM-1), equivalent to the number following the decimal point in the job ID (the '2' in 134567.2).")
     parser.add_argument("-n","--no_submit", default=False, action="store_true", help="generate condor_command file but do not submit")
     parser.add_argument(
@@ -298,17 +345,18 @@ def main():
     parser.add_argument("executable", default=None, nargs='?',
                          help="executable for job to run")
 
-    parser.add_argument("arguments", default=[], nargs=argparse.REMAINDER,
-                        action="append", help="arguments to executable")
+    parser.add_argument("exe_arguments", nargs='*', help="arguments to executable")
+    return parser
 
+def main():
+    parser = get_parser()
     args = parser.parse_args()
 
-    tmp = "%s/js%d" % (os.environ.get('TMPDIR','/tmp'), os.getpid())
-    if not os.path.isdir(tmp):
-        os.makedirs(tmp)
+    submitdir = "%s/js%d" % (os.environ.get('SUBMITDIR',os.environ.get('TMPDIR','/tmp')), os.getpid())
+    if not os.path.isdir(submitdir):
+        os.makedirs(submitdir)
     get_creds()
     do_tarballs(args)
-    set_extras(args, tmp)
     
     # we are in prefix/bin/jobsub_submit...
     # so prefix is:
@@ -316,21 +364,24 @@ def main():
 
     if args.dag:
         d = '%s/templates/dag' % prefix
-        parse_dagnabbit(parser, d, args.__dict__, tmp)
-        submit_dag('%s/*.dag' % tmp)
+        parse_dagnabbit(d, args.__dict__, submitdir)
+        submit_dag('%s/*.dag' % submitdir)
     elif args.dataset_definition:
         d = '%s/templates/dataset_dag' % prefix
-        render_files(d, args.__dict__, tmp)
-        submit_dag('%s/*.dag' % tmp)
+        set_extras_n_fix_units(args.__dict__, submitdir)
+        render_files(d, args.__dict__, submitdir)
+        submit_dag('%s/*.dag' % submitdir)
     elif args.maxConcurrent:
         d = '%s/templates/maxconcurrent_dag' % prefix
-        render_files(d, args.__dict__, tmp)
-        submit_dag('%s/*.dag' % tmp)
+        set_extras_n_fix_units(args.__dict__, submitdir)
+        render_files(d, args.__dict__, submitdir)
+        submit_dag('%s/*.dag' % submitdir)
     else:
         d = '%s/templates/simple' % prefix
-        render_files(d, args.__dict__, tmp)
-        submit('%s/*.cmd' % tmp)
-    cleanup(tmp)
+        set_extras_n_fix_units(args.__dict__, submitdir)
+        render_files(d, args.__dict__, submitdir)
+        submit('%s/*.cmd' % submitdir)
+    cleanup(submitdir)
 
 
 if __name__ == '__main__':
