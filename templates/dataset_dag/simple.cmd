@@ -16,9 +16,10 @@ transfer_executable= True
 transfer_input_files = {{dir}}/{{executable_basename}}
 when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_output_files = .empty_file
-{%if OS %}
-+DesiredOS={{OS}}
-{%endif%}
+{%if    cpu %}request_cpus = {{cpu}}{%endif%}
+{%if memory %}request_memory = {{memory}}{%endif%}
+{%if   disk %}request_disk = {{disk}}{%endif%}
+{%if     OS %}+DesiredOS={{OS}}{%endif%}
 +JobsubClientDN="{{clientdn}}
 +JobsubClientIpAddress="{{ipaddr}}"
 +Owner="{{user}}"

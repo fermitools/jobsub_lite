@@ -40,6 +40,6 @@ x509userproxy = /var/lib/jobsub/creds/proxies/fermilab/x509cc_mengel_Analysis
 +Drain = False
 +GeneratedBy ="NO_UPS_VERSION jobsub03.fnal.gov"
 +DESIRED_usage_model = "OPPORTUNISTIC,DEDICATED"
-request_memory = 100mb
+request_memory = 100
 requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model)))
 queue 1
