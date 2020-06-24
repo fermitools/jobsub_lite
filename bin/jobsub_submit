@@ -17,16 +17,17 @@ import hashlib
 
 random.seed()
 
-def parse_dagnabbit( srcdir, values, dest, debug_comments=True):
-    ''' 
+
+def parse_dagnabbit(srcdir, values, dest, debug_comments=True):
+    """ 
          parse a dagnabbit dag file generating a .dag file and .cmd files 
          in the dest directory, using global cmdline options from values
          along with ones parsed from dagnabbit file
-    '''
+    """
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
     count = 0
     linenum = 0
-    df = open(values['dag'], 'r')
+    df = open(values["dag"], "r")
     of = open("%s/dag.dag" % dest, "w")
     of.write("DOT %s/dag.dot UPDATE\n" % dest)
     in_parallel = False
@@ -37,55 +38,64 @@ def parse_dagnabbit( srcdir, values, dest, debug_comments=True):
         line = line.strip()
         line = os.path.expandvars(line)
         linenum = linenum + 1
-        if debug_comments: 
+        if debug_comments:
             of.write("# line: %s\n" % line)
-            of.write("# in_parallel: %s in_serial: %s last_serial: %s parallel_l: %s\n" %
-                (in_parallel, in_serial, last_serial, parallel_l)
+            of.write(
+                "# in_parallel: %s in_serial: %s last_serial: %s parallel_l: %s\n"
+                % (in_parallel, in_serial, last_serial, parallel_l)
             )
 
-        if line.find('<parallel>')>=0:
+        if line.find("<parallel>") >= 0:
             in_parallel = True
             parallel_l = []
-        elif line.find('</parallel>')>=0:
+        elif line.find("</parallel>") >= 0:
             in_parallel = False
             parallels = " ".join(parallel_l)
             of.write("PARENT %s CHILD %s\n" % (last_serial, parallels))
             last_serial = parallels
-        elif line.find('<serial>')>= 0:
+        elif line.find("<serial>") >= 0:
             in_serial = True
             if in_parallel:
                 # to make this work we need a stack to remember we were
                 # in a parallel, and our parallel_l would need a start
                 # and end for each chain...
-                sys.stderr.write("Error: file %s line %d: <serial> inside <parallel> not currently supported\n" % (values[dag],linenum))
+                sys.stderr.write(
+                    "Error: file %s line %d: <serial> inside <parallel> not currently supported\n"
+                    % (values[dag], linenum)
+                )
                 sys.exit(1)
-        elif line.find('</serial>')>=0:
+        elif line.find("</serial>") >= 0:
             in_serial = False
-        elif line.find("jobsub")>=0:
+        elif line.find("jobsub") >= 0:
             if not in_serial and not in_parallel:
-                sys.stderr.write("Syntax Error: job not in <serial> or <parallel block> at line %d\n" % linenum)
+                sys.stderr.write(
+                    "Syntax Error: job not in <serial> or <parallel block> at line %d\n"
+                    % linenum
+                )
             count = count + 1
             name = "stage_%d" % count
             parser = get_parser()
             try:
                 res = parser.parse_args(line.strip().split()[1:])
             except:
-                sys.stderr.write("Error at file %s line %s\n" %(values['dag'],linenum))
+                sys.stderr.write(
+                    "Error at file %s line %s\n" % (values["dag"], linenum)
+                )
                 sys.stderr.write("parsing: %s\n" % line.strip.split())
                 sys.stderr.flush()
                 raise
             print("res.__dict__: %s" % repr(res.__dict__))
             thesevalues = values.copy()
-            thesevalues['N'] = 1
-            thesevalues['dag'] = None
+            thesevalues["N"] = 1
+            thesevalues["dag"] = None
             thesevalues.update(res.__dict__)
             cf = open("%s/%s.cmd" % (dest, name), "w")
             csf = open("%s/%s.sh" % (dest, name), "w")
-            set_extras_n_fix_units(thesevalues,dest)
-            cf.write(jinja_env.get_template('simple.cmd').render(**thesevalues))
-            csf.write(jinja_env.get_template('simple.sh').render(**thesevalues))
+            set_extras_n_fix_units(thesevalues, dest)
+            cf.write(jinja_env.get_template("simple.cmd").render(**thesevalues))
+            csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
             cf.close()
-            of.write("JOB %s %s/%s.cmd\n" % (name,dest,name))
+            of.write("JOB %s %s/%s.cmd\n" % (name, dest, name))
             if in_serial:
                 if last_serial:
                     of.write("PARENT %s CHILD %s\n" % (last_serial, name))
@@ -94,106 +104,116 @@ def parse_dagnabbit( srcdir, values, dest, debug_comments=True):
                 parallel_l.append(name)
         elif not line:
             # blank lines are fine
-            pass 
+            pass
         else:
             sys.stderr.write("Syntax Error: ignoring %s at line %d\n" % (line, linenum))
-       
+
     of.close()
 
+
 def tar_up(directory, excludes):
-    ''' build path/to/directory.tar from path/to/directory '''
+    """ build path/to/directory.tar from path/to/directory """
     tarfile = "%s.tar.gz" % directory
     if not excludes:
-        excludes = os.path.dirname(__FILE__) + '/../etc/default_excludes'
+        excludes = os.path.dirname(__FILE__) + "/../etc/default_excludes"
     excludes = "--exclude-from %s" % excludes
     os.system("tar czvf %s %s %s" % (tarfile, excludes, directory))
     return tarfile
 
+
 def slurp_file(fname):
-     ''' pull in a tarfile while computing its hash '''
-     h = hashlib.sha256()
-     tfl=[]
-     with open(fname,"r") as f:
-         tff = f.read(4096)
-         h.update(tff)
-         tfl.append(tff)
-         while tff:
-             tff = f.read(4096)
-             h.update(tff)
-             tfl.append(tff)
-     return h.hexdigest(), ''.join(tfl)
+    """ pull in a tarfile while computing its hash """
+    h = hashlib.sha256()
+    tfl = []
+    with open(fname, "r") as f:
+        tff = f.read(4096)
+        h.update(tff)
+        tfl.append(tff)
+        while tff:
+            tff = f.read(4096)
+            h.update(tff)
+            tfl.append(tff)
+    return h.hexdigest(), "".join(tfl)
+
 
 ih = None
+
+
 def get_creds():
-     global ih
-     if not ih:
-         ih = ifdh.ifdh()
-     return ih.getProxy()
+    global ih
+    if not ih:
+        ih = ifdh.ifdh()
+    return ih.getProxy()
+
 
 def do_tarballs(args):
-    ''' handle tarfile argument;  we could have: 
+    """ handle tarfile argument;  we could have: 
            a directory with tardir: prefix to tar up and upload
            a tarfile with dropbox: prefix to upload
            a plain path to just use
         we convert the argument to the next type as we go...
-    '''
-   
+    """
+
     res = []
     for tfn in args.tar_file_name:
         if tfn.startswith("tardir:"):
-             # tar it up, pretend they gave us dropbox:
-             tarfile = tar_up(tfn[7:], args.tarball_exclusion_file)
-             tfn = "dropbox:%s" % tarfile
+            # tar it up, pretend they gave us dropbox:
+            tarfile = tar_up(tfn[7:], args.tarball_exclusion_file)
+            tfn = "dropbox:%s" % tarfile
 
         if tfn.startswith("dropbox:"):
-             # move it to dropbox area, pretend they gave us plain path
-             
-             digest,tf = slurp_file(tfn[8:])
-             proxy = get_creds()
+            # move it to dropbox area, pretend they gave us plain path
 
-             cid = ''.join( (args.group, '%2F', digest) )
-             location = pubapi_update(cid, proxy)
-             if not location:
-                 location = pubapi_publish(cid, tf, proxy)
+            digest, tf = slurp_file(tfn[8:])
+            proxy = get_creds()
 
-             tfn = location
+            cid = "".join((args.group, "%2F", digest))
+            location = pubapi_update(cid, proxy)
+            if not location:
+                location = pubapi_publish(cid, tf, proxy)
+
+            tfn = location
         res.append(tfn)
-    args.tar_file_name = res 
+    args.tar_file_name = res
 
-DROPBOX_SERVERS=("rcds01.fnal.gov", "rcds02.fnal.gov")
+
+DROPBOX_SERVERS = ("rcds01.fnal.gov", "rcds02.fnal.gov")
+
 
 def pubapi_update(cid, proxy):
-    ''' make pubapi update call to check if we already have this tarfile,
+    """ make pubapi update call to check if we already have this tarfile,
         return path.
-    '''
+    """
     dropbox_server = random.choice(DROPBOX_SERVERS)
     url = "https://%s/pubapi/update?cid=%s" % (dropbox_server, cid)
-    res = requests.get(url, cert=(proxy,proxy))
-    if res.text[:8] == 'PRESENT:':
+    res = requests.get(url, cert=(proxy, proxy))
+    if res.text[:8] == "PRESENT:":
         return res.text[8:]
     else:
         return None
+
 
 def pubapi_publish(cid, tf, proxy):
-    ''' make pubapi publish call to upload this tarfile, return path'''
+    """ make pubapi publish call to upload this tarfile, return path"""
     dropbox_server = random.choice(DROPBOX_SERVERS)
     url = "https://%s/pubapi/publish?cid=%s" % (dropbox_server, cid)
-    res = requests.post(url, cert=(proxy,proxy), data=tf)
-    if res.text[:8] == 'PRESENT:':
+    res = requests.post(url, cert=(proxy, proxy), data=tf)
+    if res.text[:8] == "PRESENT:":
         return res.text[8:]
     else:
         return None
 
+
 def render_files(srcdir, values, dest):
-    ''' use jinja to render the templates from srcdir into the dest directory
+    """ use jinja to render the templates from srcdir into the dest directory
         using values dict for substitutions
-    '''
+    """
     print("trying to render files from %s\n" % srcdir)
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
-    flist = glob.glob('%s/*' % srcdir)
+    flist = glob.glob("%s/*" % srcdir)
 
     # add destination dir to values for template
-    values['cwd'] = dest
+    values["cwd"] = dest
 
     for f in flist:
         print("rendering: %s" % f)
@@ -202,13 +222,17 @@ def render_files(srcdir, values, dest):
         of.write(jinja_env.get_template(bf).render(**values))
         of.close()
 
-SCHEDDS = (("jobsub01.fnal.gov","default"),("jobsub02.fnal.gov","default"))
+
+SCHEDDS = (("jobsub01.fnal.gov", "default"), ("jobsub02.fnal.gov", "default"))
+
+
 def get_schedd():
-    ''' FIXME: this picks a schedd and pool. it should be smarter somehow '''
+    """ FIXME: this picks a schedd and pool. it should be smarter somehow """
     return random.choice(SCHEDDS)
 
+
 def submit(f):
-    ''' Actually submit the job '''
+    """ Actually submit the job """
     print("submitting: %s" % f)
     fl = glob.glob(f)
     if fl:
@@ -216,24 +240,27 @@ def submit(f):
     schedd, pool = get_schedd()
     os.system("echo condor_submit -name %s -remote %s %s" % (schedd, pool, f))
 
+
 def submit_dag(f):
-    ''' Actually submit the dag '''
+    """ Actually submit the dag """
     fl = glob.glob(f)
     if fl:
         f = fl[0]
     schedd, pool = get_schedd()
     os.system("echo condor_submit_dag -name %s -remote %s %s" % (schedd, pool, f))
 
+
 def cleanup(tmp):
     print("remember to clean up %s" % tmp)
-    #os.system("rm -rf %s" % tmp)
+    # os.system("rm -rf %s" % tmp)
+
 
 def get_principal():
     princ = None
     p = subprocess.Popen(["/usr/bin/klist"], stdout=subprocess.PIPE)
     line = p.stdout.readline()
     line = p.stdout.readline()
-    princ = line[line.find(":")+2:-1]
+    princ = line[line.find(":") + 2 : -1]
     p.stdout.close()
     p.wait()
     return princ
@@ -241,148 +268,248 @@ def get_principal():
 
 def set_extras_n_fix_units(args, submitdir):
 
-    args['user'] = os.environ['USER']
-    args['submitdir'] = submitdir
-    ai = socket.getaddrinfo(socket.gethostname(),80)
+    args["user"] = os.environ["USER"]
+    args["submitdir"] = submitdir
+    ai = socket.getaddrinfo(socket.gethostname(), 80)
     if ai:
-        args['ipaddr'] = ai[-1][-1][0]
+        args["ipaddr"] = ai[-1][-1][0]
     else:
-        args['ipaddr'] = 'unknown'
-    args['jobsub_version'] = 'lite_v1_0'
-    args['kerberos_principal'] = get_principal()
-    args['usage_model'] = 'ONSITE'
-    args['uuid'] = str(uuid.uuid4())
-    args['date'] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
-    print("executable: %s" % repr(args['executable']))
-    print("exe_arguments: %s" % repr(args['exe_arguments']))
-    if not args['executable'] and args['exe_arguments']:
-        args['executable'] = args['exe_arguments'][-1]
-        args['exe_arguments'] = args['exe_arguments'][:-1]
-    print("executable: %s" % repr(args['executable']))
-    print("exe_arguments: %s" % repr(args['exe_arguments']))
-    args['full_executable'] = args['executable'].replace('file://','')
-    if args['full_executable'][0] != '/':
-        args['full_executable'] = os.path.join(os.getcwd(), args['full_executable'])
-    args['executable_basename'] = os.path.basename(args['full_executable'])
+        args["ipaddr"] = "unknown"
+    args["jobsub_version"] = "lite_v1_0"
+    args["kerberos_principal"] = get_principal()
+    args["usage_model"] = "ONSITE"
+    args["uuid"] = str(uuid.uuid4())
+    args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
+    print("executable: %s" % repr(args["executable"]))
+    print("exe_arguments: %s" % repr(args["exe_arguments"]))
+    if not args["executable"] and args["exe_arguments"]:
+        args["executable"] = args["exe_arguments"][-1]
+        args["exe_arguments"] = args["exe_arguments"][:-1]
+    print("executable: %s" % repr(args["executable"]))
+    print("exe_arguments: %s" % repr(args["exe_arguments"]))
+    args["full_executable"] = args["executable"].replace("file://", "")
+    if args["full_executable"][0] != "/":
+        args["full_executable"] = os.path.join(os.getcwd(), args["full_executable"])
+    args["executable_basename"] = os.path.basename(args["full_executable"])
 
     # conversion factors for memory suffixes
-    dsktable={"k": 1, "m": 1024, "g": 1024*1024, "t": 1024*1024*1024}
+    dsktable = {"k": 1, "m": 1024, "g": 1024 * 1024, "t": 1024 * 1024 * 1024}
 
-    memtable={"k": 1.0/1024, "m": 1, "g": 1024, "t": 1024*1024}
-    timtable={'s': 1, 'm': 60, 'h': 60*60, 'd': 60*60*24}
+    memtable = {"k": 1.0 / 1024, "m": 1, "g": 1024, "t": 1024 * 1024}
+    timtable = {"s": 1, "m": 60, "h": 60 * 60, "d": 60 * 60 * 24}
 
-    fix_unit(args, 'disk',dsktable, -1, 'bB', -2)
-    fix_unit(args, 'memory',memtable, -1, 'bB', -2)
-    fix_unit(args, 'expected_lifetime',timtable, -1, 'smhd', -1)
-    fix_unit(args, 'expected_timeout', timtable, -1, 'smhd', -1)
+    fix_unit(args, "disk", dsktable, -1, "bB", -2)
+    fix_unit(args, "memory", memtable, -1, "bB", -2)
+    fix_unit(args, "expected_lifetime", timtable, -1, "smhd", -1)
+    fix_unit(args, "expected_timeout", timtable, -1, "smhd", -1)
+
 
 def fix_unit(args, name, table, s_offset, s_list, c_offset):
-    if args[name] and  args[name].[s_offset].lower in s_list:
+    if args[name] and args[name][s_offset].lower() in s_list:
         cf = memtable[args[name][c_offset].lower()]
         args[name] = float(args[name][:c_offset]) * cf
     else:
         args[name] = float(args[name])
 
+
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--append_condor_requirements",
-                        help="append condor requirements")
     parser.add_argument(
-        "--blacklist", help="enusure that jobs do not land at these sites")
+        "--append_condor_requirements", help="append condor requirements"
+    )
     parser.add_argument(
-        "--cpu", help="request worker nodes have at least NUMBER cpus")
+        "--blacklist", help="enusure that jobs do not land at these sites"
+    )
+    parser.add_argument("--cpu", help="request worker nodes have at least NUMBER cpus")
     parser.add_argument("--dag", help="submit and run a dagNabbit input file")
-    parser.add_argument("--dataset_definition",
-                        help="SAM dataset definition used in a Directed Acyclic Graph (DAG)")
+    parser.add_argument(
+        "--dataset_definition",
+        help="SAM dataset definition used in a Directed Acyclic Graph (DAG)",
+    )
     parser.add_argument("--debug", help="Turn on debugging")
     parser.add_argument(
-        "--disk", help="Request worker nodes have at least NUMBER[UNITS] of disk space. If UNITS is not specified default is 'KB' (a typo in earlier versions said that default was 'MB', this was wrong). Allowed values for UNITS are 'KB','MB','GB', and 'TB'", default="")
-    parser.add_argument("-d", help="-d <tag> <dir> Writable directory $CONDOR_DIR_<tag> will exist on the execution node. After job completion, its contents will be moved to <dir> automatically Specify as many <tag>/<dir> pairs as you need.")
-    parser.add_argument("--email-to", default="%s@fnal.gov" %
-                        os.environ["USER"], help="email address to send job reports/summaries to (default is $USER@fnal.gov)")
-    parser.add_argument("-e", "--environment", default=[], action="append", help=" -e ADDED_ENVIRONMENT exports this variable with its local value to worker node environment. For example export FOO='BAR'; jobsub -e FOO <more stuff> guarantees that the value of $FOO on the worker node is 'BAR' . Alternate format which does not require setting the env var first is the -e VAR=VAL, idiom which sets the value of $VAR to 'VAL' in the worker environment. The -e option can be used as many times in one jobsub_submit invocation as desired.")
-    parser.add_argument("--expected-lifetime", help=" 'short'|'medium'|'long'|NUMBER[UNITS] Expected lifetime of the job. Used to match against resources advertising that they have REMAINING_LIFETIME seconds left. The shorter your EXPECTED_LIFTIME is, the more resources (aka slots, cpus) your job can potentially match against and the quicker it should start. If your job runs longer than EXPECTED_LIFETIME it *may* be killed by the batch system. If your specified EXPECTED_LIFETIME is too long your job may take a long time to match against a resource a sufficiently long REMAINING_LIFETIME. Valid inputs for this parameter are 'short', 'medium', IF [UNITS] is omitted, value is NUMBER seconds. Allowed values for UNITS are 's', 'm', 'h', 'd' representing seconds, minutes, etc.The values for 'short','medium',and 'long' are configurable by Grid Operations, they currently are '3h' , '8h' , and '85200s' but this may change in the future.", default='8h')
-    parser.add_argument("-f", dest="input_file", default=[], action="append", help="INPUT_FILE at runtime, INPUT_FILE will be copied to directory $CONDOR_DIR_INPUT on the execution node. Example :-f /grid/data/minerva/my/input/file.xxx will be copied to $CONDOR_DIR_INPUT/file.xxx Specify as many -f INPUT_FILE_1 -f INPUT_FILE_2 args as you need. To copy file at submission time instead of run time, use -f dropbox://INPUT_FILE to copy the file.")
+        "--disk",
+        help="Request worker nodes have at least NUMBER[UNITS] of disk space. If UNITS is not specified default is 'KB' (a typo in earlier versions said that default was 'MB', this was wrong). Allowed values for UNITS are 'KB','MB','GB', and 'TB'",
+        default="",
+    )
+    parser.add_argument(
+        "-d",
+        help="-d <tag> <dir> Writable directory $CONDOR_DIR_<tag> will exist on the execution node. After job completion, its contents will be moved to <dir> automatically Specify as many <tag>/<dir> pairs as you need.",
+    )
+    parser.add_argument(
+        "--email-to",
+        default="%s@fnal.gov" % os.environ["USER"],
+        help="email address to send job reports/summaries to (default is $USER@fnal.gov)",
+    )
+    parser.add_argument(
+        "-e",
+        "--environment",
+        default=[],
+        action="append",
+        help=" -e ADDED_ENVIRONMENT exports this variable with its local value to worker node environment. For example export FOO='BAR'; jobsub -e FOO <more stuff> guarantees that the value of $FOO on the worker node is 'BAR' . Alternate format which does not require setting the env var first is the -e VAR=VAL, idiom which sets the value of $VAR to 'VAL' in the worker environment. The -e option can be used as many times in one jobsub_submit invocation as desired.",
+    )
+    parser.add_argument(
+        "--expected-lifetime",
+        help=" 'short'|'medium'|'long'|NUMBER[UNITS] Expected lifetime of the job. Used to match against resources advertising that they have REMAINING_LIFETIME seconds left. The shorter your EXPECTED_LIFTIME is, the more resources (aka slots, cpus) your job can potentially match against and the quicker it should start. If your job runs longer than EXPECTED_LIFETIME it *may* be killed by the batch system. If your specified EXPECTED_LIFETIME is too long your job may take a long time to match against a resource a sufficiently long REMAINING_LIFETIME. Valid inputs for this parameter are 'short', 'medium', IF [UNITS] is omitted, value is NUMBER seconds. Allowed values for UNITS are 's', 'm', 'h', 'd' representing seconds, minutes, etc.The values for 'short','medium',and 'long' are configurable by Grid Operations, they currently are '3h' , '8h' , and '85200s' but this may change in the future.",
+        default="8h",
+    )
+    parser.add_argument(
+        "-f",
+        dest="input_file",
+        default=[],
+        action="append",
+        help="INPUT_FILE at runtime, INPUT_FILE will be copied to directory $CONDOR_DIR_INPUT on the execution node. Example :-f /grid/data/minerva/my/input/file.xxx will be copied to $CONDOR_DIR_INPUT/file.xxx Specify as many -f INPUT_FILE_1 -f INPUT_FILE_2 args as you need. To copy file at submission time instead of run time, use -f dropbox://INPUT_FILE to copy the file.",
+    )
     parser.add_argument("--generate-email-summary", help="")
     parser.add_argument(
-        "-G", "--group", help="Group/Experiment/Subgroup for priorities and accounting")
-    parser.add_argument("-L", "--log_file",
-                        help="Log file to hold log output from job.")
+        "-G", "--group", help="Group/Experiment/Subgroup for priorities and accounting"
+    )
     parser.add_argument(
-        "-l", "--lines", action="append", default=[""],help="Log file to hold log output from job.")
-    parser.add_argument("-Q", "--mail_never", dest="mail", action="store_const",
-                        const="never", default="never", help="never send mail about job results (default)")
+        "-L", "--log_file", help="Log file to hold log output from job."
+    )
+    parser.add_argument(
+        "-l",
+        "--lines",
+        action="append",
+        default=[""],
+        help="Log file to hold log output from job.",
+    )
+    parser.add_argument(
+        "-Q",
+        "--mail_never",
+        dest="mail",
+        action="store_const",
+        const="never",
+        default="never",
+        help="never send mail about job results (default)",
+    )
 
-    parser.add_argument("--mail_on_error", dest="mail", action="store_const",
-                        const="on_error",  help="never send mail about job results (default)")
-    parser.add_argument("--mail_always", dest="mail", action="store_const",
-                        const="always",  help="never send mail about job results (default)")
+    parser.add_argument(
+        "--mail_on_error",
+        dest="mail",
+        action="store_const",
+        const="on_error",
+        help="never send mail about job results (default)",
+    )
+    parser.add_argument(
+        "--mail_always",
+        dest="mail",
+        action="store_const",
+        const="always",
+        help="never send mail about job results (default)",
+    )
 
-    parser.add_argument("--maxConcurrent", help="max number of jobs running concurrently at given time.  Use in conjunction with -N option to protect a shared resource. Example: jobsub -N 1000 -maxConcurrent 20 will only run 20 jobs at a time until all 1000 have completed. This is implemented by running the jobs in a DAG. Normally when jobs are run with the -N option, they all have the same $CLUSTER number and differing, sequential $PROCESS numbers, and many submission scripts take advantage of this. When jobs are run with this option in a DAG each job has a different $CLUSTER number and a $PROCESS number of 0, which may break scripts that rely on the normal -N numbering scheme for $CLUSTER and $PROCESS. Groups of jobs run with this option will have the same $JOBSUBPARENTJOBID, each individual job will have a unique and sequential $JOBSUBJOBSECTION. Scripts may need modification to take this into account")
     parser.add_argument(
-        "--memory", default=None, help="Request worker nodes have at least NUMBER[UNITS] of memory. If UNITS is not specified default is 'MB'.  Allowed values for UNITS are 'KB','MB','GB', and 'TB'",default='2GB')
-    parser.add_argument("-N", default=1, type=int, help="submit N copies of this job. Each job will have access to the environment variable $PROCESS that provides the job number (0 to NUM-1), equivalent to the number following the decimal point in the job ID (the '2' in 134567.2).")
-    parser.add_argument("-n","--no_submit", default=False, action="store_true", help="generate condor_command file but do not submit")
+        "--maxConcurrent",
+        help="max number of jobs running concurrently at given time.  Use in conjunction with -N option to protect a shared resource. Example: jobsub -N 1000 -maxConcurrent 20 will only run 20 jobs at a time until all 1000 have completed. This is implemented by running the jobs in a DAG. Normally when jobs are run with the -N option, they all have the same $CLUSTER number and differing, sequential $PROCESS numbers, and many submission scripts take advantage of this. When jobs are run with this option in a DAG each job has a different $CLUSTER number and a $PROCESS number of 0, which may break scripts that rely on the normal -N numbering scheme for $CLUSTER and $PROCESS. Groups of jobs run with this option will have the same $JOBSUBPARENTJOBID, each individual job will have a unique and sequential $JOBSUBJOBSECTION. Scripts may need modification to take this into account",
+    )
     parser.add_argument(
-        "--OS", default=None, help="specify OS version of worker node. Example --OS=SL5 Comma seperated list '--OS=SL4,SL5,SL6' works as well . Default is any available OS")
-    parser.add_argument("--overwrite_condor_requirements",
-                        help="overwrite default condor requirements with supplied requirements")
-    parser.add_argument("--resource-provides", action="append", default=[""], help="request specific resources by changing condor jdf file. For example: --resource-provides=CVMFS=OSG will add +DESIRED_CVMFS=\"OSG\" to the job classad attributes and '&&(CVMFS==\"OSG\")' to the job requirements")
+        "--memory",
+        default="2GB",
+        help="Request worker nodes have at least NUMBER[UNITS] of memory. If UNITS is not specified default is 'MB'.  Allowed values for UNITS are 'KB','MB','GB', and 'TB'",
+    )
     parser.add_argument(
-        "--role", help="VOMS Role for priorities and accounting")
+        "-N",
+        default=1,
+        type=int,
+        help="submit N copies of this job. Each job will have access to the environment variable $PROCESS that provides the job number (0 to NUM-1), equivalent to the number following the decimal point in the job ID (the '2' in 134567.2).",
+    )
     parser.add_argument(
-        "--site", help="submit jobs to these (comma-separated) sites")
-    parser.add_argument("--subgroup", help=" Subgroup for priorities and accounting. See https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/ Jobsub_submit#Groups-Subgroups-Quotas-Priorities for more documentation on using --subgroup to set job quotas and priorities")
-    parser.add_argument("--tar_file_name", default=[], action='append', help="                              d\ndropbox://PATH/TO/TAR_FILE\n tardir://PATH/TO/DIRECTORY \nspecify TAR_FILE or DIRECTORY to be transferred to worker node. TAR_FILE will be copied to an area specified in the jobsub server configuration, transferred to the job and unpacked there. TAR_FILE will be accessible to the user job on the worker node via the environment variable $INPUT_TAR_FILE. The unpacked contents will be in the same directory as $INPUT_TAR_FILE.")
-    parser.add_argument("--tarball-exclusion-file", default=None, help="File with patterns to exclude from tarffile creation")
+        "-n",
+        "--no_submit",
+        default=False,
+        action="store_true",
+        help="generate condor_command file but do not submit",
+    )
     parser.add_argument(
-        "--timeout", help="kill user job if still running after NUMBER[UNITS] of time . UNITS may be `s' for seconds (the default), `m' for minutes, `h' for hours or `d' h for days.")
-    parser.add_argument("--use-cvmfs-dropbox",
-                        help="use cvmfs for dropbox (default is pnfs)")
+        "--OS",
+        default=None,
+        help="specify OS version of worker node. Example --OS=SL5 Comma seperated list '--OS=SL4,SL5,SL6' works as well . Default is any available OS",
+    )
     parser.add_argument(
-        "--verbose", help="dump internal state of program (useful for debugging)")
+        "--overwrite_condor_requirements",
+        help="overwrite default condor requirements with supplied requirements",
+    )
+    parser.add_argument(
+        "--resource-provides",
+        action="append",
+        default=[""],
+        help='request specific resources by changing condor jdf file. For example: --resource-provides=CVMFS=OSG will add +DESIRED_CVMFS="OSG" to the job classad attributes and \'&&(CVMFS=="OSG")\' to the job requirements',
+    )
+    parser.add_argument("--role", help="VOMS Role for priorities and accounting")
+    parser.add_argument("--site", help="submit jobs to these (comma-separated) sites")
+    parser.add_argument(
+        "--subgroup",
+        help=" Subgroup for priorities and accounting. See https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/ Jobsub_submit#Groups-Subgroups-Quotas-Priorities for more documentation on using --subgroup to set job quotas and priorities",
+    )
+    parser.add_argument(
+        "--tar_file_name",
+        default=[],
+        action="append",
+        help="                              d\ndropbox://PATH/TO/TAR_FILE\n tardir://PATH/TO/DIRECTORY \nspecify TAR_FILE or DIRECTORY to be transferred to worker node. TAR_FILE will be copied to an area specified in the jobsub server configuration, transferred to the job and unpacked there. TAR_FILE will be accessible to the user job on the worker node via the environment variable $INPUT_TAR_FILE. The unpacked contents will be in the same directory as $INPUT_TAR_FILE.",
+    )
+    parser.add_argument(
+        "--tarball-exclusion-file",
+        default=None,
+        help="File with patterns to exclude from tarffile creation",
+    )
+    parser.add_argument(
+        "--timeout",
+        help="kill user job if still running after NUMBER[UNITS] of time . UNITS may be `s' for seconds (the default), `m' for minutes, `h' for hours or `d' h for days.",
+    )
+    parser.add_argument(
+        "--use-cvmfs-dropbox", help="use cvmfs for dropbox (default is pnfs)"
+    )
+    parser.add_argument(
+        "--verbose", help="dump internal state of program (useful for debugging)"
+    )
 
-    parser.add_argument("executable", default=None, nargs='?',
-                         help="executable for job to run")
+    parser.add_argument(
+        "executable", default=None, nargs="?", help="executable for job to run"
+    )
 
-    parser.add_argument("exe_arguments", nargs='*', help="arguments to executable")
+    parser.add_argument("exe_arguments", nargs="*", help="arguments to executable")
     return parser
+
 
 def main():
     parser = get_parser()
     args = parser.parse_args()
 
-    submitdir = "%s/js%d" % (os.environ.get('SUBMITDIR',os.environ.get('TMPDIR','/tmp')), os.getpid())
+    submitdir = "%s/js%d" % (
+        os.environ.get("SUBMITDIR", os.environ.get("TMPDIR", "/tmp")),
+        os.getpid(),
+    )
     if not os.path.isdir(submitdir):
         os.makedirs(submitdir)
     get_creds()
     do_tarballs(args)
-    
+
     # we are in prefix/bin/jobsub_submit...
     # so prefix is:
     prefix = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     if args.dag:
-        d = '%s/templates/dag' % prefix
+        d = "%s/templates/dag" % prefix
         parse_dagnabbit(d, args.__dict__, submitdir)
-        submit_dag('%s/*.dag' % submitdir)
+        submit_dag("%s/*.dag" % submitdir)
     elif args.dataset_definition:
-        d = '%s/templates/dataset_dag' % prefix
+        d = "%s/templates/dataset_dag" % prefix
         set_extras_n_fix_units(args.__dict__, submitdir)
         render_files(d, args.__dict__, submitdir)
-        submit_dag('%s/*.dag' % submitdir)
+        submit_dag("%s/*.dag" % submitdir)
     elif args.maxConcurrent:
-        d = '%s/templates/maxconcurrent_dag' % prefix
+        d = "%s/templates/maxconcurrent_dag" % prefix
         set_extras_n_fix_units(args.__dict__, submitdir)
         render_files(d, args.__dict__, submitdir)
-        submit_dag('%s/*.dag' % submitdir)
+        submit_dag("%s/*.dag" % submitdir)
     else:
-        d = '%s/templates/simple' % prefix
+        d = "%s/templates/simple" % prefix
         set_extras_n_fix_units(args.__dict__, submitdir)
         render_files(d, args.__dict__, submitdir)
-        submit('%s/*.cmd' % submitdir)
+        submit("%s/*.cmd" % submitdir)
     cleanup(submitdir)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
