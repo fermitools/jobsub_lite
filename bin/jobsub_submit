@@ -329,6 +329,7 @@ def fix_unit(args, name, table, s_offset, s_list, c_offset):
 
 
 def get_parser():
+    """ build the argument parser and return it """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--append_condor_requirements", help="append condor requirements"
