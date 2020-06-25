@@ -28,7 +28,7 @@ def parse_dagnabbit(srcdir, values, dest, debug_comments=True):
     count = 0
     linenum = 0
     df = open(values["dag"], "r")
-    of = open("%s/dag.dag" % dest, "w")
+    of = open(os.path.join(dest,"dag.dag"), "w")
     of.write("DOT %s/dag.dot UPDATE\n" % dest)
     in_parallel = False
     in_serial = False
@@ -84,24 +84,24 @@ def parse_dagnabbit(srcdir, values, dest, debug_comments=True):
                 sys.stderr.write("parsing: %s\n" % line.strip.split())
                 sys.stderr.flush()
                 raise
-            print("res.__dict__: %s" % repr(res.__dict__))
+            print("vars(res): %s" % repr(vars(res)))
             thesevalues = values.copy()
             thesevalues["N"] = 1
             thesevalues["dag"] = None
-            thesevalues.update(res.__dict__)
-            cf = open("%s/%s.cmd" % (dest, name), "w")
-            csf = open("%s/%s.sh" % (dest, name), "w")
+            thesevalues.update(vars(res))
+            cf = open(os.path.join(dest, "%s.cmd"% name), "w")
+            csf = open(os.path.join(dest,"%s.sh" % name), "w")
             set_extras_n_fix_units(thesevalues, dest)
             cf.write(jinja_env.get_template("simple.cmd").render(**thesevalues))
             csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
             cf.close()
             of.write("JOB %s %s/%s.cmd\n" % (name, dest, name))
             if in_serial:
-                if last_serial:
-                    of.write("PARENT %s CHILD %s\n" % (last_serial, name))
-                last_serial = name
-            if in_parallel:
-                parallel_l.append(name)
+                if last_serial: 
+                    of.write("PARENT %s CHILD %s\n" % (last_serial, name)) 
+                    last_serial = name 
+            if in_parallel: 
+                parallel_l.append(name) 
         elif not line:
             # blank lines are fine
             pass
@@ -221,7 +221,7 @@ def render_files(srcdir, values, dest):
     for f in flist:
         print("rendering: %s" % f)
         bf = os.path.basename(f)
-        of = open("%s/%s" % (dest, bf), "w")
+        of = open(os.path.join(dest, bf), "w")
         of.write(jinja_env.get_template(bf).render(**values))
         of.close()
 
@@ -327,6 +327,16 @@ def fix_unit(args, name, table, s_offset, s_list, c_offset):
     elif args[name]:
         args[name] = float(args[name])
 
+
+def verify_executable_starts_with_file_colon(s):
+    """ routine to give argparse to verify the executable parameter,
+        which is supposed to be given as a file:///path URL
+        -- note we could check the file exists here, too.
+    """
+    if s.startswith("file://"):
+        return s
+    else:
+        raise TypeError("executable must start with file://")
 
 def get_parser():
     """ build the argument parser and return it """
@@ -482,7 +492,7 @@ def get_parser():
     )
 
     parser.add_argument(
-        "executable", default=None, nargs="?", help="executable for job to run"
+        "executable", type = verify_executable_starts_with_file_colon, default=None, nargs="?", help="executable for job to run"
     )
 
     parser.add_argument("exe_arguments", nargs="*", help="arguments to executable")
@@ -506,27 +516,27 @@ def main():
     # so prefix is:
     prefix = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+    varg = vars(args)
     if args.dag:
-        d = "%s/templates/dag" % prefix
-        parse_dagnabbit(d, args.__dict__, submitdir)
-        submit_dag("%s/*.dag" % submitdir)
+        d = os.path.join(prefix, 'templates','dag')
+        parse_dagnabbit(d, varg, submitdir)
+        submit_dag(os.path.join(submitdir,'*.dag'))
     elif args.dataset_definition:
-        d = "%s/templates/dataset_dag" % prefix
-        set_extras_n_fix_units(args.__dict__, submitdir)
-        render_files(d, args.__dict__, submitdir)
-        submit_dag("%s/*.dag" % submitdir)
+        d = os.path.join(prefix, 'templates','dataset_dag')
+        set_extras_n_fix_units(varg, submitdir)
+        render_files(d, varg, submitdir)
+        submit_dag(os.path.join(submitdir,'*.dag'))
     elif args.maxConcurrent:
-        d = "%s/templates/maxconcurrent_dag" % prefix
-        set_extras_n_fix_units(args.__dict__, submitdir)
-        render_files(d, args.__dict__, submitdir)
-        submit_dag("%s/*.dag" % submitdir)
+        d = os.path.join(prefix, 'templates','maxconcurrent_dag')
+        set_extras_n_fix_units(varg, submitdir)
+        render_files(d, varg, submitdir)
+        submit_dag(os.path.join(submitdir,'*.dag'))
     else:
         d = "%s/templates/simple" % prefix
-        set_extras_n_fix_units(args.__dict__, submitdir)
-        render_files(d, args.__dict__, submitdir)
-        submit("%s/*.cmd" % submitdir)
+        set_extras_n_fix_units(varg, submitdir)
+        render_files(d, varg, submitdir)
+        submit(os.path.join(submitdir, "*.cmd"))
     cleanup(submitdir)
-
 
 if __name__ == "__main__":
     main()
