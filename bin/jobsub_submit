@@ -226,12 +226,16 @@ def render_files(srcdir, values, dest):
         of.close()
 
 
-SCHEDDS = (("jobsub01.fnal.gov", "default"), ("jobsub02.fnal.gov", "default"))
+import htcondor
+COLLECTOR="gpcollector03.fnal.gov"
 
 def get_schedd():
-    """ FIXME: this picks a schedd and pool. it should be smarter somehow """
-    return random.choice(SCHEDDS)
-
+    """ get jobsub* schedd names from collector, pick one. """
+    coll = htcondor.Collector('gpcollector03.fnal.gov')
+    schedd_classads = coll.locateAll(htcondor.DaemonTypes.Schedd)
+    schedd_names = [ ca.eval("Machine") for ca in schedd_classads]
+    jobsub_names = [ x for x in schedd_names if x.startswith("jobsub") and not x.startswith("jobsubdev")]
+    return random.choice(jobsub_names)
 
 def submit(f):
     """ Actually submit the job """
