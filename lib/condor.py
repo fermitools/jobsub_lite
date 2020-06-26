@@ -1,4 +1,11 @@
+import os
+import sys
+import glob
+import re
 import htcondor
+import random
+random.seed()
+
 COLLECTOR="gpcollector03.fnal.gov"
 
 def get_schedd():
@@ -39,7 +46,7 @@ def submit(f):
     schedd_name = schedd_add.eval("Machine")
     schedd = htcondor.Schedd(schedd_add)
 
-    subm, nqueue = load_submit_file(f):
+    subm, nqueue = load_submit_file(f)
     print ("would condor_submit -name %s -remote %s %s" % (schedd, pool, f))
     return
     #with schedd.transaction() as txn:

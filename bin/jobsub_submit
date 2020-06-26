@@ -5,19 +5,14 @@ import os.path
 import sys
 import re
 import glob
-import argparse
 import jinja2 as jinja
 import ifdh
 import requests
-import random
-import socket
 import subprocess
 import datetime
 import uuid
 import hashlib
-
-random.seed()
-
+import socket
 
 #
 # we are in prefix/bin/jobsub_submit, so find our prefix
@@ -313,16 +308,6 @@ def fix_unit(args, name, table, s_offset, s_list, c_offset):
     elif args[name]:
         args[name] = float(args[name])
 
-
-def verify_executable_starts_with_file_colon(s):
-    """ routine to give argparse to verify the executable parameter,
-        which is supposed to be given as a file:///path URL
-        -- note we could check the file exists here, too.
-    """
-    if s.startswith("file://"):
-        return s
-    else:
-        raise TypeError("executable must start with file://")
 
 def main():
     parser = get_parser()

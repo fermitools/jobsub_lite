@@ -1,3 +1,16 @@
+import argparse
+import sys
+import os
+
+def verify_executable_starts_with_file_colon(s):
+    """ routine to give argparse to verify the executable parameter,
+        which is supposed to be given as a file:///path URL
+        -- note we could check the file exists here, too.
+    """
+    if s.startswith("file://"):
+        return s
+    else:
+        raise TypeError("executable must start with file://")
 
 def get_parser():
     """ build the argument parser and return it """
