@@ -231,7 +231,7 @@ COLLECTOR="gpcollector03.fnal.gov"
 
 def get_schedd():
     """ get jobsub* schedd names from collector, pick one. """
-    coll = htcondor.Collector('gpcollector03.fnal.gov')
+    coll = htcondor.Collector(COLLECTOR)
     schedd_classads = coll.locateAll(htcondor.DaemonTypes.Schedd)
     schedd_names = [ ca.eval("Machine") for ca in schedd_classads]
     jobsub_names = [ x for x in schedd_names if x.startswith("jobsub") and not x.startswith("jobsubdev")]
