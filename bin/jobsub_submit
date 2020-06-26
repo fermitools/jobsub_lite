@@ -3,6 +3,7 @@
 import os
 import os.path
 import sys
+import re
 import glob
 import argparse
 import jinja2 as jinja
@@ -181,13 +182,11 @@ def do_tarballs(args):
     args.tar_file_name = res
 
 
-DROPBOX_SERVERS = ("rcds01.fnal.gov", "rcds02.fnal.gov")
-
 def pubapi_update(cid, proxy):
     """ make pubapi update call to check if we already have this tarfile,
         return path.
     """
-    dropbox_server = random.choice(DROPBOX_SERVERS)
+    dropbox_server = "rdcs.fnal.gov"
     url = "https://%s/pubapi/update?cid=%s" % (dropbox_server, cid)
     res = requests.get(url, cert=(proxy, proxy))
     if res.text[:8] == "PRESENT:":
@@ -233,9 +232,29 @@ def get_schedd():
     """ get jobsub* schedd names from collector, pick one. """
     coll = htcondor.Collector(COLLECTOR)
     schedd_classads = coll.locateAll(htcondor.DaemonTypes.Schedd)
-    schedd_names = [ ca.eval("Machine") for ca in schedd_classads]
-    jobsub_names = [ x for x in schedd_names if x.startswith("jobsub") and not x.startswith("jobsubdev")]
-    return random.choice(jobsub_names)
+    schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").startswith("jobsub0") ]
+    return random.choice(schedds), "default"
+
+
+def load_submit_file(filename):
+    f=open(filename,"r")
+    res = {}
+    nqueue = None
+    for line in f:
+        line = line.strip()
+        if line.startswith("#"):
+           continue
+        t = re.split("\s*=\s*", line, maxsplit=1)
+        if len(t) == 2:
+            res[t[0]] = t[1]
+        elif line.startswith('queue'):
+            nqueue = int(line[5:])
+        elif not line:
+            pass # blank lines ok
+        else:
+            raise SyntaxError("malformed line: %s" % line)
+    f.close()
+    return htcondor.Submit(res), nqueue
 
 def submit(f):
     """ Actually submit the job """
@@ -243,17 +262,29 @@ def submit(f):
     fl = glob.glob(f)
     if fl:
         f = fl[0]
-    schedd, pool = get_schedd()
-    os.system("echo condor_submit -name %s -remote %s %s" % (schedd, pool, f))
+    schedd_add, pool = get_schedd()
+    schedd_name = schedd_add.eval("Machine")
+    schedd = htcondor.Schedd(schedd_add)
 
+    subm, nqueue = load_submit_file(f):
+    print ("would condor_submit -name %s -remote %s %s" % (schedd, pool, f))
+    return
+    #with schedd.transaction() as txn:
+    #    cluster  = subm.queue(txn, count=nqueue)
 
 def submit_dag(f):
     """ Actually submit the dag """
     fl = glob.glob(f)
     if fl:
         f = fl[0]
-    schedd, pool = get_schedd()
-    os.system("echo condor_submit_dag -name %s -remote %s %s" % (schedd, pool, f))
+    schedd_add, pool = get_schedd()
+    schedd_name = schedd_add.eval("Machine")
+    schedd = htcondor.Schedd(schedd_add)
+    subm = htcondor.Schedd.from_dag(f)
+    print("would: condor_submit_dag -name %s -remote %s %s" % (schedd, pool, f))
+    return
+    #with schedd.transaction() as txn:
+    #    cluster  = subm.queue(txn)
 
 
 def cleanup(tmp):
