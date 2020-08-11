@@ -147,15 +147,21 @@ def slurp_file(fname):
 ih = None
 
 
-def get_creds():
+def get_creds(args):
     """ get credentials -- Note this does not currently push to
-        myproxy, nor does it yet deal with tokens, but those should
-        be done here as needed.
+        myproxy, we only get the proxy in case we need it for file
+        transfers
     """
     global ih
+
     if not ih:
         ih = ifdh.ifdh()
-    return ih.getProxy()
+    os.environ['EXPERIMENT'] = args.group
+    proxy = ih.getProxy()
+    os.environ['X509_USER_PROXY'] = proxy
+    token = ih.getToken()
+    os.environ['BEARER_TOKEN'] = token
+    return proxy, token
 
 
 def do_tarballs(args):
@@ -177,7 +183,7 @@ def do_tarballs(args):
             # move it to dropbox area, pretend they gave us plain path
 
             digest, tf = slurp_file(tfn[8:])
-            proxy = get_creds()
+            proxy,token = get_creds(args)
 
             cid = "".join((args.group, "%2F", digest))
             location = pubapi_update(cid, proxy)
@@ -319,7 +325,7 @@ def main():
     )
     if not os.path.isdir(submitdir):
         os.makedirs(submitdir)
-    get_creds()
+    proxy, token = get_creds(args)
     do_tarballs(args)
 
 
