@@ -333,22 +333,22 @@ def main():
     if args.dag:
         d = os.path.join(PREFIX, 'templates','dag')
         parse_dagnabbit(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'))
+        submit_dag(os.path.join(submitdir,'*.dag'),varg)
     elif args.dataset_definition:
         d = os.path.join(PREFIX, 'templates','dataset_dag')
         set_extras_n_fix_units(varg, submitdir)
         render_files(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'))
+        submit_dag(os.path.join(submitdir,'*.dag'),varg)
     elif args.maxConcurrent:
         d = os.path.join(PREFIX, 'templates','maxconcurrent_dag')
         set_extras_n_fix_units(varg, submitdir)
         render_files(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'))
+        submit_dag(os.path.join(submitdir,'*.dag'),varg)
     else:
         d = "%s/templates/simple" % PREFIX
         set_extras_n_fix_units(varg, submitdir)
         render_files(d, varg, submitdir)
-        submit(os.path.join(submitdir, "*.cmd"))
+        submit(os.path.join(submitdir, "*.cmd"),varg)
     cleanup(submitdir)
 
 if __name__ == "__main__":

@@ -116,6 +116,12 @@ def get_parser():
         help="submit N copies of this job. Each job will have access to the environment variable $PROCESS that provides the job number (0 to NUM-1), equivalent to the number following the decimal point in the job ID (the '2' in 134567.2).",
     )
     parser.add_argument(
+        "--devserver",
+        default=False,
+        action="store_true",
+        help="Use jobsubdevgpvm01 etc. to submit"
+    )
+    parser.add_argument(
         "-n",
         "--no_submit",
         default=False,

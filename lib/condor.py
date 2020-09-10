@@ -7,12 +7,13 @@ import random
 random.seed()
 
 COLLECTOR="gpcollector03.fnal.gov"
+DEVCOLLECTOR="jobsubdevgpvm01.fnal.gov"
 
-def get_schedd():
+def get_schedd(vargs):
     """ get jobsub* schedd names from collector, pick one. """
-    coll = htcondor.Collector(COLLECTOR)
+    coll = htcondor.Collector(DEVCOLLECTOR if args["devserver"] else COLLECTOR)
     schedd_classads = coll.locateAll(htcondor.DaemonTypes.Schedd)
-    schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").startswith("jobsub0") ]
+    schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").startswith("jobsub") ]
     return random.choice(schedds), "default"
 
 
@@ -36,13 +37,13 @@ def load_submit_file(filename):
     f.close()
     return htcondor.Submit(res), nqueue
 
-def submit(f):
+def submit(f,args):
     """ Actually submit the job """
     print("submitting: %s" % f)
     fl = glob.glob(f)
     if fl:
         f = fl[0]
-    schedd_add, pool = get_schedd()
+    schedd_add, pool = get_schedd(vargs)
     schedd_name = schedd_add.eval("Machine")
     schedd = htcondor.Schedd(schedd_add)
 
@@ -53,12 +54,12 @@ def submit(f):
     print("Got cluster: %s", cluster)
     return
 
-def submit_dag(f):
+def submit_dag(f,vargs):
     """ Actually submit the dag """
     fl = glob.glob(f)
     if fl:
         f = fl[0]
-    schedd_add, pool = get_schedd()
+    schedd_add, pool = get_schedd(vargs)
     schedd_name = schedd_add.eval("Machine")
     schedd = htcondor.Schedd(schedd_add)
     subm = htcondor.Schedd.from_dag(f)
