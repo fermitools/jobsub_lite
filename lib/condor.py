@@ -11,9 +11,9 @@ DEVCOLLECTOR="jobsubdevgpvm01.fnal.gov"
 
 def get_schedd(vargs):
     """ get jobsub* schedd names from collector, pick one. """
-    coll = htcondor.Collector(DEVCOLLECTOR if args["devserver"] else COLLECTOR)
+    coll = htcondor.Collector(DEVCOLLECTOR if vargs["devserver"] else COLLECTOR)
     schedd_classads = coll.locateAll(htcondor.DaemonTypes.Schedd)
-    schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").startswith("jobsub") ]
+    schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").startswith("jobsubdev" if vargs["devserver"] else "jobsub0") ]
     return random.choice(schedds), "default"
 
 
@@ -37,7 +37,7 @@ def load_submit_file(filename):
     f.close()
     return htcondor.Submit(res), nqueue
 
-def submit(f,args):
+def submit(f,vargs):
     """ Actually submit the job """
     print("submitting: %s" % f)
     fl = glob.glob(f)
