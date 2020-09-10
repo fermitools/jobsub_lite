@@ -47,10 +47,11 @@ def submit(f):
     schedd = htcondor.Schedd(schedd_add)
 
     subm, nqueue = load_submit_file(f)
-    print ("would condor_submit -name %s -remote %s %s" % (schedd, pool, f))
+    print ("trying to submit to schedd: %s: %s" % (schedd_name,repr(schedd)))
+    with schedd.transaction() as txn:
+        cluster  = subm.queue(txn, count=nqueue)
+    print("Got cluster: %s", cluster)
     return
-    #with schedd.transaction() as txn:
-    #    cluster  = subm.queue(txn, count=nqueue)
 
 def submit_dag(f):
     """ Actually submit the dag """
@@ -62,7 +63,8 @@ def submit_dag(f):
     schedd = htcondor.Schedd(schedd_add)
     subm = htcondor.Schedd.from_dag(f)
     print("would: condor_submit_dag -name %s -remote %s %s" % (schedd, pool, f))
+    with schedd.transaction() as txn:
+        cluster  = subm.queue(txn)
+    print("Got cluster: %s", cluster)
     return
-    #with schedd.transaction() as txn:
-    #    cluster  = subm.queue(txn)
 
