@@ -1,5 +1,5 @@
 universe           = vanilla
-executable         = {{full_executable}}
+executable         = {{submitdir}}/simple.sh
 arguments          = --disk {{disk}}  -d {{d}}  --email-to {{email_to}} {% for item in environment%} -e {{item}}{%endfor%} --expected-lifetime {{expected_lifetime}}  {% for item in input_file %} -f {{item}}{%endfor%} {%if generate_email_summary%}--generate-email-summary  {{generate_email_summary}}{%endif%} -L {{L}} {%for l in lines%} -l  {{l}}{%endfor%} -Q{%if mail_on_error%} --mail_on_error{%endif%} {%if mail_always%} --mail_always{%endif%} --memory {{memory}} -N {{N}} --OS {{OS}}  --overwrite_condor_requirements {{overwrite_condor_requirements}} --resource-provides {{resource_provides}} --site  {{site}} --subgroup  {{subgroup}}  --tar_file_name  {{tar_file_name}} --timeout {{timeout}} --verbose {{verbose}} {{executable_basename}} {{exe_arguments|join(" ")}}
 
 {% set dir %}/fife/local/scratch/uploads/{{group}}/{{user}}/{{date}}.{{uuid}}{% endset %}

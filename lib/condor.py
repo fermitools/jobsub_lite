@@ -15,7 +15,7 @@ def get_schedd(vargs):
     schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").startswith("jobsubdev" if vargs["devserver"] else "jobsub0") ]
     res = random.choice(schedds)
     print("picked schedd: %s" % res.get('Machine'))
-    return res , "default"
+    return res 
 
 
 def load_submit_file(filename):
@@ -38,13 +38,12 @@ def load_submit_file(filename):
     f.close()
     return htcondor.Submit(res), nqueue
 
-def submit(f,vargs):
+def submit(f,vargs, schedd_add):
     """ Actually submit the job """
     print("submitting: %s" % f)
     fl = glob.glob(f)
     if fl:
         f = fl[0]
-    schedd_add, pool = get_schedd(vargs)
     schedd_name = schedd_add.eval("Machine")
     schedd = htcondor.Schedd(schedd_add)
 
@@ -52,15 +51,14 @@ def submit(f,vargs):
     print ("trying to submit to schedd: %s: %s" % (schedd_name,repr(schedd)))
     with schedd.transaction() as txn:
         cluster  = subm.queue(txn, count=nqueue)
-    print("Got cluster: %s", cluster)
+    print("jobid: %s@%s" % (cluster, schedd_name))
     return
 
-def submit_dag(f,vargs):
+def submit_dag(f,vargs, schedd_add):
     """ Actually submit the dag """
     fl = glob.glob(f)
     if fl:
         f = fl[0]
-    schedd_add, pool = get_schedd(vargs)
     schedd_name = schedd_add.eval("Machine")
     schedd = htcondor.Schedd(schedd_add)
     subm = htcondor.Schedd.from_dag(f)

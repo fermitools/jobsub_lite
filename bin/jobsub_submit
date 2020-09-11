@@ -32,7 +32,7 @@ import ifdh
 from get_parser import get_parser 
 from condor import  get_schedd, submit, submit_dag
 
-def parse_dagnabbit(srcdir, values, dest, debug_comments=True):
+def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
     """ 
          parse a dagnabbit dag file generating a .dag file and .cmd files 
          in the dest directory, using global cmdline options from values
@@ -105,7 +105,7 @@ def parse_dagnabbit(srcdir, values, dest, debug_comments=True):
             thesevalues.update(vars(res))
             cf = open(os.path.join(dest, "%s.cmd"% name), "w")
             csf = open(os.path.join(dest,"%s.sh" % name), "w")
-            set_extras_n_fix_units(thesevalues, dest)
+            set_extras_n_fix_units(thesevalues, dest, schedd_name)
             cf.write(jinja_env.get_template("simple.cmd").render(**thesevalues))
             csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
             cf.close()
@@ -233,11 +233,12 @@ def render_files(srcdir, values, dest):
     for f in flist:
         print("rendering: %s" % f)
         bf = os.path.basename(f)
-        of = open(os.path.join(dest, bf), "w")
+        ff = os.path.join(dest, bf)
+        of = open(ff, "w")
         of.write(jinja_env.get_template(bf).render(**values))
         of.close()
-
-
+        if ff.endswith(".sh"):
+            os.chmod(ff, 0o755)
 
 def cleanup(tmp):
     """ cleanup /tmp etc. """
@@ -263,17 +264,18 @@ def get_principal():
 def fixquote(s):
     parts = s.split("=",1)
     if len(parts) == 2:
-        return "%s='%s'" % (parts[0],parts[1])
+        return '%s="%s"' % (parts[0],parts[1])
     else:
         return s
 
-def set_extras_n_fix_units(args, submitdir):
+def set_extras_n_fix_units(args, submitdir, schedd_name):
     """ add items to our args dictionary that are not given on the
         command line, but that are needed to render the condor submit
         file templates.  Also convert units on memory, disk, and times
     """
     args["user"] = os.environ["USER"]
     args["submitdir"] = submitdir
+    args["schedd"] = schedd_name
     ai = socket.getaddrinfo(socket.gethostname(), 80)
     if ai:
         args["ipaddr"] = ai[-1][-1][0]
@@ -338,25 +340,27 @@ def main():
 
 
     varg = vars(args)
+    schedd_add = get_schedd(varg)
+    schedd_name = schedd_add.eval("Machine")
     if args.dag:
         d = os.path.join(PREFIX, 'templates','dag')
-        parse_dagnabbit(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'),varg)
+        parse_dagnabbit(d, varg, submitdir, schedd_name)
+        submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     elif args.dataset_definition:
         d = os.path.join(PREFIX, 'templates','dataset_dag')
-        set_extras_n_fix_units(varg, submitdir)
+        set_extras_n_fix_units(varg, submitdir, schedd_name)
         render_files(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'),varg)
+        submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     elif args.maxConcurrent:
         d = os.path.join(PREFIX, 'templates','maxconcurrent_dag')
-        set_extras_n_fix_units(varg, submitdir)
+        set_extras_n_fix_units(varg, submitdir, schedd_name)
         render_files(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'),varg)
+        submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     else:
         d = "%s/templates/simple" % PREFIX
-        set_extras_n_fix_units(varg, submitdir)
+        set_extras_n_fix_units(varg, submitdir, schedd_name)
         render_files(d, varg, submitdir)
-        submit(os.path.join(submitdir, "*.cmd"),varg)
+        submit(os.path.join(submitdir, "*.cmd"),varg,schedd_add)
     cleanup(submitdir)
 
 if __name__ == "__main__":
