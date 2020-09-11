@@ -41,6 +41,6 @@ x509userproxy = /var/lib/jobsub/creds/proxies/{{group}}/x509cc_{{user}}_{{role}}
 +GeneratedBy ="{{version}} {{schedd}}"
 {{resource_provides|join("\n+DESIRED_")}}
 {{lines|join("\n+")}}
-requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))) && {{append_condor_requriments}}
+requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))) {%if append_condor_requirements %} && {{append_condor_requriments}} {%endif%}
 
 queue {{N}}
