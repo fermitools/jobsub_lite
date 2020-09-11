@@ -143,7 +143,11 @@ def get_parser():
         default=[""],
         help='request specific resources by changing condor jdf file. For example: --resource-provides=CVMFS=OSG will add +DESIRED_CVMFS="OSG" to the job classad attributes and \'&&(CVMFS=="OSG")\' to the job requirements',
     )
-    parser.add_argument("--role", help="VOMS Role for priorities and accounting")
+    parser.add_argument(
+        "--role", 
+        help="VOMS Role for priorities and accounting", 
+        default="Analysis"
+    )
     parser.add_argument("--site", help="submit jobs to these (comma-separated) sites")
     parser.add_argument(
         "--subgroup",

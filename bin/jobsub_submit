@@ -260,6 +260,12 @@ def get_principal():
     p.wait()
     return princ
 
+def fixquote(s):
+    parts = s.split("=",1)
+    if len(parts) == 2:
+        return "%s='%s'" % (parts[0],parts[1])
+    else:
+        return s
 
 def set_extras_n_fix_units(args, submitdir):
     """ add items to our args dictionary that are not given on the
@@ -276,6 +282,7 @@ def set_extras_n_fix_units(args, submitdir):
     args["jobsub_version"] = "lite_v1_0"
     args["kerberos_principal"] = get_principal()
     args["usage_model"] = "ONSITE"
+    args["uid"] = str(os.getuid())
     args["uuid"] = str(uuid.uuid4())
     args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
     print("executable: %s" % repr(args["executable"]))
@@ -289,6 +296,7 @@ def set_extras_n_fix_units(args, submitdir):
     if args["full_executable"][0] != "/":
         args["full_executable"] = os.path.join(os.getcwd(), args["full_executable"])
     args["executable_basename"] = os.path.basename(args["full_executable"])
+    args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
     #
     # conversion factors for memory suffixes

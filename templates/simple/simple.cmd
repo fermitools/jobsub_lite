@@ -22,7 +22,7 @@ transfer_output_files = .empty_file
 {%if memory %}request_memory = {{memory}}{%endif%}
 {%if   disk %}request_disk = {{disk}}{%endif%}
 {%if     OS %}+DesiredOS={{OS}}{%endif%}
-+JobsubClientDN="{{clientdn}}
++JobsubClientDN="{{clientdn}}"
 +JobsubClientIpAddress="{{ipaddr}}"
 +Owner="{{user}}"
 +JobsubServerVersion="{{jobsub_version}}"
@@ -30,7 +30,7 @@ transfer_output_files = .empty_file
 +JobsubClientKerberosPrincipal="{{kerberosprincipal}}"
 +JOB_EXPECTED_MAX_LIFETIME = {{expected_lifetime}}
 notify_user = {{notify_user}}
-x509userproxy = /var/lib/jobsub/creds/proxies/{{group}}/x509cc_{{user}}_{{role}}
+x509userproxy = /tmp/x509up_voms_{{group}}_{{role}}_{{uid}}
 +AccountingGroup = "group_{{group}}.{{user}}"
 +Jobsub_Group="{{group}}"
 +JobsubJobId="$(CLUSTER).$(PROCESS)@{{schedd}}"
@@ -39,7 +39,7 @@ x509userproxy = /var/lib/jobsub/creds/proxies/{{group}}/x509cc_{{user}}_{{role}}
 +Blacklist_Sites = "{{blacklist}}"
 {% endif %}
 +GeneratedBy ="{{version}} {{schedd}}"
-{{resource_provides|join("\n+DESIRED_")}}
+{{resource_provides_quoted|join("\n+DESIRED_")}}
 {{lines|join("\n+")}}
 requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))) {%if append_condor_requirements %} && {{append_condor_requriments}} {%endif%}
 
