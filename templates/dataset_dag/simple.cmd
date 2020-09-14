@@ -1,8 +1,8 @@
 universe           = vanilla
-executable         = {{full_executable}}
-arguments          = {{args|join(" ")}}
-{% set dir %}/fife/local/scratch/uploads/{{group}}/{{user}}/{{date}}.{{uuid}}{% endset %}
-{%set filebase %}{{dir}}/{{dir}}{{executable_basename}}{{datestamp}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
+executable         = {{submitdir}}/simple.sh
+arguments          = {{exe_arguments|join(" ")}}
+
+{% set filebase %}{{outdir}}/{{executable_basename}}{{date}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
 output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
@@ -35,6 +35,6 @@ x509userproxy = /var/lib/jobsub/creds/proxies/{{group}}/x509cc_{{user}}_{{role}}
 +Drain = False
 +GeneratedBy ="{{version}} {{schedd}}"
 {{resource_provides|join("\n")}}
-requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model)))
+requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))) {%if append_condor_requirements %} && {{append_condor_requriments}} {%endif%}
 
 queue {{N}}

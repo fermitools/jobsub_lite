@@ -1,9 +1,11 @@
-universe          = vanilla
-executable        = /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.sambegin.sh
-arguments         = fermilab gen_cfg_slice_38533_stage_2 mengel-fife_wrap_20200114_162957_3316054 mengel
-output                = /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/sambegin-fife_wrap_20200114_162957_3316054.out
-error                 = /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/sambegin-fife_wrap_20200114_162957_3316054.err
-log                   = /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/sambegin-fife_wrap_20200114_162957_3316054.log
+universe           = vanilla
+executable         = {{submitdir}}/simple.sh
+arguments          = {{exe_arguments|join(" ")}}
+
+{% set filebase %}{{outdir}}/{{executable_basename}}{{date}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
+output             = {{filebase}}.out
+error              = {{filebase}}.err
+log                = {{filebase}}.log
 environment = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP=/fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);POMS_CAMPAIGN_ID=1;POMS_TASK_ID=1391;EXPERIMENT=samdev;IFDH_BASE_URI=http://samweb.fnal.gov:8480/sam/samdev/api;SAM_EXPERIMENT=samdev;SAM_GROUP=samdev;SAM_STATION=samdev;CPN_LOCK_GROUP=gpcf;IFDH_CP_MAXRETRIES=2;VERSION=v1_2;GRID_USER=mengel;JOBSUBJOBID=$(CLUSTER).$(PROCESS)@jobsub03.fnal.gov;JOBSUBPARENTJOBID=$(DAGManJobId).0@jobsub03.fnal.gov;SAM_USER=mengel;SAM_PROJECT=mengel-fife_wrap_20200114_162957_3316054;SAM_PROJECT_NAME=mengel-fife_wrap_20200114_162957_3316054;SAM_DATASET=gen_cfg_slice_38533_stage_2;JOBSUBJOBSECTION=0
 rank                  = Mips / 2 + Memory
 notification  = Error
@@ -39,7 +41,7 @@ x509userproxy = /var/lib/jobsub/creds/proxies/fermilab/x509cc_mengel_Analysis
 
 +Drain = False
 +GeneratedBy ="NO_UPS_VERSION jobsub03.fnal.gov"
-+DESIRED_usage_model = "OPPORTUNISTIC,DEDICATED"
 request_memory = 100mb
-requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model)))
+{{resource_provides_quoted|join("\n+DESIRED_")}}
+requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))) {%if append_condor_requirements %} && {{append_condor_requriments}} {%endif%}
 queue 1
