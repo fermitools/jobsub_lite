@@ -19,10 +19,12 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 #
 # find parts we need in package management
+# this means we don't need fancy ups dependencies..
 #
 sys.path.append(os.path.join(PREFIX,"lib"))
 from packages import pkg_find
 pkg_find("ifdhc","-q python36")
+pkg_find("ifdhc_config")
 pkg_find("jinja")
 import jinja2 as jinja
 import ifdh
@@ -273,6 +275,7 @@ def set_extras_n_fix_units(args, submitdir, schedd_name):
         command line, but that are needed to render the condor submit
         file templates.  Also convert units on memory, disk, and times
     """
+    args["outbase"] = "/home/gcounpriv/mengel/scratch"
     args["user"] = os.environ["USER"]
     args["submitdir"] = submitdir
     args["schedd"] = schedd_name
@@ -300,6 +303,7 @@ def set_extras_n_fix_units(args, submitdir, schedd_name):
     args["executable_basename"] = os.path.basename(args["full_executable"])
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
+    args["outdir"]="%(outbase)s/%(group)s/%(user)s/%(date)s.%(uuid)s" % args
     #
     # conversion factors for memory suffixes
     #
@@ -345,21 +349,25 @@ def main():
     if args.dag:
         d = os.path.join(PREFIX, 'templates','dag')
         parse_dagnabbit(d, varg, submitdir, schedd_name)
+        os.makedirs(varg["outdir"])
         submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     elif args.dataset_definition:
         d = os.path.join(PREFIX, 'templates','dataset_dag')
         set_extras_n_fix_units(varg, submitdir, schedd_name)
         render_files(d, varg, submitdir)
+        os.makedirs(varg["outdir"])
         submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     elif args.maxConcurrent:
         d = os.path.join(PREFIX, 'templates','maxconcurrent_dag')
         set_extras_n_fix_units(varg, submitdir, schedd_name)
+        os.makedirs(varg["outdir"])
         render_files(d, varg, submitdir)
         submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     else:
         d = "%s/templates/simple" % PREFIX
         set_extras_n_fix_units(varg, submitdir, schedd_name)
         render_files(d, varg, submitdir)
+        os.makedirs(varg["outdir"])
         submit(os.path.join(submitdir, "*.cmd"),varg,schedd_add)
     cleanup(submitdir)
 
