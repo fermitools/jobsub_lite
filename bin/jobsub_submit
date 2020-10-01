@@ -132,7 +132,13 @@ def set_extras_n_fix_units(args, schedd_name):
     fix_unit(args, "memory", memtable, -1, "b", -2)
     fix_unit(args, "expected_lifetime", timtable, -1, "smhd", -1)
     fix_unit(args, "timeout", timtable, -1, "smhd", -1)
-
+    for e in args["environment"]:
+        pos = e.find("=")
+        if pos < 0:
+            v = os.environ.get(e,None)
+            if not v:
+                raise (RuntimeError("--environment %s was given but no value was in the environment")
+            e = "%s=%s" % (e,v) 
 
 def fix_unit(args, name, table, s_offset, s_list, c_offset):
     """ unit conversions using appropriate conversion table
@@ -145,6 +151,21 @@ def fix_unit(args, name, table, s_offset, s_list, c_offset):
     elif args[name]:
         args[name] = float(args[name])
 
+do_dataset_defaults(varg):
+
+    # see if we have --environment SAM_PROJECT=
+    have_project = False
+    for e in args["environment"]:
+        pos = e.find("=")
+        if e[:pos] == "SAM_PROJECT"
+            have_project = True
+
+    if not have_project:
+        # if not, grab from the environment, or use dataset_$uuid
+        e.append("SAM_PROJECT=%s" % 
+                 os.environ.get("SAM_PROJECT",
+                                "%s_%s" % (varg["dataset_definition"], 
+                                           varg["uuid"])))
 
 def main():
     parser = get_parser()
@@ -152,7 +173,6 @@ def main():
 
     get_creds()
     do_tarballs(args)
-
 
     varg = vars(args)
     schedd_add = get_schedd(varg)
@@ -165,6 +185,7 @@ def main():
         parse_dagnabbit(d, varg, submitdir, schedd_name)
         submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     elif args.dataset_definition:
+        do_dataset_defaults(varg)
         d = os.path.join(PREFIX, 'templates','dataset_dag')
         render_files(d, varg, submitdir)
         submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)

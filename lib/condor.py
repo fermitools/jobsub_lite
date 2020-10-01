@@ -41,6 +41,7 @@ def load_submit_file(filename):
 def submit(f,vargs, schedd_add):
     """ Actually submit the job """
     if vargs["nosubmit"]:
+         print("NOT submitting file %s\n" % f)
          return
     print("submitting: %s" % f)
     fl = glob.glob(f)
@@ -59,16 +60,18 @@ def submit(f,vargs, schedd_add):
 def submit_dag(f,vargs, schedd_add):
     """ Actually submit the dag """
     if vargs["nosubmit"]:
+         print("NOT submitting dag %s\n" % f)
          return
     fl = glob.glob(f)
     if fl:
         f = fl[0]
     schedd_name = schedd_add.eval("Machine")
-    schedd = htcondor.Schedd(schedd_add)
-    subm = htcondor.Schedd.from_dag(f)
-    print("would: condor_submit_dag -name %s -remote %s %s" % (schedd, pool, f))
-    with schedd.transaction() as txn:
-        cluster  = subm.queue(txn)
-    print("Got cluster: %s", cluster)
+    print("running: condor_submit_dag -r %s  %s" % (schedd_name,  f))
+    os.system("condor_submit_dag -r %s  %s" % (schedd_name,  f))
+    #schedd = htcondor.Schedd(schedd_add)
+    #subm = htcondor.Schedd.from_dag(f)
+    #with schedd.transaction() as txn:
+    #    cluster  = subm.queue(txn)
+    #print("Got cluster: %s", cluster)
     return
 
