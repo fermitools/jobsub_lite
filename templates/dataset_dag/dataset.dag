@@ -1,8 +1,8 @@
-DOT {{tmp}}/dataset.dag.dot UPDATE
-JOB SAM_START {{tmp}}/dagbegin.cmd
+DOT {{submitdir}}/dataset.dag.dot UPDATE
+JOB SAM_START {{submitdir}}/dagbegin.cmd
 {%for i in range(N) %}
-JOB WORKER_{{i}} {{tmp}}/simple.cmd 
+JOB WORKER_{{i}} {{submitdir}}/simple.cmd 
 PARENT SAM_START WORKER_{{i}} 
 PARENT WORKER_{{i}} SAM_END
 {%endfor%}
-JOB SAM_END {{tmp}}/dagend.cmd
+JOB SAM_END {{submitdir}}/dagend.cmd

@@ -1,5 +1,5 @@
 universe           = vanilla
-executable        = {{submitdir}}/sambegin.sh
+executable        = {{submitdir}}/samend.sh
 arguments          = {{exe_arguments|join(" ")}}
 
 {% set filebase %}{{outdir}}/{{executable_basename}}{{date}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
