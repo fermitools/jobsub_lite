@@ -40,6 +40,8 @@ def load_submit_file(filename):
 
 def submit(f,vargs, schedd_add):
     """ Actually submit the job """
+    if vargs["nosubmit"]:
+         return
     print("submitting: %s" % f)
     fl = glob.glob(f)
     if fl:
@@ -56,6 +58,8 @@ def submit(f,vargs, schedd_add):
 
 def submit_dag(f,vargs, schedd_add):
     """ Actually submit the dag """
+    if vargs["nosubmit"]:
+         return
     fl = glob.glob(f)
     if fl:
         f = fl[0]
