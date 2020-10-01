@@ -34,7 +34,8 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 +JobsubParentJobId = "$(DAGManJobId).0@jobsub03.fnal.gov" 
 +Jobsub_Group="fermilab"
 notify_user = mengel@fnal.gov
-x509userproxy = /var/lib/jobsub/creds/proxies/fermilab/x509cc_mengel_Analysis
+x509userproxy = /tmp/x509up_voms_{{group}}_{{role}}_{{uid}}
+
 +AccountingGroup = "group_fermilab.mengel"
 +JobsubJobId="$(CLUSTER).$(PROCESS)@jobsub03.fnal.gov"
 +JobsubJobSection = "7"

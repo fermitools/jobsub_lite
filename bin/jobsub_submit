@@ -137,7 +137,7 @@ def set_extras_n_fix_units(args, schedd_name):
         if pos < 0:
             v = os.environ.get(e,None)
             if not v:
-                raise (RuntimeError("--environment %s was given but no value was in the environment")
+                raise RuntimeError("--environment %s was given but no value was in the environment")
             e = "%s=%s" % (e,v) 
 
 def fix_unit(args, name, table, s_offset, s_list, c_offset):
@@ -151,18 +151,18 @@ def fix_unit(args, name, table, s_offset, s_list, c_offset):
     elif args[name]:
         args[name] = float(args[name])
 
-do_dataset_defaults(varg):
+def do_dataset_defaults(varg):
 
     # see if we have --environment SAM_PROJECT=
     have_project = False
-    for e in args["environment"]:
+    for e in varg["environment"]:
         pos = e.find("=")
-        if e[:pos] == "SAM_PROJECT"
+        if e[:pos] == "SAM_PROJECT":
             have_project = True
 
     if not have_project:
         # if not, grab from the environment, or use dataset_$uuid
-        e.append("SAM_PROJECT=%s" % 
+        varg["environment"].append("SAM_PROJECT=%s" % 
                  os.environ.get("SAM_PROJECT",
                                 "%s_%s" % (varg["dataset_definition"], 
                                            varg["uuid"])))
