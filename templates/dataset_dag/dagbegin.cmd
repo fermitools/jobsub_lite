@@ -13,7 +13,6 @@ notification  = Error
 rank               = Mips / 2 + Memory
 job_lease_duration = 3600
 notification       = Never
-transfer_output    = True
 transfer_error     = True
 transfer_executable= True
 when_to_transfer_output = ON_EXIT_OR_EVICT

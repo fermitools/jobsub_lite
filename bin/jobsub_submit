@@ -153,12 +153,27 @@ def fix_unit(args, name, table, s_offset, s_list, c_offset):
 
 def do_dataset_defaults(varg):
 
-    # see if we have --environment SAM_PROJECT=
+    # see if we have --environment SAM_PROJECT, SAM_DATASET, SAM_STATION, etc.
     have_project = False
+    have_dataset = False
+    have_station = False
+    have_user = False
+    have_group = False
+    experiment = varg["group"]
     for e in varg["environment"]:
         pos = e.find("=")
         if e[:pos] == "SAM_PROJECT":
             have_project = True
+        if e[:pos] == "SAM_DATASET":
+            have_dataset = True
+        if e[:pos] == "SAM_STATION":
+            have_station = True
+        if e[:pos] == "SAM_USER":
+            have_user = True
+        if e[:pos] == "SAM_GROUP":
+            have_group = True
+        if e[:pos] == "SAM_EXPERIMENT":
+            experiment = e[pos+1:]
 
     if not have_project:
         # if not, grab from the environment, or use dataset_$uuid
@@ -166,6 +181,14 @@ def do_dataset_defaults(varg):
                  os.environ.get("SAM_PROJECT",
                                 "%s_%s" % (varg["dataset_definition"], 
                                            varg["uuid"])))
+    if not have_dataset:
+        varg["environment"].append("SAM_DATASET=%s" % varg["dataset_definition"])
+    if not have_station:
+        varg["environment"].append("SAM_STATION=%s" % experiment)
+    if not have_user:
+        varg["environment"].append("SAM_USER=%s" % os.environ["USER"])
+    if not have_group:
+        varg["environment"].append("SAM_GROUP=%s" % experiment)
 
 def main():
     parser = get_parser()

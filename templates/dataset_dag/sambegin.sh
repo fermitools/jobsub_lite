@@ -9,6 +9,7 @@ setup_ifdh_env(){
 cat << '_HEREDOC_' > ${JSB_TMP}/ifdh.sh
 #!/bin/sh
 #
+touch .empty_file
 which ifdh > /dev/null 2>&1
 has_ifdh=$?
 if [ "$has_ifdh" -ne "0" ] ; then
