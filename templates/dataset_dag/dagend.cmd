@@ -6,7 +6,7 @@ arguments          = {{exe_arguments|join(" ")}}
 output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
-environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP={{dir}};CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{env}}
+environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP={{dir}};CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
 rank                  = Mips / 2 + Memory
 notification  = Error
 +RUN_ON_HEADNODE= True

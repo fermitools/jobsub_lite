@@ -1,0 +1,10 @@
+FILE=table
+PRODUCT=jobsub_lite
+
+FLAVOR=ANY
+QUALIFIERS=
+
+Action=setup
+     setupEnv()
+     ProdDir()
+     envPrepend(PATH,${UPS_PROD_DIR}/bin)

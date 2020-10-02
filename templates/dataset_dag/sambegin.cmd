@@ -1,8 +1,8 @@
 universe           = vanilla
-executable         = {{submitdir}}/samend.sh
-arguments          = {{exe_arguments|join(" ")}}
+executable         = {{submitdir}}/sambegin.sh
+arguments          = 
 
-{% set filebase %}{{outdir}}/samend{{date}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
+{% set filebase %}{{outdir}}/sambegin{{date}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
 output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
