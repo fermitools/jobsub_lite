@@ -1,6 +1,6 @@
 universe           = vanilla
 executable        = {{submitdir}}/samend.sh
-arguments          = {{exe_arguments|join(" ")}}
+arguments          = 
 
 {% set filebase %}{{outdir}}/{{executable_basename}}{{date}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
 output             = {{filebase}}.out
@@ -17,7 +17,6 @@ notification       = Never
 transfer_output    = True
 transfer_error     = True
 transfer_executable= True
-transfer_input_files = {{dir}}/{{executable_basename}}
 when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_output_files = .empty_file
 {%if    cpu %}request_cpus = {{cpu}}{%endif%}
@@ -45,3 +44,4 @@ x509userproxy = /tmp/x509up_voms_{{group}}_{{role}}_{{uid}}
 {{lines|join("\n+")}}
 requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))) {%if append_condor_requirements %} && {{append_condor_requriments}} {%endif%}
 
+queue 1

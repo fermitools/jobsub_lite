@@ -181,13 +181,12 @@ redirect_output_start
 setup_ifdh_env
 export PATH="${PATH}:."
 
-
-export JOBSUB_EXE_SCRIPT=$(ls fife_wrap 2>/dev/null)
+export JOBSUB_EXE_SCRIPT=$(ls {{executeable}} 2>/dev/null)
 if [ "$JOBSUB_EXE_SCRIPT" = "" ]; then 
-     export JOBSUB_EXE_SCRIPT=$(find . -name fife_wrap -print | head -1)
+     export JOBSUB_EXE_SCRIPT=$(find . -name {{executable_basename}} -print | head -1)
 fi
 chmod +x $JOBSUB_EXE_SCRIPT
-${JSB_TMP}/ifdh.sh log "mengel:$JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT  --exe /usr/bin/printenv --  
+${JSB_TMP}/ifdh.sh log "mengel:$JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT   {{exe_arguments|join(" ")}} 
  "
 
 
@@ -198,9 +197,9 @@ export poms_data='{"campaign_id":"'$CAMPAIGN_ID'","task_definition_id":"'$TASK_D
 
         
 ${JSB_TMP}/ifdh.sh log poms_data=$poms_data
-echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT  --exe /usr/bin/printenv --  
->&2 echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT  --exe /usr/bin/printenv --  
-timeout 1h $JOBSUB_EXE_SCRIPT --exe {{executable_basename}} -- {{exe_arguments}}
+echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}} >&2 
+echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}}
+timeout 1h $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}}
 JOB_RET_STATUS=$?
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS 1>&2

@@ -13,7 +13,6 @@ notification       = Never
 transfer_output    = True
 transfer_error     = True
 transfer_executable= True
-transfer_input_files = {{dir}}/{{executable_basename}}
 when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_output_files = .empty_file
 {%if    cpu %}request_cpus = {{cpu}}{%endif%}
