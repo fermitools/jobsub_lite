@@ -66,8 +66,8 @@ def submit_dag(f,vargs, schedd_add):
     if fl:
         f = fl[0]
     schedd_name = schedd_add.eval("Machine")
-    print("running: condor_submit_dag -r %s  %s" % (schedd_name,  f))
-    os.system("condor_submit_dag -r %s  %s" % (schedd_name,  f))
+    print('running: condor_submit_dag -append "x509userproxy=%s" -r %s  %s' % (os.environ['X509_USER_PROXY'],schedd_name,  f))
+    os.system('condor_submit_dag -append "x509userproxy=%s" -r %s  %s' % (os.environ['X509_USER_PROXY'], schedd_name,  f))
     #schedd = htcondor.Schedd(schedd_add)
     #subm = htcondor.Schedd.from_dag(f)
     #with schedd.transaction() as txn:

@@ -1,3 +1,8 @@
+import jinja2 as jinja
+import os
+import os.path
+from get_parser import get_parser 
+from utils import fixquote, set_extras_n_fix_units
 
 def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
     """ 
@@ -27,14 +32,20 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
             )
 
         if line.find("<parallel>") >= 0:
+            if debug_comments:
+                of.write("# saw <parallel>\n")
             in_parallel = True
             parallel_l = []
         elif line.find("</parallel>") >= 0:
+            if debug_comments:
+                of.write("# saw </parallel>\n")
             in_parallel = False
             parallels = " ".join(parallel_l)
             of.write("PARENT %s CHILD %s\n" % (last_serial, parallels))
             last_serial = parallels
         elif line.find("<serial>") >= 0:
+            if debug_comments:
+                of.write("# saw <serial>\n")
             in_serial = True
             if in_parallel:
                 # to make this work we need a stack to remember we were
@@ -46,6 +57,8 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
                 )
                 sys.exit(1)
         elif line.find("</serial>") >= 0:
+            if debug_comments:
+                of.write("# saw </serial>\n")
             in_serial = False
         elif line.find("jobsub") >= 0:
             if not in_serial and not in_parallel:
@@ -72,7 +85,7 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
             thesevalues.update(vars(res))
             cf = open(os.path.join(dest, "%s.cmd"% name), "w")
             csf = open(os.path.join(dest,"%s.sh" % name), "w")
-            set_extras_n_fix_units(thesevalues, dest, schedd_name)
+            set_extras_n_fix_units(thesevalues, schedd_name)
             cf.write(jinja_env.get_template("simple.cmd").render(**thesevalues))
             csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
             cf.close()
@@ -80,7 +93,7 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
             if in_serial:
                 if last_serial: 
                     of.write("PARENT %s CHILD %s\n" % (last_serial, name)) 
-                    last_serial = name 
+                last_serial = name 
             if in_parallel: 
                 parallel_l.append(name) 
         elif not line:

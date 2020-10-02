@@ -1,4 +1,5 @@
 import ifdh
+import os
 
 ih = None
 
@@ -10,5 +11,7 @@ def get_creds():
     global ih
     if not ih:
         ih = ifdh.ifdh()
-    return ih.getProxy()
+    p = ih.getProxy()
+    os.environ['X509_USER_PROXY'] = p
+    return p
 
