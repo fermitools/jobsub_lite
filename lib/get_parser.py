@@ -61,7 +61,8 @@ def get_parser():
         action="append",
         help="INPUT_FILE at runtime, INPUT_FILE will be copied to directory $CONDOR_DIR_INPUT on the execution node. Example :-f /grid/data/minerva/my/input/file.xxx will be copied to $CONDOR_DIR_INPUT/file.xxx Specify as many -f INPUT_FILE_1 -f INPUT_FILE_2 args as you need. To copy file at submission time instead of run time, use -f dropbox://INPUT_FILE to copy the file.",
     )
-    parser.add_argument("--generate-email-summary", help="")
+    parser.add_argument("--generate-email-summary", action="store_true",default=False, help="generate and mail a summary report of completed/failed/removed jobs in a DAG"
+    )
     parser.add_argument(
         "-G", "--group", help="Group/Experiment/Subgroup for priorities and accounting"
     )
@@ -166,7 +167,7 @@ def get_parser():
         "--use-cvmfs-dropbox", help="use cvmfs for dropbox (default is pnfs)"
     )
     parser.add_argument(
-        "--verbose", help="dump internal state of program (useful for debugging)"
+        "--verbose", action="store_true", default=False, help="dump internal state of program (useful for debugging)"
     )
     parser.add_argument(
         "--devserver",

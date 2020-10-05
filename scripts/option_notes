@@ -1,0 +1,18 @@
+Need to add:
+--dropbox-server xxx
+--debug
+--drain?
+--schedd (name(Pattern?) of schedd)
+
+params:
+[executable] [exe_arguments [exe_arguments ...] ]
+
+flags:
+[--generate-email-summary]
+[-n]
+[--devserver]
+[--nosubmit]
+[-Q]
+[--mail_on_error]
+[--mail_always]
+
