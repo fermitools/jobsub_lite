@@ -1,0 +1,5 @@
+DOT {{submitdir}}/dataset.dag.dot UPDATE
+{%for i in range(N) %}
+JOB WORKER_{{i}} {{submitdir}}/simple.cmd 
+{%endfor%}
+CONFIG dagmax.config

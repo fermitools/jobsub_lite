@@ -35,6 +35,10 @@ def get_parser():
     )
     parser.add_argument(
         "-d",
+        nargs = 2,
+        action = 'append',
+        default = [],
+        metavar = ('tag','dir'),
         help="-d <tag> <dir> Writable directory $CONDOR_DIR_<tag> will exist on the execution node. After job completion, its contents will be moved to <dir> automatically Specify as many <tag>/<dir> pairs as you need.",
     )
     parser.add_argument(
@@ -61,7 +65,8 @@ def get_parser():
         action="append",
         help="INPUT_FILE at runtime, INPUT_FILE will be copied to directory $CONDOR_DIR_INPUT on the execution node. Example :-f /grid/data/minerva/my/input/file.xxx will be copied to $CONDOR_DIR_INPUT/file.xxx Specify as many -f INPUT_FILE_1 -f INPUT_FILE_2 args as you need. To copy file at submission time instead of run time, use -f dropbox://INPUT_FILE to copy the file.",
     )
-    parser.add_argument("--generate-email-summary", help="")
+    parser.add_argument("--generate-email-summary", action="store_true",default=False, help="generate and mail a summary report of completed/failed/removed jobs in a DAG"
+    )
     parser.add_argument(
         "-G", "--group", help="Group/Experiment/Subgroup for priorities and accounting"
     )
@@ -73,7 +78,7 @@ def get_parser():
         "--lines",
         action="append",
         default=[""],
-        help="Log file to hold log output from job.",
+        help="Lines to append to the job file.",
     )
     parser.add_argument(
         "-Q",
@@ -137,7 +142,11 @@ def get_parser():
         default=[""],
         help='request specific resources by changing condor jdf file. For example: --resource-provides=CVMFS=OSG will add +DESIRED_CVMFS="OSG" to the job classad attributes and \'&&(CVMFS=="OSG")\' to the job requirements',
     )
-    parser.add_argument("--role", help="VOMS Role for priorities and accounting")
+    parser.add_argument(
+        "--role", 
+        help="VOMS Role for priorities and accounting", 
+        default="Analysis"
+    )
     parser.add_argument("--site", help="submit jobs to these (comma-separated) sites")
     parser.add_argument(
         "--subgroup",
@@ -162,7 +171,19 @@ def get_parser():
         "--use-cvmfs-dropbox", help="use cvmfs for dropbox (default is pnfs)"
     )
     parser.add_argument(
-        "--verbose", help="dump internal state of program (useful for debugging)"
+        "--verbose", action="store_true", default=False, help="dump internal state of program (useful for debugging)"
+    )
+    parser.add_argument(
+        "--devserver",
+        default=False,
+        action="store_true",
+        help="Use jobsubdevgpvm01 etc. to submit"
+    )
+    parser.add_argument(
+        "--nosubmit",
+        default=False,
+        action="store_true",
+        help="just generate files, do not submit"
     )
 
     parser.add_argument(

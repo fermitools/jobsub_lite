@@ -5,8 +5,6 @@ import os.path
 import sys
 import re
 import glob
-import jinja2 as jinja
-import ifdh
 import requests
 import subprocess
 import datetime
@@ -20,203 +18,26 @@ import socket
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 #
-# import our local parts
+# find parts we need in package management
+# this means we don't need fancy ups dependencies..
 #
 sys.path.append(os.path.join(PREFIX,"lib"))
+from packages import pkg_find
+pkg_find("ifdhc","-q python36")
+pkg_find("ifdhc_config")
+pkg_find("jinja")
+import jinja2 as jinja
+import ifdh
+
+#
+# import our local parts
+#
 from get_parser import get_parser 
 from condor import  get_schedd, submit, submit_dag
-
-def parse_dagnabbit(srcdir, values, dest, debug_comments=True):
-    """ 
-         parse a dagnabbit dag file generating a .dag file and .cmd files 
-         in the dest directory, using global cmdline options from values
-         along with ones parsed from dagnabbit file
-    """
-    jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
-    count = 0
-    linenum = 0
-    df = open(values["dag"], "r")
-    of = open(os.path.join(dest,"dag.dag"), "w")
-    of.write("DOT %s/dag.dot UPDATE\n" % dest)
-    in_parallel = False
-    in_serial = False
-    last_serial = None
-    parallel_l = []
-    for line in df:
-        line = line.strip()
-        line = os.path.expandvars(line)
-        linenum = linenum + 1
-        if debug_comments:
-            of.write("# line: %s\n" % line)
-            of.write(
-                "# in_parallel: %s in_serial: %s last_serial: %s parallel_l: %s\n"
-                % (in_parallel, in_serial, last_serial, parallel_l)
-            )
-
-        if line.find("<parallel>") >= 0:
-            in_parallel = True
-            parallel_l = []
-        elif line.find("</parallel>") >= 0:
-            in_parallel = False
-            parallels = " ".join(parallel_l)
-            of.write("PARENT %s CHILD %s\n" % (last_serial, parallels))
-            last_serial = parallels
-        elif line.find("<serial>") >= 0:
-            in_serial = True
-            if in_parallel:
-                # to make this work we need a stack to remember we were
-                # in a parallel, and our parallel_l would need a start
-                # and end for each chain...
-                sys.stderr.write(
-                    "Error: file %s line %d: <serial> inside <parallel> not currently supported\n"
-                    % (values[dag], linenum)
-                )
-                sys.exit(1)
-        elif line.find("</serial>") >= 0:
-            in_serial = False
-        elif line.find("jobsub") >= 0:
-            if not in_serial and not in_parallel:
-                sys.stderr.write(
-                    "Syntax Error: job not in <serial> or <parallel block> at line %d\n"
-                    % linenum
-                )
-            count = count + 1
-            name = "stage_%d" % count
-            parser = get_parser()
-            try:
-                res = parser.parse_args(line.strip().split()[1:])
-            except:
-                sys.stderr.write(
-                    "Error at file %s line %s\n" % (values["dag"], linenum)
-                )
-                sys.stderr.write("parsing: %s\n" % line.strip.split())
-                sys.stderr.flush()
-                raise
-            print("vars(res): %s" % repr(vars(res)))
-            thesevalues = values.copy()
-            thesevalues["N"] = 1
-            thesevalues["dag"] = None
-            thesevalues.update(vars(res))
-            cf = open(os.path.join(dest, "%s.cmd"% name), "w")
-            csf = open(os.path.join(dest,"%s.sh" % name), "w")
-            set_extras_n_fix_units(thesevalues, dest)
-            cf.write(jinja_env.get_template("simple.cmd").render(**thesevalues))
-            csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
-            cf.close()
-            of.write("JOB %s %s/%s.cmd\n" % (name, dest, name))
-            if in_serial:
-                if last_serial: 
-                    of.write("PARENT %s CHILD %s\n" % (last_serial, name)) 
-                    last_serial = name 
-            if in_parallel: 
-                parallel_l.append(name) 
-        elif not line:
-            # blank lines are fine
-            pass
-        else:
-            sys.stderr.write("Syntax Error: ignoring %s at line %d\n" % (line, linenum))
-
-    of.close()
-
-
-def tar_up(directory, excludes):
-    """ build path/to/directory.tar from path/to/directory """
-    tarfile = "%s.tar.gz" % directory
-    if not excludes:
-        excludes = os.path.dirname(__FILE__) + "/../etc/default_excludes"
-    excludes = "--exclude-from %s" % excludes
-    os.system("tar czvf %s %s %s" % (tarfile, excludes, directory))
-    return tarfile
-
-
-def slurp_file(fname):
-    """ pull in a tarfile while computing its hash """
-    h = hashlib.sha256()
-    tfl = []
-    with open(fname, "r") as f:
-        tff = f.read(4096)
-        h.update(tff)
-        tfl.append(tff)
-        while tff:
-            tff = f.read(4096)
-            h.update(tff)
-            tfl.append(tff)
-    return h.hexdigest(), "".join(tfl)
-
-
-ih = None
-
-
-def get_creds(args):
-    """ get credentials -- Note this does not currently push to
-        myproxy, we only get the proxy in case we need it for file
-        transfers
-    """
-    global ih
-
-    if not ih:
-        ih = ifdh.ifdh()
-    os.environ['EXPERIMENT'] = args.group
-    proxy = ih.getProxy()
-    os.environ['X509_USER_PROXY'] = proxy
-    token = ih.getToken()
-    os.environ['BEARER_TOKEN_FILE'] = token
-    return proxy, token
-
-def do_tarballs(args):
-    """ handle tarfile argument;  we could have: 
-           a directory with tardir: prefix to tar up and upload
-           a tarfile with dropbox: prefix to upload
-           a plain path to just use
-        we convert the argument to the next type as we go...
-    """
-
-    res = []
-    for tfn in args.tar_file_name:
-        if tfn.startswith("tardir:"):
-            # tar it up, pretend they gave us dropbox:
-            tarfile = tar_up(tfn[7:], args.tarball_exclusion_file)
-            tfn = "dropbox:%s" % tarfile
-
-        if tfn.startswith("dropbox:"):
-            # move it to dropbox area, pretend they gave us plain path
-
-            digest, tf = slurp_file(tfn[8:])
-            proxy,token = get_creds(args)
-
-            cid = "".join((args.group, "%2F", digest))
-            location = pubapi_update(cid, proxy)
-            if not location:
-                location = pubapi_publish(cid, tf, proxy)
-
-            tfn = location
-        res.append(tfn)
-    args.tar_file_name = res
-
-
-def pubapi_update(cid, proxy):
-    """ make pubapi update call to check if we already have this tarfile,
-        return path.
-    """
-    dropbox_server = "rdcs.fnal.gov"
-    url = "https://%s/pubapi/update?cid=%s" % (dropbox_server, cid)
-    res = requests.get(url, cert=(proxy, proxy))
-    if res.text[:8] == "PRESENT:":
-        return res.text[8:]
-    else:
-        return None
-
-
-def pubapi_publish(cid, tf, proxy):
-    """ make pubapi publish call to upload this tarfile, return path"""
-    dropbox_server = random.choice(DROPBOX_SERVERS)
-    url = "https://%s/pubapi/publish?cid=%s" % (dropbox_server, cid)
-    res = requests.post(url, cert=(proxy, proxy), data=tf)
-    if res.text[:8] == "PRESENT:":
-        return res.text[8:]
-    else:
-        return None
-
+from dagnabbit import parse_dagnabbit
+from creds import get_creds
+from tarfiles import do_tarballs
+from utils import fixquote, set_extras_n_fix_units
 
 def render_files(srcdir, values, dest):
     """ use jinja to render the templates from srcdir into the dest directory
@@ -232,11 +53,12 @@ def render_files(srcdir, values, dest):
     for f in flist:
         print("rendering: %s" % f)
         bf = os.path.basename(f)
-        of = open(os.path.join(dest, bf), "w")
+        ff = os.path.join(dest, bf)
+        of = open(ff, "w")
         of.write(jinja_env.get_template(bf).render(**values))
         of.close()
-
-
+        if ff.endswith(".sh"):
+            os.chmod(ff, 0o755)
 
 def cleanup(tmp):
     """ cleanup /tmp etc. """
@@ -244,111 +66,85 @@ def cleanup(tmp):
     # os.system("rm -rf %s" % tmp)
 
 
-def get_principal():
-    """ get our kerberos principal name """
-    princ = None
-    if sys.version_info.major >= 3:
-        enc = {'encoding': 'UTF-8'}
-    else:
-        enc = {}
-    p = subprocess.Popen(["/usr/bin/klist"], stdout=subprocess.PIPE, **enc)
-    line = p.stdout.readline()
-    line = p.stdout.readline()
-    princ = line[line.find(":") + 2 : -1]
-    p.stdout.close()
-    p.wait()
-    return princ
+def do_dataset_defaults(varg):
 
+    # see if we have --environment SAM_PROJECT, SAM_DATASET, SAM_STATION, etc.
+    have_project = False
+    have_dataset = False
+    have_station = False
+    have_user = False
+    have_group = False
+    experiment = varg["group"]
+    for e in varg["environment"]:
+        pos = e.find("=")
+        if e[:pos] == "SAM_PROJECT":
+            have_project = True
+        if e[:pos] == "SAM_DATASET":
+            have_dataset = True
+        if e[:pos] == "SAM_STATION":
+            have_station = True
+        if e[:pos] == "SAM_USER":
+            have_user = True
+        if e[:pos] == "SAM_GROUP":
+            have_group = True
+        if e[:pos] == "SAM_EXPERIMENT":
+            experiment = e[pos+1:]
 
-def set_extras_n_fix_units(args, submitdir):
-    """ add items to our args dictionary that are not given on the
-        command line, but that are needed to render the condor submit
-        file templates.  Also convert units on memory, disk, and times
-    """
-    args["user"] = os.environ["USER"]
-    args["submitdir"] = submitdir
-    ai = socket.getaddrinfo(socket.gethostname(), 80)
-    if ai:
-        args["ipaddr"] = ai[-1][-1][0]
-    else:
-        args["ipaddr"] = "unknown"
-    args["jobsub_version"] = "lite_v1_0"
-    args["kerberos_principal"] = get_principal()
-    args["usage_model"] = "ONSITE"
-    args["uuid"] = str(uuid.uuid4())
-    args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
-    print("executable: %s" % repr(args["executable"]))
-    print("exe_arguments: %s" % repr(args["exe_arguments"]))
-    if not args["executable"] and args["exe_arguments"]:
-        args["executable"] = args["exe_arguments"][-1]
-        args["exe_arguments"] = args["exe_arguments"][:-1]
-    print("executable: %s" % repr(args["executable"]))
-    print("exe_arguments: %s" % repr(args["exe_arguments"]))
-    args["full_executable"] = args["executable"].replace("file://", "")
-    if args["full_executable"][0] != "/":
-        args["full_executable"] = os.path.join(os.getcwd(), args["full_executable"])
-    args["executable_basename"] = os.path.basename(args["full_executable"])
-
-    #
-    # conversion factors for memory suffixes
-    #
-    dsktable = {"k": 1, "m": 1024, "g": 1024 * 1024, "t": 1024 * 1024 * 1024}
-    memtable = {"k": 1.0 / 1024, "m": 1, "g": 1024, "t": 1024 * 1024}
-    timtable = {"s": 1, "m": 60, "h": 60 * 60, "d": 60 * 60 * 24}
-
-    fix_unit(args, "disk", dsktable, -1, "b", -2)
-    fix_unit(args, "memory", memtable, -1, "b", -2)
-    fix_unit(args, "expected_lifetime", timtable, -1, "smhd", -1)
-    fix_unit(args, "timeout", timtable, -1, "smhd", -1)
-
-
-def fix_unit(args, name, table, s_offset, s_list, c_offset):
-    """ unit conversions using appropriate conversion table
-    """
-    #print("fix_unit: %s %s %s %d %s %d" % (name, args[name], repr(table),s_offset,s_list,c_offset))
-    if args[name] and args[name][s_offset].lower() in s_list:
-        cf = table[args[name][c_offset].lower()]
-        args[name] = float(args[name][:c_offset]) * cf
-        #print("converted to %f" % args[name])
-    elif args[name]:
-        args[name] = float(args[name])
-
+    if not have_project:
+        # if not, grab from the environment, or use dataset_$uuid
+        varg["environment"].append("SAM_PROJECT=%s" % 
+                 os.environ.get("SAM_PROJECT",
+                                "%s_%s" % (varg["dataset_definition"], 
+                                           varg["uuid"])))
+    if not have_dataset:
+        varg["environment"].append("SAM_DATASET=%s" % varg["dataset_definition"])
+    if not have_station:
+        varg["environment"].append("SAM_STATION=%s" % experiment)
+    if not have_user:
+        varg["environment"].append("SAM_USER=%s" % os.environ["USER"])
+    if not have_group:
+        varg["environment"].append("SAM_GROUP=%s" % experiment)
 
 def main():
     parser = get_parser()
     args = parser.parse_args()
 
-    submitdir = "%s/js%d" % (
-        os.environ.get("SUBMITDIR", os.environ.get("TMPDIR", "/tmp")),
-        os.getpid(),
-    )
-    if not os.path.isdir(submitdir):
-        os.makedirs(submitdir)
     proxy, token = get_creds(args)
     do_tarballs(args)
 
-
     varg = vars(args)
+    schedd_add = get_schedd(varg)
+    schedd_name = schedd_add.eval("Machine")
+    set_extras_n_fix_units(varg, schedd_name)
+    os.makedirs(varg["outdir"])
+    submitdir=varg["outdir"]
     if args.dag:
+        d = os.path.join(PREFIX, 'templates','simple')
+        parse_dagnabbit(d, varg, submitdir, schedd_name)
+        d = "%s/templates/simple" % PREFIX
+        varg["N"] = 1
         d = os.path.join(PREFIX, 'templates','dag')
-        parse_dagnabbit(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'))
-    elif args.dataset_definition:
-        d = os.path.join(PREFIX, 'templates','dataset_dag')
-        set_extras_n_fix_units(varg, submitdir)
         render_files(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'))
+        submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
+    elif args.dataset_definition:
+        do_dataset_defaults(varg)
+        d = os.path.join(PREFIX, 'templates','dataset_dag')
+        render_files(d, varg, submitdir)
+        d = "%s/templates/simple" % PREFIX
+        varg["N"] = 1
+        render_files(d, varg, submitdir)
+        submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     elif args.maxConcurrent:
         d = os.path.join(PREFIX, 'templates','maxconcurrent_dag')
-        set_extras_n_fix_units(varg, submitdir)
         render_files(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'))
+        d = "%s/templates/simple" % PREFIX
+        varg["N"] = 1
+        render_files(d, varg, submitdir)
+        submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     else:
         d = "%s/templates/simple" % PREFIX
-        set_extras_n_fix_units(varg, submitdir)
         render_files(d, varg, submitdir)
-        submit(os.path.join(submitdir, "*.cmd"))
-    cleanup(submitdir)
+        submit(os.path.join(submitdir, "*.cmd"),varg,schedd_add)
 
 if __name__ == "__main__":
     main()
