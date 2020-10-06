@@ -178,30 +178,45 @@ export CONDOR_DIR_INPUT=${_CONDOR_SCRATCH_DIR}/${PROCESS}/TRANSFERRED_INPUT_FILE
 mkdir -p $CONDOR_DIR_INPUT
 redirect_output_start
 
+# -f files for input
+{%for fname in input_file%}
+${JSB_TMP}/ifdh.sh cp -D {{fname}} .
+{%endfor%}
+
+# -d directories for output
+{%for pair in d%}
+export JOBSUB_OUT_{{pair[0]}}=out_{{pair[0]}}
+mkdir $JOBSUB_OUT_{{pair[0]}}
+{%endfor%}
+
 setup_ifdh_env
 export PATH="${PATH}:."
 
-export JOBSUB_EXE_SCRIPT=$(ls {{executeable}} 2>/dev/null)
+export JOBSUB_EXE_SCRIPT=$(ls {{executable}} 2>/dev/null)
 if [ "$JOBSUB_EXE_SCRIPT" = "" ]; then 
      export JOBSUB_EXE_SCRIPT=$(find . -name {{executable_basename}} -print | head -1)
 fi
 chmod +x $JOBSUB_EXE_SCRIPT
-${JSB_TMP}/ifdh.sh log "mengel:$JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT   {{exe_arguments|join(" ")}} 
- "
-
+${JSB_TMP}/ifdh.sh log "mengel:$JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT   {{exe_arguments|join(" ")}} "
 
 export NODE_NAME=`hostname`
 export BOGOMIPS=`grep bogomips /proc/cpuinfo | tail -1 | cut -d ' ' -f2`
 export VENDOR_ID=`grep vendor_id /proc/cpuinfo | tail -1 | cut -d ' ' -f2`
 export poms_data='{"campaign_id":"'$CAMPAIGN_ID'","task_definition_id":"'$TASK_DEFINITION_ID'","task_id":"'$POMS_TASK_ID'","job_id":"'$POMS_JOB_ID'","batch_id":"'$JOBSUBJOBID'","host_site":"'$HOST_SITE'","bogomips":"'$BOGOMIPS'","node_name":"'$NODE_NAME'","vendor_id":"'$VENDOR_ID'"}'
 
-        
 ${JSB_TMP}/ifdh.sh log poms_data=$poms_data
 echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}} >&2 
 echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}}
-timeout 1h $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}}
+
+{%if timeout%} timeout {{timeout}} {%endif%}  $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}}
 JOB_RET_STATUS=$?
+
+# copy out -d directories
+{%for pair in d%}
+${JSB_TMP}/ifdh.sh cp -D $JOBSUB_OUT_{{pair[0]}}/* {{pair[1]}}
+{%endfor%}
+
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS 1>&2
-${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID mengel:fife_wrap COMPLETED with return code $JOB_RET_STATUS" 
+${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID {{user}}:{{executable_basename}} COMPLETED with return code $JOB_RET_STATUS" 
 exit $JOB_RET_STATUS

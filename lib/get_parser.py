@@ -35,6 +35,10 @@ def get_parser():
     )
     parser.add_argument(
         "-d",
+        nargs = 2,
+        action = 'append',
+        default = [],
+        metavar = ('tag','dir'),
         help="-d <tag> <dir> Writable directory $CONDOR_DIR_<tag> will exist on the execution node. After job completion, its contents will be moved to <dir> automatically Specify as many <tag>/<dir> pairs as you need.",
     )
     parser.add_argument(
@@ -74,7 +78,7 @@ def get_parser():
         "--lines",
         action="append",
         default=[""],
-        help="Log file to hold log output from job.",
+        help="Lines to append to the job file.",
     )
     parser.add_argument(
         "-Q",

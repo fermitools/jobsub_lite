@@ -119,16 +119,26 @@ def main():
     os.makedirs(varg["outdir"])
     submitdir=varg["outdir"]
     if args.dag:
-        d = os.path.join(PREFIX, 'templates','dag')
+        d = os.path.join(PREFIX, 'templates','simple')
         parse_dagnabbit(d, varg, submitdir, schedd_name)
+        d = "%s/templates/simple" % PREFIX
+        varg["N"] = 1
+        d = os.path.join(PREFIX, 'templates','dag')
+        render_files(d, varg, submitdir)
         submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     elif args.dataset_definition:
         do_dataset_defaults(varg)
         d = os.path.join(PREFIX, 'templates','dataset_dag')
         render_files(d, varg, submitdir)
+        d = "%s/templates/simple" % PREFIX
+        varg["N"] = 1
+        render_files(d, varg, submitdir)
         submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     elif args.maxConcurrent:
         d = os.path.join(PREFIX, 'templates','maxconcurrent_dag')
+        render_files(d, varg, submitdir)
+        d = "%s/templates/simple" % PREFIX
+        varg["N"] = 1
         render_files(d, varg, submitdir)
         submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
     else:

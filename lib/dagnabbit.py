@@ -86,6 +86,7 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
             cf = open(os.path.join(dest, "%s.cmd"% name), "w")
             csf = open(os.path.join(dest,"%s.sh" % name), "w")
             set_extras_n_fix_units(thesevalues, schedd_name)
+            thesevalues['script_name'] = "%s.sh" % name
             cf.write(jinja_env.get_template("simple.cmd").render(**thesevalues))
             csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
             cf.close()
@@ -101,5 +102,8 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
             pass
         else:
             sys.stderr.write("Syntax Error: ignoring %s at line %d\n" % (line, linenum))
+
+    if values["maxConcurrent"]:
+       of.write("CONFIG dagmax.config\n")
 
     of.close()
