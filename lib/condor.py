@@ -15,7 +15,6 @@ def get_schedd():
     schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").startswith("jobsub0") ]
     return random.choice(schedds), "default"
 
-
 def load_submit_file(filename):
     f=open(filename,"r")
     res = {}

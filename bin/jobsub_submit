@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import os.path
@@ -160,9 +160,8 @@ def get_creds(args):
     proxy = ih.getProxy()
     os.environ['X509_USER_PROXY'] = proxy
     token = ih.getToken()
-    os.environ['BEARER_TOKEN'] = token
+    os.environ['BEARER_TOKEN_FILE'] = token
     return proxy, token
-
 
 def do_tarballs(args):
     """ handle tarfile argument;  we could have: 
