@@ -119,13 +119,13 @@ def main():
     set_extras_n_fix_units(varg, schedd_name)
     submitdir=varg["outdir"]
     if proxy:
-	proxy_dest=os.path.join(submitdir,os.path.basename(proxy))
-	shutil.copyfile(proxy, proxy_dest)
-	varg["proxy"] = proxy_dest
+        proxy_dest=os.path.join(submitdir,os.path.basename(proxy))
+        shutil.copyfile(proxy, proxy_dest)
+        varg["proxy"] = proxy_dest
     if token:
-	token_dest=os.path.join(submitdir,os.path.basename(token))
-	shutil.copyfile(token, token_dest)
-	varg["token"] = token_dest
+        token_dest=os.path.join(submitdir,os.path.basename(token))
+        shutil.copyfile(token, token_dest)
+        varg["token"] = token_dest
 
     if args.dag:
         d = os.path.join(PREFIX, 'templates','simple')
