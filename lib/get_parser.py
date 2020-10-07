@@ -179,18 +179,12 @@ def get_parser():
         action="store_true",
         help="Use jobsubdevgpvm01 etc. to submit"
     )
-    parser.add_argument(
-        "--nosubmit",
-        default=False,
-        action="store_true",
-        help="just generate files, do not submit"
-    )
 
     parser.add_argument(
         "executable", type = verify_executable_starts_with_file_colon, default=None, nargs="?", help="executable for job to run"
     )
 
-    parser.add_argument("exe_arguments", nargs="*", help="arguments to executable")
+    parser.add_argument("exe_arguments", nargs=argparse.REMAINDER, help="arguments to executable")
     return parser
 
 

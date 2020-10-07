@@ -192,7 +192,7 @@ mkdir $JOBSUB_OUT_{{pair[0]}}
 setup_ifdh_env
 export PATH="${PATH}:."
 
-export JOBSUB_EXE_SCRIPT=$(ls {{executable}} 2>/dev/null)
+export JOBSUB_EXE_SCRIPT=$(ls {{full_executable}} 2>/dev/null)
 if [ "$JOBSUB_EXE_SCRIPT" = "" ]; then 
      export JOBSUB_EXE_SCRIPT=$(find . -name {{executable_basename}} -print | head -1)
 fi

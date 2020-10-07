@@ -1,3 +1,3 @@
 
-export SUBMIT_FLAGS="--memory 200MB"
-../bin/jobsub_submit --devserver --dag ../../test/client/jobsubDagTest/dagTest
+export SUBMIT_FLAGS="--memory 200MB -G fermilab --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED"
+../bin/jobsub_submit --devserver --group fermilab --dag ../../test/client/jobsubDagTest/dagTest

@@ -15,7 +15,7 @@ notification       = Never
 transfer_output    = True
 transfer_error     = True
 transfer_executable= True
-transfer_input_files = {{dir}}/{{executable_basename}}
+transfer_input_files = {{full_executable}}
 when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_output_files = .empty_file
 {%if    cpu %}request_cpus = {{cpu}}{%endif%}
@@ -30,7 +30,7 @@ transfer_output_files = .empty_file
 +JobsubClientKerberosPrincipal="{{kerberosprincipal}}"
 +JOB_EXPECTED_MAX_LIFETIME = {{expected_lifetime}}
 notify_user = {{email_to}}
-x509userproxy = /tmp/x509up_voms_{{group}}_{{role}}_{{uid}}
+x509userproxy = {{proxy}}
 
 {% if subgroup %}
 +AccountingGroup = "group_{{group}}.{{subgroup}}.{{user}}"

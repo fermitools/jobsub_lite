@@ -11,6 +11,7 @@ import datetime
 import uuid
 import hashlib
 import socket
+import shutil
 
 #
 # we are in prefix/bin/jobsub_submit, so find our prefix
@@ -116,8 +117,10 @@ def main():
     schedd_add = get_schedd(varg)
     schedd_name = schedd_add.eval("Machine")
     set_extras_n_fix_units(varg, schedd_name)
-    os.makedirs(varg["outdir"])
     submitdir=varg["outdir"]
+    proxy_dest=os.path.join(submitdir,os.path.basename(proxy))
+    shutil.copyfile(proxy, proxy_dest)
+    varg["proxy"] = proxy_dest
     if args.dag:
         d = os.path.join(PREFIX, 'templates','simple')
         parse_dagnabbit(d, varg, submitdir, schedd_name)
