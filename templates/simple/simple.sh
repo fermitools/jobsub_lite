@@ -183,6 +183,29 @@ redirect_output_start
 ${JSB_TMP}/ifdh.sh cp -D {{fname}} .
 {%endfor%}
 
+# --tar_file_name for input
+{%for tfname in tar_file_name%}
+  {%if tfname[:6] == "/cvmfs" and tfname[-7:] != ".tar.gz" %}
+    # RCDS unpacked tarfile
+    {%if loop.first%}
+      TAR_FILE_NAME={{tfname}}
+    {%else%}
+      TAR_FILE_NAME_{{loop.index0}}={{tfname}}
+    {%endif%}
+  {%else%}
+    # tarfile to transfer and unpack
+    ${JSB_TMP}/ifdh.sh cp {{tfname}} .unwind_{{loop.index0}}.tar.gz
+    mkdir .unwind_{{loop.index0}}
+    tar xzvf --directory .unwind_{{loop.index0}} .unwind_{{loop.index0}}.tar.gz
+    rm -f .unwind_{{loop.index0}}.tar.gz
+    {%if loop.first%}
+      TAR_FILE_NAME=.unwind_{{loop.index0}}
+    {%else%}
+      TAR_FILE_NAME_{{loop.index0}}=.unwind_{{loop.index0}}
+    {%endif%}
+  {%endif%}
+{%endfor%}
+
 # -d directories for output
 {%for pair in d%}
 export JOBSUB_OUT_{{pair[0]}}=out_{{pair[0]}}

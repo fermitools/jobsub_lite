@@ -1,24 +1,26 @@
 import os
+import hashlib
 import os.path
 from creds import get_creds
 import requests
 import ifdh
+from functools import wraps
+import time
 
 def tar_up(directory, excludes):
     """ build path/to/directory.tar from path/to/directory """
     tarfile = "%s.tar.gz" % directory
     if not excludes:
-        excludes = os.path.dirname(__FILE__) + "/../etc/default_excludes"
+        excludes = os.path.dirname(__file__) + "/../etc/excludes"
     excludes = "--exclude-from %s" % excludes
-    os.system("tar czvf %s %s %s" % (tarfile, excludes, directory))
+    os.system("tar czvf %s %s --directory %s ." % (tarfile, excludes, directory))
     return tarfile
-
 
 def slurp_file(fname):
     """ pull in a tarfile while computing its hash """
     h = hashlib.sha256()
     tfl = []
-    with open(fname, "r") as f:
+    with open(fname, "rb") as f:
         tff = f.read(4096)
         h.update(tff)
         tfl.append(tff)
@@ -26,13 +28,15 @@ def slurp_file(fname):
             tff = f.read(4096)
             h.update(tff)
             tfl.append(tff)
-    return h.hexdigest(), "".join(tfl)
+    return h.hexdigest(), bytes().join(tfl)
 
-def dcache_path(filename):
+def dcache_persistent_path(exp, filename):
     """ pick the reslient dcache path for a tarfile """
     bf = os.path.basename(filename)
-    sha1_hash = backquote("sha1sum %s" % filename)
-    return "/pnfs/%s/resilient/%s/%s" % (exp, sha1_hash, bf)
+    f = os.popen("sha256sum %s" % filename, "r")
+    sha256_hash = f.read().strip()
+    f.close()
+    return "/pnfs/%s/resilient/jobsub_stage/%s/%s" % (exp, sha256_hash, bf)
 
 def do_tarballs(args):
     """ handle tarfile argument;  we could have: 
@@ -52,33 +56,46 @@ def do_tarballs(args):
         if tfn.startswith("dropbox:"):
             # move it to dropbox area, pretend they gave us plain path
 
-            if args.tarmethod=="cvmfs":
+            if args.use_dropbox == "cvmfs" or args.use_dropbox == None:
                 digest, tf = slurp_file(tfn[8:])
-                proxy = get_creds()
+                proxy, token = get_creds()
 
+                if not args.group:
+                    raise ValueError("No --group specified!")
                 cid = "".join((args.group, "%2F", digest))
-                location = pubapi_update(cid, proxy)
+                location = pubapi_exists(cid, proxy)
                 if not location:
-                    location = pubapi_publish(cid, tf, proxy)
-            elif args.tarmethod=="persistent":
-                location = dcache_persistent_path(tfn[8:])
+                    pubapi_publish(cid, tf, proxy)
+                    for i in range(20):
+                        time.sleep(30)
+                        location = pubapi_exists(cid, proxy)
+                        if location:
+                            break
+                        print("debug: waiting %s for publication..." % i)
+                else:
+                    # tag it so it stays around
+                    pubapi_update(cid, proxy)
+
+            elif args.use_dropbox=="pnfs":
+                location = dcache_persistent_path(args.group, tfn[8:])
                 ih = ifdh.ifdh()
                 ih.cp([tfn[8:],location])
             else:
-                raise(NotImplementedError("unknown tar distribution method: %s" % tarmethod))
-
+                raise(NotImplementedError("unknown tar distribution method: %s" % args.use_dropbox))
             tfn = location
         res.append(tfn)
     args.tar_file_name = res
+    print("converted tar_file_name to '%s'" % res)
 
 
 def pubapi_update(cid, proxy):
     """ make pubapi update call to check if we already have this tarfile,
         return path.
     """
-    dropbox_server = "rdcs.fnal.gov"
+    dropbox_server = "rcds.fnal.gov"
     url = "https://%s/pubapi/update?cid=%s" % (dropbox_server, cid)
-    res = requests.get(url, cert=(proxy, proxy))
+    res = requests.get(url, cert=(proxy, proxy), verify=False)
+    print("pubapi/update returns: '%s'" % res.text)
     if res.text[:8] == "PRESENT:":
         return res.text[8:]
     else:
@@ -87,9 +104,23 @@ def pubapi_update(cid, proxy):
 
 def pubapi_publish(cid, tf, proxy):
     """ make pubapi publish call to upload this tarfile, return path"""
-    dropbox_server = random.choice(DROPBOX_SERVERS)
+    dropbox_server = "rcds.fnal.gov"
     url = "https://%s/pubapi/publish?cid=%s" % (dropbox_server, cid)
-    res = requests.post(url, cert=(proxy, proxy), data=tf)
+    res = requests.post(url, cert=(proxy, proxy), data=tf, verify=False)
+    print("pubapi/publish returns: '%s'" % res.text)
+    if res.text[:8] == "PRESENT:":
+        return res.text[8:]
+    else:
+        return None
+
+def pubapi_exists(cid, proxy):
+    """ make pubapi update call to check if we already have this tarfile,
+        return path.
+    """
+    dropbox_server = "rcds.fnal.gov"
+    url = "https://%s/pubapi/exists?cid=%s" % (dropbox_server, cid)
+    res = requests.get(url, cert=(proxy, proxy), verify=False)
+    print("pubapi/exists returns: '%s'" % res.text)
     if res.text[:8] == "PRESENT:":
         return res.text[8:]
     else:

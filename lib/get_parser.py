@@ -168,7 +168,10 @@ def get_parser():
         help="kill user job if still running after NUMBER[UNITS] of time . UNITS may be `s' for seconds (the default), `m' for minutes, `h' for hours or `d' h for days.",
     )
     parser.add_argument(
-        "--use-cvmfs-dropbox", help="use cvmfs for dropbox (default is pnfs)"
+        "--use-cvmfs-dropbox", dest="use_dropbox", action="store_const", const="cvmfs", help="use cvmfs for dropbox (default is pnfs)", default=None
+    )
+    parser.add_argument(
+        "--use-pnfs-dropbox", dest="use_dropbox", action="store_const", const="pnfs", help="use cvmfs for dropbox (default is pnfs)", default=None
     )
     parser.add_argument(
         "--verbose", action="store_true", default=False, help="dump internal state of program (useful for debugging)"
