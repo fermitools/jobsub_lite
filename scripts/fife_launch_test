@@ -1,0 +1,35 @@
+#!/bin/sh
+
+GROUP=fermilab; export GROUP
+export IFDH_DEBUG='1'
+export SAM_EXPERIMENT='samdev'
+export SAM_GROUP='fermilab'
+export SAM_STATION='samdev'
+export CPN_LOCK_GROUP='gpcf'
+jobsub_submit \
+  --devserver \
+  -e IFDH_DEBUG \
+  -e SAM_EXPERIMENT \
+  -e SAM_GROUP \
+  -e SAM_STATION \
+  -e CPN_LOCK_GROUP \
+  -G fermilab  \
+  --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED  \
+  --generate-email-summary \
+  --expected-lifetime=1h  \
+  file://fife_wrap \
+    --debug \
+    --find_setups \
+    --export-unquote 'TIMESTAMP%3D%24%28date%20%2B%25Y%25m%25dT%25H%25M%25S%29' \
+    --addoutput '*.txt' \
+    --dest '/pnfs/nova/scratch/users/mengel' \
+  --exe  /usr/bin/printenv \
+  --exe  /bin/true \
+  --exe  /bin/true \
+  --exe  /bin/true \
+ -- \
+ -- \
+ -- \
+ -- \
+
+
