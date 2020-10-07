@@ -4,6 +4,10 @@ import sys
 from glob import glob
 
 def pkg_find(p,qual=''):
+    """
+        Use Spack or UPS to find the package mentioned and stuff its 
+        various subdirectories on sys.path so we can 'import' from it.
+    """
     path = None
     if not path and  os.environ.get("SPACK_ROOT",None):
         cmd = "spack find --paths --variants '%s os=fe' 'py-%s os=fe'" % p

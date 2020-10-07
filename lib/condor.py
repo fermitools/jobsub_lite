@@ -18,6 +18,8 @@ def get_schedd(vargs):
     return res 
 
 def load_submit_file(filename):
+    """ pull in a condor submit file, make a dictionary """
+
     f=open(filename,"r")
     res = {}
     nqueue = None
@@ -38,7 +40,7 @@ def load_submit_file(filename):
     return htcondor.Submit(res), nqueue
 
 def submit(f,vargs, schedd_add):
-    """ Actually submit the job """
+    """ Actually submit the job, using condor python bindings """
     if vargs["no_submit"]:
          print("NOT submitting file:\n%s\n" % f)
          return
@@ -57,7 +59,12 @@ def submit(f,vargs, schedd_add):
     return
 
 def submit_dag(f,vargs, schedd_add):
-    """ Actually submit the dag """
+    """ 
+       Actually submit the dag 
+       for the moment, we call the commandline condor_submit_dag, 
+       but in future we should template-ize the dagman submission file, and
+       just call condor_submit() on it.
+    """
     if vargs["no_submit"]:
          print("NOT submitting dag\n%s\n" % f)
          return

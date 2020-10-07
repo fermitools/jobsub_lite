@@ -63,13 +63,15 @@ def render_files(srcdir, values, dest):
 
 def cleanup(tmp):
     """ cleanup /tmp etc. """
-    print("remember to clean up %s" % tmp)
-    # os.system("rm -rf %s" % tmp)
+    # we actually leave everything in the sandbox right now..
+    pass
 
 
 def do_dataset_defaults(varg):
-
-    # see if we have --environment SAM_PROJECT, SAM_DATASET, SAM_STATION, etc.
+    """
+        make sure to pass appropriate SAM_* environment variables if we
+        are doing datasets.  Pick a SAM_PROJECT name if we don't have one.
+    """
     have_project = False
     have_dataset = False
     have_station = False
@@ -107,6 +109,14 @@ def do_dataset_defaults(varg):
         varg["environment"].append("SAM_GROUP=%s" % experiment)
 
 def main():
+    """ script mainline:
+        - parse args
+        - get credentials
+        - handle tarfile options
+        - set added values from environment, etc.
+        - convert/render template files to submission files
+        - launch
+    """
     parser = get_parser()
     args = parser.parse_args()
 

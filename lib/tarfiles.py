@@ -29,6 +29,7 @@ def slurp_file(fname):
     return h.hexdigest(), "".join(tfl)
 
 def dcache_path(filename):
+    """ pick the reslient dcache path for a tarfile """
     bf = os.path.basename(filename)
     sha1_hash = backquote("sha1sum %s" % filename)
     return "/pnfs/%s/resilient/%s/%s" % (exp, sha1_hash, bf)
