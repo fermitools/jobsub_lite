@@ -1,10 +1,11 @@
-import os
-import hashlib
-import os.path
 from creds import get_creds
-import requests
-import ifdh
 from functools import wraps
+import hashlib
+import ifdh
+import os
+import os.path
+import requests
+import sys
 import time
 
 def tar_up(directory, excludes):
@@ -30,13 +31,20 @@ def slurp_file(fname):
             tfl.append(tff)
     return h.hexdigest(), bytes().join(tfl)
 
+
 def dcache_persistent_path(exp, filename):
     """ pick the reslient dcache path for a tarfile """
     bf = os.path.basename(filename)
     f = os.popen("sha256sum %s" % filename, "r")
-    sha256_hash = f.read().strip()
+    sha256_hash = f.read().strip().split(' ')[0]
     f.close()
-    return "/pnfs/%s/resilient/jobsub_stage/%s/%s" % (exp, sha256_hash, bf)
+    res = "/pnfs/%s/resilient/jobsub_stage/%s/%s" % (exp, sha256_hash, bf)
+    # for testing, we don't have a resilient area for "fermilab", so...
+    if exp == 'fermilab':
+        res = res.replace('fermilab/resilient', 'fermilab/volatile')
+    print("debug: dcache_persistent_path returning %s" % res)
+    sys.stdout.flush()
+    return res
 
 def do_tarballs(args):
     """ handle tarfile argument;  we could have: 
@@ -47,11 +55,13 @@ def do_tarballs(args):
     """
 
     res = []
+    clean_up = []
     for tfn in args.tar_file_name:
         if tfn.startswith("tardir:"):
             # tar it up, pretend they gave us dropbox:
             tarfile = tar_up(tfn[7:], args.tarball_exclusion_file)
             tfn = "dropbox:%s" % tarfile
+            clean_up.append(tarfile)
 
         if tfn.startswith("dropbox:"):
             # move it to dropbox area, pretend they gave us plain path
@@ -79,14 +89,22 @@ def do_tarballs(args):
             elif args.use_dropbox=="pnfs":
                 location = dcache_persistent_path(args.group, tfn[8:])
                 ih = ifdh.ifdh()
+                ih.mkdir_p(os.path.dirname(location))
                 ih.cp([tfn[8:],location])
             else:
                 raise(NotImplementedError("unknown tar distribution method: %s" % args.use_dropbox))
             tfn = location
         res.append(tfn)
+    # clean up tarfiles we made...
+    for tf in clean_up:
+        try:
+            os.unlink(tf)
+        except:
+            print("Notice: unable to remove generated tarfile %s" % tf)
+            pass
+
     args.tar_file_name = res
     print("converted tar_file_name to '%s'" % res)
-
 
 def pubapi_update(cid, proxy):
     """ make pubapi update call to check if we already have this tarfile,

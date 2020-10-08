@@ -45,6 +45,7 @@ def render_files(srcdir, values, dest):
     """
     print("trying to render files from %s\n" % srcdir)
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
+    jinja_env.filters['basename'] = os.path.basename
     flist = glob.glob("%s/*" % srcdir)
 
     # add destination dir to values for template

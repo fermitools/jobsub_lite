@@ -11,6 +11,7 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
          along with ones parsed from dagnabbit file
     """
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
+    jinja_env.filters['basename'] = os.path.basename
     count = 0
     linenum = 0
     df = open(values["dag"], "r")

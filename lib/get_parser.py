@@ -156,7 +156,7 @@ def get_parser():
         "--tar_file_name",
         default=[],
         action="append",
-        help="                              d\ndropbox://PATH/TO/TAR_FILE\n tardir://PATH/TO/DIRECTORY \nspecify TAR_FILE or DIRECTORY to be transferred to worker node. TAR_FILE will be copied to an area specified in the jobsub server configuration, transferred to the job and unpacked there. TAR_FILE will be accessible to the user job on the worker node via the environment variable $INPUT_TAR_FILE. The unpacked contents will be in the same directory as $INPUT_TAR_FILE.",
+        help="                              d\ndropbox://PATH/TO/TAR_FILE\n tardir://PATH/TO/DIRECTORY \nspecify TAR_FILE or DIRECTORY to be transferred to worker node. TAR_FILE will be copied to an area specified in the jobsub server configuration, transferred to the job and unpacked there. TAR_FILE will be accessible to the user job on the worker node via the environment variable $INPUT_TAR_FILE. The unpacked contents will be in the same directory as $INPUT_TAR_FILE. Successive --tar_file_name options will be in $INPUT_TAR_FILE_1, $INPUT_TAR_FILE_2, etc.",
     )
     parser.add_argument(
         "--tarball-exclusion-file",

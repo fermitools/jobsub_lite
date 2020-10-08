@@ -194,14 +194,14 @@ ${JSB_TMP}/ifdh.sh cp -D {{fname}} .
     {%endif%}
   {%else%}
     # tarfile to transfer and unpack
-    ${JSB_TMP}/ifdh.sh cp {{tfname}} .unwind_{{loop.index0}}.tar.gz
     mkdir .unwind_{{loop.index0}}
-    tar xzvf --directory .unwind_{{loop.index0}} .unwind_{{loop.index0}}.tar.gz
-    rm -f .unwind_{{loop.index0}}.tar.gz
+    {%set tflocal = '.unwind_%d/%s' % (loop.index0, tfname|basename) %}
+    ${JSB_TMP}/ifdh.sh cp {{tfname}} {{tflocal}}
+    tar --directory .unwind_{{loop.index0}} -xzvf {{tflocal}} 
     {%if loop.first%}
-      TAR_FILE_NAME=.unwind_{{loop.index0}}
+      TAR_FILE_NAME=`pwd`/.unwind_{{loop.index0}}
     {%else%}
-      TAR_FILE_NAME_{{loop.index0}}=.unwind_{{loop.index0}}
+      TAR_FILE_NAME_{{loop.index0}}=`pwd`/.unwind_{{loop.index0}}
     {%endif%}
   {%endif%}
 {%endfor%}
@@ -217,7 +217,7 @@ export PATH="${PATH}:."
 
 export JOBSUB_EXE_SCRIPT=$(ls {{full_executable}} 2>/dev/null)
 if [ "$JOBSUB_EXE_SCRIPT" = "" ]; then 
-     export JOBSUB_EXE_SCRIPT=$(find . -name {{executable_basename}} -print | head -1)
+     export JOBSUB_EXE_SCRIPT=$(find . -name {{executable|basename}} -print | head -1)
 fi
 chmod +x $JOBSUB_EXE_SCRIPT
 ${JSB_TMP}/ifdh.sh log "mengel:$JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT   {{exe_arguments|join(" ")}} "
@@ -241,5 +241,5 @@ ${JSB_TMP}/ifdh.sh cp -D $JOBSUB_OUT_{{pair[0]}}/* {{pair[1]}}
 
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS 1>&2
-${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID {{user}}:{{executable_basename}} COMPLETED with return code $JOB_RET_STATUS" 
+${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID {{user}}:{{executable|basename}} COMPLETED with return code $JOB_RET_STATUS" 
 exit $JOB_RET_STATUS

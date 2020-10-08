@@ -4,7 +4,7 @@ universe           = vanilla
 executable        = {{submitdir}}/samend.sh
 arguments          = 
 
-{% set filebase %}{{outdir}}/{{executable_basename}}{{date}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
+{% set filebase %}{{outdir}}/{{executable|basename}}{{date}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
 output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
