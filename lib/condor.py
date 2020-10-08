@@ -14,7 +14,6 @@ def get_schedd(vargs):
     schedd_classads = coll.locateAll(htcondor.DaemonTypes.Schedd)
     schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").startswith("jobsubdev" if vargs["devserver"] else "jobsub0") ]
     res = random.choice(schedds)
-    print("picked schedd: %s" % res.get('Machine'))
     return res 
 
 def load_submit_file(filename):
@@ -52,7 +51,6 @@ def submit(f,vargs, schedd_add):
     schedd = htcondor.Schedd(schedd_add)
 
     subm, nqueue = load_submit_file(f)
-    print ("trying to submit to schedd: %s: %s" % (schedd_name,repr(schedd)))
     with schedd.transaction() as txn:
         cluster  = subm.queue(txn, count=nqueue)
     print("jobid: %s@%s" % (cluster, schedd_name))
@@ -72,7 +70,7 @@ def submit_dag(f,vargs, schedd_add):
     if fl:
         f = fl[0]
     schedd_name = schedd_add.eval("Machine")
-    print('running: condor_submit_dag -append "x509userproxy=%s" -r %s  %s' % (os.environ['X509_USER_PROXY'],schedd_name,  f))
+    #print('running: condor_submit_dag -append "x509userproxy=%s" -r %s  %s' % (os.environ['X509_USER_PROXY'],schedd_name,  f))
     os.system('condor_submit_dag -append "x509userproxy=%s" -r %s  %s' % (os.environ['X509_USER_PROXY'], schedd_name,  f))
     #schedd = htcondor.Schedd(schedd_add)
     #subm = htcondor.Schedd.from_dag(f)

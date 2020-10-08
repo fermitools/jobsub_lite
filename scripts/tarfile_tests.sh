@@ -3,7 +3,7 @@
 export IFDH_FORCE=https
 export IFDH_CP_MAXRETRIES=2
 
-common="--no_submit --devserver --group fermilab --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED"
+common="--devserver --group fermilab --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED"
 #try assorted permutations of tarfile uploads
 for dbtype in cvmfs pnfs
 do

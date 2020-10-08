@@ -178,6 +178,9 @@ export CONDOR_DIR_INPUT=${_CONDOR_SCRATCH_DIR}/${PROCESS}/TRANSFERRED_INPUT_FILE
 mkdir -p $CONDOR_DIR_INPUT
 redirect_output_start
 
+setup_ifdh_env
+export PATH="${PATH}:."
+
 # -f files for input
 {%for fname in input_file%}
 ${JSB_TMP}/ifdh.sh cp -D {{fname}} .
@@ -188,9 +191,11 @@ ${JSB_TMP}/ifdh.sh cp -D {{fname}} .
   {%if tfname[:6] == "/cvmfs" and tfname[-7:] != ".tar.gz" %}
     # RCDS unpacked tarfile
     {%if loop.first%}
-      TAR_FILE_NAME={{tfname}}
+      INPUT_TAR_FILE={{tfname}}
+      export INPUT_TAR_FILE
     {%else%}
-      TAR_FILE_NAME_{{loop.index0}}={{tfname}}
+      INPUT_TAR_FILE_{{loop.index0}}={{tfname}}
+      export INPUT_TAR_FILE_{{loop.index0}}
     {%endif%}
   {%else%}
     # tarfile to transfer and unpack
@@ -199,9 +204,11 @@ ${JSB_TMP}/ifdh.sh cp -D {{fname}} .
     ${JSB_TMP}/ifdh.sh cp {{tfname}} {{tflocal}}
     tar --directory .unwind_{{loop.index0}} -xzvf {{tflocal}} 
     {%if loop.first%}
-      TAR_FILE_NAME=`pwd`/.unwind_{{loop.index0}}
+      INPUT_TAR_FILE=`pwd`/.unwind_{{loop.index0}}
+      export INPUT_TAR_FILE
     {%else%}
-      TAR_FILE_NAME_{{loop.index0}}=`pwd`/.unwind_{{loop.index0}}
+      INPUT_TAR_FILE_{{loop.index0}}=`pwd`/.unwind_{{loop.index0}}
+      export INPUT_TAR_FILE_{{loop.index0}}
     {%endif%}
   {%endif%}
 {%endfor%}
@@ -212,8 +219,6 @@ export JOBSUB_OUT_{{pair[0]}}=out_{{pair[0]}}
 mkdir $JOBSUB_OUT_{{pair[0]}}
 {%endfor%}
 
-setup_ifdh_env
-export PATH="${PATH}:."
 
 export JOBSUB_EXE_SCRIPT=$(ls {{full_executable}} 2>/dev/null)
 if [ "$JOBSUB_EXE_SCRIPT" = "" ]; then 

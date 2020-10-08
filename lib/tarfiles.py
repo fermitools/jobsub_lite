@@ -42,7 +42,6 @@ def dcache_persistent_path(exp, filename):
     # for testing, we don't have a resilient area for "fermilab", so...
     if exp == 'fermilab':
         res = res.replace('fermilab/resilient', 'fermilab/volatile')
-    print("debug: dcache_persistent_path returning %s" % res)
     sys.stdout.flush()
     return res
 
@@ -81,7 +80,6 @@ def do_tarballs(args):
                         location = pubapi_exists(cid, proxy)
                         if location:
                             break
-                        print("debug: waiting %s for publication..." % i)
                 else:
                     # tag it so it stays around
                     pubapi_update(cid, proxy)
@@ -104,7 +102,6 @@ def do_tarballs(args):
             pass
 
     args.tar_file_name = res
-    print("converted tar_file_name to '%s'" % res)
 
 def pubapi_update(cid, proxy):
     """ make pubapi update call to check if we already have this tarfile,
@@ -113,7 +110,6 @@ def pubapi_update(cid, proxy):
     dropbox_server = "rcds.fnal.gov"
     url = "https://%s/pubapi/update?cid=%s" % (dropbox_server, cid)
     res = requests.get(url, cert=(proxy, proxy), verify=False)
-    print("pubapi/update returns: '%s'" % res.text)
     if res.text[:8] == "PRESENT:":
         return res.text[8:]
     else:
@@ -125,7 +121,6 @@ def pubapi_publish(cid, tf, proxy):
     dropbox_server = "rcds.fnal.gov"
     url = "https://%s/pubapi/publish?cid=%s" % (dropbox_server, cid)
     res = requests.post(url, cert=(proxy, proxy), data=tf, verify=False)
-    print("pubapi/publish returns: '%s'" % res.text)
     if res.text[:8] == "PRESENT:":
         return res.text[8:]
     else:
@@ -138,7 +133,6 @@ def pubapi_exists(cid, proxy):
     dropbox_server = "rcds.fnal.gov"
     url = "https://%s/pubapi/exists?cid=%s" % (dropbox_server, cid)
     res = requests.get(url, cert=(proxy, proxy), verify=False)
-    print("pubapi/exists returns: '%s'" % res.text)
     if res.text[:8] == "PRESENT:":
         return res.text[8:]
     else:
