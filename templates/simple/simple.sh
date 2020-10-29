@@ -242,13 +242,13 @@ mkdir $JOBSUB_OUT_{{pair[0]}}
         setup_minos -r {{r}}
       {%endif%}
       {%if t%}
-        if -d "{{t}}" ] then;
+        if [ -d "{{t}}" ] then;
                     echo Running 'srt_setup -a' in `relpathto {{t}}`
             here=`/bin/pwd`
             cd `relpathto {{t}}`
             srt_setup -a
             cd $here
-         fi
+        fi
       {%endif%}
     fi
 
