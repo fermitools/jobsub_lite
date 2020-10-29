@@ -16,11 +16,15 @@ def get_parser():
     """ build the argument parser and return it """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--append_condor_requirements", help="append condor requirements"
+        "-c", "--append_condor_requirements", help="append condor requirements"
     )
     parser.add_argument(
         "--blacklist", help="enusure that jobs do not land at these sites"
     )
+    parser.add_argument("-r", help="Experiment release version")
+    parser.add_argument("-i", help="Experiment release dir")
+    parser.add_argument("-t", help="Experiment test release dir")
+    parser.add_argument("--cmtconfig", help=" Set up minervasoft release built with cmt configuration. default is $CMTCONFIG")
     parser.add_argument("--cpu", help="request worker nodes have at least NUMBER cpus")
     parser.add_argument("--dag", help="submit and run a dagNabbit input file")
     parser.add_argument(

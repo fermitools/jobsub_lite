@@ -219,6 +219,82 @@ export JOBSUB_OUT_{{pair[0]}}=out_{{pair[0]}}
 mkdir $JOBSUB_OUT_{{pair[0]}}
 {%endfor%}
 
+# ==========
+{%if group == 'minos' %}
+    #Minos Preamble
+    if [ -d "/grid/fermiapp/minos/" ]; then
+        export MINOS_ENSTORE=/grid/fermiapp/minos/enstore
+        source /grid/fermiapp/minos/enstore/setup_aliases.sh
+        export PATH="/grid/fermiapp/minos/enstore:${PATH}"
+        export MINOS_GRIDDB=/grid/fermiapp/minos/griddb
+        export PATH="/grid/fermiapp/minos/griddb:${PATH}"
+      {%if r %}
+        export ENV_TSQL_URL=`/grid/fermiapp/minos/griddb/choose_db_server`
+        echo Setting database URL to $ENV_TSQL_URL
+        export MINOS_SETUP_DIR=/grid/fermiapp/minos/minossoft/setup
+        #unset SETUP_UPS SETUPS_DIR
+        #. /grid/fermiapp/nova/products/db/.upsfiles/configure/v4_7_4a_Linux+2_/setups.sh
+
+        setup_minos()
+             {
+               . $MINOS_SETUP_DIR/setup_minossoft_FNALU.sh $*
+             }
+        setup_minos -r {{r}}
+      {%endif%}
+      {%if t%}
+        if -d "{{t}}" ] then;
+                    echo Running 'srt_setup -a' in `relpathto {{t}}`
+            here=`/bin/pwd`
+            cd `relpathto {{t}}`
+            srt_setup -a
+            cd $here
+         fi
+      {%endif%}
+    fi
+
+
+{%if group == 'nova' %}
+  # NOvA preamble
+  {%if r%}
+    source /grid/fermiapp/nova/novaart/novasvn/srt/srt.sh
+    export EXTERNALS=/nusoft/app/externals
+    source $SRT_DIST/setup/setup_novasoft.sh -r {{r}}
+  {%endif%} 
+  {%if t%}
+    echo "Running 'srt_setup -a' in  %s"
+    here=`/bin/pwd`
+    cd {{t}} 
+    srt_setup -a
+    cd $here 
+  {%endif%} 
+
+
+{%elif group == 'minerva' %}
+  # Minerva preamble
+  {%if i%}
+    source {{i}}/setup.sh -c {{r}} {{cmtconfig}}
+    {%if t%}
+      pushd {{t}}/cmt
+      cmt config
+      source setup.sh
+      popd
+  {%endif%}
+
+{%else%}
+  # Generic Preamble
+  {%if {{i}}%}
+    source {{i}}/setup.sh
+  {%endif%}
+  {%if {{t}}%}
+    source {{t}}/setup.sh
+  {%endif%}
+  {%if {{r}}%}
+    setup  {{group}}{%if group=="dune"%}tpc{%else%}code{%endif%} {{r}}
+  {%endif%}
+
+{%endif%}
+# ==========
+
 
 export JOBSUB_EXE_SCRIPT=$(ls {{full_executable}} 2>/dev/null)
 if [ "$JOBSUB_EXE_SCRIPT" = "" ]; then 
