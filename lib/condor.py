@@ -49,6 +49,7 @@ def submit(f,vargs, schedd_add):
         f = fl[0]
     schedd_name = schedd_add.eval("Machine")
     schedd = htcondor.Schedd(schedd_add)
+    print("schedd: %s" %  schedd_name)
 
     subm, nqueue = load_submit_file(f)
     with schedd.transaction() as txn:

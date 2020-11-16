@@ -252,8 +252,7 @@ mkdir $JOBSUB_OUT_{{pair[0]}}
       {%endif%}
     fi
 
-
-{%if group == 'nova' %}
+{%elif group == 'nova' %}
   # NOvA preamble
   {%if r%}
     source /grid/fermiapp/nova/novaart/novasvn/srt/srt.sh
@@ -282,13 +281,13 @@ mkdir $JOBSUB_OUT_{{pair[0]}}
 
 {%else%}
   # Generic Preamble
-  {%if {{i}}%}
+  {%if i%}
     source {{i}}/setup.sh
   {%endif%}
-  {%if {{t}}%}
+  {%if t%}
     source {{t}}/setup.sh
   {%endif%}
-  {%if {{r}}%}
+  {%if r%}
     setup  {{group}}{%if group=="dune"%}tpc{%else%}code{%endif%} {{r}}
   {%endif%}
 
@@ -312,7 +311,7 @@ ${JSB_TMP}/ifdh.sh log poms_data=$poms_data
 echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}} >&2 
 echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}}
 
-{%if timeout%} timeout {{timeout}} {%endif%}  $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}}
+{%if timeout%} timeout {{timeout}} {%endif%}  $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}} {%endif%}
 JOB_RET_STATUS=$?
 
 # copy out -d directories
