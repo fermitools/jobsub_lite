@@ -57,5 +57,9 @@ requirements  = {%if overwrite_requirements %}{{overwrite_requirements}}{%else%}
 # this is supposed to get us output even if jobs are held(?)
 #
 +SpoolOnEvict = false
+#
+#
+#
++SCITOKENS_FILE={{token_file}}
 
 queue {{N}}

@@ -15,7 +15,7 @@ def fixquote(s):
     else:
         return s
 
-def set_extras_n_fix_units(args, schedd_name):
+def set_extras_n_fix_units(args, schedd_name, proxy, token):
     """ add items to our args dictionary that are not given on the
         command line, but that are needed to render the condor submit
         file templates.  
@@ -30,6 +30,8 @@ def set_extras_n_fix_units(args, schedd_name):
         args["ipaddr"] = ai[-1][-1][0]
     else:
         args["ipaddr"] = "unknown"
+    args["proxy"] = proxy
+    args["token"] = token
     args["jobsub_version"] = "lite_v1_0"
     args["kerberos_principal"] = get_principal()
     args["usage_model"] = "ONSITE"

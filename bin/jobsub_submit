@@ -126,7 +126,7 @@ def main():
     varg = vars(args)
     schedd_add = get_schedd(varg)
     schedd_name = schedd_add.eval("Machine")
-    set_extras_n_fix_units(varg, schedd_name)
+    set_extras_n_fix_units(varg, schedd_name, proxy, token)
     submitdir=varg["outdir"]
     if proxy:
         proxy_dest=os.path.join(submitdir,os.path.basename(proxy))
