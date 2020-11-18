@@ -22,7 +22,10 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
         Also convert units on memory, disk, and times
         Note: this has gotten excessively long, probably should be split up?
     """
-    args["outbase"] = "/home/gcounpriv/mengel/scratch"
+    #
+    # outbase needs to be an area shared with schedd servers.
+    #
+    args["outbase"] = "/storage/local/data1/lite"
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
     ai = socket.getaddrinfo(socket.gethostname(), 80)

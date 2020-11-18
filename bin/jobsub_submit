@@ -94,11 +94,12 @@ def do_dataset_defaults(varg):
             experiment = e[pos+1:]
 
     if not have_project:
-        # if not, grab from the environment, or use dataset_$uuid
+        # if not, grab from the environment, or use dataset_$USER_$uuid
         varg["environment"].append("SAM_PROJECT=%s" % 
                  os.environ.get("SAM_PROJECT",
-                                "%s_%s" % (varg["dataset_definition"], 
-                                           varg["uuid"])))
+                                "%s_%s_%s" % (varg["dataset_definition"], 
+                                             os.environ.get("USER",""),
+                                             varg["uuid"])))
     if not have_dataset:
         varg["environment"].append("SAM_DATASET=%s" % varg["dataset_definition"])
     if not have_station:
