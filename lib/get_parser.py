@@ -35,7 +35,7 @@ def get_parser():
     parser.add_argument(
         "--disk",
         help="Request worker nodes have at least NUMBER[UNITS] of disk space. If UNITS is not specified default is 'KB' (a typo in earlier versions said that default was 'MB', this was wrong). Allowed values for UNITS are 'KB','MB','GB', and 'TB'",
-        default="",
+        default="100MB",
     )
     parser.add_argument(
         "-d",

@@ -12,8 +12,8 @@ def get_creds(args={}):
     if not ih:
         ih = ifdh.ifdh()
     p = ih.getProxy()
-    #t = ih.getToken()
-    t = None
+    t = ih.getToken()
     os.environ['X509_USER_PROXY'] = p
+    os.environ['BEARER_TOKEN_FILE'] = t
     return p,t
 
