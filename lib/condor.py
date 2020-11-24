@@ -4,6 +4,8 @@ import glob
 import re
 import htcondor
 import random
+import packages
+
 random.seed()
 
 COLLECTOR="gpcollector03.fnal.gov"
@@ -19,6 +21,11 @@ def get_schedd(vargs):
 def load_submit_file(filename):
     """ pull in a condor submit file, make a dictionary """
 
+    #
+    # NOTICE: this needs extra bits as added by condor
+    #   if you run condor_submit --dump filename
+    #   until that's done, we have to call real condor_submit.
+    #
     f=open(filename,"r")
     res = {}
     nqueue = None
@@ -51,10 +58,16 @@ def submit(f,vargs, schedd_add):
     schedd = htcondor.Schedd(schedd_add)
     print("schedd: %s" %  schedd_name)
 
-    subm, nqueue = load_submit_file(f)
-    with schedd.transaction() as txn:
-        cluster  = subm.queue(txn, count=nqueue)
-    print("jobid: %s@%s" % (cluster, schedd_name))
+    if (True):
+        cmd='condor_submit -pool %s -remote %s  %s' % (COLLECTOR, schedd_name,  f)
+        packages.orig_env()
+        print("Running: %s" % cmd)
+        os.system(cmd)
+    else:
+        subm, nqueue = load_submit_file(f)
+        with schedd.transaction() as txn:
+            cluster  = subm.queue(txn, count=nqueue)
+        print("jobid: %s@%s" % (cluster, schedd_name))
     return
 
 def submit_dag(f,vargs, schedd_add):
@@ -64,19 +77,12 @@ def submit_dag(f,vargs, schedd_add):
        but in future we should template-ize the dagman submission file, and
        just call condor_submit() on it.
     """
-    if vargs["no_submit"]:
-         print("NOT submitting dag\n%s\n" % f)
-         return
     fl = glob.glob(f)
     if fl:
         f = fl[0]
-    schedd_name = schedd_add.eval("Machine")
-    #print('running: condor_submit_dag -append "x509userproxy=%s" -r %s  %s' % (os.environ['X509_USER_PROXY'],schedd_name,  f))
-    os.system('condor_submit_dag -append "x509userproxy=%s" -r %s  %s' % (os.environ['X509_USER_PROXY'], schedd_name,  f))
-    #schedd = htcondor.Schedd(schedd_add)
-    #subm = htcondor.Schedd.from_dag(f)
-    #with schedd.transaction() as txn:
-    #    cluster  = subm.queue(txn)
-    #print("Got cluster: %s", cluster)
-    return
-
+    subfile = "%s.condor.sub" % f
+    if (not os.path.exists(subfile)):
+        cmd = 'condor_submit_dag --no_submit %s' % f
+        print("Running: %s" % cmd)
+        os.system(cmd)
+    submit(subfile, vargs, schedd_add)
