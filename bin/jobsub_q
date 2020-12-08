@@ -28,6 +28,13 @@ case "x$*" in
      args=`echo "$*" | sed -e 's/@[^ ]*//'`
      ;;
 esac
+case "x$args" in
+--group*) 
+        group=`echo $args | sed -e 's/.*--group \([a-z0-9]*\).*/\1/'`
+        args=`echo $args | sed -e 's/--group [a-z0-9]*//'`
+        ;;
+esac
+args=`echo $args |  sed -e 's/--jobid//' -e 's/--user//'`
 if [ x$schedd != x ]
 then
     args="-name $schedd $args"
