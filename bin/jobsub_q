@@ -1,0 +1,35 @@
+#!/bin/sh
+
+if [ "x$*" = "x" ]
+then
+    set $USER
+    filter() {
+        need_headings=true
+         while read f1 f2 f3 f4 f5 f6 f7 f8 f9 f10 f11
+	 do
+	   case "x$f1" in
+	   x--)     schedd=`echo $f3 | sed -e 's/\(.\{18\}\).*/\1/'`;;
+	   xOWNER)  if	$need_headings; then echo "$f1	TYP:	JOBSUBJOBID          	$f3	$f4	$f5	$f6	$f7	$f8	$f9	$f10	$f11"; need_headings=false; fi ;;
+	   x)       ;;
+	   xTotal)  ;;
+	   x*) echo	"$f1	$f2	$f3@$schedd	$f4	$f5	$f6	$f7	$f8	$f9	$f10	$f11"
+	   esac
+         done | expand --tabs 9,15,41,47,53,58,63,68,73,79
+    }
+else
+    filter() {
+       cat
+    }
+fi
+
+schedd=""
+case "x$*" in
+*@*) schedd=`echo "$*" | sed -e 's/.*@//' -e 's/ .*//'`
+     args=`echo "$*" | sed -e 's/@[^ ]*//'`
+     ;;
+esac
+if [ x$schedd != x ]
+then
+    args="-name $schedd $args"
+fi
+condor_q -pool gpcollector03.fnal.gov -global $args | filter

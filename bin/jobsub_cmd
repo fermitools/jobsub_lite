@@ -1,0 +1,15 @@
+
+schedd=""
+case "x$*" in
+*@*) schedd=`echo "$*" | sed -e 's/.*@//' -e 's/ .*//'`
+     args=`echo "$*" | sed -e 's/@[^ ]*//'`
+     ;;
+esac
+if [ x$schedd != x ]
+then
+    args="-name $schedd $args"
+fi
+
+cmd=`basename $0 | sed -e 's/jobsub_/condor/'`
+exec $cmd -pool gpcollector03.fnal.gov -name $schedd $args
+
