@@ -277,7 +277,8 @@ mkdir $JOBSUB_OUT_{{pair[0]}}
       cmt config
       source setup.sh
       popd
-  {%endif%}
+   {%endif%}
+ {%endif%}
 
 {%else%}
   # Generic Preamble
