@@ -59,8 +59,9 @@ def submit(f,vargs, schedd_add):
     print("schedd: %s" %  schedd_name)
 
     if (True):
-        cmd='condor_submit -pool %s -remote %s  %s' % (COLLECTOR, schedd_name,  f)
+        cmd='condor_submit -spool -pool %s -remote %s  %s' % (COLLECTOR, schedd_name,  f)
         packages.orig_env()
+        os.environ['_condor_SEC_CLIENT_AUTHENTICATION_METHODS']='SCITOKENS'
         print("Running: %s" % cmd)
         os.system(cmd)
     else:
@@ -82,6 +83,7 @@ def submit_dag(f,vargs, schedd_add):
         f = fl[0]
     subfile = "%s.condor.sub" % f
     if (not os.path.exists(subfile)):
+        os.environ['_condor_SEC_CLIENT_AUTHENTICATION_METHODS']='SCITOKENS'
         cmd = 'condor_submit_dag --no_submit %s' % f
         print("Running: %s" % cmd)
         os.system(cmd)

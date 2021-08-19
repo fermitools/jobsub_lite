@@ -41,7 +41,7 @@ def pkg_find(p,qual=''):
 
     if path:
         os.environ["%s_DIR" % p.upper() ] =  path
-        for fmt in ['%s/lib/python*/site-packages/*.egg', '%s/lib/python*/site-packages', '%s/lib/python*', '%s/python']:
+        for fmt in ['%s/lib/python*/site-packages/*.egg', '%s/lib/python*/site-packages', '%s/lib/python*']:
 
                 gl = glob(fmt % path) 
                 if gl:

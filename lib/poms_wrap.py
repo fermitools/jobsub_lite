@@ -4,8 +4,7 @@ from packages import pkg_find
 pkg_find("poms_client")
 import poms_client
 
-
-# translation of jobub_submit in poms_jobsub_wrapper...
+# translation of jobub_submit wrapper in poms_jobsub_wrapper...
 
 def poms_wrap(args):
 
