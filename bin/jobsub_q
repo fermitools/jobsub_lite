@@ -22,6 +22,7 @@ else
     }
 fi
 
+source `ups setup ifdhc -g jobsub_lite v2_5_14 -q python36, ifdhc_config v2_5_14 -q tokens`
 schedd=""
 case "x$*" in
 *@*) schedd=`echo "$*" | sed -e 's/.*@//' -e 's/ .*//'`

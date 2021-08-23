@@ -10,7 +10,7 @@ then
     args="-name $schedd $args"
 fi
 
-source `ups setup ifdhc -g jobsub_lite -q python36`
+source `ups setup ifdhc -g jobsub_lite v2_5_14 -q python36, ifdhc_config v2_5_14 -q tokens`
 export X509_USER_PROXY=`ifdh getProxy`
 export BEARER_TOKEN=`ifdh getToken`
 

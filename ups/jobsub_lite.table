@@ -9,9 +9,12 @@ Action=setup
      ProdDir()
      envPrepend(PATH,${UPS_PROD_DIR}/bin)
 
-     if ( "x$IFDHC_DIR" = "x" )
-        source `ups setup ifdhc v2_5_14 -q python36`
-        source `ups setup ifdhc_config v2_5_14 -q tokens`
-     endif ( "x$IFDHC_DIR" = "x" )
-     setupOptional(jinja)
-     setupOptional(poms_client)
+     # the scripts set these up internally so they don't mess
+     # up experiment environments...
+     #
+     #if ( "x$IFDHC_DIR" = "x" )
+     #   source `ups setup ifdhc v2_5_14 -q python36`
+     #   source `ups setup ifdhc_config v2_5_14 -q tokens`
+     #endif ( "x$IFDHC_DIR" = "x" )
+     #setupOptional(jinja)
+     #setupOptional(poms_client)
