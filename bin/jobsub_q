@@ -32,5 +32,6 @@ if [ x$schedd != x ]
 then
     args="-name $schedd $args"
 fi
+export BEARER_TOKEN_FILE=`ifdh getToken`
 export _condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS 
 condor_q -pool gpcollector03.fnal.gov -global $args | filter

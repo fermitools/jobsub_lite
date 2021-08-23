@@ -32,7 +32,6 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 +JobsubClientKerberosPrincipal="{{kerberosprincipal}}"
 +JOB_EXPECTED_MAX_LIFETIME = {{expected_lifetime}}
 notify_user = {{email_to}}
-x509userproxy = {{proxy}}
 +AccountingGroup = "group_{{group}}.{{user}}"
 +Jobsub_Group="{{group}}"
 +JobsubJobId="$(CLUSTER).$(PROCESS)@{{schedd}}"

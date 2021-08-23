@@ -30,7 +30,6 @@ transfer_output_files = .empty_file
 +JobsubClientKerberosPrincipal="{{kerberosprincipal}}"
 +JOB_EXPECTED_MAX_LIFETIME = {{expected_lifetime}}
 notify_user = {{email_to}}
-x509userproxy = {{proxy}}
 
 {% if subgroup %}
 +AccountingGroup = "group_{{group}}.{{subgroup}}.{{user}}"
