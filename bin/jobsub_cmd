@@ -10,10 +10,11 @@ then
     args="-name $schedd $args"
 fi
 
-source `ups setup ifdhc -g jobsub_lite v2_5_14 -q python36, ifdhc_config v2_5_14 -q tokens`
+source `ups setup ifdhc v2_5_14 -q python36, ifdhc_config v2_5_14 -q tokens`
 export X509_USER_PROXY=`ifdh getProxy`
 export BEARER_TOKEN=`ifdh getToken`
 
+export _condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates
 export _condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS
 
 cmd=`basename $0 | sed -e 's/jobsub_/condor_/'`

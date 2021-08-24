@@ -22,7 +22,7 @@ else
     }
 fi
 
-source `ups setup ifdhc -g jobsub_lite v2_5_14 -q python36, ifdhc_config v2_5_14 -q tokens`
+source `ups setup ifdhc v2_5_14 -q python36, ifdhc_config v2_5_14 -q tokens`
 schedd=""
 case "x$*" in
 *@*) schedd=`echo "$*" | sed -e 's/.*@//' -e 's/ .*//'`
@@ -34,5 +34,6 @@ then
     args="-name $schedd $args"
 fi
 export BEARER_TOKEN_FILE=`ifdh getToken`
+export _condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates
 export _condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS 
 condor_q -pool gpcollector03.fnal.gov -global $args | filter
