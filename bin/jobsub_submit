@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-# clean our search path
 import sys
 sys.path = [ x for x in sys.path if x[:6] == '/usr/l' ]
 
@@ -26,8 +25,8 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #
 sys.path.append(os.path.join(PREFIX,"lib"))
 from packages import pkg_find
-pkg_find("ifdhc","-g jobsub_lite -q python36")
-pkg_find("ifdhc_config -q tokens")
+pkg_find("ifdhc","v2_5_15 -g jobsub_lite -q python36")
+pkg_find("ifdhc_config", "v2_5_15 -q tokens")
 pkg_find("jinja")
 import jinja2 as jinja
 import ifdh

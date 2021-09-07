@@ -1,4 +1,5 @@
 import os
+import re
 import os.path
 import socket
 import sys
@@ -15,6 +16,14 @@ def fixquote(s):
     else:
         return s
 
+def grep_n(regex, n, file):
+    rre = re.compile(regex)
+    with  open(file,"r") as fd:
+        for line in fd:
+            m = rre.match(line)
+            if m:
+                return m.group(n)
+
 def set_extras_n_fix_units(args, schedd_name, proxy, token):
     """ add items to our args dictionary that are not given on the
         command line, but that are needed to render the condor submit
@@ -28,6 +37,8 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
     args["outbase"] = os.environ.get("JOBSUB_SPOOL", "/storage/local/data1/lite")
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
+    ifdh_config = '%s/ifdh.cfg' % os.environ.get('IFDHC_CONFIG_DIR')
+    args["vault_server"] = grep_n('vault_server=(.*)', 1, ifdh_config)
     ai = socket.getaddrinfo(socket.gethostname(), 80)
     if ai:
         args["ipaddr"] = ai[-1][-1][0]

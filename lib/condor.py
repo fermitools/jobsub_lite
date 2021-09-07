@@ -61,6 +61,7 @@ def submit(f,vargs, schedd_add):
     if (True):
         cmd='condor_submit -spool -pool %s -remote %s  %s' % (COLLECTOR, schedd_name,  f)
         cmd = 'BEARER_TOKEN_FILE=%s %s' % (os.environ['BEARER_TOKEN_FILE'],cmd)
+        cmd = '_condor_SEC_CREDENTIAL_GETTOKEN_OPTS ="-a %s"' % (cmd, vargs.vault_server)
         cmd = '_condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates %s' % cmd
         cmd = '_condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS %s' % cmd
         packages.orig_env()
@@ -85,7 +86,8 @@ def submit_dag(f,vargs, schedd_add):
         f = fl[0]
     subfile = "%s.condor.sub" % f
     if (not os.path.exists(subfile)):
-        cmd = 'condor_submit_dag --no_submit %s' % f
+        cmd = 'condor_submit_dag -append "use_scitokens=True" -append "scitokens_file=%s" -no_submit %s' % (vargs['token'], f)
+
         cmd = 'BEARER_TOKEN_FILE=%s %s' % (os.environ['BEARER_TOKEN_FILE'],cmd)
         cmd = '_condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates %s' % cmd
         cmd = '_condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS %s' % cmd

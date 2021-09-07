@@ -10,9 +10,9 @@ then
     args="-name $schedd $args"
 fi
 
-source `ups setup ifdhc v2_5_14 -q python36, ifdhc_config v2_5_14 -q tokens`
+source `ups setup ifdhc v2_5_15 -q python36, ifdhc_config v2_5_15 -q tokens`
 export X509_USER_PROXY=`ifdh getProxy`
-export BEARER_TOKEN=`ifdh getToken`
+export BEARER_TOKEN_FILE=`ifdh getToken`
 
 export _condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates
 export _condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS
