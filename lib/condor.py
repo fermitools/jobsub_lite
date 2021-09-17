@@ -77,7 +77,9 @@ def submit(f,vargs, schedd_add):
     if (True):
         cmd='condor_submit -spool -pool %s -remote %s  %s' % (COLLECTOR, schedd_name,  f)
         cmd = 'BEARER_TOKEN_FILE=%s %s' % (os.environ['BEARER_TOKEN_FILE'],cmd)
-        cmd = '_condor_SEC_CREDENTIAL_GETTOKEN_OPTS ="-a %s"' % (cmd, vargs.vault_server)
+        cmd = '_condor_SEC_CREDENTIAL_GETTOKEN_OPTS="-a %s" %s' % (vargs['vault_server'], cmd)
+        cmd = '_condor_CREDD_HOST=%s %s'  % (schedd_name, cmd)
+        cmd = '_condor_COLLECTOR_HOST=%s %s'  % (COLLECTOR, cmd)
         cmd = '_condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates %s' % cmd
         cmd = '_condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS %s' % cmd
         packages.orig_env()
