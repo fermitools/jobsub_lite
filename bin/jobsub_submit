@@ -155,10 +155,10 @@ def main():
     #    proxy_dest=os.path.join(submitdir,os.path.basename(proxy))
     #    shutil.copyfile(proxy, proxy_dest)
     #    varg["proxy"] = proxy_dest
-    if token:
-        token_dest=os.path.join(submitdir,os.path.basename(token))
-        shutil.copyfile(token, token_dest)
-        varg["token"] = token_dest
+    #if token:
+    #    token_dest=os.path.join(submitdir,os.path.basename(token))
+    #    shutil.copyfile(token, token_dest)
+    #    varg["token"] = token_dest
 
     if args.dag:
         d = os.path.join(PREFIX, 'templates','simple')
