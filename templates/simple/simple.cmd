@@ -8,7 +8,7 @@ arguments          = {{exe_arguments|join(" ")}}
 output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
-environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP={{dir}};CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
+environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP={{dir}};BEARER_TOKEN_FILE=.condor_creds/{{group}}.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
 rank               = Mips / 2 + Memory
 job_lease_duration = 3600
 notification       = Never
@@ -59,10 +59,6 @@ requirements  = {%if overwrite_requirements %}{{overwrite_requirements}}{%else%}
 #
 #
 #
-use_scitokens=True
-scitokens_file={{token}}
-
 use_oauth_services = {{group}}
-osg_oauth_resource = "https://wlcg.cern.ch/jwt/v1/any"
 
 queue {{N}}

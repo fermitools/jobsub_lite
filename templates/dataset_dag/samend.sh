@@ -1,5 +1,7 @@
 #!/bin/sh -x
 
+export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}.use
+
 setup_ifdh_env(){
 #
 # create ifdh.sh which runs
@@ -41,6 +43,7 @@ _HEREDOC_
 chmod +x ${JSB_TMP}/ifdh.sh
 }
             
+
 echo `date` BEGIN executing /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.samend.sh
 >&2 echo `date` BEGIN executing /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.samend.sh
 export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp

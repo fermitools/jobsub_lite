@@ -78,13 +78,17 @@ def submit(f,vargs, schedd_add):
         cmd='condor_submit -spool -pool %s -remote %s  %s' % (COLLECTOR, schedd_name,  f)
         cmd = 'BEARER_TOKEN_FILE=%s %s' % (os.environ['BEARER_TOKEN_FILE'],cmd)
         cmd = '_condor_SEC_CREDENTIAL_GETTOKEN_OPTS="-a %s" %s' % (vargs['vault_server'], cmd)
+        cmd = '_condor_CREDMON_OAUTH=/usr/sbin/condor_credmon_vault %s' % cmd
+        cmd = '_condor_SEC_CREDENTIAL_STORER=/usr/bin/condor_vault_storer %s' % cmd
         cmd = '_condor_CREDD_HOST=%s %s'  % (schedd_name, cmd)
         cmd = '_condor_COLLECTOR_HOST=%s %s'  % (COLLECTOR, cmd)
         cmd = '_condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates %s' % cmd
         cmd = '_condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS %s' % cmd
         packages.orig_env()
         print("Running: %s" % cmd)
+        cmd = '%s | sed -e "s/\\(submitted.to.cluster.*\\)\\./\\1@%s/"' % (cmd, schedd_name)
         os.system(cmd)
+        print("Output will be in %s after running jobub_tranfer_data." % vargs['outdir']  )
     else:
         subm, nqueue = load_submit_file(f)
         with schedd.transaction() as txn:
@@ -104,12 +108,15 @@ def submit_dag(f,vargs, schedd_add):
         f = fl[0]
     subfile = "%s.condor.sub" % f
     if (not os.path.exists(subfile)):
-        cmd = 'condor_submit_dag -append "use_scitokens=True" -append "scitokens_file=%s" -no_submit %s' % (vargs['token'], f)
+        cmd = 'condor_submit_dag -append "use_oauth_services = %s" -no_submit %s' % (vargs['group'], f)
 
         cmd = 'BEARER_TOKEN_FILE=%s %s' % (os.environ['BEARER_TOKEN_FILE'],cmd)
+        cmd = '_condor_SEC_CREDENTIAL_GETTOKEN_OPTS="-a %s" %s' % (vargs['vault_server'], cmd)
+        cmd = '_condor_CREDMON_OAUTH=/usr/sbin/condor_credmon_vault %s' % cmd
+        cmd = '_condor_SEC_CREDENTIAL_STORER=/usr/bin/condor_vault_storer %s' % cmd
+        cmd = '_condor_COLLECTOR_HOST=%s %s'  % (COLLECTOR, cmd)
         cmd = '_condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates %s' % cmd
         cmd = '_condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS %s' % cmd
         print("Running: %s" % cmd)
-        packages.orig_env()
         os.system(cmd)
     submit(subfile, vargs, schedd_add)
