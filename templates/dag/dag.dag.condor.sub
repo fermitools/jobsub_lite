@@ -16,7 +16,7 @@ remove_kill_sig	= SIGUSR1
 on_exit_remove	= (ExitSignal =?= 11 || (ExitCode =!= UNDEFINED && ExitCode >=0 && ExitCode <= 2))
 copy_to_spool	= False
 arguments	= "-p 0 -f -l . -Lockfile {{submitdir}}/dag.dag.lock -AutoRescue 1 -DoRescueFrom 0 -Dag {{submitdir}}/dag.dag -Suppress_notification -CsdVersion $CondorVersion:' '9.0.5' 'Aug' '18' '2021' 'PackageID:' '9.0.5-1' '$ -Dagman /usr/bin/condor_dagman"
-environment	=  _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address;_CONDOR_MAX_DAGMAN_LOG=0;_CONDOR_SCHEDD_DAEMON_AD_FILE=/var/lib/condor/spool/.schedd_classad;_CONDOR_DAGMAN_LOG={{submitdir}}/dag.dag.dagman.out
+environment	=  _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address;_CONDOR_MAX_DAGMAN_LOG=0;_CONDOR_SCHEDD_DAEMON_AD_FILE=/var/lib/condor/spool/.schedd_classad;_CONDOR_DAGMAN_LOG={{submitdir}}/dag.dag.dagman.out;_condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS;_condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates;_condor_COLLECTOR_HOST=gpcollector03.fnal.gov;_condor_CREDD_HOST={{schedd}};_condor_SEC_CREDENTIAL_STORER=/bin/true;_condor_CREDMON_OAUTH=/usr/sbin/condor_credmon_vault;_condor_SEC_CREDENTIAL_GETTOKEN_OPTS=-a fermicloud543.fnal.gov
 
 +JobsubClientDN="{{clientdn}}"
 +JobsubClientIpAddress="{{ipaddr}}"
