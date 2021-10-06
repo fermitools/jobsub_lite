@@ -61,22 +61,23 @@ def load_submit_file(filename):
     f.close()
     return htcondor.Submit(res), nqueue
 
-def submit(f,vargs, schedd_add):
+def submit(f,vargs, schedd_add, cmd_args = []):
     """ Actually submit the job, using condor python bindings """
     if vargs["no_submit"]:
          print("NOT submitting file:\n%s\n" % f)
          return
-    print("submitting: %s" % f)
-    fl = glob.glob(f)
-    if fl:
-        f = fl[0]
+    if f:
+        print("submitting: %s" % f)
+        fl = glob.glob(f)
+        if fl:
+            f = fl[0]
     schedd_name = schedd_add.eval("Machine")
     schedd = htcondor.Schedd(schedd_add)
     print("schedd: %s" %  schedd_name)
 
     if (True):
-        cmd='condor_submit -spool -pool %s -remote %s  %s' % (COLLECTOR, schedd_name,  f)
-        cmd = 'BEARER_TOKEN_FILE=%s %s' % (os.environ['BEARER_TOKEN_FILE'],cmd)
+        cmd='/usr/bin/condor_submit -spool -pool %s -remote %s %s %s' % (COLLECTOR, schedd_name,  f , ' '.join(["'%s'"%x for x in cmd_args]))
+        cmd = 'BEARER_TOKEN_FILE=%s %s' % (os.environ['BEARER_TOKEN_FILE'],cmd) 
         cmd = '_condor_SEC_CREDENTIAL_GETTOKEN_OPTS="-a %s" %s' % (vargs['vault_server'], cmd)
         cmd = '_condor_CREDMON_OAUTH=/usr/sbin/condor_credmon_vault %s' % cmd
         cmd = '_condor_SEC_CREDENTIAL_STORER=/usr/bin/condor_vault_storer %s' % cmd
@@ -96,7 +97,7 @@ def submit(f,vargs, schedd_add):
         print("jobid: %s@%s" % (cluster, schedd_name))
     return
 
-def submit_dag(f,vargs, schedd_add):
+def submit_dag(f,vargs, schedd_add, cmd_args = []):
     """ 
        Actually submit the dag 
        for the moment, we call the commandline condor_submit_dag, 
@@ -108,7 +109,7 @@ def submit_dag(f,vargs, schedd_add):
         f = fl[0]
     subfile = "%s.condor.sub" % f
     if (not os.path.exists(subfile)):
-        cmd = 'condor_submit_dag -append "use_oauth_services = %s" -no_submit %s' % (vargs['group'], f)
+        cmd = '/usr/bin/condor_submit_dag -append "use_oauth_services = %s" -no_submit %s %s' % (vargs['group'], f, ' '.join(["'%s'"%x for x in cmd_args))
 
         cmd = 'BEARER_TOKEN_FILE=%s %s' % (os.environ['BEARER_TOKEN_FILE'],cmd)
         cmd = '_condor_SEC_CREDENTIAL_GETTOKEN_OPTS="-a %s" %s' % (vargs['vault_server'], cmd)
