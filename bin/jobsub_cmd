@@ -35,6 +35,6 @@ export BEARER_TOKEN_FILE=`ifdh getToken`
 export _condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates
 export _condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS
 
-cmd=`basename $0 | sed -e 's/jobsub_/condor_/'`
+cmd=`basename $0 | sed -e 's;jobsub_;/usr/bin/condor_;'`
 exec $cmd -pool gpcollector03.fnal.gov -name $schedd $args
 

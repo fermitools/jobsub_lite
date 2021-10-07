@@ -1,6 +1,7 @@
 #!/bin/sh -x
 
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}.use
+export BEARER_TOKEN=`cat "$BEARER_TOKEN_FILE"`
 
 setup_ifdh_env(){
 #

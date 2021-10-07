@@ -8,6 +8,7 @@
 umask 002
 
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}.use
+export BEARER_TOKEN=`cat "$BEARER_TOKEN_FILE"`
 
 set_jobsub_debug(){
     export PS4='$LINENO:'
