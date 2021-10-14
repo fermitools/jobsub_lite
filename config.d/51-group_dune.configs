@@ -1,0 +1,17 @@
+#
+# Configs for Jobsub-lite use at Fermilab
+# group fermilab config items
+#
+
+#
+# The collector for this group to use
+#
+COLLECTOR_HOST=dune_global_collector.fnal.gov(?)
+
+#
+# Default schedd to use if they aren't using the wrappers.
+# we expect our wrapper scripts to override them after picking one
+# at random from the available schedd's
+#
+SCHEDD_HOST=dune_global_schedd01.fnal.gov(?)
+CREDD_HOST=dune_global_schedd01.fnal.gov(?)

@@ -1,0 +1,17 @@
+#
+# Configs for Jobsub-lite use at Fermilab
+# group fermilab config items
+#
+
+#
+# The collector for this group to use
+#
+COLLECTOR_HOST=gpcollector04.fnal.gov
+
+#
+# Default schedd to use if they aren't using the wrappers.
+# we expect our wrappers to overwrite them after picking one
+# at random from the available.
+#
+SCHEDD_HOST=jobsub01.fnal.gov
+CREDD_HOST=jobsub01.fnal.gov

@@ -24,13 +24,23 @@ import packages
 
 random.seed()
 
-COLLECTOR="gpcollector03.fnal.gov"
+COLLECTOR_HOST=htcondor.param.get('COLLECTOR_HOST','gpcollector03.fnal.gov')
 
 def get_schedd(vargs):
     """ get jobsub* schedd names from collector, pick one. """
-    coll = htcondor.Collector(COLLECTOR)
+    coll = htcondor.Collector(COLLECTOR_HOST)
     schedd_classads = coll.locateAll(htcondor.DaemonTypes.Schedd)
-    schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").startswith("jobsubdev" if vargs["devserver"] else "jobsub0") ]
+
+    # pick schedds who list our group in their vo list
+    schedds = [ ca  for ca in schedd_classads if ca.eval("SupportedVOList").find(vargs['group']) != -1 ]
+
+    # pick schedds who do or do not have "dev" in their name, depending if
+    # we have "devserver" set...
+    if vargs["devserver"]:
+        schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").find("dev") != -1 ]
+    else:
+        schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").find("dev") == -1 ]
+
     res = random.choice(schedds)
     return res 
 
@@ -76,15 +86,9 @@ def submit(f,vargs, schedd_add, cmd_args = []):
     print("schedd: %s" %  schedd_name)
 
     if (True):
-        cmd='/usr/bin/condor_submit -spool -pool %s -remote %s %s %s' % (COLLECTOR, schedd_name,  f , ' '.join(["'%s'"%x for x in cmd_args]))
+        cmd='/usr/bin/condor_submit -spool -pool %s -remote %s %s %s' % (COLLECTOR_HOST, schedd_name,  f , ' '.join(["'%s'"%x for x in cmd_args]))
         cmd = 'BEARER_TOKEN_FILE=%s %s' % (os.environ['BEARER_TOKEN_FILE'],cmd) 
-        cmd = '_condor_SEC_CREDENTIAL_GETTOKEN_OPTS="-a %s" %s' % (vargs['vault_server'], cmd)
-        cmd = '_condor_CREDMON_OAUTH=/usr/sbin/condor_credmon_vault %s' % cmd
-        cmd = '_condor_SEC_CREDENTIAL_STORER=/usr/bin/condor_vault_storer %s' % cmd
         cmd = '_condor_CREDD_HOST=%s %s'  % (schedd_name, cmd)
-        cmd = '_condor_COLLECTOR_HOST=%s %s'  % (COLLECTOR, cmd)
-        cmd = '_condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates %s' % cmd
-        cmd = '_condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS %s' % cmd
         packages.orig_env()
         print("Running: %s" % cmd)
         cmd = '%s | sed -e "s/\\(submitted.to.cluster.*\\)\\./\\1@%s/"' % (cmd, schedd_name)
@@ -109,15 +113,9 @@ def submit_dag(f,vargs, schedd_add, cmd_args = []):
         f = fl[0]
     subfile = "%s.condor.sub" % f
     if (not os.path.exists(subfile)):
-        cmd = '/usr/bin/condor_submit_dag -append "use_oauth_services = %s" -no_submit %s %s' % (vargs['group'], f, ' '.join(["'%s'"%x for x in cmd_args))
+        cmd = '/usr/bin/condor_submit_dag -append "use_oauth_services = %s" -no_submit %s %s' % (vargs['group'], f, ' '.join(["'%s'"%x for x in cmd_args]))
 
         cmd = 'BEARER_TOKEN_FILE=%s %s' % (os.environ['BEARER_TOKEN_FILE'],cmd)
-        cmd = '_condor_SEC_CREDENTIAL_GETTOKEN_OPTS="-a %s" %s' % (vargs['vault_server'], cmd)
-        cmd = '_condor_CREDMON_OAUTH=/usr/sbin/condor_credmon_vault %s' % cmd
-        cmd = '_condor_SEC_CREDENTIAL_STORER=/usr/bin/condor_vault_storer %s' % cmd
-        cmd = '_condor_COLLECTOR_HOST=%s %s'  % (COLLECTOR, cmd)
-        cmd = '_condor_AUTH_SSL_CLIENT_CADIR=/etc/grid-security/certificates %s' % cmd
-        cmd = '_condor_SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS %s' % cmd
         print("Running: %s" % cmd)
         os.system(cmd)
     submit(subfile, vargs, schedd_add)
