@@ -16,21 +16,22 @@
 import jinja2 as jinja
 import os
 import os.path
-from get_parser import get_parser 
+from get_parser import get_parser
 from utils import fixquote, set_extras_n_fix_units
 
+
 def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
-    """ 
-         parse a dagnabbit dag file generating a .dag file and .cmd files 
-         in the dest directory, using global cmdline options from values
-         along with ones parsed from dagnabbit file
+    """
+    parse a dagnabbit dag file generating a .dag file and .cmd files
+    in the dest directory, using global cmdline options from values
+    along with ones parsed from dagnabbit file
     """
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
-    jinja_env.filters['basename'] = os.path.basename
+    jinja_env.filters["basename"] = os.path.basename
     count = 0
     linenum = 0
     df = open(values["dag"], "r")
-    of = open(os.path.join(dest,"dag.dag"), "w")
+    of = open(os.path.join(dest, "dag.dag"), "w")
     of.write("DOT %s/dag.dot UPDATE\n" % dest)
     in_parallel = False
     in_serial = False
@@ -99,20 +100,20 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
             thesevalues["N"] = 1
             thesevalues["dag"] = None
             thesevalues.update(vars(res))
-            cf = open(os.path.join(dest, "%s.cmd"% name), "w")
-            csf = open(os.path.join(dest,"%s.sh" % name), "w")
+            cf = open(os.path.join(dest, "%s.cmd" % name), "w")
+            csf = open(os.path.join(dest, "%s.sh" % name), "w")
             set_extras_n_fix_units(thesevalues, schedd_name)
-            thesevalues['script_name'] = "%s.sh" % name
+            thesevalues["script_name"] = "%s.sh" % name
             cf.write(jinja_env.get_template("simple.cmd").render(**thesevalues))
             csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
             cf.close()
             of.write("JOB %s %s/%s.cmd\n" % (name, dest, name))
             if in_serial:
-                if last_serial: 
-                    of.write("PARENT %s CHILD %s\n" % (last_serial, name)) 
-                last_serial = name 
-            if in_parallel: 
-                parallel_l.append(name) 
+                if last_serial:
+                    of.write("PARENT %s CHILD %s\n" % (last_serial, name))
+                last_serial = name
+            if in_parallel:
+                parallel_l.append(name)
         elif not line:
             # blank lines are fine
             pass
@@ -120,6 +121,6 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
             sys.stderr.write("Syntax Error: ignoring %s at line %d\n" % (line, linenum))
 
     if values["maxConcurrent"]:
-       of.write("CONFIG dagmax.config\n")
+        of.write("CONFIG dagmax.config\n")
 
     of.close()

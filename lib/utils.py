@@ -23,28 +23,31 @@ import uuid
 import datetime
 import shutil
 
+
 def fixquote(s):
-    """ utility to put double quotes on value in string 'name=value' """
-    parts = s.split("=",1)
+    """utility to put double quotes on value in string 'name=value'"""
+    parts = s.split("=", 1)
     if len(parts) == 2:
-        return '%s="%s"' % (parts[0],parts[1])
+        return '%s="%s"' % (parts[0], parts[1])
     else:
         return s
 
+
 def grep_n(regex, n, file):
     rre = re.compile(regex)
-    with  open(file,"r") as fd:
+    with open(file, "r") as fd:
         for line in fd:
             m = rre.match(line)
             if m:
                 return m.group(n)
 
+
 def set_extras_n_fix_units(args, schedd_name, proxy, token):
-    """ add items to our args dictionary that are not given on the
-        command line, but that are needed to render the condor submit
-        file templates.  
-        Also convert units on memory, disk, and times
-        Note: this has gotten excessively long, probably should be split up?
+    """add items to our args dictionary that are not given on the
+    command line, but that are needed to render the condor submit
+    file templates.
+    Also convert units on memory, disk, and times
+    Note: this has gotten excessively long, probably should be split up?
     """
     #
     # outbase needs to be an area shared with schedd servers.
@@ -52,8 +55,8 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
     args["outbase"] = os.environ.get("JOBSUB_SPOOL", "/storage/local/data1/lite")
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
-    ifdh_config = '%s/ifdh.cfg' % os.environ.get('IFDHC_CONFIG_DIR')
-    args["vault_server"] = grep_n('vault_server=(.*)', 1, ifdh_config)
+    ifdh_config = "%s/ifdh.cfg" % os.environ.get("IFDHC_CONFIG_DIR")
+    args["vault_server"] = grep_n("vault_server=(.*)", 1, ifdh_config)
     ai = socket.getaddrinfo(socket.gethostname(), 80)
     if ai:
         args["ipaddr"] = ai[-1][-1][0]
@@ -81,7 +84,7 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
-    args["outdir"]="%(outbase)s/%(group)s/%(user)s/%(date)s.%(uuid)s" % args
+    args["outdir"] = "%(outbase)s/%(group)s/%(user)s/%(date)s.%(uuid)s" % args
     args["submitdir"] = args["outdir"]
 
     if not os.path.exists(args["outdir"]):
@@ -108,30 +111,34 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
     for e in args["environment"]:
         pos = e.find("=")
         if pos < 0:
-            v = os.environ.get(e,None)
+            v = os.environ.get(e, None)
             if not v:
-                raise RuntimeError("--environment %s was given but no value was in the environment")
-            e = "%s=%s" % (e,v) 
+                raise RuntimeError(
+                    "--environment %s was given but no value was in the environment"
+                )
+            e = "%s=%s" % (e, v)
         newe.append(e)
     args["environment"] = newe
 
+
 def fix_unit(args, name, table, s_offset, s_list, c_offset):
-    """ 
-        unit conversions using appropriate conversion table
     """
-    #print("fix_unit: %s %s %s %d %s %d" % (name, args[name], repr(table),s_offset,s_list,c_offset))
+    unit conversions using appropriate conversion table
+    """
+    # print("fix_unit: %s %s %s %d %s %d" % (name, args[name], repr(table),s_offset,s_list,c_offset))
     if args[name] and args[name][s_offset].lower() in s_list:
         cf = table[args[name][c_offset].lower()]
         args[name] = float(args[name][:c_offset]) * cf
-        #print("converted to %f" % args[name])
+        # print("converted to %f" % args[name])
     elif args[name]:
         args[name] = float(args[name])
 
+
 def get_principal():
-    """ get our kerberos principal name """
+    """get our kerberos principal name"""
     princ = None
     if sys.version_info.major >= 3:
-        enc = {'encoding': 'UTF-8'}
+        enc = {"encoding": "UTF-8"}
     else:
         enc = {}
     p = subprocess.Popen(["/usr/bin/klist"], stdout=subprocess.PIPE, **enc)
@@ -141,5 +148,3 @@ def get_principal():
     p.stdout.close()
     p.wait()
     return princ
-
-

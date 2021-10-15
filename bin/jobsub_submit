@@ -18,7 +18,8 @@
 # limitations under the License.
 
 import sys
-sys.path = [ x for x in sys.path if x[:6] == '/usr/l' ]
+
+sys.path = [x for x in sys.path if x[:6] == "/usr/l"]
 
 import os
 import os.path
@@ -40,9 +41,10 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # find parts we need in package management
 # this means we don't need fancy ups dependencies..
 #
-sys.path.append(os.path.join(PREFIX,"lib"))
+sys.path.append(os.path.join(PREFIX, "lib"))
 from packages import pkg_find
-pkg_find("ifdhc","v2_5_15 -g jobsub_lite -q python36")
+
+pkg_find("ifdhc", "v2_5_15 -g jobsub_lite -q python36")
 pkg_find("ifdhc_config", "v2_5_15 -q tokens")
 pkg_find("jinja")
 import jinja2 as jinja
@@ -51,20 +53,21 @@ import ifdh
 #
 # import our local parts
 #
-from get_parser import get_parser 
-from condor import  get_schedd, submit, submit_dag
+from get_parser import get_parser
+from condor import get_schedd, submit, submit_dag
 from dagnabbit import parse_dagnabbit
 from creds import get_creds
 from tarfiles import do_tarballs
 from utils import fixquote, set_extras_n_fix_units
 
+
 def render_files(srcdir, values, dest):
-    """ use jinja to render the templates from srcdir into the dest directory
-        using values dict for substitutions
+    """use jinja to render the templates from srcdir into the dest directory
+    using values dict for substitutions
     """
     print("trying to render files from %s\n" % srcdir)
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
-    jinja_env.filters['basename'] = os.path.basename
+    jinja_env.filters["basename"] = os.path.basename
     flist = glob.glob("%s/*" % srcdir)
 
     # add destination dir to values for template
@@ -80,16 +83,17 @@ def render_files(srcdir, values, dest):
         if ff.endswith(".sh"):
             os.chmod(ff, 0o755)
 
+
 def cleanup(tmp):
-    """ cleanup /tmp etc. """
+    """cleanup /tmp etc."""
     # we actually leave everything in the sandbox right now..
     pass
 
 
 def do_dataset_defaults(varg):
     """
-        make sure to pass appropriate SAM_* environment variables if we
-        are doing datasets.  Pick a SAM_PROJECT name if we don't have one.
+    make sure to pass appropriate SAM_* environment variables if we
+    are doing datasets.  Pick a SAM_PROJECT name if we don't have one.
     """
     have_project = False
     have_dataset = False
@@ -110,15 +114,22 @@ def do_dataset_defaults(varg):
         if e[:pos] == "SAM_GROUP":
             have_group = True
         if e[:pos] == "SAM_EXPERIMENT":
-            experiment = e[pos+1:]
+            experiment = e[pos + 1 :]
 
     if not have_project:
         # if not, grab from the environment, or use dataset_$USER_$uuid
-        varg["environment"].append("SAM_PROJECT=%s" % 
-                 os.environ.get("SAM_PROJECT",
-                                "%s_%s_%s" % (varg["dataset_definition"], 
-                                             os.environ.get("USER",""),
-                                             varg["uuid"])))
+        varg["environment"].append(
+            "SAM_PROJECT=%s"
+            % os.environ.get(
+                "SAM_PROJECT",
+                "%s_%s_%s"
+                % (
+                    varg["dataset_definition"],
+                    os.environ.get("USER", ""),
+                    varg["uuid"],
+                ),
+            )
+        )
     if not have_dataset:
         varg["environment"].append("SAM_DATASET=%s" % varg["dataset_definition"])
     if not have_station:
@@ -128,65 +139,67 @@ def do_dataset_defaults(varg):
     if not have_group:
         varg["environment"].append("SAM_GROUP=%s" % experiment)
 
+
 def main():
-    """ script mainline:
-        - parse args
-        - get credentials
-        - handle tarfile options
-        - set added values from environment, etc.
-        - convert/render template files to submission files
-        - launch
+    """script mainline:
+    - parse args
+    - get credentials
+    - handle tarfile options
+    - set added values from environment, etc.
+    - convert/render template files to submission files
+    - launch
     """
     parser = get_parser()
     args = parser.parse_args()
 
     proxy, token = get_creds(args)
     # put in environment for condor libs to use
-    os.environ['X509_USER_PROXY'] = proxy
-    os.environ['BEARER_TOKEN_FILE'] = token
+    os.environ["X509_USER_PROXY"] = proxy
+    os.environ["BEARER_TOKEN_FILE"] = token
     do_tarballs(args)
 
     varg = vars(args)
     schedd_add = get_schedd(varg)
     schedd_name = schedd_add.eval("Machine")
     set_extras_n_fix_units(varg, schedd_name, proxy, token)
-    submitdir=varg["outdir"]
-    #if proxy:
+    submitdir = varg["outdir"]
+    # if proxy:
     #    proxy_dest=os.path.join(submitdir,os.path.basename(proxy))
     #    shutil.copyfile(proxy, proxy_dest)
     #    varg["proxy"] = proxy_dest
-    #if token:
+    # if token:
     #    token_dest=os.path.join(submitdir,os.path.basename(token))
     #    shutil.copyfile(token, token_dest)
     #    varg["token"] = token_dest
 
     if args.dag:
-        d = os.path.join(PREFIX, 'templates','simple')
+        d = os.path.join(PREFIX, "templates", "simple")
         parse_dagnabbit(d, varg, submitdir, schedd_name)
         d = "%s/templates/simple" % PREFIX
         varg["N"] = 1
-        d = os.path.join(PREFIX, 'templates','dag')
+        d = os.path.join(PREFIX, "templates", "dag")
         render_files(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
+        submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
     elif args.dataset_definition:
         do_dataset_defaults(varg)
-        d = os.path.join(PREFIX, 'templates','dataset_dag')
+        d = os.path.join(PREFIX, "templates", "dataset_dag")
         render_files(d, varg, submitdir)
         d = "%s/templates/simple" % PREFIX
         varg["N"] = 1
         render_files(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
+        submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
     elif args.maxConcurrent:
-        d = os.path.join(PREFIX, 'templates','maxconcurrent_dag')
+        d = os.path.join(PREFIX, "templates", "maxconcurrent_dag")
         render_files(d, varg, submitdir)
         d = "%s/templates/simple" % PREFIX
         varg["N"] = 1
         render_files(d, varg, submitdir)
-        submit_dag(os.path.join(submitdir,'*.dag'),varg,schedd_add)
+        submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
     else:
         d = "%s/templates/simple" % PREFIX
         render_files(d, varg, submitdir)
-        submit(os.path.join(submitdir, "*.cmd"),varg,schedd_add)
+        submit(os.path.join(submitdir, "*.cmd"), varg, schedd_add)
+
 
 if __name__ == "__main__":
     main()

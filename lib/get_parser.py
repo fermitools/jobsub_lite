@@ -17,18 +17,20 @@ import argparse
 import sys
 import os
 
+
 def verify_executable_starts_with_file_colon(s):
-    """ routine to give argparse to verify the executable parameter,
-        which is supposed to be given as a file:///path URL
-        -- note we could check the file exists here, too.
+    """routine to give argparse to verify the executable parameter,
+    which is supposed to be given as a file:///path URL
+    -- note we could check the file exists here, too.
     """
     if s.startswith("file://"):
         return s
     else:
         raise TypeError("executable must start with file://")
 
+
 def get_parser():
-    """ build the argument parser and return it """
+    """build the argument parser and return it"""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-c", "--append_condor_requirements", help="append condor requirements"
@@ -39,7 +41,10 @@ def get_parser():
     parser.add_argument("-r", help="Experiment release version")
     parser.add_argument("-i", help="Experiment release dir")
     parser.add_argument("-t", help="Experiment test release dir")
-    parser.add_argument("--cmtconfig", help=" Set up minervasoft release built with cmt configuration. default is $CMTCONFIG")
+    parser.add_argument(
+        "--cmtconfig",
+        help=" Set up minervasoft release built with cmt configuration. default is $CMTCONFIG",
+    )
     parser.add_argument("--cpu", help="request worker nodes have at least NUMBER cpus")
     parser.add_argument("--dag", help="submit and run a dagNabbit input file")
     parser.add_argument(
@@ -54,10 +59,10 @@ def get_parser():
     )
     parser.add_argument(
         "-d",
-        nargs = 2,
-        action = 'append',
-        default = [],
-        metavar = ('tag','dir'),
+        nargs=2,
+        action="append",
+        default=[],
+        metavar=("tag", "dir"),
         help="-d <tag> <dir> Writable directory $CONDOR_DIR_<tag> will exist on the execution node. After job completion, its contents will be moved to <dir> automatically Specify as many <tag>/<dir> pairs as you need.",
     )
     parser.add_argument(
@@ -84,7 +89,11 @@ def get_parser():
         action="append",
         help="INPUT_FILE at runtime, INPUT_FILE will be copied to directory $CONDOR_DIR_INPUT on the execution node. Example :-f /grid/data/minerva/my/input/file.xxx will be copied to $CONDOR_DIR_INPUT/file.xxx Specify as many -f INPUT_FILE_1 -f INPUT_FILE_2 args as you need. To copy file at submission time instead of run time, use -f dropbox://INPUT_FILE to copy the file.",
     )
-    parser.add_argument("--generate-email-summary", action="store_true",default=False, help="generate and mail a summary report of completed/failed/removed jobs in a DAG"
+    parser.add_argument(
+        "--generate-email-summary",
+        action="store_true",
+        default=False,
+        help="generate and mail a summary report of completed/failed/removed jobs in a DAG",
     )
     parser.add_argument(
         "-G", "--group", help="Group/Experiment/Subgroup for priorities and accounting"
@@ -162,9 +171,7 @@ def get_parser():
         help='request specific resources by changing condor jdf file. For example: --resource-provides=CVMFS=OSG will add +DESIRED_CVMFS="OSG" to the job classad attributes and \'&&(CVMFS=="OSG")\' to the job requirements',
     )
     parser.add_argument(
-        "--role", 
-        help="VOMS Role for priorities and accounting", 
-        default="Analysis"
+        "--role", help="VOMS Role for priorities and accounting", default="Analysis"
     )
     parser.add_argument("--site", help="submit jobs to these (comma-separated) sites")
     parser.add_argument(
@@ -187,26 +194,43 @@ def get_parser():
         help="kill user job if still running after NUMBER[UNITS] of time . UNITS may be `s' for seconds (the default), `m' for minutes, `h' for hours or `d' h for days.",
     )
     parser.add_argument(
-        "--use-cvmfs-dropbox", dest="use_dropbox", action="store_const", const="cvmfs", help="use cvmfs for dropbox (default is pnfs)", default=None
+        "--use-cvmfs-dropbox",
+        dest="use_dropbox",
+        action="store_const",
+        const="cvmfs",
+        help="use cvmfs for dropbox (default is pnfs)",
+        default=None,
     )
     parser.add_argument(
-        "--use-pnfs-dropbox", dest="use_dropbox", action="store_const", const="pnfs", help="use cvmfs for dropbox (default is pnfs)", default=None
+        "--use-pnfs-dropbox",
+        dest="use_dropbox",
+        action="store_const",
+        const="pnfs",
+        help="use cvmfs for dropbox (default is pnfs)",
+        default=None,
     )
     parser.add_argument(
-        "--verbose", action="store_true", default=False, help="dump internal state of program (useful for debugging)"
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="dump internal state of program (useful for debugging)",
     )
     parser.add_argument(
         "--devserver",
         default=False,
         action="store_true",
-        help="Use jobsubdevgpvm01 etc. to submit"
+        help="Use jobsubdevgpvm01 etc. to submit",
     )
 
     parser.add_argument(
-        "executable", type = verify_executable_starts_with_file_colon, default=None, nargs="?", help="executable for job to run"
+        "executable",
+        type=verify_executable_starts_with_file_colon,
+        default=None,
+        nargs="?",
+        help="executable for job to run",
     )
 
-    parser.add_argument("exe_arguments", nargs=argparse.REMAINDER, help="arguments to executable")
+    parser.add_argument(
+        "exe_arguments", nargs=argparse.REMAINDER, help="arguments to executable"
+    )
     return parser
-
-
