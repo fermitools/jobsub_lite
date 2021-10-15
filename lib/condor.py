@@ -31,16 +31,32 @@ def get_schedd(vargs):
     coll = htcondor.Collector(COLLECTOR_HOST)
     schedd_classads = coll.locateAll(htcondor.DaemonTypes.Schedd)
 
+    # locateAll gives a list of minimal classads... but 
+    # need to directQuery for the full classads to check for 
+    # SupportedVOList...
+
+    full_schedd_classads = []
+    for ca in schedd_classads:
+        full_schedd_classads.append( 
+           coll.directQuery( 
+               htcondor.DaemonTypes.Schedd, 
+               name=ca.eval("Machine")))
+
+
     # pick schedds who list our group in their vo list
-    schedds = [ ca  for ca in schedd_classads if ca.eval("SupportedVOList").find(vargs['group']) != -1 ]
+
+    schedds = [ ca  for ca in full_schedd_classads if "SupportedVOList" in ca and ca.eval("SupportedVOList").find(vargs['group']) != -1 ]
+
 
     # pick schedds who do or do not have "dev" in their name, depending if
     # we have "devserver" set...
-    if vargs["devserver"]:
-        schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").find("dev") != -1 ]
-    else:
-        schedds = [ ca  for ca in schedd_classads if ca.eval("Machine").find("dev") == -1 ]
 
+    if vargs["devserver"]:
+        schedds = [ ca  for ca in schedds if ca.eval("Machine").find("dev") != -1 ]
+    else:
+        schedds = [ ca  for ca in schedds if ca.eval("Machine").find("dev") == -1 ]
+
+    # print("after dev check:" , [ca.eval("Machine") for ca in schedds])
     res = random.choice(schedds)
     return res 
 
