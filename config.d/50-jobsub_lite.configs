@@ -6,7 +6,7 @@
 #
 # details for credmon_vault
 #
-SEC_CREDENTIAL_GETTOKEN_OPTS="-a fermicloud543.fnal.gov" 
+SEC_CREDENTIAL_GETTOKEN_OPTS=-a fermicloud543.fnal.gov
 CREDMON_OAUTH=/usr/sbin/condor_credmon_vault
 SEC_CREDENTIAL_STORER=/usr/bin/condor_vault_storer 
 
@@ -22,6 +22,11 @@ SEC_CLIENT_AUTHENTICATION_METHODS=SCITOKENS
 #   - These should be required, but until all our collectors
 #     accept SCITOKENS, it needs to be PREFERRED
 #
-SEC_CLIENT_AUTHENTICATION=PREFERRED
-SEC_CLIENT_INTEGRITY=PREFERRED
+SEC_CLIENT_AUTHENTICATION=OPTIONAL
+SEC_CLIENT_INTEGRITY=OPTIONAL
+
+#
+# Not sure why we need these
+#
+LOG=/storage/local/data1/condor/log
 
