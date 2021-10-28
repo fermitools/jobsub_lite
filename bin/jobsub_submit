@@ -60,12 +60,24 @@ from creds import get_creds
 from tarfiles import do_tarballs
 from utils import fixquote, set_extras_n_fix_units
 
+def get_basefiles(dlist):
+    res = []
+    for d in dlist:
+        flist = glob.glob("%s/*" % d)
+        for f in flist:
+            res.append(os.path.basename(f))
+    return res
 
-def render_files(srcdir, values, dest):
+def render_files(srcdir, values, dest, dlist=None):
     """use jinja to render the templates from srcdir into the dest directory
     using values dict for substitutions
     """
     print("trying to render files from %s\n" % srcdir)
+
+    if dlist == None:
+        dlist = [ d ]
+    values["transfer_files"] = get_basefiles(dlist)
+
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
     jinja_env.filters["basename"] = os.path.basename
     flist = glob.glob("%s/*" % srcdir)
@@ -173,31 +185,34 @@ def main():
     #    varg["token"] = token_dest
 
     if args.dag:
-        d = os.path.join(PREFIX, "templates", "simple")
-        parse_dagnabbit(d, varg, submitdir, schedd_name)
-        d = "%s/templates/simple" % PREFIX
+        d1 = os.path.join(PREFIX, "templates", "simple")
+        d2 = os.path.join(PREFIX, "templates", "dag")
+        parse_dagnabbit(d1, varg, submitdir, schedd_name)
         varg["N"] = 1
-        d = os.path.join(PREFIX, "templates", "dag")
-        render_files(d, varg, submitdir)
+        render_files(d2, varg, submitdir, dlist=[d1,d2,varg["dest"]])
+        os.chdir(varg["dest"])
         submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
     elif args.dataset_definition:
         do_dataset_defaults(varg)
-        d = os.path.join(PREFIX, "templates", "dataset_dag")
-        render_files(d, varg, submitdir)
-        d = "%s/templates/simple" % PREFIX
+        d1 = os.path.join(PREFIX, "templates", "dataset_dag")
+        d2 = "%s/templates/simple" % PREFIX
+        render_files(d1, varg, submitdir, dlist=[d1,d2])
         varg["N"] = 1
-        render_files(d, varg, submitdir)
+        render_files(d2, varg, submitdir, dlist=[d1,d2])
+        os.chdir(varg["dest"])
         submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
     elif args.maxConcurrent:
-        d = os.path.join(PREFIX, "templates", "maxconcurrent_dag")
-        render_files(d, varg, submitdir)
-        d = "%s/templates/simple" % PREFIX
+        d1 = os.path.join(PREFIX, "templates", "maxconcurrent_dag")
+        d2 = os.path.join(PREFIX, "templates", "simple")
+        render_files(d1, varg, submitdir, dlist=[d1,d2])
         varg["N"] = 1
-        render_files(d, varg, submitdir)
+        render_files(d2, varg, submitdir, dlist=[d1,d2])
+        os.chdir(varg["dest"])
         submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
     else:
         d = "%s/templates/simple" % PREFIX
         render_files(d, varg, submitdir)
+        os.chdir(varg["dest"])
         submit(os.path.join(submitdir, "*.cmd"), varg, schedd_add)
 
 
