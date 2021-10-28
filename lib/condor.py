@@ -35,6 +35,18 @@ def get_schedd(vargs):
     # need to directQuery for the full classads to check for
     # SupportedVOList...
 
+    print("classads:" , schedd_classads)
+
+    # pick schedds who do or do not have "dev" in their name, depending if
+    # we have "devserver" set...
+
+    if vargs["devserver"]:
+        schedd_classads = [ca for ca in schedd_classads if ca.eval("Machine").find("dev") != -1]
+    else:
+        schedd_classads = [ca for ca in schedd_classads if ca.eval("Machine").find("dev") == -1]
+
+    # print("after dev check:" , [ca.eval("Machine") for ca in schedds])
+
     full_schedd_classads = []
     for ca in schedd_classads:
         full_schedd_classads.append(
@@ -49,16 +61,6 @@ def get_schedd(vargs):
         if "SupportedVOList" in ca
         and ca.eval("SupportedVOList").find(vargs["group"]) != -1
     ]
-
-    # pick schedds who do or do not have "dev" in their name, depending if
-    # we have "devserver" set...
-
-    if vargs["devserver"]:
-        schedds = [ca for ca in schedds if ca.eval("Machine").find("dev") != -1]
-    else:
-        schedds = [ca for ca in schedds if ca.eval("Machine").find("dev") == -1]
-
-    # print("after dev check:" , [ca.eval("Machine") for ca in schedds])
     res = random.choice(schedds)
     return res
 
