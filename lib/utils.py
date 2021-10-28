@@ -52,7 +52,7 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
     #
     # outbase needs to be an area shared with schedd servers.
     #
-    args["outbase"] = os.environ.get("JOBSUB_SPOOL", "/storage/local/data1/lite")
+    args["outbase"] = os.environ.get("JOBSUB_SPOOL", "%s/.jobsub_lite" % os.environ.get("HOME"))
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
     ifdh_config = "%s/ifdh.cfg" % os.environ.get("IFDHC_CONFIG_DIR")

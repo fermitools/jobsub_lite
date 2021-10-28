@@ -1,11 +1,11 @@
-DOT {{submitdir}}/dataset.dag.dot UPDATE
-JOB SAM_START {{submitdir}}/dagbegin.cmd
+DOT dataset.dag.dot UPDATE
+JOB SAM_START dagbegin.cmd
 
 {%for i in range(N) %}
-JOB WORKER_{{i}} {{submitdir}}/simple.cmd 
+JOB WORKER_{{i}} simple.cmd 
 PARENT SAM_START CHILD WORKER_{{i}} 
 PARENT WORKER_{{i}} CHILD SAM_END
 {%endfor%}
 
-JOB SAM_END {{submitdir}}/dagend.cmd
+JOB SAM_END dagend.cmd
 {%if maxConcurrent%}CONFIG dagmax.config{%endif%}
