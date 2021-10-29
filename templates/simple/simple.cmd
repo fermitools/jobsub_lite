@@ -4,7 +4,7 @@
 universe           = vanilla
 executable         = {{script_name|default('simple.sh')}}
 arguments          = {{exe_arguments|join(" ")}}
-{% set filebase %}}{{executable|basename}}{{date}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
+{% set filebase %}{{executable|basename}}{{date}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
 output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
@@ -15,7 +15,7 @@ notification       = Never
 transfer_output    = True
 transfer_error     = True
 transfer_executable= True
-transfer_input_files = {{full_executable}}
+transfer_input_files = {{executable|basename}}
 when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_output_files = .empty_file
 {%if    cpu %}request_cpus = {{cpu}}{%endif%}
