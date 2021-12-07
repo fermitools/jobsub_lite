@@ -22,12 +22,19 @@ import sys
 
 sys.path = [x for x in sys.path if x[:6] == "/usr/l"]
 
+import os
+import time
 import argparse
+
+vault_host="fermicloud543.fnal.gov"
+
+def getTmp():
+    return os.environ.get("TMPDIR","/tmp")
 
 def getExp():
     for ev in ["GROUP", "EXPERIMENT", "SAM_EXPERIMENT"]:
-        if os.envrion.get(ev, None):
-            return os.environ[ev]
+        if os.environ.get(ev, None):
+            return os.environ.get(ev)
     # otherwise guess primary group...
     f = os.popen('id -gn', 'r')
     exp = f.read()
@@ -35,42 +42,59 @@ def getExp():
     return exp
 
 def getRole():
-    if username[-3:] == "pro":
+    if os.environ["USER"][-3:] == "pro":
         return "Production"
     else:
         return "Analysis"
 
 def getToken():
-    pid = os.getpid()
+    pid = os.getuid()
     tmp = getTmp()
     role = getRole()
     exp = getExp()
-    tokenfile = '%s/bt_token_%s_%s_%d' % (tmp, exp, role, pid)
+    if exp  == "samdev":
+        issuer = "fermilab"
+    else:
+        issuer = exp
+    tokenfile = '%s/bt_token_%s_%s_%s' % (tmp, issuer, role, pid)
     os.environ["BEARER_TOKEN_FILE"] = tokenfile
-    f = os.popen("decode_token.sh -e exp %s" % tokenfile, "r")
+    f = os.popen("decode_token.sh -e exp %s 2>/dev/null" % tokenfile, "r")
     exp_time = f.read()
     f.close()
-    if not exp_time or ((int(exp_time) - time.time(0)) > 60):
+    if not exp_time or ((int(exp_time) - time.time()) < 60):
         cmd = "htgettoken -a %s -i %s" % (vault_host, issuer)
         if role != "Analysis": 
             cmd = "%s -r %" % (cmd, role)
         os.system(cmd)
         print(tokenfile)
-    Telse:
+    else:
         print(tokenfile)
-10 
+ 
 def getProxy():
-    pid = os.getpid()
+    pid = os.getuid()
     tmp = getTmp()
     role = getRole()
     exp = getExp()
-    certfile = '%s/x509up_u%d' % (tmp, exp, role, pid)
-    vomsfile = '%s/x509up_%s_%s_%d' % (tmp, exp, role, pid)
-    if 0 != os.system("voms-proxy-info -exists -valid 0:10 -file %s" % vomsfile):
-        os.system("cigetcert -i 'Fermi National Accelerator Laboratory' -n -o %s" % certfile);
-        os.system("voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen -debug -cert %s -key %s -out %s -voms" % (
-             certfile,certfile, vomsfile));
-        if 0 == os.system("voms-proxy-info -exists -valid 0:10 -file %s" % vomsfile):
+    certfile = '%s/x509up_u%s' % (tmp, pid)
+    if exp  == "samdev":
+        issuer = "fermilab"
+        igroup = "fermilab"
+    elif exp in ("lsst","dune","fermilab","des"):
+        issuer = exp
+        igroup = exp
+    else:
+        issuer = "fermilab"
+        igroup = "fermilab/" + exp
+    vomsfile = '%s/x509up_%s_%s_%s' % (tmp, exp, role, pid)
+    chk_cmd = "voms-proxy-info -exists -valid 0:10 -file %s" % vomsfile
+    if 0 != os.system(chk_cmd):
+        cmd = "cigetcert -i 'Fermi National Accelerator Laboratory' -n -o %s" % certfile
+        os.system(cmd)
+        cmd = "voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen -debug -cert %s -key %s -out %s -voms %s:/%s/Role=%s" % (
+             certfile,certfile, vomsfile, issuer, igroup, role)
+
+        os.system(cmd)
+        if 0 == os.system(chk_cmd):
             print(vomsfile)
         else:
             print("")
@@ -78,16 +102,16 @@ def getProxy():
         print(vomsfile)
 
 def cp(src, dest):
-    os.system("gfal_copy %s %s" % (src, dest))
+    os.system("gfal-copy %s %s" % (src, dest))
 
 if __name__ == '__main__':
     commands = {"getProxy": getProxy, "getToken": getToken, "cp": cp}
     parser = argparse.ArgumentParser(description="ifdh subset replacement")
-    parser.add_argument('command', nargs=1, description='command')
-    parser.add_argument('--experiment', description='experiment name', default = os.environ.get["GROUP"])
-    parser.add_argument('cpargs', default=[], action='append', nargs='*', description="copy arguments")
+    parser.add_argument('command', action='store', nargs=1, help='command')
+    parser.add_argument('--experiment', help='experiment name', default = os.environ.get("GROUP",None))
+    parser.add_argument('cpargs', default=None, action='append', nargs='*', help="copy arguments")
 
     opts = parser.parse_args()
 
-    if opts.command and commands.get(opts.command, None):
-        commands[opts.command](*opts.cpargs)
+    if opts.command and opts.command[0] and commands.get(opts.command[0], None):
+        commands[opts.command[0]](*opts.cpargs[0])
