@@ -38,6 +38,13 @@ def getRole():
     if username[-3:] == "pro":
         return "Production"
     else:
+        return "Analysis"
+
+def getToken():
+    pid = os.getpid()
+    tmp = getTmp()
+    role = getRole()
+    exp = getExp()
     tokenfile = '%s/bt_token_%s_%s_%d' % (tmp, exp, role, pid)
     os.environ["BEARER_TOKEN_FILE"] = tokenfile
     f = os.popen("decode_token.sh -e exp %s" % tokenfile, "r")
@@ -49,8 +56,26 @@ def getRole():
             cmd = "%s -r %" % (cmd, role)
         os.system(cmd)
         print(tokenfile)
-    else:
+    Telse:
         print(tokenfile)
+10 
+def getProxy():
+    pid = os.getpid()
+    tmp = getTmp()
+    role = getRole()
+    exp = getExp()
+    certfile = '%s/x509up_u%d' % (tmp, exp, role, pid)
+    vomsfile = '%s/x509up_%s_%s_%d' % (tmp, exp, role, pid)
+    if 0 != os.system("voms-proxy-info -exists -valid 0:10 -file %s" % vomsfile):
+        os.system("cigetcert -i 'Fermi National Accelerator Laboratory' -n -o %s" % certfile);
+        os.system("voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen -debug -cert %s -key %s -out %s -voms" % (
+             certfile,certfile, vomsfile));
+        if 0 == os.system("voms-proxy-info -exists -valid 0:10 -file %s" % vomsfile):
+            print(vomsfile)
+        else:
+            print("")
+    else:
+        print(vomsfile)
 
 def cp(src, dest):
     os.system("gfal_copy %s %s" % (src, dest))
