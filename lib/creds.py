@@ -13,10 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import ifdh
 import os
-
-ih = None
 
 
 def get_creds(args={}):
@@ -24,11 +21,12 @@ def get_creds(args={}):
     myproxy, nor does it yet deal with tokens, but those should
     be done here as needed.
     """
-    global ih
-    if not ih:
-        ih = ifdh.ifdh()
-    p = ih.getProxy()
-    t = ih.getToken()
+    f = os.popen("fake_ifdh getProxy","r") 
+    p = f.read().strip()
+    f.close()
+    f = os.popen("fake_ifdh getToken","r") 
+    t = f.read().strip()
+    f.close
     os.environ["X509_USER_PROXY"] = p
     os.environ["BEARER_TOKEN_FILE"] = t
     return p, t

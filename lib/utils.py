@@ -55,8 +55,6 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
     args["outbase"] = os.environ.get("JOBSUB_SPOOL", "%s/.jobsub_lite" % os.environ.get("HOME"))
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
-    ifdh_config = "%s/ifdh.cfg" % os.environ.get("IFDHC_CONFIG_DIR")
-    args["vault_server"] = grep_n("vault_server=(.*)", 1, ifdh_config)
     ai = socket.getaddrinfo(socket.gethostname(), 80)
     if ai:
         args["ipaddr"] = ai[-1][-1][0]

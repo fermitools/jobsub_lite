@@ -16,7 +16,6 @@
 from creds import get_creds
 from functools import wraps
 import hashlib
-import ifdh
 import os
 import os.path
 import requests
@@ -104,9 +103,7 @@ def do_tarballs(args):
 
             elif args.use_dropbox == "pnfs":
                 location = dcache_persistent_path(args.group, tfn[8:])
-                ih = ifdh.ifdh()
-                ih.mkdir_p(os.path.dirname(location))
-                ih.cp([tfn[8:], location])
+                os.system("fake_ifdh cp %s %s" % (tfn[8:], location))
             else:
                 raise (
                     NotImplementedError(

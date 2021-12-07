@@ -39,7 +39,6 @@ else
     }
 fi
 
-source `ups setup ifdhc v2_5_15 -q python36, ifdhc_config v2_5_15 -q tokens`
 schedd=""
 case "x$*" in
 *@*) schedd=`echo "$*" | sed -e 's/.*@//' -e 's/ .*//'`
@@ -50,5 +49,5 @@ if [ x$schedd != x ]
 then
     args="-name $schedd $args"
 fi
-export BEARER_TOKEN_FILE=`ifdh getToken`
+export BEARER_TOKEN_FILE=`fake_ifdh getToken`
 /usr/bin/condor_q -global $args | filter
