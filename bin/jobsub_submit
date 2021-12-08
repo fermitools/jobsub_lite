@@ -37,6 +37,10 @@ import shutil
 #
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# handle if we're installed as an RPM in /usr/bin..
+if PREFIX == '/usr':
+    PREFIX='/usr/lib64/python3.6/site-packages/jobsub_lite'
+
 #
 # find parts we need in package management
 # this means we don't need fancy ups dependencies..
