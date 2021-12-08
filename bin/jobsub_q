@@ -50,4 +50,4 @@ then
     args="-name $schedd $args"
 fi
 export BEARER_TOKEN_FILE=`fake_ifdh getToken`
-/usr/bin/condor_q -global $args | filter
+/usr/bin/condor_q.real -global $args | filter
