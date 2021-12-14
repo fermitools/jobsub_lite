@@ -48,7 +48,6 @@ do
     install -m 644 $d/* $RPM_BUILD_ROOT%{_libdir}/python3.6/site-packages/jobsub_lite/$d/
 done
 install -m 644 config.d/* $RPM_BUILD_ROOT/etc/condor/config.d/samples
-51-jobsub_lite.configs 
 %postun
 
 for f in condor_q condor_transfer_data condor_release condor_wait condor_rm condor_submit condor_submit_dag 
