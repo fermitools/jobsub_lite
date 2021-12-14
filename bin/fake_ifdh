@@ -65,7 +65,8 @@ def getToken():
         cmd = "htgettoken -a %s -i %s" % (vault_host, issuer)
         if role != "Analysis": 
             cmd = "%s -r %" % (cmd, role)
-        os.system(cmd)
+        # send htgettoken output to stderr because invokers read stdout
+        os.system("%s >&2" % cmd)
         print(tokenfile)
     else:
         print(tokenfile)
@@ -89,11 +90,13 @@ def getProxy():
     chk_cmd = "voms-proxy-info -exists -valid 0:10 -file %s" % vomsfile
     if 0 != os.system(chk_cmd):
         cmd = "cigetcert -i 'Fermi National Accelerator Laboratory' -n -o %s" % certfile
-        os.system(cmd)
+        # send htgettoken output to stderr because invokers read stdout
+        os.system("%s >&2" % cmd)
         cmd = "voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen -debug -cert %s -key %s -out %s -voms %s:/%s/Role=%s" % (
              certfile,certfile, vomsfile, issuer, igroup, role)
 
-        os.system(cmd)
+        # send htgettoken output to stderr because invokers read stdout
+        os.system("%s >&2" % cmd)
         if 0 == os.system(chk_cmd):
             print(vomsfile)
         else:
