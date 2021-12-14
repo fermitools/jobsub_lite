@@ -301,7 +301,7 @@ mkdir $JOBSUB_OUT_{{pair[0]}}
 # ==========
 
 
-export JOBSUB_EXE_SCRIPT=$(ls {{full_executable}} 2>/dev/null)
+export JOBSUB_EXE_SCRIPT=$(ls {{executable|basename}} 2>/dev/null)
 if [ "$JOBSUB_EXE_SCRIPT" = "" ]; then 
      export JOBSUB_EXE_SCRIPT=$(find . -name {{executable|basename}} -print | head -1)
 fi
