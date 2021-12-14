@@ -39,7 +39,7 @@ done
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 mkdir -p $RPM_BUILD_ROOT%{_libdir}/python3.6/site-packages/jobsub_lite/lib/
 mkdir -p $RPM_BUILD_ROOT%{_libdir}/python3.6/site-packages/jobsub_lite/templates/
-mkdir -p $RPM_BUILD_ROOT/etc/condor/config.d
+mkdir -p $RPM_BUILD_ROOT/etc/condor/config.d/samples
 install -m 755 bin/* $RPM_BUILD_ROOT%{_bindir}
 install -m 755 lib/* $RPM_BUILD_ROOT%{_libdir}/python3.6/site-packages/jobsub_lite/lib/
 for d in templates/*
@@ -47,8 +47,8 @@ do
     mkdir $RPM_BUILD_ROOT%{_libdir}/python3.6/site-packages/jobsub_lite/$d
     install -m 644 $d/* $RPM_BUILD_ROOT%{_libdir}/python3.6/site-packages/jobsub_lite/$d/
 done
-install -m 644 config.d/50-jobsub_lite.configs $RPM_BUILD_ROOT/etc/condor/config.d
-
+install -m 644 config.d/* $RPM_BUILD_ROOT/etc/condor/config.d/samples
+51-jobsub_lite.configs 
 %postun
 
 for f in condor_q condor_transfer_data condor_release condor_wait condor_rm condor_submit condor_submit_dag 
@@ -98,7 +98,9 @@ done
 %{_libdir}/python3.6/site-packages/jobsub_lite/templates/maxconcurrent_dag/maxconcurrent.dag
 %{_libdir}/python3.6/site-packages/jobsub_lite/templates/simple/simple.cmd
 %{_libdir}/python3.6/site-packages/jobsub_lite/templates/simple/simple.sh
-/etc/condor/config.d/50-jobsub_lite.configs 
+/etc/condor/config.d/samples/50-jobsub_lite.configs 
+/etc/condor/config.d/samples/51-group_dune.configs
+/etc/condor/config.d/samples/51-group_fermilab.configs
 %{_libdir}/python3.6/site-packages/jobsub_lite/lib/__pycache__/condor.cpython-36.pyc
 %{_libdir}/python3.6/site-packages/jobsub_lite/lib/__pycache__/creds.cpython-36.pyc
 %{_libdir}/python3.6/site-packages/jobsub_lite/lib/__pycache__/dagnabbit.cpython-36.pyc
