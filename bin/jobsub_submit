@@ -165,6 +165,7 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
 
+
     proxy, token = get_creds(args)
     # put in environment for condor libs to use
     os.environ["X509_USER_PROXY"] = proxy
@@ -172,6 +173,8 @@ def main():
     do_tarballs(args)
 
     varg = vars(args)
+    if args.debug:
+        sys.stderr.write("varg: %s" % repr(varg))
     schedd_add = get_schedd(varg)
     schedd_name = schedd_add.eval("Machine")
     set_extras_n_fix_units(varg, schedd_name, proxy, token)
@@ -191,8 +194,9 @@ def main():
         parse_dagnabbit(d1, varg, submitdir, schedd_name)
         varg["N"] = 1
         render_files(d2, varg, submitdir, dlist=[d1,d2,varg["dest"]])
-        os.chdir(varg["submitdir"])
-        submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
+        if not varg.get("no_submit",False):
+            os.chdir(varg["submitdir"])
+            submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
     elif args.dataset_definition:
         do_dataset_defaults(varg)
         d1 = os.path.join(PREFIX, "templates", "dataset_dag")
@@ -200,21 +204,24 @@ def main():
         render_files(d1, varg, submitdir, dlist=[d1,d2])
         varg["N"] = 1
         render_files(d2, varg, submitdir, dlist=[d1,d2])
-        os.chdir(varg["submitdir"])
-        submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
+        if not varg.get("no_submit",False):
+            os.chdir(varg["submitdir"])
+            submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
     elif args.maxConcurrent:
         d1 = os.path.join(PREFIX, "templates", "maxconcurrent_dag")
         d2 = os.path.join(PREFIX, "templates", "simple")
         render_files(d1, varg, submitdir, dlist=[d1,d2])
         varg["N"] = 1
         render_files(d2, varg, submitdir, dlist=[d1,d2])
-        os.chdir(varg["submitdir"])
-        submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
+        if not varg.get("no_submit",False):
+            os.chdir(varg["submitdir"])
+            submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
     else:
         d = "%s/templates/simple" % PREFIX
         render_files(d, varg, submitdir)
-        os.chdir(varg["submitdir"])
-        submit(os.path.join(submitdir, "*.cmd"), varg, schedd_add)
+        if not varg.get("no_submit",False):
+            os.chdir(varg["submitdir"])
+            submit(os.path.join(submitdir, "*.cmd"), varg, schedd_add)
 
 
 if __name__ == "__main__":

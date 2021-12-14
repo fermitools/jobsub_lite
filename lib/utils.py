@@ -52,6 +52,9 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
     #
     # outbase needs to be an area shared with schedd servers.
     #
+    if args["debug"]:
+        sys.stderr.write("entering set_extras... args: %s\n" % repr(args))
+
     args["outbase"] = os.environ.get("JOBSUB_SPOOL", "%s/.jobsub_lite" % os.environ.get("HOME"))
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
@@ -69,13 +72,17 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
     if not "uuid" in args:
         args["uuid"] = str(uuid.uuid4())
     args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
+    if args["debug"]:
+        sys.stderr.write("checking args[executable]: %s\n" % repr(args.get("executable",None)))
     if not args["executable"] and args["exe_arguments"]:
         args["executable"] = args["exe_arguments"][-1]
         args["exe_arguments"] = args["exe_arguments"][:-1]
+
     if args["executable"]:
-        args["full_executable"] = args["executable"].replace("file://", "")
+        args["full_executable"] = args["executable"]
+        args["full_executable"] = args["full_executable"].replace("file://", "")
     else:
-        print("Ouch! no executable?")
+        sys.stderr.write("Ouch! no executable?\n")
         args["full_executable"] = "/bin/false"
     if args["full_executable"][0] != "/":
         args["full_executable"] = os.path.join(os.getcwd(), args["full_executable"])
@@ -89,8 +96,13 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
         os.makedirs(args["outdir"])
 
     # copy executable to submit dir so schedd can see it
-    if args["full_executable"]:
+    if args["debug"]:
+        sys.stderr.write("checking full_executable: %s\n" % repr(args.get("full_executable",None)))
+
+    if args.get("full_executable",False):
         dest = os.path.join(args["submitdir"], os.path.basename(args["executable"]))
+        if args["debug"]:
+            sys.stderr.write("copying  %s to %s\n" % (repr(args.get("full_executable",None)),repr(dest)))
         shutil.copyfile(args["full_executable"], dest, follow_symlinks=True)
         args["full_executable"] = dest
 
@@ -117,6 +129,8 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
             e = "%s=%s" % (e, v)
         newe.append(e)
     args["environment"] = newe
+    if args["debug"]:
+        sys.stderr.write("leaving set_extras... args: %s\n" % repr(args))
 
 
 def fix_unit(args, name, table, s_offset, s_list, c_offset):
