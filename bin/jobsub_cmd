@@ -32,4 +32,4 @@ export X509_USER_PROXY=`fake_ifdh getProxy`
 export BEARER_TOKEN_FILE=`fake_ifdh getToken`
 
 cmd=`basename $0 | sed -e 's;^[a-z]*_;/usr/bin/condor_;'`
-exec $cmd.real -name $schedd $args
+exec /usr/bin/$cmd -name $schedd $args

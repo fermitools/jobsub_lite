@@ -108,7 +108,7 @@ def submit(f, vargs, schedd_add, cmd_args=[]):
     print("schedd: %s" % schedd_name)
 
     if True:
-        cmd = "/usr/bin/condor_submit.real -spool -pool %s -remote %s %s %s" % (
+        cmd = "/usr/bin/condor_submit -spool -pool %s -remote %s %s %s" % (
             COLLECTOR_HOST,
             schedd_name,
             f,

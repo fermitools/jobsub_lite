@@ -29,13 +29,6 @@ Job submission wrapper scripts
 %build
 /bin/true
 
-%pre
-
-for f in condor_q condor_transfer_data condor_release condor_wait condor_rm condor_submit condor_submit_dag 
-do
-    mv /usr/bin/$f /usr/bin/$f.real
-done
-
 %install
 mkdir -p $RPM_BUILD_ROOT/opt/jobsub_lite/bin
 mkdir -p $RPM_BUILD_ROOT/opt/jobsub_lite/lib/
@@ -50,12 +43,6 @@ do
 done
 install -m 644 config.d/* $RPM_BUILD_ROOT/etc/condor/config.d/samples
 install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
-%postun
-
-for f in condor_q condor_transfer_data condor_release condor_wait condor_rm condor_submit condor_submit_dag 
-do
-    mv /usr/bin/$f.real /usr/bin/$f
-done
 
 %files
 %doc
