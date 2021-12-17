@@ -28,6 +28,20 @@ then
     args="-name $schedd $args"
 fi
 
+# Check group and pull it into environment
+case "x$*" in
+*--group*)
+    group=`echo "$*" | sed -e 's/.*--group[=( )+]//' -e 's/ .*//'`
+    ;;
+*-G*)
+    group=`echo "$*" | sed -e 's/.*-G[( )+]//' -e 's/ .*//'`
+    ;;
+esac
+if [ x$group != x ]
+then
+    export GROUP=group
+fi
+
 export X509_USER_PROXY=`fake_ifdh getProxy`
 export BEARER_TOKEN_FILE=`fake_ifdh getToken`
 
