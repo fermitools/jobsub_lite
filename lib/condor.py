@@ -124,7 +124,7 @@ def submit(f, vargs, schedd_add, cmd_args=[]):
         )
         os.system(cmd)
         print(
-            "Output will be in %s after running jobub_tranfer_data." % vargs["outdir"]
+            "Output will be in %s after running jobsub_transfer_data." % vargs["outdir"]
         )
     else:
         subm, nqueue = load_submit_file(f)
