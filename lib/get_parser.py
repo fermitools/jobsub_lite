@@ -29,6 +29,14 @@ def verify_executable_starts_with_file_colon(s):
         raise TypeError("executable must start with file://")
 
 
+class StoreGroupinEnvironment(argparse.Action):
+    """Action to store the given group in the GROUP environment variable"""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        os.environ["GROUP"] = values
+        setattr(namespace, self.dest, values)
+
+
 def get_parser():
     """build the argument parser and return it"""
     parser = argparse.ArgumentParser()
@@ -96,7 +104,10 @@ def get_parser():
         help="generate and mail a summary report of completed/failed/removed jobs in a DAG",
     )
     parser.add_argument(
-        "-G", "--group", help="Group/Experiment/Subgroup for priorities and accounting"
+        "-G",
+        "--group",
+        help="Group/Experiment/Subgroup for priorities and accounting",
+        action=StoreGroupinEnvironment,
     )
     parser.add_argument(
         "-L", "--log_file", help="Log file to hold log output from job."
