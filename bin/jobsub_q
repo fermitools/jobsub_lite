@@ -41,13 +41,31 @@ fi
 
 schedd=""
 case "x$*" in
-*@*) schedd=`echo "$*" | sed -e 's/.*@//' -e 's/ .*//'`
-     args=`echo "$*" | sed -e 's/@[^ ]*//'`
-     ;;
+*@*)
+    schedd=`echo "$*" | sed -e 's/.*@//' -e 's/ .*//'`
+    args=`echo "$*" | sed -e 's/@[^ ]*//'`
+    ;;
 esac
 if [ x$schedd != x ]
 then
     args="-name $schedd $args"
 fi
+
+# Check group and pull it into environment
+case "x$*" in
+*--group*)
+    group=`echo "$*" | sed -e 's/.*--group[=( )+]//' -e 's/ .*//'`
+    args=`echo "$*" | sed -e "s/--group[=( )+]$group//"`
+    ;;
+*-G*)
+    group=`echo "$*" | sed -e 's/.*-G[( )+]//' -e 's/ .*//'`
+    args=`echo "$*" | sed -e "s/-G[( )+]$group//"`
+    ;;
+esac
+if [ x$group != x ]
+then
+    export GROUP=group
+fi
+
 export BEARER_TOKEN_FILE=`fake_ifdh getToken`
 /usr/bin/condor_q -global $args | filter
