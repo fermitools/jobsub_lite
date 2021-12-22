@@ -22,6 +22,8 @@ case "x$*" in
 *@*) schedd=`echo "$*" | sed -e 's/.*@//' -e 's/ .*//'`
      args=`echo "$*" | sed -e 's/@[^ ]*//'`
      ;;
+*)  args="$*"
+    ;;
 esac
 if [ x$schedd != x ]
 then
