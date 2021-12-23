@@ -1,5 +1,5 @@
 Name:		jobsub_lite
-Version:	beta6
+Version:	beta8
 Release:	1%{?dist}
 Summary:	Job submission wrapper scripts
 
@@ -31,9 +31,9 @@ Job submission wrapper scripts
 
 %install
 mkdir -p $RPM_BUILD_ROOT/opt/jobsub_lite/bin
-mkdir -p $RPM_BUILD_ROOT/opt/jobsub_lite/lib/
-mkdir -p $RPM_BUILD_ROOT/opt/jobsub_lite/templates/
-mkdir -p $RPM_BUILD_ROOT/etc/condor/config.d/samples
+mkdir -p $RPM_BUILD_ROOT/opt/jobsub_lite/lib
+mkdir -p $RPM_BUILD_ROOT/opt/jobsub_lite/templates
+mkdir -p $RPM_BUILD_ROOT/etc/condor/config.d
 install -m 755 bin/* $RPM_BUILD_ROOT/opt/jobsub_lite/bin
 install -m 755 lib/* $RPM_BUILD_ROOT/opt/jobsub_lite/lib/
 for d in templates/*
@@ -41,12 +41,12 @@ do
     mkdir $RPM_BUILD_ROOT/opt/jobsub_lite/$d
     install -m 644 $d/* $RPM_BUILD_ROOT/opt/jobsub_lite/$d/
 done
-install -m 644 config.d/* $RPM_BUILD_ROOT/etc/condor/config.d/samples
+install -m 644 config.d/50-jobsub_lite.configs config.d/51-group_fermilab.configs $RPM_BUILD_ROOT/etc/condor/config.d/
 install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 
 %files
 %doc
-/opt/jobsub_lite/bin//condor_q
+/opt/jobsub_lite/bin/condor_q
 /opt/jobsub_lite/bin/condor_release
 /opt/jobsub_lite/bin/condor_rm
 /opt/jobsub_lite/bin/condor_submit
@@ -86,9 +86,8 @@ install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 /opt/jobsub_lite/templates/maxconcurrent_dag/maxconcurrent.dag
 /opt/jobsub_lite/templates/simple/simple.cmd
 /opt/jobsub_lite/templates/simple/simple.sh
-/etc/condor/config.d/samples/50-jobsub_lite.configs 
-/etc/condor/config.d/samples/51-group_dune.configs
-/etc/condor/config.d/samples/51-group_fermilab.configs
+/etc/condor/config.d/50-jobsub_lite.configs 
+/etc/condor/config.d/51-group_fermilab.configs
 /etc/profile.d/jobsub_lite.sh
 /etc/profile.d/jobsub_lite.csh
 /opt/jobsub_lite/lib/__pycache__/condor.cpython-36.pyc
