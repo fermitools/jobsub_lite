@@ -13,9 +13,9 @@ The basic design of jobsub_lite is straightforward. It will:
 * optionally upload tarballs to the fast cvmfs distribution service
 * add other data to the dictionary from the environment, etc.
 * render (Jinja) templates with info from said dictionary to generate:
-** condor .cmd file(s)
-** job wrapper script(s)
-** condor dagman .dag files (in some cases)
+        - condor .cmd file(s)
+        - job wrapper script(s)
+        - condor dagman .dag files (in some cases)
 * use the Condor python bindings and command line tools to submit the above
 
 There is also a simplified dagnabbit parser (again for past jobsub DAG tools compatbilit) that reuses the same command line parser to generate .cmd and .sh files for each stage in the DAG.
