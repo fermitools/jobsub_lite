@@ -9,9 +9,11 @@
 decode_token() {
     #
     # token is 3 base64 segments separated by dots
-    # we want the middle one
+    # we want the middle one. 
+    # the ending of the base64 segment is sometimes 
+    # chopped, so ignore errors about that
     #
-    sed -e 's/.*\.\(.*\)\..*/\1==/' "$1" | base64 -d 
+    sed -e 's/.*\.\(.*\)\..*/\1==/' "$1" 2>/dev/null | base64 -d  2>/dev/null
 }
 
 get_field() {
