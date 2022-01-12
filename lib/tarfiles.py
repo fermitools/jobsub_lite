@@ -86,20 +86,25 @@ def do_tarballs(args):
                 digest, tf = slurp_file(tfn[8:])
                 proxy, token = get_creds()
 
+                if token:
+                    f = open(token,'r')
+                    tokenstr = f.read()
+                    f.close()
+
                 if not args.group:
                     raise ValueError("No --group specified!")
                 cid = "".join((args.group, "%2F", digest))
-                location = pubapi_exists(cid, proxy)
+                location = pubapi_exists(cid, proxy) # tokenstr=tokenstr
                 if not location:
-                    pubapi_publish(cid, tf, proxy)
+                    pubapi_publish(cid, tf, proxy) # tokenstr=tokenstr
                     for i in range(20):
                         time.sleep(30)
-                        location = pubapi_exists(cid, proxy)
+                        location = pubapi_exists(cid, proxy) # tokenstr=tokenstr
                         if location:
                             break
                 else:
                     # tag it so it stays around
-                    pubapi_update(cid, proxy)
+                    pubapi_update(cid, proxy) # tokenstr=tokenstr
 
             elif args.use_dropbox == "pnfs":
                 location = dcache_persistent_path(args.group, tfn[8:])
@@ -123,37 +128,49 @@ def do_tarballs(args):
     args.tar_file_name = res
 
 
-def pubapi_update(cid, proxy):
+def pubapi_update(cid, proxy = None, tokenstr = None):
     """make pubapi update call to check if we already have this tarfile,
     return path.
     """
     dropbox_server = "rcds.fnal.gov"
     url = "https://%s/pubapi/update?cid=%s" % (dropbox_server, cid)
-    res = requests.get(url, cert=(proxy, proxy), verify=False)
+    if tokenstr:
+        headers = { 'Authorization': 'Bearer %s' % tokenstr}
+	res = requests.get(url, headers=headers , verify=False)
+    else:
+	res = requests.get(url, cert=(proxy, proxy), verify=False)
     if res.text[:8] == "PRESENT:":
         return res.text[8:]
     else:
         return None
 
 
-def pubapi_publish(cid, tf, proxy):
+def pubapi_publish(cid, tf, proxy = None, tokenstr = None):
     """make pubapi publish call to upload this tarfile, return path"""
     dropbox_server = "rcds.fnal.gov"
     url = "https://%s/pubapi/publish?cid=%s" % (dropbox_server, cid)
-    res = requests.post(url, cert=(proxy, proxy), data=tf, verify=False)
+    if tokenstr:
+        headers = { 'Authorization': 'Bearer %s' % tokenstr}
+        res = requests.post(url, headers=headers, data=tf, verify=False)
+    else:
+        res = requests.post(url, cert=(proxy, proxy), data=tf, verify=False)
     if res.text[:8] == "PRESENT:":
         return res.text[8:]
     else:
         return None
 
 
-def pubapi_exists(cid, proxy):
+def pubapi_exists(cid, proxy = None, tokenstr = None):
     """make pubapi update call to check if we already have this tarfile,
     return path.
     """
     dropbox_server = "rcds.fnal.gov"
     url = "https://%s/pubapi/exists?cid=%s" % (dropbox_server, cid)
-    res = requests.get(url, cert=(proxy, proxy), verify=False)
+    if tokenstr:
+        headers = { 'Authorization': 'Bearer %s' % tokenstr}
+	res = requests.get(url, headers=headers , verify=False)
+    else:
+        res = requests.get(url, cert=(proxy, proxy), verify=False)
     if res.text[:8] == "PRESENT:":
         return res.text[8:]
     else:
