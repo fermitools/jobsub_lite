@@ -64,7 +64,7 @@ def getToken():
     if not exp_time or ((int(exp_time) - time.time()) < 60):
         cmd = "htgettoken -a %s -i %s" % (vault_host, issuer)
         if role != "Analysis": 
-            cmd = "%s -r %" % (cmd, role)
+            cmd = "%s -r %s" % (cmd, role)
         # send htgettoken output to stderr because invokers read stdout
         os.system("%s >&2" % cmd)
         print(tokenfile)
