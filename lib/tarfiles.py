@@ -136,9 +136,9 @@ def pubapi_update(cid, proxy = None, tokenstr = None):
     url = "https://%s/pubapi/update?cid=%s" % (dropbox_server, cid)
     if tokenstr:
         headers = { 'Authorization': 'Bearer %s' % tokenstr}
-	res = requests.get(url, headers=headers , verify=False)
+        res = requests.get(url, headers=headers , verify=False)
     else:
-	res = requests.get(url, cert=(proxy, proxy), verify=False)
+        res = requests.get(url, cert=(proxy, proxy), verify=False)
     if res.text[:8] == "PRESENT:":
         return res.text[8:]
     else:
@@ -168,7 +168,7 @@ def pubapi_exists(cid, proxy = None, tokenstr = None):
     url = "https://%s/pubapi/exists?cid=%s" % (dropbox_server, cid)
     if tokenstr:
         headers = { 'Authorization': 'Bearer %s' % tokenstr}
-	res = requests.get(url, headers=headers , verify=False)
+        res = requests.get(url, headers=headers , verify=False)
     else:
         res = requests.get(url, cert=(proxy, proxy), verify=False)
     if res.text[:8] == "PRESENT:":
