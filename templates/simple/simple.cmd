@@ -59,6 +59,10 @@ requirements  = {%if overwrite_requirements %}{{overwrite_requirements}}{%else%}
 #
 #
 #
+{% if role and role != 'Analysis' %}
+use_oauth_services = {{group}}_{{role}}
+{% else %}
 use_oauth_services = {{group}}
+{% endif %}
 
 queue {{N}}
