@@ -68,7 +68,9 @@ def main():
     """
     cmd_args = sys.argv[1:]
 
-    proxy, token = get_creds(args)
+#   these args may/may not come from the input args
+    cred_args = {}
+    proxy, token = get_creds(cred_args)
 
     # put in environment for condor libs to use
     os.environ['X509_USER_PROXY'] = proxy
