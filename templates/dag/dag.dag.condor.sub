@@ -37,6 +37,11 @@ x509userproxy = {{proxy}}
 +Jobsub_Group="{{group}}"
 +JobsubJobId="$(CLUSTER).$(PROCESS)@{{schedd}}"
 
+{% if role and role != 'Analysis' %}
+use_oauth_services = {{group}}_{{role}}
+{% else %}
 use_oauth_services = {{group}}
+{% endif %}
+
 
 queue
