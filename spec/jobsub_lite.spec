@@ -47,6 +47,7 @@ install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 
 %files
 %doc
+%exclude /opt/jobsub_lite/*/*.py?
 /opt/jobsub_lite/bin/condor_q
 /opt/jobsub_lite/bin/condor_release
 /opt/jobsub_lite/bin/condor_rm
@@ -91,8 +92,12 @@ install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 /etc/condor/config.d/51-group_fermilab.configs
 /etc/profile.d/jobsub_lite.sh
 /etc/profile.d/jobsub_lite.csh
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-
+* Wed Feb 23 2022 Shreyas Bhat <sbhat@fnal.gov> beta8
+- Added creation of /etc/profile.d in install section
+- Only install .py files from lib/ and exclude all auto-compiled .py{co} files from lib/ in files section
+- Remove __pycache__ files from files section
