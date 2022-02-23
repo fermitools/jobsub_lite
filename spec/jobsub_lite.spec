@@ -34,6 +34,7 @@ mkdir -p $RPM_BUILD_ROOT/opt/jobsub_lite/bin
 mkdir -p $RPM_BUILD_ROOT/opt/jobsub_lite/lib
 mkdir -p $RPM_BUILD_ROOT/opt/jobsub_lite/templates
 mkdir -p $RPM_BUILD_ROOT/etc/condor/config.d
+mkdir -p $RPM_BUILD_ROOT/etc/profile.d
 install -m 755 bin/* $RPM_BUILD_ROOT/opt/jobsub_lite/bin
 install -m 755 lib/* $RPM_BUILD_ROOT/opt/jobsub_lite/lib/
 for d in templates/*
