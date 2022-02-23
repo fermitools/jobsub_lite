@@ -36,7 +36,7 @@ mkdir -p $RPM_BUILD_ROOT/opt/jobsub_lite/templates
 mkdir -p $RPM_BUILD_ROOT/etc/condor/config.d
 mkdir -p $RPM_BUILD_ROOT/etc/profile.d
 install -m 755 bin/* $RPM_BUILD_ROOT/opt/jobsub_lite/bin
-install -m 755 lib/* $RPM_BUILD_ROOT/opt/jobsub_lite/lib/
+install -m 755 lib/*.py $RPM_BUILD_ROOT/opt/jobsub_lite/lib/
 for d in templates/*
 do
     mkdir $RPM_BUILD_ROOT/opt/jobsub_lite/$d
@@ -91,22 +91,6 @@ install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 /etc/condor/config.d/51-group_fermilab.configs
 /etc/profile.d/jobsub_lite.sh
 /etc/profile.d/jobsub_lite.csh
-/opt/jobsub_lite/lib/__pycache__/condor.cpython-36.pyc
-/opt/jobsub_lite/lib/__pycache__/creds.cpython-36.pyc
-/opt/jobsub_lite/lib/__pycache__/dagnabbit.cpython-36.pyc
-/opt/jobsub_lite/lib/__pycache__/get_parser.cpython-36.pyc
-/opt/jobsub_lite/lib/__pycache__/packages.cpython-36.pyc
-/opt/jobsub_lite/lib/__pycache__/poms_wrap.cpython-36.pyc
-/opt/jobsub_lite/lib/__pycache__/tarfiles.cpython-36.pyc
-/opt/jobsub_lite/lib/__pycache__/utils.cpython-36.pyc
-/opt/jobsub_lite/lib/__pycache__/condor.cpython-36.opt-1.pyc
-/opt/jobsub_lite/lib/__pycache__/creds.cpython-36.opt-1.pyc
-/opt/jobsub_lite/lib/__pycache__/dagnabbit.cpython-36.opt-1.pyc
-/opt/jobsub_lite/lib/__pycache__/get_parser.cpython-36.opt-1.pyc
-/opt/jobsub_lite/lib/__pycache__/packages.cpython-36.opt-1.pyc
-/opt/jobsub_lite/lib/__pycache__/poms_wrap.cpython-36.opt-1.pyc
-/opt/jobsub_lite/lib/__pycache__/tarfiles.cpython-36.opt-1.pyc
-/opt/jobsub_lite/lib/__pycache__/utils.cpython-36.opt-1.pyc
 %clean
 rm -rf $RPM_BUILD_ROOT
 
