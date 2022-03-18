@@ -26,7 +26,7 @@ def get_creds(args={}):
     f.close()
     f = os.popen("fake_ifdh getToken","r") 
     t = f.read().strip()
-    f.close
+    f.close()
     os.environ["X509_USER_PROXY"] = p
     os.environ["BEARER_TOKEN_FILE"] = t
     return p, t
