@@ -4,9 +4,9 @@
 # want it to run the local one, so we give it this one...
 
 {% if role and role != 'Analysis' %}
-export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role}}.use
+export BEARER_TOKEN_FILE=$_CONDOR_CREDS/{{group}}_{{role}}.use
 {% else %}
-export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}.use
+export BEARER_TOKEN_FILE=$_CONDOR_CREDS/{{group}}.use
 {% endif %}
 export BEARER_TOKEN=`cat "$BEARER_TOKEN_FILE"`
 
