@@ -26,74 +26,82 @@ import os
 import time
 import argparse
 
-vault_host="fermicloud543.fnal.gov"
+vault_host = "fermicloud543.fnal.gov"
+
 
 def getTmp():
-    return os.environ.get("TMPDIR","/tmp")
+    return os.environ.get("TMPDIR", "/tmp")
+
 
 def getExp():
     for ev in ["GROUP", "EXPERIMENT", "SAM_EXPERIMENT"]:
         if os.environ.get(ev, None):
             return os.environ.get(ev)
     # otherwise guess primary group...
-    f = os.popen('id -gn', 'r')
+    f = os.popen("id -gn", "r")
     exp = f.read()
     f.close()
     return exp
 
-def getRole():
-    if os.environ["USER"][-3:] == "pro":
+
+def getRole(role_override=None):
+    if role_override:
+        return role_override
+    elif os.environ["USER"][-3:] == "pro":
         return "Production"
     else:
         return "Analysis"
 
-def getToken():
+
+def getToken(role):
     pid = os.getuid()
     tmp = getTmp()
     role = getRole()
     exp = getExp()
-    if exp  == "samdev":
+    if exp == "samdev":
         issuer = "fermilab"
     else:
         issuer = exp
-    tokenfile = '%s/bt_token_%s_%s_%s' % (tmp, issuer, role, pid)
+    tokenfile = "%s/bt_token_%s_%s_%s" % (tmp, issuer, role, pid)
     os.environ["BEARER_TOKEN_FILE"] = tokenfile
     f = os.popen("decode_token.sh -e exp %s 2>/dev/null" % tokenfile, "r")
     exp_time = f.read()
     f.close()
     if not exp_time or ((int(exp_time) - time.time()) < 60):
         cmd = "htgettoken -a %s -i %s" % (vault_host, issuer)
-        if role != "Analysis": 
+        if role != "Analysis":
             cmd = "%s -r %s" % (cmd, role)
         # send htgettoken output to stderr because invokers read stdout
         os.system("%s >&2" % cmd)
         print(tokenfile)
     else:
         print(tokenfile)
- 
-def getProxy():
+
+
+def getProxy(role):
     pid = os.getuid()
     tmp = getTmp()
-    role = getRole()
     exp = getExp()
-    certfile = '%s/x509up_u%s' % (tmp, pid)
-    if exp  == "samdev":
+    certfile = "%s/x509up_u%s" % (tmp, pid)
+    if exp == "samdev":
         issuer = "fermilab"
         igroup = "fermilab"
-    elif exp in ("lsst","dune","fermilab","des"):
+    elif exp in ("lsst", "dune", "fermilab", "des"):
         issuer = exp
         igroup = exp
     else:
         issuer = "fermilab"
         igroup = "fermilab/" + exp
-    vomsfile = '%s/x509up_%s_%s_%s' % (tmp, exp, role, pid)
+    vomsfile = "%s/x509up_%s_%s_%s" % (tmp, exp, role, pid)
     chk_cmd = "voms-proxy-info -exists -valid 0:10 -file %s" % vomsfile
     if 0 != os.system(chk_cmd):
         cmd = "cigetcert -i 'Fermi National Accelerator Laboratory' -n -o %s" % certfile
         # send htgettoken output to stderr because invokers read stdout
         os.system("%s >&2" % cmd)
-        cmd = "voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen -debug -cert %s -key %s -out %s -voms %s:/%s/Role=%s" % (
-             certfile,certfile, vomsfile, issuer, igroup, role)
+        cmd = (
+            "voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen -debug -cert %s -key %s -out %s -voms %s:/%s/Role=%s"
+            % (certfile, certfile, vomsfile, issuer, igroup, role)
+        )
 
         # send htgettoken output to stderr because invokers read stdout
         os.system("%s >&2" % cmd)
@@ -104,17 +112,33 @@ def getProxy():
     else:
         print(vomsfile)
 
+
 def cp(src, dest):
     os.system("gfal-copy %s %s" % (src, dest))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     commands = {"getProxy": getProxy, "getToken": getToken, "cp": cp}
     parser = argparse.ArgumentParser(description="ifdh subset replacement")
-    parser.add_argument('command', action='store', nargs=1, help='command')
-    parser.add_argument('--experiment', help='experiment name', default = os.environ.get("GROUP",None))
-    parser.add_argument('cpargs', default=None, action='append', nargs='*', help="copy arguments")
+    parser.add_argument("command", action="store", nargs=1, help="command")
+    parser.add_argument(
+        "--experiment", help="experiment name", default=os.environ.get("GROUP", None)
+    )
+    parser.add_argument("--role", help="role name", default=None)
+    parser.add_argument(
+        "cpargs", default=None, action="append", nargs="*", help="copy arguments"
+    )
 
     opts = parser.parse_args()
+    role = getRole(opts.role)
 
-    if opts.command and opts.command[0] and commands.get(opts.command[0], None):
-        commands[opts.command[0]](*opts.cpargs[0])
+    try:
+        if opts.command[0] == "cp":
+            commands[opts.command[0]](*opts.cpargs[0])
+        else:
+            commands[opts.command[0]](role)
+    except KeyError:
+        print(
+            "An invalid command to fake_ifdh was given.  Please select from "
+            f'one of the following: {", ".join(commands.keys())}'
+        )
