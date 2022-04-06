@@ -56,7 +56,7 @@ def getRole(role_override=None):
 def getToken(role):
     pid = os.getuid()
     tmp = getTmp()
-    role = getRole()
+    role = role.lower()  # Token-world wants all-lowercase roles
     exp = getExp()
     if exp == "samdev":
         issuer = "fermilab"
