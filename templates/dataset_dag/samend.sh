@@ -1,6 +1,10 @@
 #!/bin/sh -x
 
+{% if role and role != 'Analysis' %}
+export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role}}.use
+{% else %}
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}.use
+{% endif %}
 export BEARER_TOKEN=`cat "$BEARER_TOKEN_FILE"`
 
 setup_ifdh_env(){

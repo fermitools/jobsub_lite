@@ -28,7 +28,7 @@ def get_creds(args={}):
 
     f = subprocess.Popen('fake_ifdh getToken', shell=True, bufsize=0, stdout=subprocess.PIPE, universal_newlines=True).stdout
     t = f.read().strip()
-    f.close
+    f.close()
 
     os.environ["X509_USER_PROXY"] = p
     os.environ["BEARER_TOKEN_FILE"] = t
