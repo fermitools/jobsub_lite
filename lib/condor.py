@@ -35,12 +35,12 @@ def get_schedd(vargs):
     # need to directQuery for the full classads to check for
     # SupportedVOList...
 
-    print("classads:" , schedd_classads)
+    print("classads: ", schedd_classads)
 
     # pick schedds who do or do not have "dev" in their name, depending if
     # we have "devserver" set...
 
-    if vargs["devserver"]:
+    if 'devserver' in vargs and vargs["devserver"]:
         schedd_classads = [ca for ca in schedd_classads if ca.eval("Machine").find("dev") != -1]
     else:
         schedd_classads = [ca for ca in schedd_classads if ca.eval("Machine").find("dev") == -1]
@@ -95,7 +95,8 @@ def load_submit_file(filename):
 
 def submit(f, vargs, schedd_add, cmd_args=[]):
     """Actually submit the job, using condor python bindings"""
-    if vargs["no_submit"]:
+
+    if 'no_submit' in vargs and vargs["no_submit"]:
         print("NOT submitting file:\n%s\n" % f)
         return
     if f:
@@ -103,6 +104,9 @@ def submit(f, vargs, schedd_add, cmd_args=[]):
         fl = glob.glob(f)
         if fl:
             f = fl[0]
+
+    print("cmd=args: %s" % cmd_args)
+
     schedd_name = schedd_add.eval("Machine")
     schedd = htcondor.Schedd(schedd_add)
     print("schedd: %s" % schedd_name)

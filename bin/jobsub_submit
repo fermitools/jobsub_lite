@@ -162,7 +162,7 @@ def main():
     args = parser.parse_args()
 
 
-    proxy, token = get_creds(args)
+    proxy, token = get_creds()
     # put in environment for condor libs to use
     os.environ["X509_USER_PROXY"] = proxy
     os.environ["BEARER_TOKEN_FILE"] = token
