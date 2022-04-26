@@ -70,6 +70,9 @@ def do_tarballs(args):
     we convert the argument to the next type as we go...
     """
 
+    NUM_RETRIES_UPLOAD = 20
+    RETRY_INTERVAL_SEC = 30
+    
     res = []
     clean_up = []
     for tfn in args.tar_file_name:
@@ -82,29 +85,29 @@ def do_tarballs(args):
         if tfn.startswith("dropbox:"):
             # move it to dropbox area, pretend they gave us plain path
 
-            if args.use_dropbox == "cvmfs" or args.use_dropbox == None:
+            if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
                 digest, tf = slurp_file(tfn[8:])
                 proxy, token = get_creds()
 
                 if token:
                     f = open(token,'r')
-                    tokenstr = f.read()
+                    token_string = f.read()
                     f.close()
 
                 if not args.group:
                     raise ValueError("No --group specified!")
                 cid = "".join((args.group, "%2F", digest))
-                location = pubapi_exists(cid, proxy) # tokenstr=tokenstr
-                if not location:
-                    pubapi_publish(cid, tf, proxy) # tokenstr=tokenstr
-                    for i in range(20):
-                        time.sleep(30)
-                        location = pubapi_exists(cid, proxy) # tokenstr=tokenstr
-                        if location:
+                location = pubapi_exists(cid, tokenstr=token_string) 
+                if location is None:
+                    pubapi_publish(cid, tf, tokenstr=token_string) 
+                    for i in range(NUM_RETRIES_UPLOAD):
+                        time.sleep(RETRY_INTERVAL_SEC)
+                        location = pubapi_exists(cid, tokenstr=token_string) 
+                        if location is not None:
                             break
                 else:
                     # tag it so it stays around
-                    pubapi_update(cid, proxy) # tokenstr=tokenstr
+                    pubapi_update(cid, tokenstr=token_string) 
 
             elif args.use_dropbox == "pnfs":
                 location = dcache_persistent_path(args.group, tfn[8:])
