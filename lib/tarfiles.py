@@ -90,9 +90,9 @@ def do_tarballs(args):
                 proxy, token = get_creds()
 
                 if token:
-                    f = open(token,'r')
-                    token_string = f.read()
-                    f.close()
+                    with open(token, 'r') as f:
+                        token_string = f.read()
+                        token_string = token_string.strip() # Drop \n at end of token_string
 
                 if not args.group:
                     raise ValueError("No --group specified!")
