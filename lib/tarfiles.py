@@ -95,6 +95,10 @@ def do_tarballs(args):
                     raise ValueError("No --group specified!")
 
                 cid = "".join((args.group, "%2F", digest))
+                if args.verbose:
+                    print("Using RCDS to publish tarball"
+                          f"cid: {cid}"
+                    )
 
                 publisher = TarfilePublisherHandler(cid, proxy, token)
                 location = publisher.cid_exists()
