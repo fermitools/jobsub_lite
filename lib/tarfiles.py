@@ -21,6 +21,7 @@ import os.path
 import re
 import sys
 import time
+from urllib.parse import quote as _quote
 
 import requests
 
@@ -94,12 +95,10 @@ def do_tarballs(args):
                 if not args.group:
                     raise ValueError("No --group specified!")
 
-                cid = "".join((args.group, "%2F", digest))
+                # cid looks something like dune/bf6a15b4238b72f82...(long hash)
+                cid = f"{args.group}/{digest}"
                 if args.verbose:
-                    from urllib.parse import unquote as _unquote
-
-                    _cid = _unquote(cid)
-                    print(f"Using RCDS to publish tarball\ncid: {_cid}")
+                    print(f"Using RCDS to publish tarball\ncid: {cid}")
 
                 publisher = TarfilePublisherHandler(cid, proxy, token)
                 location = publisher.cid_exists()
@@ -153,11 +152,11 @@ class TarfilePublisherHandler(object):
     )  # RCDS returns this if a tarball represented by cid is present
 
     def __init__(self, cid, proxy=None, token=None):
-        self.cid = cid
+        self.cid_url = _quote(cid, safe="")  # Encode CID for passing to URL
         self.proxy = proxy
         self.token = token
         self.pubapi_base_url_formatter = (
-            f"{self.pubapi_base_url}/{{endpoint}}?cid={self.cid}"
+            f"{self.pubapi_base_url}/{{endpoint}}?cid={self.cid_url}"
         )
         if token is not None:
             self.request_headers = self.__make_request_token_headers()
