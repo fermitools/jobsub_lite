@@ -18,9 +18,11 @@ from functools import wraps
 import hashlib
 import os
 import os.path
-import requests
+import re
 import sys
 import time
+
+import requests
 
 
 def tar_up(directory, excludes):
@@ -72,7 +74,7 @@ def do_tarballs(args):
 
     NUM_RETRIES_UPLOAD = 20
     RETRY_INTERVAL_SEC = 30
-    
+
     res = []
     clean_up = []
     for tfn in args.tar_file_name:
@@ -89,25 +91,23 @@ def do_tarballs(args):
                 digest, tf = slurp_file(tfn[8:])
                 proxy, token = get_creds()
 
-                if token:
-                    with open(token, 'r') as f:
-                        token_string = f.read()
-                        token_string = token_string.strip() # Drop \n at end of token_string
-
                 if not args.group:
                     raise ValueError("No --group specified!")
+
                 cid = "".join((args.group, "%2F", digest))
-                location = pubapi_exists(cid, tokenstr=token_string) 
+
+                publisher = TarfilePublisherHandler(cid, proxy, token)
+                location = publisher.cid_exists()
                 if location is None:
-                    pubapi_publish(cid, tf, tokenstr=token_string) 
+                    publisher.publish(tf)
                     for i in range(NUM_RETRIES_UPLOAD):
                         time.sleep(RETRY_INTERVAL_SEC)
-                        location = pubapi_exists(cid, tokenstr=token_string) 
+                        location = publisher.cid_exists()
                         if location is not None:
                             break
                 else:
                     # tag it so it stays around
-                    pubapi_update(cid, tokenstr=token_string) 
+                    publisher.update_cid()
 
             elif args.use_dropbox == "pnfs":
                 location = dcache_persistent_path(args.group, tfn[8:])
@@ -131,50 +131,97 @@ def do_tarballs(args):
     args.tar_file_name = res
 
 
-def pubapi_update(cid, proxy = None, tokenstr = None):
-    """make pubapi update call to check if we already have this tarfile,
-    return path.
+class TarfilePublisherHandler(object):
+    """Handler to publish tarballs via HTTP to RCDS (or future dropbox server)
+
+    Args:
+        object (_type_): _description_
+        cid (str): unique group/hash combination that RCDS uses to locate tarballs
+        proxy (str): Location of X509 Proxy file to authenticate to RCDS
+        token (str): Location of JWT/Sci-token to authenticate to RCDS
     """
+
     dropbox_server = "rcds.fnal.gov"
-    url = "https://%s/pubapi/update?cid=%s" % (dropbox_server, cid)
-    if tokenstr:
-        headers = { 'Authorization': 'Bearer %s' % tokenstr}
-        res = requests.get(url, headers=headers , verify=False)
-    else:
-        res = requests.get(url, cert=(proxy, proxy), verify=False)
-    if res.text[:8] == "PRESENT:":
-        return res.text[8:]
-    else:
-        return None
+    pubapi_base_url = f"https://{dropbox_server}/pubapi"
+    check_tarball_present_re = re.compile(
+        "^PRESENT\:(.+)$"
+    )  # RCDS returns this if a tarball represented by cid is present
 
+    def __init__(self, cid, proxy=None, token=None):
+        self.cid = cid
+        self.proxy = proxy
+        self.token = token
+        self.pubapi_base_url_formatter = (
+            f"{self.pubapi_base_url}/{{endpoint}}?cid={self.cid}"
+        )
+        if token is not None:
+            self.request_headers = self.__make_request_token_headers()
 
-def pubapi_publish(cid, tf, proxy = None, tokenstr = None):
-    """make pubapi publish call to upload this tarfile, return path"""
-    dropbox_server = "rcds.fnal.gov"
-    url = "https://%s/pubapi/publish?cid=%s" % (dropbox_server, cid)
-    if tokenstr:
-        headers = { 'Authorization': 'Bearer %s' % tokenstr}
-        res = requests.post(url, headers=headers, data=tf, verify=False)
-    else:
-        res = requests.post(url, cert=(proxy, proxy), data=tf, verify=False)
-    if res.text[:8] == "PRESENT:":
-        return res.text[8:]
-    else:
-        return None
+    # Some sort of wrapper to wrap the above three
+    def pubapi_operation(func):
+        """Wrap various PubAPI operations, return path if we get it from response"""
 
+        def wrapper(self, *args, **kwargs):
+            response = func(self, *args, **kwargs)
+            _match = self.check_tarball_present_re.match(response.text)
+            if _match is not None:
+                return _match.group(1)
+            return None
 
-def pubapi_exists(cid, proxy = None, tokenstr = None):
-    """make pubapi update call to check if we already have this tarfile,
-    return path.
-    """
-    dropbox_server = "rcds.fnal.gov"
-    url = "https://%s/pubapi/exists?cid=%s" % (dropbox_server, cid)
-    if tokenstr:
-        headers = { 'Authorization': 'Bearer %s' % tokenstr}
-        res = requests.get(url, headers=headers , verify=False)
-    else:
-        res = requests.get(url, cert=(proxy, proxy), verify=False)
-    if res.text[:8] == "PRESENT:":
-        return res.text[8:]
-    else:
-        return None
+        return wrapper
+
+    @pubapi_operation
+    def update_cid(self):
+        """Make PubAPI update call to check if we already have this tarfile
+
+        Returns:
+            requests.Response: Response from PubAPI call indicating if tarball
+            represented by self.cid is present
+        """
+        url = self.pubapi_base_url_formatter.format(endpoint="update")
+        if self.token:
+            return requests.get(url, headers=self.request_headers, verify=False)
+        else:
+            return requests.get(url, cert=(self.proxy, self.proxy), verify=False)
+
+    @pubapi_operation
+    def publish(self, tarfile):
+        """Make PubAPI publish call to upload this tarfile
+
+        Args:
+            tarfile (bytes): Byte-string of tarfile #TODO CHECK THIS
+
+        Returns:
+            requests.Response: Response from PubAPI call indicating if tarball
+            represented by self.cid is present
+        """
+        url = self.pubapi_base_url_formatter.format(endpoint="publish")
+        if self.token:
+            return requests.post(
+                url, headers=self.request_headers, data=tarfile, verify=False
+            )
+        else:
+            return requests.post(
+                url, cert=(self.proxy, self.proxy), data=tarfile, verify=False
+            )
+
+    @pubapi_operation
+    def cid_exists(self):
+        """Make PubAPI update call to check if we already have this tarfile
+
+        Returns:
+            requests.Response: Response from PubAPI call indicating if tarball
+            represented by self.cid is present
+        """
+        url = self.pubapi_base_url_formatter.format(endpoint="exists")
+        if self.token:
+            return requests.get(url, headers=self.request_headers, verify=False)
+        else:
+            return requests.get(url, cert=(self.proxy, self.proxy), verify=False)
+
+    def __make_request_token_headers(self):
+        with open(self.token, "r") as f:
+            token_string = f.read()
+        token_string = token_string.strip()  # Drop \n at end of token_string
+        header = {"Authorization": f"Bearer {token_string}"}
+        return header
