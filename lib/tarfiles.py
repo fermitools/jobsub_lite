@@ -96,9 +96,8 @@ def do_tarballs(args):
 
                 cid = "".join((args.group, "%2F", digest))
                 if args.verbose:
-                    print("Using RCDS to publish tarball"
-                          f"cid: {cid}"
-                    )
+	                _cid = re.sub("\%2F", "/", cid)
+                    print(f"Using RCDS to publish tarball\ncid: {_cid}")
 
                 publisher = TarfilePublisherHandler(cid, proxy, token)
                 location = publisher.cid_exists()
