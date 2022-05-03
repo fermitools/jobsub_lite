@@ -184,8 +184,10 @@ class TarfilePublisherHandler(object):
         """
         url = self.pubapi_base_url_formatter.format(endpoint="update")
         if self.token:
+            print(f"Using bearer token located at {self.token} to authenticate to RCDS")
             return requests.get(url, headers=self.request_headers, verify=False)
         else:
+            print(f"Using X509 proxy located at {self.proxy} to authenticate to RCDS")
             return requests.get(url, cert=(self.proxy, self.proxy), verify=False)
 
     @pubapi_operation
