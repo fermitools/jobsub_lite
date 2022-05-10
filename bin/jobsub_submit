@@ -215,9 +215,10 @@ def main():
     else:
         d = "%s/templates/simple" % PREFIX
         render_files(d, varg, submitdir)
+        schedd_args = "-remote %s" %(schedd_name)
         if not varg.get("no_submit",False):
             os.chdir(varg["submitdir"])
-            submit(os.path.join(submitdir, "*.cmd"), varg, schedd_add)
+            submit(os.path.join(submitdir, "*.cmd"), varg, schedd_args, schedd_name)
 
 
 if __name__ == "__main__":

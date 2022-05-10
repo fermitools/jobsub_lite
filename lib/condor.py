@@ -20,6 +20,7 @@ import re
 import htcondor
 import random
 import packages
+import subprocess
 
 random.seed()
 
@@ -93,7 +94,7 @@ def load_submit_file(filename):
     return htcondor.Submit(res), nqueue
 
 
-def submit(f, vargs, schedd_add, cmd_args=[]):
+def submit(f, vargs, schedd_args, schedd_name, cmd_args=[]):
     """Actually submit the job, using condor python bindings"""
 
     if 'no_submit' in vargs and vargs["no_submit"]:
@@ -101,40 +102,44 @@ def submit(f, vargs, schedd_add, cmd_args=[]):
         return
     if f:
         print("submitting: %s" % f)
+        schedd_args = schedd_args + " %s" %(f)
         fl = glob.glob(f)
         if fl:
             f = fl[0]
 
-    print("cmd=args: %s" % cmd_args)
+    print("cmd_args: %s" % cmd_args)
 
-    schedd_name = schedd_add.eval("Machine")
-    schedd = htcondor.Schedd(schedd_add)
-    print("schedd: %s" % schedd_name)
+# commenting this out for now since the 'else' is not implemented
+#    if True:
 
-    if True:
-        cmd = "/usr/bin/condor_submit -pool %s -remote %s %s %s" % (
-            COLLECTOR_HOST,
-            schedd_name,
-            f,
-            " ".join(["'%s'" % x for x in cmd_args]),
-        )
-        cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
-        cmd = "_condor_CREDD_HOST=%s %s" % (schedd_name, cmd)
-        packages.orig_env()
-        print("Running: %s" % cmd)
-        cmd = '%s | sed -e "s/\\(submitted.to.cluster.*\\)\\./\\1@%s/"' % (
-            cmd,
-            schedd_name,
-        )
-        os.system(cmd)
-        print(
-            "Output will be in %s after running jobsub_transfer_data." % vargs["outdir"]
-        )
-    else:
-        subm, nqueue = load_submit_file(f)
-        with schedd.transaction() as txn:
-            cluster = subm.queue(txn, count=nqueue)
-        print("jobid: %s@%s" % (cluster, schedd_name))
+    cmd = "/usr/bin/condor_submit -pool %s %s %s" % (
+        COLLECTOR_HOST,
+        schedd_args,
+        " ".join(["'%s'" % x for x in cmd_args]),
+    )
+    cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
+    cmd = "_condor_CREDD_HOST=%s %s" % (schedd_name, cmd)
+    packages.orig_env()
+    print("Running: %s" % cmd)
+
+    try:
+        output = subprocess.run(cmd, shell=True)
+        if output.returncode < 0:
+            print("Child was terminated by signal", -output.returncode)
+        else:
+            if 'outdir' in vargs:
+                print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
+    except OSError as e:
+        print("Execution failed: ", e)
+         
+
+# This 'else' is not currently implemented
+#    else:
+#        subm, nqueue = load_submit_file(f)
+#        with schedd.transaction() as txn:
+#            cluster = subm.queue(txn, count=nqueue)
+#        print("jobid: %s@%s" % (cluster, schedd_name))
+
     return
 
 

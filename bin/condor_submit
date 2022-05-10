@@ -44,7 +44,7 @@ import packages
 #
 # import our local parts
 #
-from condor import get_schedd
+from condor import get_schedd, submit
 from creds import get_creds
 
 COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", "gpcollector03.fnal.gov")
@@ -94,70 +94,58 @@ def main():
         help="Submit to the specified condor_schedd, spooling all required input files over the network connection")
 
     condor_parser.add_argument(
+        "-v",
+        "--verbose",
+        required=False,
+        help="Verbose output",
+        action='store_true')
+
+    # currently not used, but wanted to put the placeholder in
+    condor_parser.add_argument(
         "--credentials",
         help="credential information")
 
 
 #   PARSE ARGS TO GET SUBMISSION ARGUMENTS
+    args, cmd_args = condor_parser.parse_known_args()
 
-    args_tuple = condor_parser.parse_known_args()
-
-    if args_tuple[0].group is not None:
-        group = args_tuple[0].group
+    if args.group is not None:
+        group = args.group
     else:
         group = os.environ["GROUP"]
 
-    if args_tuple[0].name is not None:
-        schedd_name = args_tuple[0].name
-    elif args_tuple[0].remote is not None:
-        schedd_name = args_tuple[0].remote
+    if args.name is not None:
+        schedd_name = args.name
+    elif args.remote is not None:
+        schedd_name = args.remote
     else:
         schedd_add = get_schedd({"group": group})
         schedd_name = schedd_add.eval("Machine")
-    
-    cmd_args = args_tuple[1]
 
-    print("schedd_name is : %s" % schedd_name)
-    print("cmd_args is : %s" % cmd_args)
+    if args.verbose:
+        print("schedd_name is : %s" % schedd_name)
+        print("cmd_args is : %s" % cmd_args)
 
-
-    if args_tuple[0].spool:
-       schedd_args = "-name '%s' -spool" %(schedd_name)
+    if args.spool:
+       schedd_args = "-name %s -spool" %(schedd_name)
     else:
-       schedd_args = "-remote '%s'" %(schedd_name)
+       schedd_args = "-remote %s" %(schedd_name)
 
 
 #   GET CREDENTIALS
 #   these args may/may not come from the input args. for now let's keep it empty  
     cred_args = {}
-    if args_tuple[0].credentials is not None:
-        cred_args = args_tuple[0].credentials
+    if args.credentials is not None:
+        cred_args = args.credentials
 
-    proxy, token = get_creds(cred_args)   
-    print("proxy is : %s" % proxy)
-    print("token is : %s" % token)
-
-# put in environment for condor libs to use
-    os.environ["X509_USER_PROXY"] = proxy
-    os.environ["BEARER_TOKEN_FILE"] = token
+    proxy, token = get_creds(cred_args)
+    if args.verbose:
+        print("proxy is : %s" % proxy)
+        print("token is : %s" % token)
 
 
-#   CREATE SUBMIT COMMAND
-    cmd = "/usr/bin/condor_submit -pool %s %s %s" % (
-            COLLECTOR_HOST,
-            schedd_args,
-            " ".join(["'%s'" % x for x in cmd_args]),
-        )
-    cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
-    cmd = "_condor_CREDD_HOST=%s %s" % (schedd_name, cmd)
-    packages.orig_env()
-    print("Running: %s" % cmd)
-
-    cmd = '%s | sed -e "s/\\(submitted.to.cluster.*\\)\\./\\1@%s/"' % (
-        cmd,
-        schedd_name,
-    )
-    os.system(cmd)
+#   SUBMIT
+    submit('', {}, schedd_args, schedd_name, cmd_args)
 
 
 if __name__ == "__main__":
