@@ -73,8 +73,8 @@ def do_tarballs(args):
     we convert the argument to the next type as we go...
     """
 
-    NUM_RETRIES_UPLOAD = 20
-    RETRY_INTERVAL_SEC = 30
+    NUM_RETRIES_UPLOAD = os.getenv("JOBSUB_NUM_RETRIES_UPLOAD", 20)
+    RETRY_INTERVAL_SEC = os.getenv("JOBSUB_RETRY_INTERVAL_SEC", 30)
 
     res = []
     clean_up = []
@@ -145,7 +145,7 @@ class TarfilePublisherHandler(object):
         token (str): Location of JWT/Sci-token to authenticate to RCDS
     """
 
-    dropbox_server = "rcds.fnal.gov"
+    dropbox_server = os.getenv("JOBSUB_DROPBOX_SERVER", "rcds.fnal.gov")
     pubapi_base_url = f"https://{dropbox_server}/pubapi"
     check_tarball_present_re = re.compile(
         "^PRESENT\:(.+)$"
