@@ -22,13 +22,11 @@ def get_creds(args={}):
     myproxy, nor does it yet deal with tokens, but those should
     be done here as needed.
     """
-    p = subprocess.run('fake_ifdh getProxy', shell=True, bufsize=0, stdout=subprocess.PIPE, universal_newlines=True).stdout   
-    t = subprocess.run('fake_ifdh getToken', shell=True, bufsize=0, stdout=subprocess.PIPE, universal_newlines=True).stdout
 
-    p = p.strip()
-    t = t.strip()
+    p = subprocess.run('fake_ifdh getProxy', shell=True, bufsize=0, stdout=subprocess.PIPE, universal_newlines=True, check=True).stdout   
+    t = subprocess.run('fake_ifdh getToken', shell=True, bufsize=0, stdout=subprocess.PIPE, universal_newlines=True, check=True).stdout
 
-    os.environ["X509_USER_PROXY"] = p
-    os.environ["BEARER_TOKEN_FILE"] = t
+    os.environ["X509_USER_PROXY"] = p.strip()
+    os.environ["BEARER_TOKEN_FILE"] = t.strip()
 
     return p, t

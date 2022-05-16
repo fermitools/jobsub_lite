@@ -163,9 +163,10 @@ def main():
 
 
     proxy, token = get_creds()
-    # put in environment for condor libs to use
-    os.environ["X509_USER_PROXY"] = proxy
-    os.environ["BEARER_TOKEN_FILE"] = token
+    if args.verbose:
+        print("proxy is : %s" % proxy)
+        print("token is : %s" % token)
+
     do_tarballs(args)
 
     varg = vars(args)
@@ -175,6 +176,7 @@ def main():
     schedd_name = schedd_add.eval("Machine")
     set_extras_n_fix_units(varg, schedd_name, proxy, token)
     submitdir = varg["outdir"]
+
     # if proxy:
     #    proxy_dest=os.path.join(submitdir,os.path.basename(proxy))
     #    shutil.copyfile(proxy, proxy_dest)
@@ -218,7 +220,7 @@ def main():
         schedd_args = "-remote %s" %(schedd_name)
         if not varg.get("no_submit",False):
             os.chdir(varg["submitdir"])
-            submit(os.path.join(submitdir, "*.cmd"), varg, schedd_args, schedd_name)
+            submit(os.path.join(submitdir, "*.cmd"), varg, schedd_args)
 
 
 if __name__ == "__main__":

@@ -94,8 +94,15 @@ def load_submit_file(filename):
     return htcondor.Submit(res), nqueue
 
 
-def submit(f, vargs, schedd_args, schedd_name, cmd_args=[]):
+def submit(f, vargs, schedd_args, cmd_args=[]):
     """Actually submit the job, using condor python bindings"""
+
+    #get schedd_name from schedd_args
+    # by design, schedd_args has the form '-name <schedd_name> -spool' or '-remote <schedd_name>'
+    # so the schedd_name is the 2nd word in the string
+   
+    wordlist = schedd_args.split()
+    schedd_name = wordlist[1]
 
     if 'no_submit' in vargs and vargs["no_submit"]:
         print("NOT submitting file:\n%s\n" % f)
@@ -162,5 +169,15 @@ def submit_dag(f, vargs, schedd_add, cmd_args=[]):
 
         cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
         print("Running: %s" % cmd)
-        os.system(cmd)
+
+    try:
+        output = subprocess.run(cmd, shell=True)
+        if output.returncode < 0:
+            print("Child was terminated by signal", -output.returncode)
+        else:
+            if 'outdir' in vargs:
+                print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
+    except OSError as e:
+        print("Execution failed: ", e)
+
     submit(subfile, vargs, schedd_add)

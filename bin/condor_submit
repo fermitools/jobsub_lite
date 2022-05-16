@@ -145,7 +145,7 @@ def main():
 
 
 #   SUBMIT
-    submit('', {}, schedd_args, schedd_name, cmd_args)
+    submit('', {}, schedd_args, cmd_args)
 
 
 if __name__ == "__main__":
