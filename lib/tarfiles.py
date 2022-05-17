@@ -73,9 +73,17 @@ def do_tarballs(args):
        a plain path to just use
     we convert the argument to the next type as we go...
     """
-
-    NUM_RETRIES_UPLOAD = os.getenv("JOBSUB_NUM_RETRIES_UPLOAD", 20)
-    RETRY_INTERVAL_SEC = os.getenv("JOBSUB_RETRY_INTERVAL_SEC", 30)
+    try:
+        _NUM_RETRIES_ENV = os.getenv("JOBSUB_UPLOAD_NUM_RETRIES", 20)
+        NUM_RETRIES = int(_NUM_RETRIES_ENV)
+        _RETRY_INTERVAL_SEC_ENV = os.getenv("JOBSUB_UPLOAD_RETRY_INTERVAL_SEC", 30)
+        RETRY_INTERVAL_SEC = int(_RETRY_INTERVAL_SEC_ENV)
+    except ValueError:
+        print(
+            "Retry variables JOBSUB_UPLOAD_NUM_RETRIES and "
+            "JOBSUB_UPLOAD_RETRY_INTERVAL_SEC must be either unset or integers"
+        )
+        raise
 
     res = []
     clean_up = []
@@ -105,7 +113,7 @@ def do_tarballs(args):
                 location = publisher.cid_exists()
                 if location is None:
                     publisher.publish(tf)
-                    for i in range(NUM_RETRIES_UPLOAD):
+                    for i in range(NUM_RETRIES):
                         time.sleep(RETRY_INTERVAL_SEC)
                         location = publisher.cid_exists()
                         if location is not None:
