@@ -18,6 +18,7 @@ from functools import wraps
 import hashlib
 import os
 import os.path
+import random
 import re
 import sys
 import time
@@ -144,9 +145,7 @@ class TarfilePublisherHandler(object):
         proxy (str): Location of X509 Proxy file to authenticate to RCDS
         token (str): Location of JWT/Sci-token to authenticate to RCDS
     """
-
-    dropbox_server = os.getenv("JOBSUB_DROPBOX_SERVER", "rcds.fnal.gov")
-    pubapi_base_url = f"https://{dropbox_server}/pubapi"
+    dropbox_server_string = os.getenv("JOBSUB_DROPBOX_SERVER_LIST", "rcds01.fnal.gov rcds02.fnal.gov")
     check_tarball_present_re = re.compile(
         "^PRESENT\:(.+)$"
     )  # RCDS returns this if a tarball represented by cid is present
@@ -155,21 +154,23 @@ class TarfilePublisherHandler(object):
         self.cid_url = _quote(cid, safe="")  # Encode CID for passing to URL
         self.proxy = proxy
         self.token = token
-        self.pubapi_base_url_formatter = (
-            f"{self.pubapi_base_url}/{{endpoint}}?cid={self.cid_url}"
-        )
         if token is not None:
             self.request_headers = self.__make_request_token_headers()
             print(f"Using bearer token located at {self.token} to authenticate to RCDS")
         else:
             print(f"Using X509 proxy located at {self.proxy} to authenticate to RCDS")
-
+        self.dropbox_servers = tuple(dropbox_server_string.split())
+        self.pubapi_base_url_formatter = (
+            f"https://{{dropbox_server}}/pubapi/{{endpoint}}?cid={self.cid_url}"
+        )
 
     # Some sort of wrapper to wrap the above three
     def pubapi_operation(func):
         """Wrap various PubAPI operations, return path if we get it from response"""
-
         def wrapper(self, *args, **kwargs):
+            # TODO:  retry loop
+            _dropbox_server = self.__select_dropbox_server()
+            self.pubapi_base_url_formatter = self.pubapi_base_url_formatter.format(dropbox_server=_dropbox_server)
             response = func(self, *args, **kwargs)
             _match = self.check_tarball_present_re.match(response.text)
             if _match is not None:
@@ -228,8 +229,21 @@ class TarfilePublisherHandler(object):
             return requests.get(url, cert=(self.proxy, self.proxy), verify=False)
 
     def __make_request_token_headers(self):
+        """Create headers for token auth to dropbox server"""
         with open(self.token, "r") as f:
             token_string = f.read()
         token_string = token_string.strip()  # Drop \n at end of token_string
         header = {"Authorization": f"Bearer {token_string}"}
         return header
+
+    def __select_dropbox_server(self):
+        """Yield a dropbox server for client to upload tarball to"""
+        dropbox_servers_working_list = []
+        while True:
+            if len(dropbox_servers_working_list) == 0:
+                dropbox_servers_working_list = list(self.dropbox_servers)
+                random.shuffle(dropbox_servers_working_list)
+            yield dropbox_servers_working_list.pop()
+
+
+
