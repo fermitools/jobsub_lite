@@ -26,6 +26,18 @@ from urllib.parse import quote as _quote
 
 import requests
 
+try:
+    _NUM_RETRIES_ENV = os.getenv("JOBSUB_UPLOAD_NUM_RETRIES", 20)
+    NUM_RETRIES = int(_NUM_RETRIES_ENV)
+    _RETRY_INTERVAL_SEC_ENV = os.getenv("JOBSUB_UPLOAD_RETRY_INTERVAL_SEC", 30)
+    RETRY_INTERVAL_SEC = int(_RETRY_INTERVAL_SEC_ENV)
+except ValueError:
+    print(
+        "Retry variables JOBSUB_UPLOAD_NUM_RETRIES and "
+        "JOBSUB_UPLOAD_RETRY_INTERVAL_SEC must be either unset or integers"
+    )
+    raise
+
 
 def tar_up(directory, excludes):
     """build path/to/directory.tar from path/to/directory"""
@@ -73,18 +85,6 @@ def do_tarballs(args):
        a plain path to just use
     we convert the argument to the next type as we go...
     """
-    try:
-        _NUM_RETRIES_ENV = os.getenv("JOBSUB_UPLOAD_NUM_RETRIES", 20)
-        NUM_RETRIES = int(_NUM_RETRIES_ENV)
-        _RETRY_INTERVAL_SEC_ENV = os.getenv("JOBSUB_UPLOAD_RETRY_INTERVAL_SEC", 30)
-        RETRY_INTERVAL_SEC = int(_RETRY_INTERVAL_SEC_ENV)
-    except ValueError:
-        print(
-            "Retry variables JOBSUB_UPLOAD_NUM_RETRIES and "
-            "JOBSUB_UPLOAD_RETRY_INTERVAL_SEC must be either unset or integers"
-        )
-        raise
-
     res = []
     clean_up = []
     for tfn in args.tar_file_name:
@@ -176,7 +176,7 @@ class TarfilePublisherHandler(object):
     def pubapi_operation(func):
         """Wrap various PubAPI operations, return path if we get it from response"""
         def wrapper(self, *args, **kwargs):
-            # TODO:  retry loop
+            # TODO:  retry loop.
             _dropbox_server = self.__select_dropbox_server()
             self.pubapi_base_url_formatter = self.pubapi_base_url_formatter.format(dropbox_server=_dropbox_server)
             response = func(self, *args, **kwargs)
