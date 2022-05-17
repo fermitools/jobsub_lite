@@ -176,10 +176,15 @@ class TarfilePublisherHandler(object):
     def pubapi_operation(func):
         """Wrap various PubAPI operations, return path if we get it from response"""
         def wrapper(self, *args, **kwargs):
-            # TODO:  retry loop.
-            _dropbox_server = self.__select_dropbox_server()
-            self.pubapi_base_url_formatter = self.pubapi_base_url_formatter.format(dropbox_server=_dropbox_server)
-            response = func(self, *args, **kwargs)
+            for _ in range(NUM_RETRIES):
+                try:
+                    _dropbox_server = self.__select_dropbox_server()
+                    self.pubapi_base_url_formatter = self.pubapi_base_url_formatter.format(dropbox_server=_dropbox_server)
+                    response = func(self, *args, **kwargs)
+                except:
+                    time.sleep(RETRY_INTERVAL_SEC)
+                else:
+                    break
             _match = self.check_tarball_present_re.match(response.text)
             if _match is not None:
                 return _match.group(1)
