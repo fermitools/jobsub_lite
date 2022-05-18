@@ -167,7 +167,7 @@ class TarfilePublisherHandler(object):
             print(f"Using bearer token located at {self.token} to authenticate to RCDS")
         else:
             print(f"Using X509 proxy located at {self.proxy} to authenticate to RCDS")
-        self.dropbox_servers = tuple(dropbox_server_string.split())
+        self.dropbox_servers = tuple(self.dropbox_server_string.split())
         self.pubapi_base_url_formatter = (
             f"https://{{dropbox_server}}/pubapi/{{endpoint}}?cid={self.cid_url}"
         )
