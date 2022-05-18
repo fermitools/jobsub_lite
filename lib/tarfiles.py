@@ -216,9 +216,9 @@ class TarfilePublisherHandler(object):
         """
         url = self.pubapi_base_url_formatter.format(endpoint="update")
         if self.token:
-            return requests.get(url, headers=self.request_headers, verify=False)
+            return requests.get(url, headers=self.request_headers)
         else:
-            return requests.get(url, cert=(self.proxy, self.proxy), verify=False)
+            return requests.get(url, cert=(self.proxy, self.proxy))
 
     @pubapi_operation
     def publish(self, tarfile):
@@ -234,11 +234,11 @@ class TarfilePublisherHandler(object):
         url = self.pubapi_base_url_formatter.format(endpoint="publish")
         if self.token:
             return requests.post(
-                url, headers=self.request_headers, data=tarfile, verify=False
+                url, headers=self.request_headers, data=tarfile
             )
         else:
             return requests.post(
-                url, cert=(self.proxy, self.proxy), data=tarfile, verify=False
+                url, cert=(self.proxy, self.proxy), data=tarfile
             )
 
     @pubapi_operation
@@ -251,9 +251,9 @@ class TarfilePublisherHandler(object):
         """
         url = self.pubapi_base_url_formatter.format(endpoint="exists")
         if self.token:
-            return requests.get(url, headers=self.request_headers, verify=False)
+            return requests.get(url, headers=self.request_headers)
         else:
-            return requests.get(url, cert=(self.proxy, self.proxy), verify=False)
+            return requests.get(url, cert=(self.proxy, self.proxy))
 
     def __make_request_token_headers(self):
         """Create headers for token auth to dropbox server"""
