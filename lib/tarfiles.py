@@ -22,6 +22,7 @@ import random
 import re
 import sys
 import time
+import traceback as tb
 from urllib.parse import quote as _quote
 
 import requests
@@ -175,13 +176,26 @@ class TarfilePublisherHandler(object):
     # Some sort of wrapper to wrap the above three
     def pubapi_operation(func):
         """Wrap various PubAPI operations, return path if we get it from response"""
+
+        class SafeDict(dict):
+            """Use this object to allow us to not need all keys of dict when
+               running str.format_map method to do string interpolation.
+               Taken from https://stackoverflow.com/a/17215533"""
+            def __missing__(self, key):
+                return f"{{{key}}}" # "{<key>}"
+
         def wrapper(self, *args, **kwargs):
+            _dropbox_server_selector = self.__select_dropbox_server()
             for _ in range(NUM_RETRIES):
                 try:
-                    _dropbox_server = self.__select_dropbox_server()
-                    self.pubapi_base_url_formatter = self.pubapi_base_url_formatter.format(dropbox_server=_dropbox_server)
+                    _dropbox_server = next(_dropbox_server_selector)
+                    self.pubapi_base_url_formatter = \
+                            self.pubapi_base_url_formatter.format_map(
+                                    SafeDict(dropbox_server=_dropbox_server))
                     response = func(self, *args, **kwargs)
                 except:
+                    tb.print_exc()
+                    print(f"Will retry in {RETRY_INTERVAL_SEC} seconds")
                     time.sleep(RETRY_INTERVAL_SEC)
                 else:
                     break
