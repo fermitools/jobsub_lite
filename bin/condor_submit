@@ -86,7 +86,7 @@ def main():
     condor_parser.add_argument(
         "-spool",
         required=False,
-        help="Spool all required input files, job event log, and proxy over the connection to the condor_schedd",
+        help="Spool all required input files, job event log, and proxy over the connection to the condor_schedd. This is done by default.",
         action='store_true')
 
     condor_parser.add_argument(
@@ -120,6 +120,9 @@ def main():
     if args.verbose:
         print("schedd_name is : %s" % schedd_name)
         print("cmd_args is : %s" % cmd_args)
+
+    if args.spool:
+        print("Spooling is done by default. No need to request it explicitly.")
 
     if '-name' in cmd_args:
         print("You are running a wrapper for condor_submit. The schedd is chosen for you. Please remove the '-name <schedd_name>' arguments from your command line and re-run, OR use /usr/bin/condor_submit.")
