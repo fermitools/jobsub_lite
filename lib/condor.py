@@ -94,15 +94,10 @@ def load_submit_file(filename):
     return htcondor.Submit(res), nqueue
 
 
-def submit(f, vargs, schedd_args, cmd_args=[]):
+def submit(f, vargs, schedd_name, cmd_args=[]):
     """Actually submit the job, using condor python bindings"""
 
-    #get schedd_name from schedd_args
-    # by design, schedd_args has the form '-name <schedd_name> -spool' or '-remote <schedd_name>'
-    # so the schedd_name is the 2nd word in the string
-   
-    wordlist = schedd_args.split()
-    schedd_name = wordlist[1]
+    schedd_args = "-remote %s" %(schedd_name)
 
     if 'no_submit' in vargs and vargs["no_submit"]:
         print("NOT submitting file:\n%s\n" % f)
@@ -150,7 +145,7 @@ def submit(f, vargs, schedd_args, cmd_args=[]):
     return
 
 
-def submit_dag(f, vargs, schedd_add, cmd_args=[]):
+def submit_dag(f, vargs, schedd_name, cmd_args=[]):
     """
     Actually submit the dag
     for the moment, we call the commandline condor_submit_dag,
@@ -180,4 +175,4 @@ def submit_dag(f, vargs, schedd_add, cmd_args=[]):
     except OSError as e:
         print("Execution failed: ", e)
 
-    submit(subfile, vargs, schedd_add)
+    submit(subfile, vargs, schedd_name)

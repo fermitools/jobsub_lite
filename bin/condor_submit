@@ -78,20 +78,16 @@ def main():
         action=StoreGroupinEnvironment)
 
     condor_parser.add_argument(
-        "-name",
+        "-t",
+        "--test",
         required=False,
-        help="Submit to the specified condor_schedd")
+        help="For testing only: specify condor_schedd")
 
     condor_parser.add_argument(
         "-spool",
         required=False,
         help="Spool all required input files, job event log, and proxy over the connection to the condor_schedd",
         action='store_true')
-
-    condor_parser.add_argument(
-        "-remote",
-        required=False,
-        help="Submit to the specified condor_schedd, spooling all required input files over the network connection")
 
     condor_parser.add_argument(
         "-v",
@@ -114,10 +110,9 @@ def main():
     else:
         group = os.environ["GROUP"]
 
-    if args.name is not None:
-        schedd_name = args.name
-    elif args.remote is not None:
-        schedd_name = args.remote
+
+    if args.test is not None:
+        schedd_name = args.test
     else:
         schedd_add = get_schedd({"group": group})
         schedd_name = schedd_add.eval("Machine")
@@ -126,10 +121,13 @@ def main():
         print("schedd_name is : %s" % schedd_name)
         print("cmd_args is : %s" % cmd_args)
 
-    if args.spool:
-       schedd_args = "-name %s -spool" %(schedd_name)
-    else:
-       schedd_args = "-remote %s" %(schedd_name)
+    if '-name' in cmd_args:
+        print("You are running a wrapper for condor_submit. The schedd is chosen for you. Please remove the '-name <schedd_name>' arguments from your command line and re-run, OR use /usr/bin/condor_submit.")
+        return
+    elif '-remote' in cmd_args:
+        print("You are running a wrapper for condor_submit. The schedd is chosen for you. Please remove the '-remote <schedd_name>' arguments from your command line and re-run, OR use /usr/bin/condor_submit.")
+        return
+
 
 
 #   GET CREDENTIALS
@@ -145,7 +143,7 @@ def main():
 
 
 #   SUBMIT
-    submit('', {}, schedd_args, cmd_args)
+    submit('', {}, schedd_name, cmd_args)
 
 
 if __name__ == "__main__":
