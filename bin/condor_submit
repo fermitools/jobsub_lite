@@ -22,14 +22,8 @@ sys.path = [ x for x in sys.path if x[:6] == '/usr/l' ]
 
 import os
 import os.path
-import re
-import glob
-import requests
-import subprocess
-import datetime
-import uuid
-import socket
-import shutil
+import argparse
+import htcondor
 
 #
 # we are in prefix/bin/jobsub_submit, so find our prefix
@@ -45,16 +39,23 @@ if PREFIX == '/usr':
 # this means we don't need fancy ups dependencies..
 #
 sys.path.append(os.path.join(PREFIX,"lib"))
+import packages
 
 #
 # import our local parts
 #
-from get_parser import get_parser 
-from condor import  get_schedd, submit, submit_dag
-from dagnabbit import parse_dagnabbit
+from condor import get_schedd, submit
 from creds import get_creds
-from tarfiles import do_tarballs
-from utils import fixquote, set_extras_n_fix_units
+
+COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", "gpcollector03.fnal.gov")
+
+class StoreGroupinEnvironment(argparse.Action):
+    """Action to store the given group in the GROUP environment variable"""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        os.environ["GROUP"] = values
+        setattr(namespace, self.dest, values)
+
 
 
 def main():
@@ -63,21 +64,90 @@ def main():
         - get credentials
         - handle tarfile options
         - set added values from environment, etc.
-        - convert/render template files to submission files
         - launch
     """
-    cmd_args = sys.argv[1:]
 
-    proxy, token = get_creds(args)
+    condor_parser = argparse.ArgumentParser(
+        description='Queue jobs for execution under HTCondor without the jobsub wrapper.')
 
-    # put in environment for condor libs to use
-    os.environ['X509_USER_PROXY'] = proxy
-    os.environ['BEARER_TOKEN_FILE'] = token
+    condor_parser.add_argument(
+        "-G",
+        "--group",
+        required=False,
+        help="Group/Experiment/Subgroup for priorities and accounting",
+        action=StoreGroupinEnvironment)
 
-    schedd_add = get_schedd({})
-    schedd_name = schedd_add.eval("Machine")
+    condor_parser.add_argument(
+        "-t",
+        "--test",
+        required=False,
+        help="For testing only: specify condor_schedd")
 
-    submit('', varg, schedd_add, cmd_args)
+    condor_parser.add_argument(
+        "-spool",
+        required=False,
+        help="Spool all required input files, job event log, and proxy over the connection to the condor_schedd. This is done by default.",
+        action='store_true')
+
+    condor_parser.add_argument(
+        "-v",
+        "--verbose",
+        required=False,
+        help="Verbose output",
+        action='store_true')
+
+    # currently not used, but wanted to put the placeholder in
+    condor_parser.add_argument(
+        "--credentials",
+        help="credential information")
+
+
+#   PARSE ARGS TO GET SUBMISSION ARGUMENTS
+    args, cmd_args = condor_parser.parse_known_args()
+
+    if args.group is not None:
+        group = args.group
+    else:
+        group = os.environ["GROUP"]
+
+
+    if args.test is not None:
+        schedd_name = args.test
+    else:
+        schedd_add = get_schedd({"group": group})
+        schedd_name = schedd_add.eval("Machine")
+
+    if args.verbose:
+        print("schedd_name is : %s" % schedd_name)
+        print("cmd_args is : %s" % cmd_args)
+
+    if args.spool:
+        print("Spooling is done by default. No need to request it explicitly.")
+
+    if '-name' in cmd_args:
+        print("You are running a wrapper for condor_submit. The schedd is chosen for you. Please remove the '-name <schedd_name>' arguments from your command line and re-run, OR use /usr/bin/condor_submit.")
+        return
+    elif '-remote' in cmd_args:
+        print("You are running a wrapper for condor_submit. The schedd is chosen for you. Please remove the '-remote <schedd_name>' arguments from your command line and re-run, OR use /usr/bin/condor_submit.")
+        return
+
+
+
+#   GET CREDENTIALS
+#   these args may/may not come from the input args. for now let's keep it empty  
+    cred_args = {}
+    if args.credentials is not None:
+        cred_args = args.credentials
+
+    proxy, token = get_creds(cred_args)
+    if args.verbose:
+        print("proxy is : %s" % proxy)
+        print("token is : %s" % token)
+
+
+#   SUBMIT
+    submit('', {}, schedd_name, cmd_args)
+
 
 if __name__ == "__main__":
     main()

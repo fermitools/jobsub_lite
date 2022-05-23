@@ -162,10 +162,11 @@ def main():
     args = parser.parse_args()
 
 
-    proxy, token = get_creds(args)
-    # put in environment for condor libs to use
-    os.environ["X509_USER_PROXY"] = proxy
-    os.environ["BEARER_TOKEN_FILE"] = token
+    proxy, token = get_creds()
+    if args.verbose:
+        print("proxy is : %s" % proxy)
+        print("token is : %s" % token)
+
     do_tarballs(args)
 
     varg = vars(args)
@@ -175,6 +176,7 @@ def main():
     schedd_name = schedd_add.eval("Machine")
     set_extras_n_fix_units(varg, schedd_name, proxy, token)
     submitdir = varg["outdir"]
+
     # if proxy:
     #    proxy_dest=os.path.join(submitdir,os.path.basename(proxy))
     #    shutil.copyfile(proxy, proxy_dest)
@@ -192,7 +194,7 @@ def main():
         render_files(d2, varg, submitdir, dlist=[d1,d2,varg["dest"]])
         if not varg.get("no_submit",False):
             os.chdir(varg["submitdir"])
-            submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
+            submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     elif args.dataset_definition:
         do_dataset_defaults(varg)
         d1 = os.path.join(PREFIX, "templates", "dataset_dag")
@@ -202,7 +204,7 @@ def main():
         render_files(d2, varg, submitdir, dlist=[d1,d2])
         if not varg.get("no_submit",False):
             os.chdir(varg["submitdir"])
-            submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
+            submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     elif args.maxConcurrent:
         d1 = os.path.join(PREFIX, "templates", "maxconcurrent_dag")
         d2 = os.path.join(PREFIX, "templates", "simple")
@@ -211,13 +213,13 @@ def main():
         render_files(d2, varg, submitdir, dlist=[d1,d2])
         if not varg.get("no_submit",False):
             os.chdir(varg["submitdir"])
-            submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_add)
+            submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     else:
         d = "%s/templates/simple" % PREFIX
         render_files(d, varg, submitdir)
         if not varg.get("no_submit",False):
             os.chdir(varg["submitdir"])
-            submit(os.path.join(submitdir, "*.cmd"), varg, schedd_add)
+            submit(os.path.join(submitdir, "*.cmd"), varg, schedd_name)
 
 
 if __name__ == "__main__":

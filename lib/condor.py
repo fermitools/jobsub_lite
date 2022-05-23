@@ -20,6 +20,7 @@ import re
 import htcondor
 import random
 import packages
+import subprocess
 
 random.seed()
 
@@ -35,12 +36,12 @@ def get_schedd(vargs):
     # need to directQuery for the full classads to check for
     # SupportedVOList...
 
-    print("classads:" , schedd_classads)
+    print("classads: ", schedd_classads)
 
     # pick schedds who do or do not have "dev" in their name, depending if
     # we have "devserver" set...
 
-    if vargs["devserver"]:
+    if 'devserver' in vargs and vargs["devserver"]:
         schedd_classads = [ca for ca in schedd_classads if ca.eval("Machine").find("dev") != -1]
     else:
         schedd_classads = [ca for ca in schedd_classads if ca.eval("Machine").find("dev") == -1]
@@ -93,48 +94,58 @@ def load_submit_file(filename):
     return htcondor.Submit(res), nqueue
 
 
-def submit(f, vargs, schedd_add, cmd_args=[]):
+def submit(f, vargs, schedd_name, cmd_args=[]):
     """Actually submit the job, using condor python bindings"""
-    if vargs["no_submit"]:
+
+    schedd_args = "-remote %s" %(schedd_name)
+
+    if 'no_submit' in vargs and vargs["no_submit"]:
         print("NOT submitting file:\n%s\n" % f)
         return
     if f:
         print("submitting: %s" % f)
+        schedd_args = schedd_args + " %s" %(f)
         fl = glob.glob(f)
         if fl:
             f = fl[0]
-    schedd_name = schedd_add.eval("Machine")
-    schedd = htcondor.Schedd(schedd_add)
-    print("schedd: %s" % schedd_name)
 
-    if True:
-        cmd = "/usr/bin/condor_submit -spool -pool %s -remote %s %s %s" % (
-            COLLECTOR_HOST,
-            schedd_name,
-            f,
-            " ".join(["'%s'" % x for x in cmd_args]),
-        )
-        cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
-        cmd = "_condor_CREDD_HOST=%s %s" % (schedd_name, cmd)
-        packages.orig_env()
-        print("Running: %s" % cmd)
-        cmd = '%s | sed -e "s/\\(submitted.to.cluster.*\\)\\./\\1@%s/"' % (
-            cmd,
-            schedd_name,
-        )
-        os.system(cmd)
-        print(
-            "Output will be in %s after running jobsub_transfer_data." % vargs["outdir"]
-        )
-    else:
-        subm, nqueue = load_submit_file(f)
-        with schedd.transaction() as txn:
-            cluster = subm.queue(txn, count=nqueue)
-        print("jobid: %s@%s" % (cluster, schedd_name))
+    print("cmd_args: %s" % cmd_args)
+
+# commenting this out for now since the 'else' is not implemented
+#    if True:
+
+    cmd = "/usr/bin/condor_submit -pool %s %s %s" % (
+        COLLECTOR_HOST,
+        schedd_args,
+        " ".join(["'%s'" % x for x in cmd_args]),
+    )
+    cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
+    cmd = "_condor_CREDD_HOST=%s %s" % (schedd_name, cmd)
+    packages.orig_env()
+    print("Running: %s" % cmd)
+
+    try:
+        output = subprocess.run(cmd, shell=True)
+        if output.returncode < 0:
+            print("Child was terminated by signal", -output.returncode)
+        else:
+            if 'outdir' in vargs:
+                print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
+    except OSError as e:
+        print("Execution failed: ", e)
+         
+
+# This 'else' is not currently implemented
+#    else:
+#        subm, nqueue = load_submit_file(f)
+#        with schedd.transaction() as txn:
+#            cluster = subm.queue(txn, count=nqueue)
+#        print("jobid: %s@%s" % (cluster, schedd_name))
+
     return
 
 
-def submit_dag(f, vargs, schedd_add, cmd_args=[]):
+def submit_dag(f, vargs, schedd_name, cmd_args=[]):
     """
     Actually submit the dag
     for the moment, we call the commandline condor_submit_dag,
@@ -153,5 +164,15 @@ def submit_dag(f, vargs, schedd_add, cmd_args=[]):
 
         cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
         print("Running: %s" % cmd)
-        os.system(cmd)
-    submit(subfile, vargs, schedd_add)
+
+    try:
+        output = subprocess.run(cmd, shell=True)
+        if output.returncode < 0:
+            print("Child was terminated by signal", -output.returncode)
+        else:
+            if 'outdir' in vargs:
+                print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
+    except OSError as e:
+        print("Execution failed: ", e)
+
+    submit(subfile, vargs, schedd_name)

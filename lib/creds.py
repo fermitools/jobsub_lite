@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import subprocess
 
 
 def get_creds(args={}):
@@ -21,12 +22,11 @@ def get_creds(args={}):
     myproxy, nor does it yet deal with tokens, but those should
     be done here as needed.
     """
-    f = os.popen("fake_ifdh getProxy","r") 
-    p = f.read().strip()
-    f.close()
-    f = os.popen("fake_ifdh getToken","r") 
-    t = f.read().strip()
-    f.close()
-    os.environ["X509_USER_PROXY"] = p
-    os.environ["BEARER_TOKEN_FILE"] = t
+
+    p = subprocess.run('fake_ifdh getProxy', shell=True, bufsize=0, stdout=subprocess.PIPE, universal_newlines=True, check=True).stdout   
+    t = subprocess.run('fake_ifdh getToken', shell=True, bufsize=0, stdout=subprocess.PIPE, universal_newlines=True, check=True).stdout
+
+    os.environ["X509_USER_PROXY"] = p.strip()
+    os.environ["BEARER_TOKEN_FILE"] = t.strip()
+
     return p, t
