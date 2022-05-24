@@ -16,6 +16,7 @@
 from creds import get_creds
 from functools import wraps
 import hashlib
+import itertools
 import os
 import os.path
 import random
@@ -186,15 +187,19 @@ class TarfilePublisherHandler(object):
 
         def wrapper(self, *args, **kwargs):
             _dropbox_server_selector = self.__select_dropbox_server()
-            for _ in range(NUM_RETRIES):
+            retry_count = itertools.count()
+            while True:
                 try:
                     _dropbox_server = next(_dropbox_server_selector)
                     self.pubapi_base_url_formatter = \
                             self.pubapi_base_url_formatter.format_map(
                                     SafeDict(dropbox_server=_dropbox_server))
                     response = func(self, *args, **kwargs)
-                except:
+                except: 
                     tb.print_exc()
+                    if next(retry_count) == NUM_RETRIES:
+                        print(f"Max retries {NUM_RETRIES} exceeded.  Exiting now.")
+                        raise 
                     print(f"Will retry in {RETRY_INTERVAL_SEC} seconds")
                     time.sleep(RETRY_INTERVAL_SEC)
                 else:
