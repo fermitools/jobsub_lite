@@ -80,7 +80,7 @@ esac
 
 if [ x$role != x ]
 then
-    export BEARER_TOKEN_FILE=`fake_ifdh getToken --role $role`
+    export BEARER_TOKEN_FILE=`fake_ifdh --role $role getToken`
 else
     export BEARER_TOKEN_FILE=`fake_ifdh getToken`
 fi

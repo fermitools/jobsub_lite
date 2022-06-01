@@ -120,11 +120,11 @@ def cp(src, dest):
 if __name__ == "__main__":
     commands = {"getProxy": getProxy, "getToken": getToken, "cp": cp}
     parser = argparse.ArgumentParser(description="ifdh subset replacement")
-    parser.add_argument("command", action="store", nargs=1, help="command")
     parser.add_argument(
         "--experiment", help="experiment name", default=os.environ.get("GROUP", None)
     )
     parser.add_argument("--role", help="role name", default=None)
+    parser.add_argument("command", action="store", nargs=1, help="command")
     parser.add_argument(
         "cpargs", default=None, action="append", nargs="*", help="copy arguments"
     )
