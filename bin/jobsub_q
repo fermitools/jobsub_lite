@@ -78,7 +78,7 @@ case "x$args" in
     ;;
 esac
 
-if [x$role != x ]
+if [ x$role != x ]
 then
     export BEARER_TOKEN_FILE=`fake_ifdh getToken --role $role`
 else
