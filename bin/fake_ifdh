@@ -26,7 +26,8 @@ import os
 import time
 import argparse
 
-vault_host = "fermicloud543.fnal.gov"
+VAULT_HOST = "fermicloud543.fnal.gov"
+DEFAULT_ROLE = "Analysis"
 
 
 def getTmp():
@@ -50,10 +51,10 @@ def getRole(role_override=None):
     elif os.environ["USER"][-3:] == "pro":
         return "Production"
     else:
-        return "Analysis"
+        return DEFAULT_ROLE 
 
 
-def getToken(role):
+def getToken(role=DEFAULT_ROLE):
     pid = os.getuid()
     tmp = getTmp()
     role = role.lower()  # Token-world wants all-lowercase roles
@@ -68,8 +69,8 @@ def getToken(role):
     exp_time = f.read()
     f.close()
     if not exp_time or ((int(exp_time) - time.time()) < 60):
-        cmd = "htgettoken -a %s -i %s" % (vault_host, issuer)
-        if role != "Analysis":
+        cmd = "htgettoken -a %s -i %s" % (VAULT_HOST, issuer)
+        if role != DEFAULT_ROLE:
             cmd = "%s -r %s" % (cmd, role)
         # send htgettoken output to stderr because invokers read stdout
         os.system("%s >&2" % cmd)
@@ -78,7 +79,7 @@ def getToken(role):
         print(tokenfile)
 
 
-def getProxy(role):
+def getProxy(role=DEFAULT_ROLE):
     pid = os.getuid()
     tmp = getTmp()
     exp = getExp()
