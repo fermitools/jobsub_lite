@@ -39,6 +39,7 @@ else
     }
 fi
 
+# Pull schedd from job name if it's given
 schedd=""
 case "x$*" in
 *@*)
@@ -69,5 +70,19 @@ then
     export GROUP=$group
 fi
 
-export BEARER_TOKEN_FILE=`fake_ifdh getToken`
+# Check role if it's given
+case "x$args" in
+*--role*)
+    role=`echo "$args" | sed -e 's/.*--role[=( )+]//' -e 's/ .*//'`
+    args=`echo "$args" | sed -e "s/--role[=( )+]$role//"`
+    ;;
+esac
+
+if [ x$role != x ]
+then
+    export BEARER_TOKEN_FILE=`fake_ifdh --role $role getToken`
+else
+    export BEARER_TOKEN_FILE=`fake_ifdh getToken`
+fi
+
 /usr/bin/condor_q -global $args | filter
