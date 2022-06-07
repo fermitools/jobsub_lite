@@ -57,7 +57,6 @@ def getRole(role_override=None):
 def getToken(role=DEFAULT_ROLE):
     pid = os.getuid()
     tmp = getTmp()
-    role = role.lower()  # Token-world wants all-lowercase roles
     exp = getExp()
     if exp == "samdev":
         issuer = "fermilab"
@@ -71,7 +70,7 @@ def getToken(role=DEFAULT_ROLE):
     if not exp_time or ((int(exp_time) - time.time()) < 60):
         cmd = "htgettoken -a %s -i %s" % (VAULT_HOST, issuer)
         if role != DEFAULT_ROLE:
-            cmd = "%s -r %s" % (cmd, role)
+            cmd = "%s -r %s" % (cmd, role.lower()) # Token-world wants all-lower
         # send htgettoken output to stderr because invokers read stdout
         os.system("%s >&2" % cmd)
         print(tokenfile)
