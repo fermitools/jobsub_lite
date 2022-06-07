@@ -25,6 +25,7 @@ Job submission wrapper scripts
 
 %prep
 %setup
+%global __python %{__python3} # Compile package using python3
 
 %build
 /bin/true
