@@ -61,7 +61,7 @@ def get_schedd(vargs):
         for ca in full_schedd_classads
         if (("SupportedVOList" in ca) and (ca.eval("SupportedVOList").find(vargs["group"]) != -1))
         and ("InDownTime" not in ca)
-            or (("InDownTime" in ca) and (ca.eval(InDownTime) != True))
+            or (("InDownTime" in ca) and (ca.eval("InDownTime") != True))
     ]
     res = random.choice(schedds)
     return res
