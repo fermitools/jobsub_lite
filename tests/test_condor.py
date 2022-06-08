@@ -7,6 +7,10 @@ import condor
 import creds
 
 class TestCondor:
+    """
+        Use with pytest... unit tests for ../lib/condor.py
+    """
+
     test_schedd = "jobsubdevgpvm01.fnal.gov"
     test_vargs = { 
             "devserver":          True,
