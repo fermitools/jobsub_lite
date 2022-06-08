@@ -129,11 +129,14 @@ def submit(f, vargs, schedd_name, cmd_args=[]):
         output = subprocess.run(cmd, shell=True)
         if output.returncode < 0:
             print("Child was terminated by signal", -output.returncode)
+            return None
         else:
             if 'outdir' in vargs:
                 print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
+                return True
     except OSError as e:
         print("Execution failed: ", e)
+        return None
          
 
 # This 'else' is not currently implemented
