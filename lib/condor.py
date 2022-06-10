@@ -19,7 +19,6 @@ import glob
 import re
 import htcondor
 import random
-import packages
 import subprocess
 
 random.seed()
@@ -122,7 +121,6 @@ def submit(f, vargs, schedd_name, cmd_args=[]):
     )
     cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
     cmd = "_condor_CREDD_HOST=%s %s" % (schedd_name, cmd)
-    packages.orig_env()
     print("Running: %s" % cmd)
 
     try:

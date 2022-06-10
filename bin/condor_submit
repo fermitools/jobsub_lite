@@ -39,7 +39,6 @@ if PREFIX == '/usr':
 # this means we don't need fancy ups dependencies..
 #
 sys.path.append(os.path.join(PREFIX,"lib"))
-import packages
 
 #
 # import our local parts
