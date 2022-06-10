@@ -49,15 +49,20 @@ def pkg_find(p, qual=""):
         f.close()
 
     if not path and os.environ.get("PRODUCTS", None):
+        print("looking with ups..." )
         cmd = (
             "ups list -a4 -Kproduct:@prod_dir %s %s, -a0 -Kproduct:@prod_dir %s %s"
             % (p, qual, p, qual)
         )
+        print("running: ", cmd  )
         f = os.popen(cmd, "r")
         for line in f:
+            print("saw: ", line)
             path = line.split()[1].strip('"')
             break
         f.close()
+
+    print("path: " , path)
 
     if path:
         os.environ["%s_DIR" % p.upper()] = path
@@ -65,6 +70,7 @@ def pkg_find(p, qual=""):
             "%s/lib/python*/site-packages/*.egg",
             "%s/lib/python*/site-packages",
             "%s/lib/python*",
+            "%s/python*",
         ]:
 
             gl = glob(fmt % path)

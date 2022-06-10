@@ -17,7 +17,7 @@ import os
 import sys
 from packages import pkg_find
 
-pkg_find("poms_client")
+pkg_find("poms_client","-g poms41")
 import poms_client
 
 # translation of jobub_submit wrapper in poms_jobsub_wrapper...

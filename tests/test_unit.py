@@ -16,6 +16,7 @@ sys.path.append("../lib")
 import creds
 import condor
 import get_parser
+import packages
 import tarfiles
 import utils
 
@@ -217,6 +218,26 @@ queue 1
     def x_test_submit_dag_1(self):
         # XXX fix me
         res = condor.submit_dag(TestUnit.get_dag_file(), TestUnit.test_vargs, TestUnit.test_schedd, cmd_args=[])
+
+    # lib/packages.py routines
+
+    def test_pkg_find_1(self):
+        sp1 = sys.path.copy()
+        packages.pkg_find("poms_client","-g poms41")
+        sp2 = sys.path.copy()
+        # should have changed sys.path, set POMS_CLIENT_DIR, and be importable
+        assert sp1 != sp2
+        assert os.path.exists(os.environ["POMS_CLIENT_DIR"])
+        __import__("poms_client")
+
+    def test_pkg_orig_env_1(self):
+        # relies on previous test... 
+        env1 = os.environ.copy()
+        packages.orig_env()
+        env2 = os.environ.copy()
+        # should have put the environment back
+        assert env1 != env2
+
 
     # lib/tarfiles.py routines...
 
