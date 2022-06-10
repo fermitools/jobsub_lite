@@ -116,7 +116,7 @@ def get_parser():
         "-l",
         "--lines",
         action="append",
-        default=[],
+        default=[""],
         help="Lines to append to the job file.",
     )
     parser.add_argument(
@@ -178,7 +178,7 @@ def get_parser():
     parser.add_argument(
         "--resource-provides",
         action="append",
-        default=[],
+        default=[""],
         help='request specific resources by changing condor jdf file. For example: --resource-provides=CVMFS=OSG will add +DESIRED_CVMFS="OSG" to the job classad attributes and \'&&(CVMFS=="OSG")\' to the job requirements',
     )
     parser.add_argument(

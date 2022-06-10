@@ -19,6 +19,8 @@ import get_parser
 import packages
 import tarfiles
 import utils
+os.symlink("../bin/jobsub_submit", "jobsub_submit.py")
+import jobsub_submit
 
 class TestUnit:
     """
@@ -39,6 +41,7 @@ class TestUnit:
             "devserver":         True,
             "environment":       ["USER"],
             "group":             test_group,
+            "N":                 1,
             "resource_provides": "usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE" 
         }
 
@@ -180,7 +183,10 @@ queue 1
             elif arg == "f":
                 assert vres['input_file'] == ['xxfxx']
             elif arg in listargs:
-                assert vres[uarg] == ["xx%sxx" % arg,]
+                if arg in ['resource-provides', 'lines']:
+                    assert vres[uarg] == ['', "xx%sxx" % arg,]
+                else:
+                    assert vres[uarg] == ["xx%sxx" % arg,]
             else:
                 assert vres[uarg] == "xx%sxx" % arg
 
@@ -340,4 +346,30 @@ queue 1
         assert args["user"] == os.environ["USER"]
         assert args["memory"] == 64 * 1024
 
+    # jobsub_submit functions
+
+    def test_get_basefiles_1(self):
+        dlist = [ os.path.dirname(__file__) ]
+        fl = jobsub_submit.get_basefiles(dlist)
+        assert os.path.basename(__file__) in fl
+
+    def test_render_files_1(self):
+        srcdir = os.path.dirname(os.path.dirname(__file__)) + "/templates/dataset_dag"
+        dest = "/tmp/out{0}".format(os.getpid())
+        os.mkdir(dest)
+        jobsub_submit.render_files(srcdir, TestUnit.test_vargs, dest)
+        assert os.path.exists("%s/dagbegin.cmd" % dest)
+
+    def test_cleanup_1(self):
+        # cleanup doesn't actually do anything right now...
+        jobsub_submit.cleanup("")
+        assert True
+
+    def test_do_dataset_defaults_1(self):
+        varg = TestUnit.test_vargs.copy()
+        varg['dataset_definition'] = 'mwmtest'
+        utils.set_extras_n_fix_units(varg, TestUnit.test_schedd, "", "")
+        jobsub_submit.do_dataset_defaults(varg)
+        for var in ["PROJECT", "DATASET", "USER", "GROUP", "STATION"]:
+            assert repr(varg["environment"]).find("SAM_%s"%var) > 0
 
