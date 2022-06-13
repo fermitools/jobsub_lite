@@ -28,21 +28,23 @@ class TestTarfilesUnit:
     # lib/tarfiles.py routines...
 
     def test_tar_up_1(self):
+        """ make sure tar up makes a tarfile """
         tarfile = tarfiles.tar_up(os.path.dirname(__file__), None)
         assert os.path.exists(tarfile)
         os.unlink(tarfile)
 
     def test_slurp_file_1(self):
+        """ make sure tar slurp_file makes a digest """
         digest, tf = tarfiles.slurp_file(__file__)
         assert len(digest) == 64
 
     def test_dcache_persistent_path_1(self):
+        """ make sure persistent path gives /pnfs/ path digest """
         path = tarfiles.dcache_persistent_path(TestUnit.test_group, __file__)
         assert path[:6] == '/pnfs/'
 
     def test_tarfile_publisher_1(self, needs_credentials):
-        # need creds..
-        os.environ["GROUP"] = TestUnit.test_group
+        """ test the tarfile publisher object """
         proxy, token = needs_credentials
         # need something to publish...
         tarfile = tarfiles.tar_up(os.path.dirname(__file__), None)
@@ -69,6 +71,8 @@ class TestTarfilesUnit:
         assert location is not None
 
     def test_do_tarballs_1(self, needs_credentials):
+        """ test that the do_tarballs method does a dropbox:path
+            processing """
         tdir = os.path.dirname(__file__)
         for dropbox_type in [ "cvmfs", "pnfs" ]:
             argv = [

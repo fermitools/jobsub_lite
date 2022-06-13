@@ -30,9 +30,11 @@ class TestCredUnit:
     # lib/creds.py routines...
 
     def test_get_creds_1(self):
-        # to actually submit we do need creds, and our group set...
+        """ get credentials, make sure the credentials files returned
+            exist """
         os.environ["GROUP"] = TestUnit.test_group
-        creds.get_creds()
+        proxy, token = creds.get_creds()
         assert os.path.exists(os.environ["X509_USER_PROXY"])
         assert os.path.exists(os.environ["BEARER_TOKEN_FILE"])
-
+        assert os.path.exists(proxy)
+        assert os.path.exists(token)

@@ -28,21 +28,25 @@ class TestDagnabbitUnit:
     # lib/dagnabbit.py tests
     #
 
-    def test_parse_dagnabbit_1(self):
+    def test_parse_dagnabbit_dagTest(self):
+        """ test dagnabbit parser on old jobsub dagTest example """
         self.do_one_dagnabbit("dagTest", ["dag.dag", "stage_1.sh", "stage_2.sh", "stage_3.sh", "stage_4.sh", "stage_5.sh", "stage_1.cmd", "stage_2.cmd", "stage_3.cmd", "stage_4.cmd", "stage_5.cmd"])
 
     def do_one_dagnabbit(self, dagfile, flist):
+        """ test dagnabbit parser on given dagfile make sure it generates 
+            expected list of files """
         varg = TestUnit.test_vargs.copy()
         dest = "/tmp/dagout{0}".format(os.getpid())
+        os.mkdir(dest)
+        # the dagTest uses $SUBMIT_FLAGS so make sure we set it
         os.environ['SUBMIT_FLAGS'] = '--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC'
         os.environ["GROUP"] = TestUnit.test_group
-        os.mkdir(dest)
         d1 = os.path.join("..","..", "templates", "simple")
+        # file has relative paths in it, so chdir there
         os.chdir("dagnabbit")
         varg["dag"] = dagfile
         dagnabbit.parse_dagnabbit(d1, varg, dest, TestUnit.test_schedd)
         os.chdir(os.path.dirname(__file__))
-        os.system("ls %s" % dest)
         for f in flist :
             assert os.path.exists("%s/%s" % (dest, f))
         os.system("rm -rf %s" % dest)

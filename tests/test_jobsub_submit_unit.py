@@ -31,11 +31,14 @@ class TestJobsubSubmitUnit:
     # jobsub_submit functions
 
     def test_get_basefiles_1(self):
+        """ test the get_basefiles routine on our source directory,
+            we should be in it """
         dlist = [ os.path.dirname(__file__) ]
         fl = jobsub_submit.get_basefiles(dlist)
         assert os.path.basename(__file__) in fl
 
     def test_render_files_1(self):
+        """ test render files on the dataset_dag directory """
         srcdir = os.path.dirname(os.path.dirname(__file__)) + "/templates/dataset_dag"
         dest = "/tmp/out{0}".format(os.getpid())
         os.mkdir(dest)
@@ -48,6 +51,8 @@ class TestJobsubSubmitUnit:
         assert True
 
     def test_do_dataset_defaults_1(self):
+        """ make sure do_dataset_defaults sets arguments its supposed to
+        """
         varg = TestUnit.test_vargs.copy()
         varg['dataset_definition'] = 'mwmtest'
         utils.set_extras_n_fix_units(varg, TestUnit.test_schedd, "", "")

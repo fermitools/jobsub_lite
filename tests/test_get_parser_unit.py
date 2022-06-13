@@ -24,7 +24,10 @@ class TestGetParserUnit:
 
     # lib/get_parser.py routines...
 
-    def test_get_parser_1(self):
+    def test_get_parser_small(self):
+        """
+            Try a few common arguments on a get_parser() generated parser
+        """
         parser = get_parser.get_parser()
         line = "jobsub_submit --devserver -e SAM_EXPERIMENT -G {0} --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/lookaround.sh".format(TestUnit.test_group)
         res = parser.parse_args(line.strip().split()[1:])
@@ -32,7 +35,15 @@ class TestGetParserUnit:
         assert 'SAM_EXPERIMENT' in res.environment
         assert res.group == TestUnit.test_group
 
-    def test_get_parser_2(self):
+    def test_get_parser_all(self):
+        """
+            Try to find *all* the arguments in the get_parser code, 
+            make an argument list with them all and see if we get
+            values back in the parsed arguments.
+            Arguably this should have such a list and validate it
+            rather than always generate it, so the test doesn't
+            just always work...
+       """
         # try to extract all the --foo arguments from the source
         # and track which ones are flags
         f = open("../lib/get_parser.py","r")

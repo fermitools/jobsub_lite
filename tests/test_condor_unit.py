@@ -94,22 +94,26 @@ class TestCondorUnit:
     # lib/condor.py routines...
 
     def test_get_schedd_1(self):
+        """  make sure we get our test schedd back with test_vargs """
         schedd =  condor.get_schedd(TestUnit.test_vargs)
         print("got schedd: {0}".format(schedd))
         print("schedd name: {0}".format(schedd['Name']))
         assert schedd['Name'] == TestUnit.test_schedd
 
     def test_load_submit_file_1(self, get_submit_file):
+        """  make sure load_submit_file result has bits of the submit file"""
         res = condor.load_submit_file(get_submit_file)
         assert str(res[0]).find('universe = vanilla') >= 0
         assert str(res[0]).find('executable = /bin/true') >= 0
 
     def test_submit_1(self, get_submit_file, needs_credentials):
-        # to actually submit we do need creds, and our group set...
+        """ actually submit a job with condor_submit """
         res = condor.submit(get_submit_file, TestUnit.test_vargs, TestUnit.test_schedd )
         print("got: " , res)
         assert res
 
     def x_test_submit_dag_1(self):
+        """ actually submit a dag with condor_submit_dag """
         # XXX fix me
         res = condor.submit_dag(self.get_dag_file(), TestUnit.test_vargs, TestUnit.test_schedd, cmd_args=[])
+        asssert res
