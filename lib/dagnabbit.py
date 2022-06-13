@@ -15,6 +15,8 @@
 # limitations under the License.
 import jinja2 as jinja
 import os
+import sys
+import creds
 import os.path
 from get_parser import get_parser
 from utils import fixquote, set_extras_n_fix_units
@@ -28,6 +30,7 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
     """
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
     jinja_env.filters["basename"] = os.path.basename
+    proxy, token = creds.get_creds()
     count = 0
     linenum = 0
     df = open(values["dag"], "r")
@@ -92,7 +95,7 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
                 sys.stderr.write(
                     "Error at file %s line %s\n" % (values["dag"], linenum)
                 )
-                sys.stderr.write("parsing: %s\n" % line.strip.split())
+                sys.stderr.write("parsing: %s\n" % line.strip().split())
                 sys.stderr.flush()
                 raise
             print("vars(res): %s" % repr(vars(res)))
@@ -102,7 +105,7 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
             thesevalues.update(vars(res))
             cf = open(os.path.join(dest, "%s.cmd" % name), "w")
             csf = open(os.path.join(dest, "%s.sh" % name), "w")
-            set_extras_n_fix_units(thesevalues, schedd_name)
+            set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
             thesevalues["script_name"] = "%s.sh" % name
             cf.write(jinja_env.get_template("simple.cmd").render(**thesevalues))
             csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
