@@ -78,11 +78,23 @@ queue 1
     return filename
 
 @pytest.fixture
-def get_dag_file(self):
+def get_dag_file(get_submit_file):
     filename="/tmp/tst{0}.dag".format(os.getpid())
     f = open(filename, "w")
     f.write("""
-    """)
+DOT dataset.dag.dot UPDATE
+JOB SAM_START {cmdfile}
+
+JOB WORKER_1 {cmdfile} 
+PARENT SAM_START CHILD WORKER_1
+PARENT WORKER_1 CHILD SAM_END
+
+JOB WORKER_2 {cmdfile} 
+PARENT SAM_START CHILD WORKER_2
+PARENT WORKER_2 CHILD SAM_END
+
+JOB SAM_END {cmdfile}
+    """.format(cmdfile = get_submit_file))
     f.close()
     return filename
 
@@ -112,8 +124,8 @@ class TestCondorUnit:
         print("got: " , res)
         assert res
 
-    def x_test_submit_dag_1(self):
+    def test_submit_dag_1(self, get_dag_file, needs_credentials):
         """ actually submit a dag with condor_submit_dag """
         # XXX fix me
-        res = condor.submit_dag(self.get_dag_file(), TestUnit.test_vargs, TestUnit.test_schedd, cmd_args=[])
+        res = condor.submit_dag(get_dag_file, TestUnit.test_vargs, TestUnit.test_schedd, cmd_args=[])
         assert res

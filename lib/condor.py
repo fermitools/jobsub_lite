@@ -179,4 +179,4 @@ def submit_dag(f, vargs, schedd_name, cmd_args=[]):
     except OSError as e:
         print("Execution failed: ", e)
 
-    submit(subfile, vargs, schedd_name)
+    return submit(subfile, vargs, schedd_name)
