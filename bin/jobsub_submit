@@ -57,6 +57,10 @@ from creds import get_creds
 from tarfiles import do_tarballs
 from utils import fixquote, set_extras_n_fix_units
 
+
+# DEFAULT_SINGULARITY_IMAGE = "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest" . For Production
+DEFAULT_SINGULARITY_IMAGE = "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:3.6"
+
 def get_basefiles(dlist):
     res = []
     for d in dlist:
@@ -159,6 +163,15 @@ def main():
     - launch
     """
     parser = get_parser()
+
+    submit_parser = parser.add_argument_group("jobsub_submit", "Arguments for jobsub_submit")
+    submit_parser.add_argument(
+        "--singularity-image",
+        default=DEFAULT_SINGULARITY_IMAGE,
+        help=f"Singularity image to run jobs in.  Default is {DEFAULT_SINGULARITY_IMAGE}"
+    )
+
+
     args = parser.parse_args()
 
 
