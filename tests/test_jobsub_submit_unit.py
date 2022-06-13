@@ -16,9 +16,12 @@ sys.path.append("../lib")
 import creds
 import utils
 
+from test_unit import TestUnit 
+
 if not os.path.exists("jobsub_submit.py"):
     os.symlink("../bin/jobsub_submit", "jobsub_submit.py")
 import jobsub_submit
+
 
 class TestJobsubSubmitUnit:
     """

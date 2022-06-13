@@ -14,10 +14,8 @@ os.chdir(os.path.dirname(__file__))
 #
 sys.path.append("../lib")
 import packages
+from test_unit import TestUnit 
 
-if not os.path.exists("jobsub_submit.py"):
-    os.symlink("../bin/jobsub_submit", "jobsub_submit.py")
-import jobsub_submit
 
 class TestPackagesUnit:
     """

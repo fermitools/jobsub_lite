@@ -15,6 +15,8 @@ os.chdir(os.path.dirname(__file__))
 sys.path.append("../lib")
 import get_parser
 
+from test_unit import TestUnit 
+
 class TestGetParserUnit:
     """
         Use with pytest... unit tests for ../lib/*.py

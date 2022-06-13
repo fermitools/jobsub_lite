@@ -20,6 +20,7 @@ class TestUnit:
             "environment":       ["USER"],
             "group":             test_group,
             "N":                 1,
+            "maxConcurrent":     None,
             "resource_provides": "usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE" 
         }
 

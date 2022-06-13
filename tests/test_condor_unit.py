@@ -15,13 +15,14 @@ os.chdir(os.path.dirname(__file__))
 sys.path.append("../lib")
 import creds
 import condor
+from test_unit import TestUnit 
 
 class TestCondorUnit:
     """
         Use with pytest... unit tests for ../lib/*.py
     """
 
-    def get_submit_file():
+    def get_submit_file(self):
         filename="/tmp/tst{0}.sub".format(os.getpid())
         f = open(filename, "w")
         f.write("""
@@ -77,7 +78,7 @@ queue 1
         f.close()
         return filename
 
-    def get_dag_file():
+    def get_dag_file(self):
         filename="/tmp/tst{0}.dag".format(os.getpid())
         f = open(filename, "w")
         f.write("""
@@ -94,7 +95,7 @@ queue 1
         assert schedd['Name'] == TestUnit.test_schedd
 
     def test_load_submit_file_1(self):
-        res = condor.load_submit_file(TestUnit.get_submit_file())
+        res = condor.load_submit_file(self.get_submit_file())
         assert str(res[0]).find('universe = vanilla') >= 0
         assert str(res[0]).find('executable = /bin/true') >= 0
 
@@ -103,10 +104,10 @@ queue 1
         os.environ["GROUP"] = TestUnit.test_group
         creds.get_creds()
 
-        res = condor.submit(TestUnit.get_submit_file(), TestUnit.test_vargs, TestUnit.test_schedd )
+        res = condor.submit(self.get_submit_file(), TestUnit.test_vargs, TestUnit.test_schedd )
         print("got: " , res)
         assert res
 
     def x_test_submit_dag_1(self):
         # XXX fix me
-        res = condor.submit_dag(TestUnit.get_dag_file(), TestUnit.test_vargs, TestUnit.test_schedd, cmd_args=[])
+        res = condor.submit_dag(self.get_dag_file(), TestUnit.test_vargs, TestUnit.test_schedd, cmd_args=[])

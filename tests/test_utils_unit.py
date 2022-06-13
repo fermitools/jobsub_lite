@@ -14,6 +14,9 @@ os.chdir(os.path.dirname(__file__))
 #
 sys.path.append("../lib")
 import utils
+import creds
+
+from test_unit import TestUnit 
 
 class TestUtilsUnit:
     """
@@ -29,7 +32,7 @@ class TestUtilsUnit:
         assert utils.fixquote('test2=test3=test4') == 'test2="test3=test4"'
 
     def test_grep_n_1(self):
-        assert utils.grep_n(r"class (\w*):", 1, __file__) == "TestUnit"
+        assert utils.grep_n(r"class (\w*):", 1, __file__) == "TestUtilsUnit"
         assert utils.grep_n(r"import (\w*)", 1, __file__) == "os"
 
     def test_fix_unit_1(self):

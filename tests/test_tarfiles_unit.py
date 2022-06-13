@@ -15,6 +15,9 @@ os.chdir(os.path.dirname(__file__))
 sys.path.append("../lib")
 import creds
 import tarfiles
+import get_parser
+
+from test_unit import TestUnit 
 
 class TestTarfilesUnit:
     """

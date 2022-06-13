@@ -17,6 +17,7 @@ import creds
 import get_parser
 import dagnabbit
 
+from test_unit import TestUnit 
 
 class TestDagnabbitUnit:
     """

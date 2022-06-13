@@ -14,6 +14,7 @@ os.chdir(os.path.dirname(__file__))
 #
 sys.path.append("../lib")
 import creds
+from test_unit import TestUnit 
 
 class TestCredUnit:
     """
