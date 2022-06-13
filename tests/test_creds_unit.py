@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import pytest
 
 #
 # we assume everwhere our current directory is in the package 
@@ -15,6 +16,11 @@ os.chdir(os.path.dirname(__file__))
 sys.path.append("../lib")
 import creds
 from test_unit import TestUnit 
+
+@pytest.fixture
+def needs_credentials():
+    os.environ["GROUP"] = TestUnit.test_group
+    return creds.get_creds()
 
 class TestCredUnit:
     """

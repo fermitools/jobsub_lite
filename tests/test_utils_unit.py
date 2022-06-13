@@ -46,9 +46,8 @@ class TestUtilsUnit:
         res = utils.get_principal()
         assert res.split('@')[0] == os.environ['USER']
 
-    def test_set_extras_1(self):
-        os.environ["GROUP"] = TestUnit.test_group
-        proxy, token = creds.get_creds()
+    def test_set_extras_1(self, needs_credentials):
+        proxy, token = needs_credentials
         args = TestUnit.test_vargs.copy()
         utils.set_extras_n_fix_units(args, TestUnit.test_schedd, proxy, token)
         assert args["user"] == os.environ["USER"]

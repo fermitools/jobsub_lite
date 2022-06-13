@@ -18,6 +18,7 @@ import tarfiles
 import get_parser
 
 from test_unit import TestUnit 
+from test_creds_unit import needs_credentials
 
 class TestTarfilesUnit:
     """
@@ -39,10 +40,10 @@ class TestTarfilesUnit:
         path = tarfiles.dcache_persistent_path(TestUnit.test_group, __file__)
         assert path[:6] == '/pnfs/'
 
-    def test_tarfile_publisher_1(self):
+    def test_tarfile_publisher_1(self, needs_credentials):
         # need creds..
         os.environ["GROUP"] = TestUnit.test_group
-        proxy, token = creds.get_creds()
+        proxy, token = needs_credentials
         # need something to publish...
         tarfile = tarfiles.tar_up(os.path.dirname(__file__), None)
         digest, tf = tarfiles.slurp_file(tarfile)
@@ -67,11 +68,7 @@ class TestTarfilesUnit:
 
         assert location is not None
 
-    def test_do_tarballs_1(self):
-        # need credentials...
-        os.environ["GROUP"] = TestUnit.test_group
-        creds.get_creds()
-
+    def test_do_tarballs_1(self, needs_credentials):
         tdir = os.path.dirname(__file__)
         for dropbox_type in [ "cvmfs", "pnfs" ]:
             argv = [
