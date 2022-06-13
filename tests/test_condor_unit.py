@@ -116,4 +116,4 @@ class TestCondorUnit:
         """ actually submit a dag with condor_submit_dag """
         # XXX fix me
         res = condor.submit_dag(self.get_dag_file(), TestUnit.test_vargs, TestUnit.test_schedd, cmd_args=[])
-        asssert res
+        assert res
