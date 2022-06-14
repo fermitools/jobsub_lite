@@ -91,6 +91,7 @@ func GetToken(exp, role string) error {
 	}
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
+	k.Printf("running %v", cmd.Args)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("error running htgettoken: %w", err)
 	}
