@@ -44,6 +44,10 @@ notify_user = {{email_to}}
 {{lines|join("\n+")}}
 requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))) {%if append_condor_requirements %} && {{append_condor_requirements}} {%endif%}
 
+{% if singularity_image is defined and no_singularity is false %}
++SingularityImage="{{singularity_image}}"
+{% endif %}
+
 {% if role and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role}}
 {% else %}
