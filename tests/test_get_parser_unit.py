@@ -29,25 +29,39 @@ def find_all_arguments():
     dest = {}
     for line in f.readlines():
         p = line.find('"--')
+        mq = '"'
+        if p < 0: 
+           p = line.find("'--")
+           mq = "'"
+
         if p > 0:
             arg = line[p+3:]
-            arg = arg[0:arg.find('"')]
+            p2 = arg.find(mq)
+            arg = arg[0:p2]
+            # sometimes we find '--arg=whatever' in a help message
+            # just prune it back down to --arg and it shouldn't hurt(?)
+            p2 = arg.find("=")
+            if p2 >= 0:
+                arg = arg[0:p2]
             allargs.append(arg)
             dest[arg] = arg
-        if line.find('dest="') > 0:
-            dest[arg] = line[line.find('dest="')+6:]
-            dest[arg] = dest[arg][0:dest[arg].find('"')]
-        if line.find('"-d"') > 0:
+        if line.find('dest="') > 0 or line.find("dest='") > 0:
+            dest[arg] = line[line.find('dest=')+6:]
+            p2 = dest[arg].find('"')
+            if p2 < 0: 
+                p2 = dest[arg].find("'")
+            dest[arg] = dest[arg][0:p2]
+        if line.find('"-d"') > 0 or line.find("'-d'") > 0:
             arg = "d"
             allargs.append(arg)
             dest[arg] = arg
-        if line.find('"-f"') > 0:
+        if line.find('"-f"') > 0 or line.find("'-f'") > 0:
             arg = "f"
             allargs.append(arg)
             dest[arg] = arg
-        if line.find('action="store') > 0:
+        if line.find('action="store') > 0 or line.find("action='store") > 0:
             flagargs.add(arg)
-        if line.find('action="append') > 0:
+        if line.find('action="append') > 0 or line.find("action='append") > 0:
             listargs.add(arg)
 
     f.close()
