@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"os/exec"
 
 	"github.com/urfave/cli/v2"
 
@@ -50,9 +51,17 @@ func main() {
 				Action:    jobsub.CondorWrapper("rm"),
 			},
 			{
-				Name:    "submit",
-				Aliases: []string{},
-				Usage:   "submit job(s) to batch system queue",
+				Name:      "submit",
+				Aliases:   []string{},
+				Usage:     "submit job(s) to batch system queue",
+				ArgsUsage: "[jobsub_submit args]",
+				Action: func(ctx *cli.Context) error {
+					log.Printf("running jobsub_submit...")
+					cmd := exec.Command("jobsub_submit", ctx.Args().Slice()...)
+					cmd.Stdout = os.Stdout
+					cmd.Stderr = os.Stderr
+					return cmd.Run()
+				},
 			},
 		},
 	}

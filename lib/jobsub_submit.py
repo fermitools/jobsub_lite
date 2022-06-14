@@ -18,9 +18,6 @@
 # limitations under the License.
 
 import sys
-
-sys.path = [x for x in sys.path if x[:6] == "/usr/l"]
-
 import os
 import os.path
 import re
@@ -32,19 +29,6 @@ import uuid
 import socket
 import shutil
 
-#
-# we are in prefix/bin/jobsub_submit, so find our prefix
-#
-PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-#
-# find parts we need in package management
-# this means we don't need fancy ups dependencies..
-#
-sys.path.append(os.path.join(PREFIX, "lib"))
-from packages import pkg_find
-
-pkg_find("jinja")
 import jinja2 as jinja
 
 #
@@ -56,6 +40,12 @@ from dagnabbit import parse_dagnabbit
 from creds import get_creds
 from tarfiles import do_tarballs
 from utils import fixquote, set_extras_n_fix_units
+
+#
+# we are in prefix/bin/jobsub_submit, so find our prefix for the templates
+#
+PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 def get_basefiles(dlist):
     res = []

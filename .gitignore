@@ -1,3 +1,4 @@
 /cmd/jobsub/jobsub
 /cmd/jobsub_rm/jobsub_rm
 /cmd/jobsub_fetchlog/jobsub_fetchlog
+/cmd/jobsub_submit/jobsub_submit
