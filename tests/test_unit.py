@@ -5,8 +5,8 @@ class TestUnit:
         strings/parameters common to unit tests
     """
 
-    #test_group = "fermilab"
-    test_group = "dune"
+    test_group = "fermilab"
+    #test_group = "dune"
     test_schedd = "jobsubdevgpvm01.fnal.gov"
     test_vargs = { 
             "debug":             False,
