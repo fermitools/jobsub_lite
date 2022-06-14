@@ -22,6 +22,12 @@ from test_unit import TestUnit
 def find_all_arguments():
     # try to extract all the --foo arguments from the source
     # and track which ones are flags
+    # we assume 
+    # * there are mostly calls to add_argument in the source file
+    # * the add_argument lines may span multiple lines, but
+    # * we don't have more than one add_argument call per line
+    # so we look for various parts of the add_argument calls 
+    # separately on each line
     f = open("../lib/get_parser.py","r")
     flagargs = set()
     listargs = set()
@@ -35,37 +41,48 @@ def find_all_arguments():
            mq = "'"
 
         if p > 0:
+            # we saw a '"--...' or "'--..." which we assume is a parameter
+            # to add_argument (or similar), so pull the argument name
+            # and mark that as "arg" -- the argument we're currently 
+            # working on
             arg = line[p+3:]
             p2 = arg.find(mq)
             arg = arg[0:p2]
             # sometimes we find '--arg=whatever' in a help message
-            # just prune it back down to --arg and it shouldn't hurt(?)
+            # just prune it back down to --arg and it shouldn't hurt
+            # assuming its still talking about the current argument, or last
             p2 = arg.find("=")
             if p2 >= 0:
                 arg = arg[0:p2]
             allargs.append(arg)
-            dest[arg] = arg
+            dest[arg] = arg # destination starts off as flag name
         if line.find('dest="') > 0 or line.find("dest='") > 0:
+            # add_argument may take a dest= parameter, so if we see 
+            # one make a note about the last argument we saw
             dest[arg] = line[line.find('dest=')+6:]
             p2 = dest[arg].find('"')
             if p2 < 0: 
                 p2 = dest[arg].find("'")
             dest[arg] = dest[arg][0:p2]
         if line.find('"-d"') > 0 or line.find("'-d'") > 0:
+            # special case for -d -- make it current argument
             arg = "d"
             allargs.append(arg)
             dest[arg] = arg
         if line.find('"-f"') > 0 or line.find("'-f'") > 0:
+            # special case for -f -- make it current argument
             arg = "f"
             allargs.append(arg)
             dest[arg] = arg
         if line.find('action="store') > 0 or line.find("action='store") > 0:
+            # if we see an action="store.. then this argument is a flag
+            # and doesn't consume a value
             flagargs.add(arg)
         if line.find('action="append') > 0 or line.find("action='append") > 0:
+            # if we see an action="append.. then this argument adds to a list
             listargs.add(arg)
 
     f.close()
-    # now make a filled argument list
     return allargs, flagargs, listargs, dest 
 
 @pytest.fixture
@@ -138,7 +155,8 @@ class TestGetParserUnit:
     def test_check_all_test_args(self,find_all_arguments, all_test_args):
         # make sure we have a test argument for all the arguments in 
         # the source, and that we find all the arguments in the source
-        # we think we should
+        # we think we should.  This way we maintain a list here in
+        # the test code, but check it against the source...
         allargs, flagargs, listargs, dest = find_all_arguments
         for arg in allargs:
             if len(arg) > 1:
@@ -153,7 +171,7 @@ class TestGetParserUnit:
 
     def test_get_parser_all(self,find_all_arguments, all_test_args):
         """
-            Make an argument list 
+            Validate an all arguments list
         """
 
         allargs, flagargs, listargs, dest = find_all_arguments
@@ -165,24 +183,34 @@ class TestGetParserUnit:
         vres = vars(res)  
         print("vres is ", vres)
 
+        #
+        # do a suitable assertion for all the arguments
+        # slightly more cases here than seem obvious
+        #
         for arg in allargs:
+            # figure out what arg is called in the result
+            # using dest table and fixing dashes
             uarg = dest[arg].replace('-','_')
+
             if arg in flagargs:
+                # its a flag, just assert it
                 assert vres[uarg]
             elif arg == "d":
+                # -d special case -- makes list of *pairs* of args
                 assert vres['d'] == [['dtag','dpath']]
-            elif arg == "f":
-                assert vres['input_file'] == ['xxfxx']
             elif arg in listargs:
+                # args are in a list, so look for list containing xxflagxx
                 if arg in ['resource-provides', 'lines']:
+                    # some of our arguments start with blank in the list
+                    # so a "\nprefix:".join(list) prefixes the useful items
                     assert vres[uarg] == ['', "xx%sxx" % arg,]
                 else:
                     assert vres[uarg] == ["xx%sxx" % arg,]
             else:
+                # general string argument, look for xxflagxx
                 assert vres[uarg] == "xx%sxx" % arg
 
         # also make sure we got the executable and arguments...
-
         assert 'file:///bin/true' == vres['executable']
         for i in range(4):
             assert 'xx_executable_arg_%s_xx' % i in vres['exe_arguments']
