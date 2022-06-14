@@ -17,6 +17,8 @@ import utils
 import creds
 
 from test_unit import TestUnit 
+from test_creds_unit import needs_credentials
+
 
 class TestUtilsUnit:
     """
