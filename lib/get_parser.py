@@ -252,7 +252,7 @@ def get_parser():
     )
     singularity_group.add_argument(
         "--no-singularity",
-        action="store_true"
+        action="store_true",
         help="Don't request a singularity container.  If the site your job "
             "lands on runs all jobs in singularity containers, your job will "
             "also run in one.  If the site does not run all jobs in "
