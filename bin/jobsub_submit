@@ -57,10 +57,6 @@ from creds import get_creds
 from tarfiles import do_tarballs
 from utils import fixquote, set_extras_n_fix_units
 
-
-# DEFAULT_SINGULARITY_IMAGE = "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest" . For Production
-DEFAULT_SINGULARITY_IMAGE = "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:3.6"
-
 def get_basefiles(dlist):
     res = []
     for d in dlist:
@@ -163,28 +159,7 @@ def main():
     - launch
     """
     parser = get_parser()
-
-    submit_parser = parser.add_argument_group("jobsub_submit", "Arguments for jobsub_submit")
-    singularity_group = submit_parser.add_mutually_exclusive_group()
-    singularity_group.add_argument(
-        "--singularity-image",
-        default=DEFAULT_SINGULARITY_IMAGE,
-        help="Singularity image to run jobs in.  Default is "
-            f"{DEFAULT_SINGULARITY_IMAGE}"
-    )
-    singularity_group.add_argument(
-        "--no-singularity",
-        type=bool,
-        default=False
-        help="Don't request a singularity container.  If the site your job "
-            "lands on runs all jobs in singularity containers, your job will "
-            "also run in one.  If the site does not run all jobs in "
-            "singularity containers, your job will run outside a singularity "
-            "container."
-    )
-
     args = parser.parse_args()
-
 
     proxy, token = get_creds()
     if args.verbose:
