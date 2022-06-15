@@ -82,7 +82,7 @@ def load_submit_file(filename):
         line = line.strip()
         if line.startswith("#"):
             continue
-        t = re.split("\s*=\s*", line, maxsplit=1)
+        t = re.split(r"\s*=\s*", line, maxsplit=1)
         if len(t) == 2:
             res[t[0]] = t[1]
         elif line.startswith("queue"):
@@ -133,7 +133,7 @@ def submit(f, vargs, schedd_name, cmd_args=[]):
         else:
             if 'outdir' in vargs:
                 print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
-                return True
+            return True
     except OSError as e:
         print("Execution failed: ", e)
         return None
@@ -179,4 +179,4 @@ def submit_dag(f, vargs, schedd_name, cmd_args=[]):
     except OSError as e:
         print("Execution failed: ", e)
 
-    submit(subfile, vargs, schedd_name)
+    return submit(subfile, vargs, schedd_name)
