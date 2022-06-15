@@ -18,7 +18,7 @@ import sys
 import os
 
 # DEFAULT_SINGULARITY_IMAGE = "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest" . For Production
-DEFAULT_SINGULARITY_IMAGE = "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:3.6"
+DEFAULT_SINGULARITY_IMAGE = "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:osg3.6"
 
 def verify_executable_starts_with_file_colon(s):
     """routine to give argparse to verify the executable parameter,
