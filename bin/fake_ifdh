@@ -73,9 +73,9 @@ def getToken(role=DEFAULT_ROLE):
             cmd = "%s -r %s" % (cmd, role.lower()) # Token-world wants all-lower
         # send htgettoken output to stderr because invokers read stdout
         os.system("%s >&2" % cmd)
-        print(tokenfile)
+        return(tokenfile)
     else:
-        print(tokenfile)
+        return(tokenfile)
 
 
 def getProxy(role=DEFAULT_ROLE):
@@ -106,11 +106,11 @@ def getProxy(role=DEFAULT_ROLE):
         # send htgettoken output to stderr because invokers read stdout
         os.system("%s >&2" % cmd)
         if 0 == os.system(chk_cmd):
-            print(vomsfile)
+            return(vomsfile)
         else:
-            print("")
+            return("")
     else:
-        print(vomsfile)
+        return(vomsfile)
 
 
 def cp(src, dest):
@@ -136,7 +136,9 @@ if __name__ == "__main__":
         if opts.command[0] == "cp":
             commands[opts.command[0]](*opts.cpargs[0])
         else:
-            commands[opts.command[0]](role)
+            res = commands[opts.command[0]](role)
+            if res != None:
+                print(res)
     except KeyError:
         print(
             "An invalid command to fake_ifdh was given.  Please select from "

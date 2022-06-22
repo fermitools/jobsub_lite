@@ -22,6 +22,11 @@ import os
 import subprocess
 import sys
 
+PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(PREFIX, "lib"))
+
+import fake_ifdh
+
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
 
@@ -43,10 +48,12 @@ def main():
         help="Group/Experiment/Subgroup for priorities and accounting",
         action=StoreGroupinEnvironment,
     )
-    parser.add_argument('passthru', nargs='+', action='append' )
+    parser.add_argument(
+        "--role", help="VOMS Role for priorities and accounting", default="Analysis"
+    )
 
 
-    arglist=parser.parse_args()
+    arglist,passthru = parser.parse_known_args()
 
     # make list of arguments to pass to condor command:
     # - the passthru arguments from above, except if we have
@@ -54,7 +61,7 @@ def main():
     #   keep the 234, and pass --name schedd as well
     execargs = []
     schedd = None
-    for i in arglist.passthru[0]:
+    for i in passthru:
         pos = i.find('@')
         if pos >= 0:
             schedd = i[pos+1:]
@@ -66,11 +73,18 @@ def main():
         execargs.insert(0, "-name")
 
     # also make sure we have suitable credentials...
-    os.environ['X509_USER_PROXY'] = backquote('fake_ifdh getProxy')
-    os.environ['BEARER_TOKEN_FILE'] = backquote('fake_ifdh getToken')
+    role = fake_ifdh.getRole(arglist.role)
+    os.environ['X509_USER_PROXY'] = fake_ifdh.getProxy(role)
+    os.environ['BEARER_TOKEN_FILE'] = fake_ifdh.getToken(role)
 
     # and find the wrapped command name
-    cmd = os.path.basename(sys.argv[0]).replace('jobsub_','condor_')
+    cmd = os.path.basename(sys.argv[0])
+
+    # combine jobsub_q as well
+    if cmd == 'jobsub_q':
+        execargs.insert(0, '-global')
+          
+    cmd = cmd.replace('jobsub_','condor_')
 
     execargs.insert(0, cmd)
     
