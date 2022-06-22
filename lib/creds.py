@@ -15,6 +15,7 @@
 # limitations under the License.
 import os
 import subprocess
+import fake_ifdh
 
 
 def get_creds(args={}):
@@ -23,8 +24,9 @@ def get_creds(args={}):
     be done here as needed.
     """
 
-    p = subprocess.run('fake_ifdh getProxy', shell=True, bufsize=0, stdout=subprocess.PIPE, universal_newlines=True, check=True).stdout   
-    t = subprocess.run('fake_ifdh getToken', shell=True, bufsize=0, stdout=subprocess.PIPE, universal_newlines=True, check=True).stdout
+    role = fake_ifdh.getRole(args['role'])
+    p = fake_ifdh.getProxy(role)
+    t = fake_fidh.getToken(role)
 
     p = p.strip()
     t = t.strip()
