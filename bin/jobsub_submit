@@ -53,9 +53,9 @@ import jinja2 as jinja
 from get_parser import get_parser
 from condor import get_schedd, submit, submit_dag
 from dagnabbit import parse_dagnabbit
-from creds import get_creds
 from tarfiles import do_tarballs
 from utils import fixquote, set_extras_n_fix_units
+from creds import get_creds
 
 def get_basefiles(dlist):
     res = []

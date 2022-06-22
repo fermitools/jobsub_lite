@@ -24,9 +24,9 @@ def get_creds(args={}):
     be done here as needed.
     """
 
-    role = fake_ifdh.getRole(args['role'])
+    role = fake_ifdh.getRole(args.get('role',None))
     p = fake_ifdh.getProxy(role)
-    t = fake_fidh.getToken(role)
+    t = fake_ifdh.getToken(role)
 
     p = p.strip()
     t = t.strip()
