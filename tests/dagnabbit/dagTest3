@@ -1,0 +1,54 @@
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobA.sh 
+</serial>
+<parallel>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobB.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobC.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobD.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobE.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobF.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobG.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobH.sh 
+</serial>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobB.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobC.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobD.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobE.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobF.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobG.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobH.sh 
+</serial>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobB.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobC.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobD.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobE.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobF.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobG.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobH.sh 
+</serial>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobB.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobC.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobD.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobE.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobF.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobG.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobH.sh 
+</serial>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobB.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobC.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobD.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobE.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobF.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobG.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobH.sh 
+</serial>
+</parallel>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobI.sh 
+</serial>
+
