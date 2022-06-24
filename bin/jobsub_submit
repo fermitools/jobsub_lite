@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3 -I
 
 #
 # jobsub_submit -- wrapper for condor_submit
@@ -18,9 +18,6 @@
 # limitations under the License.
 
 import sys
-
-sys.path = [x for x in sys.path if x[:6] == "/usr/l"]
-
 import os
 import os.path
 import re

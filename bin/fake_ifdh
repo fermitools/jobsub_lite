@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -I
 
 # fake_ifdh -- get rid of ifdhc dependency by providing a few
 #              bits of ifdh behavior
@@ -19,9 +19,6 @@
 # limitations under the License.
 
 import sys
-
-sys.path = [x for x in sys.path if x[:6] == "/usr/l"]
-
 import os
 import time
 import argparse
