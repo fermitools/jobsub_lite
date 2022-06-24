@@ -27,6 +27,7 @@ import traceback as tb
 from urllib.parse import quote as _quote
 
 import requests
+import fake_ifdh
 
 try:
     _NUM_RETRIES_ENV = os.getenv("JOBSUB_UPLOAD_NUM_RETRIES", 20)
@@ -126,7 +127,7 @@ def do_tarballs(args):
 
             elif args.use_dropbox == "pnfs":
                 location = dcache_persistent_path(args.group, tfn[8:])
-                os.system("fake_ifdh cp %s %s" % (tfn[8:], location))
+                fake_ifdh.cp(tfn[8:], location)
             else:
                 raise (
                     NotImplementedError(
