@@ -17,8 +17,6 @@ import argparse
 import sys
 import os
 
-# DEFAULT_SINGULARITY_IMAGE = "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest" . For Production
-DEFAULT_SINGULARITY_IMAGE = "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:osg3.6"
 
 def verify_executable_starts_with_file_colon(s):
     """routine to give argparse to verify the executable parameter,
@@ -246,7 +244,7 @@ def get_parser():
     singularity_group = parser.add_mutually_exclusive_group()
     singularity_group.add_argument(
         "--singularity-image",
-        default=DEFAULT_SINGULARITY_IMAGE,
+        default="/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
         help="Singularity image to run jobs in.  Default is "
             f"{DEFAULT_SINGULARITY_IMAGE}"
     )
