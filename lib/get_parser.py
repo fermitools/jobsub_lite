@@ -246,7 +246,7 @@ def get_parser():
         "--singularity-image",
         default="/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
         help="Singularity image to run jobs in.  Default is "
-            f"{DEFAULT_SINGULARITY_IMAGE}"
+            "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest"
     )
     singularity_group.add_argument(
         "--no-singularity",
