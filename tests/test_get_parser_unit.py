@@ -110,11 +110,13 @@ def all_test_args():
          '--mail_always',
          '--maxConcurrent', 'xxmaxConcurrentxx',
          '--memory', 'xxmemoryxx',
+         '--no-singularity',
          '--no_submit',
          '--OS', 'xxOSxx',
          '--overwrite_condor_requirements', 'xxoverwrite_condor_requirementsxx',
          '--resource-provides', 'xxresource-providesxx',
          '--role', 'xxrolexx',
+         '--singularity-image', 'xxsingularity-imagexx',
          '--site', 'xxsitexx',
          '--subgroup', 'xxsubgroupxx',
          '--tar_file_name', 'xxtar_file_namexx',
@@ -176,11 +178,38 @@ class TestGetParserUnit:
 
         allargs, flagargs, listargs, dest = find_all_arguments
 
+        # Args to exclude from checks below.  We need to do this due to,
+        # for example, mutually exclusive groups defined in the parser.
+        # Currently, the testing code here tries to parse all args, which
+        # works until you have a mutually exclusive group.  So the
+        # variable args_exclude_list should contain all the args in a 
+        # mutually exclusive group, except for one
+        # e.g. For the mutually exclusive group (--singularity-image,
+        # --no-singularity), we pick one and enter it into args_exclude_list
+        args_exclude_list = ['--no-singularity'] 
+
+        def filter_excluded(arg_list):
+            _stripped_args_exclude_list = [arg.strip('-') for arg in args_exclude_list]
+            def is_arg_excluded(arg):
+                return arg in args_exclude_list or arg in _stripped_args_exclude_list
+
+            return [arg for arg in arg_list if not is_arg_excluded(arg)]
+
+        allargs = filter_excluded(allargs)
+        flagargs = filter_excluded(flagargs) 
+        listargs = filter_excluded(listargs) 
+        all_test_args =  filter_excluded(all_test_args)
+
         print("trying command flags: ", all_test_args)
         
         parser = get_parser.get_parser()
         res = parser.parse_args(all_test_args)
         vres = vars(res)  
+        for arg in args_exclude_list:
+            remove_key = arg.strip('-').replace('-', '_')
+            vres.pop(remove_key, None)
+
+        
         print("vres is ", vres)
 
         #

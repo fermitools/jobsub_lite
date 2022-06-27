@@ -158,7 +158,6 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
 
-
     proxy, token = get_creds()
     if args.verbose:
         print("proxy is : %s" % proxy)

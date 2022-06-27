@@ -241,7 +241,25 @@ def get_parser():
         help="executable for job to run",
     )
 
+    singularity_group = parser.add_mutually_exclusive_group()
+    singularity_group.add_argument(
+        "--singularity-image",
+        default="/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
+        help="Singularity image to run jobs in.  Default is "
+            "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest"
+    )
+    singularity_group.add_argument(
+        "--no-singularity",
+        action="store_true",
+        help="Don't request a singularity container.  If the site your job "
+            "lands on runs all jobs in singularity containers, your job will "
+            "also run in one.  If the site does not run all jobs in "
+            "singularity containers, your job will run outside a singularity "
+            "container."
+    )
+
     parser.add_argument(
         "exe_arguments", nargs=argparse.REMAINDER, help="arguments to executable"
     )
+
     return parser
