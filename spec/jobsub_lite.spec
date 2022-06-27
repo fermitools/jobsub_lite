@@ -69,6 +69,7 @@ install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 /opt/jobsub_lite/lib/condor.py
 /opt/jobsub_lite/lib/creds.py
 /opt/jobsub_lite/lib/dagnabbit.py
+/opt/jobsub_lite/lib/fake_ifdh.py
 /opt/jobsub_lite/lib/get_parser.py
 /opt/jobsub_lite/lib/packages.py
 /opt/jobsub_lite/lib/poms_wrap.py
@@ -98,6 +99,9 @@ install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
+* Mon Jun 27 2022 Shreyas Bhat <sbhat@fnal.gov> beta11
+- Added lib/fake_ifdh.py to files list
+
 * Thu Jun 02 2022 Shreyas Bhat <sbhat@fnal.gov> beta10
 - Marked /etc/condor files as %config(noreplace)
 
