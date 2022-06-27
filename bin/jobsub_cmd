@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/usr/bin/python3 -I
 
 #
 # jobsub_cmd -- generic wrapper for condor commands
-# COPYRIGHT 2021 FERMI NATIONAL ACCELERATOR LABORATORY
+# COPYRIGHT 2022 FERMI NATIONAL ACCELERATOR LABORATORY
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,37 +17,81 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-schedd=""
-case "x$*" in
-*@*) schedd=`echo "$*" | sed -e 's/.*@//' -e 's/ .*//'`
-     args=`echo "$*" | sed -e 's/@[^ ]*//'`
-     ;;
-*)  args="$*"
-    ;;
-esac
-if [ x$schedd != x ]
-then
-    args="-name $schedd $args"
-fi
+import argparse
+import os
+import subprocess
+import sys
+import re
 
-# Check group and pull it into environment
-case "x$args" in
-*--group*)
-    group=`echo "$args" | sed -e 's/.*--group[=( )+]//' -e 's/ .*//'`
-    args=`echo "$args*" | sed -e "s/--group[=( )+]$group//"`
-    ;;
-*-G*)
-    group=`echo "$args" | sed -e 's/.*-G[( )+]//' -e 's/ .*//'`
-    args=`echo "$args" | sed -e "s/-G[( )+]$group//"`
-    ;;
-esac
-if [ x$group != x ]
-then
-    export GROUP=$group
-fi
+PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(PREFIX, "lib"))
 
-export X509_USER_PROXY=`fake_ifdh getProxy`
-export BEARER_TOKEN_FILE=`fake_ifdh getToken`
+import fake_ifdh
 
-cmd=`basename $0 | sed -e 's;^[a-z]*_;condor_;'`
-exec /usr/bin/$cmd -name $schedd $args
+class StoreGroupinEnvironment(argparse.Action):
+    """Action to store the given group in the GROUP environment variable"""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        os.environ["GROUP"] = values
+        setattr(namespace, self.dest, values)
+
+
+def backquote(cmd):
+    sp = subprocess.Popen(cmd, shell=True, encoding='UTF-8', stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    res, stderr = sp.communicate()
+    return res
+
+def main():
+    parser = argparse.ArgumentParser(description = 'Condor command wrapper')
+    parser.add_argument(
+        "-G",
+        "--group",
+        help="Group/Experiment/Subgroup for priorities and accounting",
+        action=StoreGroupinEnvironment,
+    )
+    parser.add_argument(
+        "--role", help="VOMS Role for priorities and accounting", default="Analysis"
+    )
+
+
+    arglist,passthru = parser.parse_known_args()
+
+    # make list of arguments to pass to condor command:
+    # - the passthru arguments from above, except if we have
+    #   any 234@schedd style arguments, pick out the schedd and
+    #   keep the 234, and pass --name schedd as well
+    execargs = []
+    schedd = None
+    for i in passthru:
+        m = re.match(r"([\d.]+)@([\w.]+)", i)
+        if m:
+            # looks like a jobsub id 12.34@schedd.name
+            schedd = m.group(2)
+            i = m.group(1)
+        execargs.append(i)
+
+    if schedd:
+        execargs.insert(0, schedd)
+        execargs.insert(0, "-name")
+
+    # also make sure we have suitable credentials...
+    role = fake_ifdh.getRole(arglist.role)
+    os.environ['X509_USER_PROXY'] = fake_ifdh.getProxy(role)
+    os.environ['BEARER_TOKEN_FILE'] = fake_ifdh.getToken(role)
+
+    # and find the wrapped command name
+    cmd = os.path.basename(sys.argv[0])
+
+    # combine jobsub_q as well
+    if cmd == 'jobsub_q':
+        execargs.insert(0, '-global')
+          
+    cmd = cmd.replace('jobsub_','condor_')
+
+    execargs.insert(0, cmd)
+    
+    # now run the command with those arguments
+    os.execvp("/usr/bin/"+cmd, execargs)
+
+if __name__ == "__main__":
+    main()

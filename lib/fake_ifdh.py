@@ -19,6 +19,7 @@
 # limitations under the License.
 
 import sys
+
 import os
 import time
 import argparse
@@ -36,9 +37,11 @@ def getExp():
         if os.environ.get(ev, None):
             return os.environ.get(ev)
     # otherwise guess primary group...
+    exp = None
     f = os.popen("id -gn", "r")
-    exp = f.read()
-    f.close()
+    if f: 
+        exp = f.read()
+        f.close()
     return exp
 
 
@@ -52,9 +55,11 @@ def getRole(role_override=None):
 
 
 def checkToken(tokenfile):
+    exp_time = None
     f = os.popen("decode_token.sh -e exp %s 2>/dev/null" % tokenfile, "r")
-    exp_time = f.read()
-    f.close()
+    if f:
+        exp_time = f.read()
+        f.close()
     return  exp_time and ((int(exp_time) - time.time()) > 60)
 
 def getToken(role=DEFAULT_ROLE):
