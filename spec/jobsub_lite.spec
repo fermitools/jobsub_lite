@@ -1,5 +1,5 @@
 Name:		jobsub_lite
-Version:	beta10
+Version:	beta11
 Release:	1%{?dist}
 Summary:	Job submission wrapper scripts
 
