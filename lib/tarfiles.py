@@ -102,7 +102,7 @@ def do_tarballs(args):
 
             if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
                 digest, tf = slurp_file(tfn[8:])
-                proxy, token = get_creds()
+                proxy, token = get_creds(vars(args))
 
                 if not args.group:
                     raise ValueError("No --group specified!")
