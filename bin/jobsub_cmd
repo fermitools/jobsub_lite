@@ -56,6 +56,9 @@ def main():
 
     arglist,passthru = parser.parse_known_args()
 
+    if os.environ.get('GROUP',None) == None:
+        raise AttributeError("%s needs -G group or $GROUP in the environment." %sys.argv[0])
+
     # make list of arguments to pass to condor command:
     # - the passthru arguments from above, except if we have
     #   any 234@schedd style arguments, pick out the schedd and
