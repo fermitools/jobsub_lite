@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from collections import OrderedDict
 import os
 import re
 import os.path
@@ -59,6 +60,7 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
     ai = socket.getaddrinfo(socket.gethostname(), 80)
+    args["clientdn"] = get_client_dn(proxy)
     if ai:
         args["ipaddr"] = ai[-1][-1][0]
     else:
@@ -160,3 +162,53 @@ def get_principal():
     p.stdout.close()
     p.wait()
     return princ
+
+
+def get_client_dn(proxy=None):
+    """Get our proxy's DN if the proxy exists"""
+    if proxy is None:
+        proxy = os.getenv('X509_USER_PROXY')    
+        if proxy is None:
+            uid = str(os.getuid())
+            proxy = f"/tmp/x509up_u{uid}"
+
+    executables = OrderedDict(
+        ( 
+            (
+                "voms-proxy-info",
+                {
+                    "args": ["-file", proxy, "-subject"],
+                    "parse_output": re.compile("(.+)")
+                },
+            ),
+            (
+                "openssl",
+                {
+                    "args": ["x509", "-in", proxy, "-noout", "-subject"],
+                    "parse_output": re.compile("subject\= (.+)")
+                },
+            )
+        )
+    )
+
+    for executable in executables:
+        exe_path = shutil.which(executable)
+        if exe_path is not None:
+            try:
+                proc = subprocess.run([exe_path, *executables[executable]["args"]], stdout=subprocess.PIPE, encoding="utf-8")
+                assert proc.returncode == 0
+            except Exception as e:
+                print("Warning:  There was an issue getting the client DN from the user proxy.  Please open a "
+                "ticket to the Service Desk and paste the entire error message in the ticket.")
+                print(e)
+                continue
+            else:
+                print(proc.stdout)
+                raw_out = proc.stdout.strip()
+                print(raw_out)
+
+            out_match = executables[executable]["parse_output"].match(raw_out)            
+            if out_match is not None:
+                return out_match.group(1)
+
+    return ""
