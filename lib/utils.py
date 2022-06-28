@@ -185,7 +185,7 @@ def get_client_dn(proxy=None):
                 "openssl",
                 {
                     "args": ["x509", "-in", proxy, "-noout", "-subject"],
-                    "parse_output": re.compile("subject\= (.+)")
+                    "parse_output": re.compile("subject= (.+)")
                 },
             )
         )
