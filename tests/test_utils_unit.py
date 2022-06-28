@@ -20,11 +20,6 @@ import creds
 from test_unit import TestUnit 
 from test_creds_unit import needs_credentials, clear_x509_user_proxy
 
-import shutil
-
-def func():
-    return shutil.which('blah')
-
 
 class TestUtilsUnit:
     """
@@ -78,14 +73,16 @@ class TestUtilsUnit:
         """Call get_client_dn with proxy specified, env set.  Should grab 
         proxy from passed-in arg"""
         _proxy, _ = needs_credentials
+        old_x509_user_proxy_value = os.environ.pop('X509_USER_PROXY', None)
         os.environ['X509_USER_PROXY'] = 'foobar' # Break the environment so that this test won't accidentally pass
         client_dn = utils.get_client_dn(proxy=_proxy)
         assert os.environ["USER"] in client_dn 
+        os.environ['X509_USER_PROXY'] = old_x509_user_proxy_value
 
     def test_get_client_dn_no_proxy_provided(self, needs_credentials):
         """Call get_client_dn with no proxy specified.  Should grab proxy from
         env"""
-        _proxy, _ = needs_credentials # Sets X509_USER_PROXY
+        _proxy, _ = needs_credentials # Sets $X509_USER_PROXY
         client_dn = utils.get_client_dn()
         assert os.environ["USER"] in client_dn 
 

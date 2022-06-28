@@ -24,9 +24,8 @@ def needs_credentials():
 
 @pytest.fixture
 def clear_x509_user_proxy():
-    # Clear environment variable X509_USER_PROXY to test credentials overrides
-    old_x509_user_proxy_value = os.getenv('X509_USER_PROXY', None)
-    os.environ.pop('X509_USER_PROXY', None)
+    """Clear environment variable X509_USER_PROXY to test credentials overrides"""
+    old_x509_user_proxy_value = os.environ.pop('X509_USER_PROXY', None)
     yield
 
     if old_x509_user_proxy_value is not None:
