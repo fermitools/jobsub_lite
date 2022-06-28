@@ -158,7 +158,7 @@ class TarfilePublisherHandler(object):
     """
     dropbox_server_string = os.getenv("JOBSUB_DROPBOX_SERVER_LIST", "rcds01.fnal.gov rcds02.fnal.gov")
     check_tarball_present_re = re.compile(
-        "^PRESENT\:(.+)$"
+        "^PRESENT:(.+)$"
     )  # RCDS returns this if a tarball represented by cid is present
 
     def __init__(self, cid, proxy=None, token=None):
