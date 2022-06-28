@@ -2,6 +2,9 @@ import os
 import sys
 import time
 
+import pytest
+from jinja2 import exceptions
+
 #
 # we assume everwhere our current directory is in the package 
 # test area, so go ahead and cd there
@@ -42,8 +45,21 @@ class TestJobsubSubmitUnit:
         srcdir = os.path.dirname(os.path.dirname(__file__)) + "/templates/dataset_dag"
         dest = "/tmp/out{0}".format(os.getpid())
         os.mkdir(dest)
-        jobsub_submit.render_files(srcdir, TestUnit.test_vargs, dest)
+        args = {**TestUnit.test_vargs, **TestUnit.test_extra_template_args}
+        jobsub_submit.render_files(srcdir, args, dest)
         assert os.path.exists("%s/dagbegin.cmd" % dest)
+
+    def test_render_files_undefined_vars(self, tmp_path):
+        """Test rendering files when a template variable is undefined.  
+        Should raise jinja2.exceptions.UndefinedError
+        """
+        test_vargs = {}
+        srcdir = os.path.dirname(os.path.dirname(__file__)) + "/templates/simple"
+        dest = tmp_path
+        args = {**TestUnit.test_vargs, **TestUnit.test_extra_template_args}
+        with pytest.raises(exceptions.UndefinedError, match="is undefined"):
+            jobsub_submit.render_files(srcdir, args, dest)
+        
 
     def test_cleanup_1(self):
         # cleanup doesn't actually do anything right now...
