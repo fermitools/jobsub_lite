@@ -203,9 +203,7 @@ def get_client_dn(proxy=None):
                 print(e)
                 continue
             else:
-                print(proc.stdout)
                 raw_out = proc.stdout.strip()
-                print(raw_out)
 
             out_match = executables[executable]["parse_output"].match(raw_out)            
             if out_match is not None:
