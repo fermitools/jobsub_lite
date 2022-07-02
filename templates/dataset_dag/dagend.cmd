@@ -8,7 +8,7 @@ arguments          =
 output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
-environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP={{dir}};BEARER_TOKEN_FILE=.condor_creds/{{group}}.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
+environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP={{outdir}};BEARER_TOKEN_FILE=.condor_creds/{{group}}.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
 rank                  = Mips / 2 + Memory
 notification  = Error
 +RUN_ON_HEADNODE= True
@@ -29,7 +29,6 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 +Owner="{{user}}"
 +JobsubServerVersion="{{jobsub_version}}"
 +JobsubClientVersion="{{jobsub_version}}"
-+JobsubClientKerberosPrincipal="{{kerberosprincipal}}"
 +JOB_EXPECTED_MAX_LIFETIME = {{expected_lifetime}}
 notify_user = {{email_to}}
 +AccountingGroup = "group_{{group}}.{{user}}"

@@ -169,14 +169,14 @@ def submit_dag(f, vargs, schedd_name, cmd_args=[]):
         cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
         print("Running: %s" % cmd)
 
-    try:
-        output = subprocess.run(cmd, shell=True)
-        if output.returncode < 0:
-            print("Child was terminated by signal", -output.returncode)
-        else:
-            if 'outdir' in vargs:
-                print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
-    except OSError as e:
-        print("Execution failed: ", e)
+        try:
+            output = subprocess.run(cmd, shell=True)
+            if output.returncode < 0:
+                print("Child was terminated by signal", -output.returncode)
+            else:
+                if 'outdir' in vargs:
+                    print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
+        except OSError as e:
+            print("Execution failed: ", e)
 
     return submit(subfile, vargs, schedd_name)

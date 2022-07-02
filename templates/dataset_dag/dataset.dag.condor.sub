@@ -25,7 +25,6 @@ environment	= _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address;
 +Owner="{{user}}"
 +JobsubServerVersion="{{jobsub_version}}"
 +JobsubClientVersion="{{jobsub_version}}"
-+JobsubClientKerberosPrincipal="{{kerberosprincipal}}"
 
 {{lines|join("\n+")}}
 
