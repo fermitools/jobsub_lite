@@ -27,6 +27,7 @@ transfer_output_files = .empty_file
 +Owner="{{user}}"
 +JobsubServerVersion="{{jobsub_version}}"
 +JobsubClientVersion="{{jobsub_version}}"
++JobsubClientKerberosPrincipal="{{kerberos_principal}}"
 +JOB_EXPECTED_MAX_LIFETIME = {{expected_lifetime}}
 notify_user = {{email_to}}
 
