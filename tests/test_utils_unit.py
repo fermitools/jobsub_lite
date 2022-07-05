@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import unittest.mock
 
 #
 # we assume everwhere our current directory is in the package 
@@ -17,7 +18,7 @@ import utils
 import creds
 
 from test_unit import TestUnit 
-from test_creds_unit import needs_credentials
+from test_creds_unit import needs_credentials, clear_x509_user_proxy
 
 
 class TestUtilsUnit:
@@ -60,4 +61,44 @@ class TestUtilsUnit:
         utils.set_extras_n_fix_units(args, TestUnit.test_schedd, proxy, token)
         assert args["user"] == os.environ["USER"]
         assert args["memory"] == 64 * 1024
+
+    def test_get_client_dn_valid_proxy_provided(self, needs_credentials, clear_x509_user_proxy):
+        """Call get_client_dn with proxy specified"""
+        _proxy, _ = needs_credentials
+        clear_x509_user_proxy
+        client_dn = utils.get_client_dn(proxy=_proxy)
+        assert os.environ["USER"] in client_dn 
+
+    def test_get_client_dn_env_plus_proxy_provided(self, needs_credentials):
+        """Call get_client_dn with proxy specified, env set.  Should grab 
+        proxy from passed-in arg"""
+        _proxy, _ = needs_credentials
+        old_x509_user_proxy_value = os.environ.pop('X509_USER_PROXY', None)
+        os.environ['X509_USER_PROXY'] = 'foobar' # Break the environment so that this test won't accidentally pass
+        client_dn = utils.get_client_dn(proxy=_proxy)
+        assert os.environ["USER"] in client_dn 
+        os.environ['X509_USER_PROXY'] = old_x509_user_proxy_value
+
+    def test_get_client_dn_no_proxy_provided(self, needs_credentials):
+        """Call get_client_dn with no proxy specified.  Should grab proxy from
+        env"""
+        _proxy, _ = needs_credentials # Sets $X509_USER_PROXY
+        client_dn = utils.get_client_dn()
+        assert os.environ["USER"] in client_dn 
+
+    def test_get_client_dn_no_proxy_provided_no_env(self, needs_credentials, clear_x509_user_proxy):
+        """Call get_client_dn with no proxy specified, environment not set.  
+        Should get proxy from standard grid location"""
+        _proxy, _ = needs_credentials 
+        clear_x509_user_proxy
+        client_dn = utils.get_client_dn()
+        assert os.environ["USER"] in client_dn 
+
+    def test_get_client_dn_bad_proxy(self):
+        """If we give a bad proxy file, or there's some other problem, we 
+        should get "" as the return value"""
+        client_dn = utils.get_client_dn('bad_path')
+        assert client_dn == ""
+
+
 

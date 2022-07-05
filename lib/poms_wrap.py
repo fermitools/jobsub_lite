@@ -25,7 +25,7 @@ import poms_client
 
 def poms_wrap(args):
 
-    if os.environ.get("POMS_TASK_ID", None) == None:
+    if os.environ.get("POMS_TASK_ID", None) is None:
         # poms launch env not set, so skip...
         return
 

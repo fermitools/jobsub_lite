@@ -21,6 +21,23 @@ class TestUnit:
             "group":             test_group,
             "N":                 1,
             "maxConcurrent":     None,
-            "resource_provides": "usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE" 
+            "resource_provides": "usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE" ,
         }
+    test_extra_template_args = {
+            "role":              "Analysis",
+            "clientdn":          "test_client_dn",
+            "ipaddr":            "TEST.IP.ADDRESS",
+            "user":              "test_user",
+            "jobsub_version":    "jobsub_test_version" ,
+            "kerberosprincipal": "test@FNAL.GOV",
+            "lines":             [],
+            "subgroup":          "test_subgroup",
+            "schedd":            "test_schedd",
+            "date":              "test_date",
+            "uuid":              "test_FERRY_uuid",
+            "dir":               "test_dir",
+            "email_to":          "test_user@fnal.gov",
+            "version":           "test_version",
+            "resource_provides_quoted": "usage_model=TEST",
+    }
 
