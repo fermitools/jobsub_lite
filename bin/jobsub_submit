@@ -68,7 +68,7 @@ def render_files(srcdir, values, dest, dlist=None):
     """
     print("trying to render files from %s\n" % srcdir)
 
-    if dlist == None:
+    if dlist is None:
         dlist = [ srcdir ]
     values["transfer_files"] = get_basefiles(dlist)
 
@@ -167,6 +167,10 @@ def main():
     """
     parser = get_parser()
     args = parser.parse_args()
+
+    if os.environ.get('GROUP',None) is None:
+        raise AttributeError("%s needs -G group or $GROUP in the environment." %sys.argv[0])
+
 
     proxy, token = get_creds()
     if args.verbose:

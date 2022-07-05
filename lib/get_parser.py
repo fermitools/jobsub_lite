@@ -108,6 +108,7 @@ def get_parser():
         "--group",
         help="Group/Experiment/Subgroup for priorities and accounting",
         action=StoreGroupinEnvironment,
+        default=os.environ.get("GROUP",None)
     )
     parser.add_argument(
         "-L", "--log_file", help="Log file to hold log output from job."
