@@ -133,7 +133,6 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
     args["environment"] = newe
     if args["debug"]:
         sys.stderr.write("leaving set_extras... args: %s\n" % repr(args))
-    args["version"] = "beta12"
     args["jobsub_command"] = " ".join(sys.argv)
 
 
