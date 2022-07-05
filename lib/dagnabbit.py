@@ -30,7 +30,7 @@ def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
     """
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
     jinja_env.filters["basename"] = os.path.basename
-    proxy, token = creds.get_creds()
+    proxy, token = creds.get_creds(values)
     count = 0
     linenum = 0
     df = open(values["dag"], "r")
