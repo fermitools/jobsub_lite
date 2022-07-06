@@ -29,7 +29,7 @@ class TestUnit:
             "ipaddr":            "TEST.IP.ADDRESS",
             "user":              "test_user",
             "jobsub_version":    "jobsub_test_version" ,
-            "kerberosprincipal": "test@FNAL.GOV",
+            "kerberos_principal": "test@FNAL.GOV",
             "lines":             [],
             "subgroup":          "test_subgroup",
             "schedd":            "test_schedd",

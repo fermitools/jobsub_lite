@@ -46,6 +46,7 @@ class TestJobsubSubmitUnit:
         dest = "/tmp/out{0}".format(os.getpid())
         os.mkdir(dest)
         args = {**TestUnit.test_vargs, **TestUnit.test_extra_template_args}
+        args['outdir'] = dest
         jobsub_submit.render_files(srcdir, args, dest)
         assert os.path.exists("%s/dagbegin.cmd" % dest)
 
