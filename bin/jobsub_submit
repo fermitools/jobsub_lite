@@ -201,7 +201,7 @@ def main():
         d2 = os.path.join(PREFIX, "templates", "dag")
         parse_dagnabbit(d1, varg, submitdir, schedd_name)
         varg["N"] = 1
-        render_files(d2, varg, submitdir, dlist=[d1,d2,varg["dest"]])
+        render_files(d2, varg, submitdir, dlist=[d1,d2,submitdir])
         if not varg.get("no_submit",False):
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
@@ -209,18 +209,18 @@ def main():
         do_dataset_defaults(varg)
         d1 = os.path.join(PREFIX, "templates", "dataset_dag")
         d2 = "%s/templates/simple" % PREFIX
-        render_files(d1, varg, submitdir, dlist=[d1,d2])
-        varg["N"] = 1
         render_files(d2, varg, submitdir, dlist=[d1,d2])
+        varg["N"] = 1
+        render_files(d1, varg, submitdir, dlist=[d1,d2, submitdir])
         if not varg.get("no_submit",False):
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     elif args.maxConcurrent:
         d1 = os.path.join(PREFIX, "templates", "maxconcurrent_dag")
         d2 = os.path.join(PREFIX, "templates", "simple")
-        render_files(d1, varg, submitdir, dlist=[d1,d2])
-        varg["N"] = 1
         render_files(d2, varg, submitdir, dlist=[d1,d2])
+        varg["N"] = 1
+        render_files(d1, varg, submitdir, dlist=[d1,d2,varg["dest"]])
         if not varg.get("no_submit",False):
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
