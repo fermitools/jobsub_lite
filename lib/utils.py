@@ -126,7 +126,7 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
             v = os.environ.get(e, None)
             if not v:
                 raise RuntimeError(
-                    "--environment %s was given but no value was in the environment"
+                    "--environment %s was given but no value was in the environment" % e
                 )
             e = "%s=%s" % (e, v)
         newe.append(e)
