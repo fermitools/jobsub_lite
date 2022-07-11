@@ -16,6 +16,7 @@ os.environ['PATH'] = (os.path.dirname(os.path.dirname(__file__)) +
 @pytest.fixture
 def job_envs():
     os.environ['IFDH_DEBUG']='1'
+    os.environ['IFDH_FORCE']='https'
     os.environ['IFDH_VERSION']='v2_6_5'
     os.environ['IFDHC_CONFIG_DIR'] = '/grid/fermiapp/products/common/db/../prd/ifdhc_config/v2_6_5/NULL'
     os.environ['IFDH_TOKEN_ENABLE']='1'
@@ -115,6 +116,7 @@ def test_launch_fife_launch(samdev):
         jobsub_submit \
           -e EXPERIMENT \
           -e IFDH_DEBUG \
+          -e IFDH_FORCE \
           -e IFDH_VERSION \
           -e IFDH_TOKEN_ENABLE \
           -e IFDH_PROXY_ENABLE \
@@ -142,6 +144,7 @@ def test_launch_fife_launch(samdev):
             --debug \
             --getconfig \
             --limit '1' \
+            --schema 'https' \
             --appvers 'v1_1' \
             --metadata_extractor 'hypot_metadata_extractor' \
             --addoutput 'gen.troot' \
