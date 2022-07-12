@@ -102,24 +102,22 @@ def run_launch(cmd):
 
     return res == None 
     
-def test_launch_lookaround_samdev(samdev):
+def lookaround_launch(extra):
     ''' Simple submit of our lookaround script '''
+    assert run_launch("jobsub_submit -e SAM_EXPERIMENT %s --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/job_scripts/lookaround.sh" % extra)
 
-    assert run_launch("jobsub_submit --devserver -e SAM_EXPERIMENT --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/job_scripts/lookaround.sh")
+
+def test_launch_lookaround_samdev(samdev):
+    lookaround_launch('--devserver')
 
 def test_launch_lookaround_dune(dune):
-    ''' Simple submit of our lookaround script '''
-
-    assert run_launch("jobsub_submit --devserver -e SAM_EXPERIMENT --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/job_scripts/lookaround.sh")
+    lookaround_launch('--devserver')
 
 def test_launch_lookaround_dune_gp(dune_gp):
-    ''' Simple submit of our lookaround script '''
+    lookaround_launch('')
 
-    assert run_launch("jobsub_submit -e SAM_EXPERIMENT --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/job_scripts/lookaround.sh")
 
-def test_launch_fife_launch(samdev):
-    ''' submit that fife_launch generated for a dataset dag '''
-
+def fife_launch(extra):
     assert run_launch("""
         jobsub_submit \
           -e EXPERIMENT \
@@ -140,7 +138,7 @@ def test_launch_fife_launch(samdev):
           --timeout=2h \
           --disk=100MB  \
           --memory=500MB  \
-          --devserver \
+          %(extra)s \
           --dataset=gen_cfg  \
           file://///grid/fermiapp/products/common/db/../prd/fife_utils/v3_3_2/NULL/libexec/fife_wrap \
             --find_setups \
@@ -169,7 +167,20 @@ def test_launch_fife_launch(samdev):
               -o \
               gen.troot \
               -c \
-              hist_gen.troot """ % {'exp':os.environ['GROUP']})
+              hist_gen.troot """ % {'exp':os.environ['GROUP'], 'extra': extra})
+
+def test_samdev_fife_launch(samdev):
+    fife_launch('--devserver')
+
+def test_dune_fife_launch(dune):
+    fife_launch('--devserver')
+
+def test_nova_fife_launch(nova):
+    fife_launch('--devserver')
+
+def test_dune_gp_fife_launch(dune_gp):
+    fife_launch('')
+
 
 def test_wait_for_jobs():
     ''' Not really a test, but we have to wait for jobs to complete... '''
@@ -225,6 +236,8 @@ def test_check_job_output():
             f_ok = False
             for l in fd.readlines():
                 if l.find("(1) Normal termination") > 0:
+                    # XXX this should also check for the exit code 0 part, but
+                    # until the SAM instances all take tokens etc, it doesn't
                     f_ok = True
             fd.close()
             assert f_ok
