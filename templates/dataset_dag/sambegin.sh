@@ -86,7 +86,6 @@ fi
 if [ "$SAM_USER" = "" ]; then
 SAM_USER=$4
 fi
-export IFDH_BASE_URI=http://samweb.fnal.gov:8480/sam/samdev/api
 ${JSB_TMP}/ifdh.sh describeDefinition $SAM_DATASET
 
 

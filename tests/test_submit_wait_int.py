@@ -30,7 +30,7 @@ def noexp(job_envs):
     if os.environ.get('GROUP', None): del os.environ['GROUP'] 
     if os.environ.get('EXPERIMENT', None): del os.environ['EXPERIMENT'] 
     if os.environ.get('SAM_EXPERIMENT', None): del os.environ['SAM_EXPERIMENT'] 
-    if os.environ.get('SAM_EXPERIMENT', None): del os.environ['SAM_STATION']
+    if os.environ.get('SAM_STATION', None): del os.environ['SAM_STATION']
 
 @pytest.fixture
 def samdev(job_envs):
@@ -41,7 +41,15 @@ def samdev(job_envs):
     os.environ['SAM_STATION']='samdev'
 
 @pytest.fixture
-def dune():
+def nova(job_envs):
+    ''' fixture to run launches for dune '''
+    os.environ['GROUP']='nova'
+    os.environ['EXPERIMENT']='nova'
+    os.environ['SAM_EXPERIMENT']='nova'
+    os.environ['SAM_STATION']='nova'
+
+@pytest.fixture
+def dune(job_envs):
     ''' fixture to run launches for dune '''
     os.environ['GROUP']='dune'
     os.environ['EXPERIMENT']='dune'
@@ -125,7 +133,6 @@ def test_launch_fife_launch(samdev):
           -e SAM_STATION \
           -e IFDH_CP_MAXRETRIES \
           -e VERSION \
-          -G fermilab  \
           -N 5  \
           --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE  \
           --generate-email-summary \
@@ -137,9 +144,9 @@ def test_launch_fife_launch(samdev):
           --dataset=gen_cfg  \
           file://///grid/fermiapp/products/common/db/../prd/fife_utils/v3_3_2/NULL/libexec/fife_wrap \
             --find_setups \
-            --setup-unquote 'hypotcode%20v1_1' \
-            --setup-unquote 'ifdhc%20v2_6_5,ifdhc_config%20v2_6_5' \
-            --prescript-unquote 'ups%20active' \
+            --setup-unquote 'hypotcode%%20v1_1' \
+            --setup-unquote 'ifdhc%%20v2_6_5,ifdhc_config%%20v2_6_5' \
+            --prescript-unquote 'ups%%20active' \
             --self_destruct_timer '700' \
             --debug \
             --getconfig \
@@ -149,12 +156,12 @@ def test_launch_fife_launch(samdev):
             --metadata_extractor 'hypot_metadata_extractor' \
             --addoutput 'gen.troot' \
             --rename 'unique' \
-            --dest '/pnfs/nova/scratch/users/mengel/dropbox' \
+            --dest '/pnfs/%(exp)s/users/mengel/dropbox' \
             --add_location \
             --declare_metadata \
             --addoutput1 'hist_gen.troot' \
             --rename1 'unique' \
-            --dest1 '/pnfs/nova/scratch/users/mengel/dropbox' \
+            --dest1 '/pnfs/%(exp)s/users/mengel/dropbox' \
             --add_location1 \
             --declare_metadata1 \
             --exe  hypot.exe \
@@ -162,7 +169,7 @@ def test_launch_fife_launch(samdev):
               -o \
               gen.troot \
               -c \
-              hist_gen.troot """)
+              hist_gen.troot """ % {'exp':os.environ['GROUP']})
 
 def test_wait_for_jobs():
     ''' Not really a test, but we have to wait for jobs to complete... '''
