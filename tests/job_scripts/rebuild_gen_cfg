@@ -6,8 +6,11 @@
 #e=samdev
 #g=fermilab/volatile
 
-e=nova
-g=nova/scratch/users
+e=${1:-samdev}
+case $e in
+samdev) g=fermilab/users;;
+*)        g=$1/scratch/users;;
+esac
 
 setup fife_utils v3_2_5
 setup hypotcode
