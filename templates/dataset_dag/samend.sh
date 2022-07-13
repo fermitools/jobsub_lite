@@ -65,7 +65,6 @@ if [ "${KRB5CCNAME}" != "" ]; then
    fi
 fi
             
-export IFDH_BASE_URI=http://samweb.fnal.gov:8480/sam/samdev/api
 CPURL=`${JSB_TMP}/ifdh.sh findProject $PRJ_NAME ''` 
 ${JSB_TMP}/ifdh.sh  endProject $CPURL
 EXITSTATUS=$?
