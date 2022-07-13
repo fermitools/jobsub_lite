@@ -28,7 +28,7 @@ environment	=  _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address
 x509userproxy = {{proxy}}
 {{lines|join("\n+")}}
 
-{% if subgroup is defined %}
+{% if subgroup is defined and subgroup %}
 +AccountingGroup = "group_{{group}}.{{subgroup}}.{{user}}"
 {% else %}
 +AccountingGroup = "group_{{group}}.{{user}}"
@@ -37,7 +37,7 @@ x509userproxy = {{proxy}}
 +Jobsub_Group="{{group}}"
 +JobsubJobId="$(CLUSTER).$(PROCESS)@{{schedd}}"
 
-{% if role is defined and role != 'Analysis' %}
+{% if role is defined and role and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role}}
 {% else %}
 use_oauth_services = {{group}}
