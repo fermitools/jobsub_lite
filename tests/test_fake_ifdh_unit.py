@@ -23,7 +23,7 @@ def test_getTmp():
     res = fake_ifdh.getTmp()
     assert res == "/tmp"
 
-def test_getTmp_overridwe():
+def test_getTmp_override():
     os.environ['TMPDIR'] = '/var/tmp'
     res = fake_ifdh.getTmp()
     assert res == "/var/tmp"
@@ -55,6 +55,8 @@ def test_checkToken_fail():
 
 @pytest.fixture
 def token():
+    if os.environ.get('BEARER_TOKEN_FILE', None):
+        del os.environ['BEARER_TOKEN_FILE']
     os.environ['GROUP'] = 'fermilab'
     return fake_ifdh.getToken('Analysis')
     
@@ -68,11 +70,15 @@ def test_checkToken_success(token):
     assert res
 
 def test_getToken_good():
+    if os.environ.get('BEARER_TOKEN_FILE', None):
+        del os.environ['BEARER_TOKEN_FILE']
     os.environ['GROUP'] = 'fermilab'
     token = fake_ifdh.getToken('Analysis')
     assert os.path.exists(token)
 
 def test_getToken_fail():
+    if os.environ.get('BEARER_TOKEN_FILE', None):
+        del os.environ['BEARER_TOKEN_FILE']
     try:
         os.environ['GROUP'] = 'bozo'
         fake_ifdh.getToken('Analysis')
@@ -82,11 +88,15 @@ def test_getToken_fail():
         assert False
    
 def test_getProxy_good():
+    if os.environ.get('BEARER_TOKEN_FILE', None):
+        del os.environ['BEARER_TOKEN_FILE']
     os.environ['GROUP'] = 'fermilab'
     proxy = fake_ifdh.getProxy('Analysis')
     assert os.path.exists(proxy)
 
 def test_getProxy_fail():
+    if os.environ.get('BEARER_TOKEN_FILE', None):
+        del os.environ['BEARER_TOKEN_FILE']
     try:
         os.environ['GROUP'] = 'bozo'
         proxy = fake_ifdh.getProxy('Analysis')
