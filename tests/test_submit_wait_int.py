@@ -143,7 +143,7 @@ def fife_launch(extra):
           file://///grid/fermiapp/products/common/db/../prd/fife_utils/v3_3_2/NULL/libexec/fife_wrap \
             --find_setups \
             --setup-unquote 'hypotcode%%20v1_1' \
-            --setup-unquote 'ifdhc%%20v2_6_5,ifdhc_config%%20v2_6_5' \
+            --setup-unquote 'ifdhc%%20v2_6_6,ifdhc_config%%20v2_6_6' \
             --prescript-unquote 'ups%%20active' \
             --self_destruct_timer '700' \
             --debug \
