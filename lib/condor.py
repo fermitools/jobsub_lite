@@ -137,8 +137,6 @@ def submit(f, vargs, schedd_name, cmd_args=[]):
             if m:
                 print("Use job id %s.0@%s to retrieve output" % 
                          (m.group(1), schedd_name))
-            else:
-                print("No cluster?")
 
             if 'outdir' in vargs:
                 print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
