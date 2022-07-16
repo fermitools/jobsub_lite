@@ -126,13 +126,23 @@ def submit(f, vargs, schedd_name, cmd_args=[]):
     print("Running: %s" % cmd)
 
     try:
-        output = subprocess.run(cmd, shell=True)
+        output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='UTF-8')
+        sys.stdout.write(output.stdout)
+
         if output.returncode < 0:
             print("Child was terminated by signal", -output.returncode)
             return None
         else:
+            m = re.search(r'\d+ job\(s\) submitted to cluster (\d+).', output.stdout)
+            if m:
+                print("Use job id %s.0@%s to retrieve output" % 
+                         (m.group(1), schedd_name))
+            else:
+                print("No cluster?")
+
             if 'outdir' in vargs:
                 print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
+
             return True
     except OSError as e:
         print("Execution failed: ", e)
