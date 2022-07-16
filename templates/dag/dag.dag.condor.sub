@@ -26,7 +26,7 @@ environment	=  _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address
 +JobsubClientVersion="{{jobsub_version}}"
 +JobsubClientKerberosPrincipal="{{kerberos_principal}}"
 x509userproxy = {{proxy}}
-{{lines|join("\n+")}}
+{{lines|join("\n")}}
 
 {% if subgroup is defined %}
 +AccountingGroup = "group_{{group}}.{{subgroup}}.{{user}}"
