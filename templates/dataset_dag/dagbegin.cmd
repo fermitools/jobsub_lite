@@ -40,7 +40,7 @@ notify_user = {{email_to}}
 {% endif %}
 +GeneratedBy ="{{jobsub_version}} {{schedd}}"
 {{resource_provides_quoted|join("\n+DESIRED_")}}
-{{lines|join("\n+")}}
+{{lines|join("\n")}}
 requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))) {%if append_condor_requirements is defined  and append_condor_requirements %} && {{append_condor_requirements}} {%endif%}
 
 {% if no_singularity is false %}
