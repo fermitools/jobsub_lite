@@ -73,9 +73,8 @@ def test_checkToken_success(fermilab_token):
     res = fake_ifdh.checkToken(fermilab_token)
     assert res
 
-def test_getToken_good(clear_token):
-    token = fermilab_token()
-    assert os.path.exists(token)
+def test_getToken_good(clear_token, fermilab_token):
+    assert os.path.exists(fermilab_token)
 
 def test_getToken_fail(clear_token):
     try:
