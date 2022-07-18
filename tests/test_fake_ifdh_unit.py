@@ -74,8 +74,7 @@ def test_checkToken_success(fermilab_token):
     assert res
 
 def test_getToken_good(clear_token):
-    os.environ['GROUP'] = 'fermilab'
-    token = fake_ifdh.getToken('Analysis')
+    token = fermilab_token()
     assert os.path.exists(token)
 
 def test_getToken_fail(clear_token):
@@ -88,6 +87,7 @@ def test_getToken_fail(clear_token):
         assert False
    
 def test_getProxy_good(clear_token):
+     
     os.environ['GROUP'] = 'fermilab'
     proxy = fake_ifdh.getProxy('Analysis')
     assert os.path.exists(proxy)
