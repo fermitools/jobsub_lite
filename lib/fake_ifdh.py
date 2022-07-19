@@ -70,8 +70,14 @@ def getToken(role=DEFAULT_ROLE):
         issuer = "fermilab"
     else:
         issuer = exp
-    tokenfile = "%s/bt_token_%s_%s_%s" % (tmp, issuer, role, pid)
-    os.environ["BEARER_TOKEN_FILE"] = tokenfile
+
+    if os.environ.get("BEARER_TOKEN_FILE",None) and os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
+        # if we have a bearer token file set already, keep that one
+        tokenfile = os.environ["BEARER_TOKEN_FILE"]
+    else:
+        tokenfile = "%s/bt_token_%s_%s_%s" % (tmp, issuer, role, pid)
+        os.environ["BEARER_TOKEN_FILE"] = tokenfile
+
     if not checkToken(tokenfile):
         cmd = "htgettoken -a %s -i %s" % (VAULT_HOST, issuer)
         if role != DEFAULT_ROLE:
