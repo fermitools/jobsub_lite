@@ -72,6 +72,7 @@ def run_launch(cmd):
     schedd = None
     jobid = None
     outdir = None
+    jobsubjobid = None
     added = False
     pf = os.popen(cmd + " 2>&1")
     for l in pf.readlines():
@@ -84,14 +85,20 @@ def run_launch(cmd):
         if m:
             print("Found jobid!")
             jobid = m.group(1)
+
         m = re.match(r'Output will be in (\S+) after running jobsub_transfer_data.', l)
         if m:
             print("Found outdir!")
             outdir = m.group(1)
 
-        if jobid and schedd and outdir and not added:
+        m = re.match(r'Use job id (\S+) to retrieve output', l)
+        if m:
+            print("Found jobsubjobid!")
+            jobsubjobid = m.group(1)
+
+        if jobid and schedd and outdir and jobsubjobid and not added:
             added = True
-            print("Found all three!")
+            print("Found all four! ", jobid, schedd, outdir, jobsubjobid)
             joblist.append( "%s@%s" % ( jobid, schedd ) )
             outdirs.append( outdir )
 
@@ -99,6 +106,9 @@ def run_launch(cmd):
 
     if not added:
         raise ValueError("Did not get expected output from %s" % cmd)
+
+    if not jobsubjobid == "%s.0@%s" % (jobid, schedd):
+        raise ValueError("Did not get consistent output from %s" % cmd)
 
     return res == None 
     
