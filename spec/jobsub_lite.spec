@@ -57,7 +57,6 @@ install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 /opt/jobsub_lite/bin/condor_transfer_data
 /opt/jobsub_lite/bin/condor_wait
 /opt/jobsub_lite/bin/decode_token.sh
-/opt/jobsub_lite/bin/fake_ifdh
 /opt/jobsub_lite/bin/jobsub_cmd
 /opt/jobsub_lite/bin/jobsub_hold
 /opt/jobsub_lite/bin/jobsub_q
@@ -99,6 +98,9 @@ install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
+* Thu Jul 21 2022 Shreyas Bhat <sbhat@fnal.gov> beta12
+- Removed bin/fake_ifdh from files list
+
 * Mon Jun 27 2022 Shreyas Bhat <sbhat@fnal.gov> beta11
 - Added lib/fake_ifdh.py to files list
 
