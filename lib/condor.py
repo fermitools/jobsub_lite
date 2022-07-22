@@ -238,6 +238,10 @@ def submit_dag(
     return submit(subfile, vargs, schedd_name)
 
 
+class JobIdError(Exception):
+    pass
+
+
 class Job:
     """
     Job represents a single HTCondor batch job or cluster with an id like
@@ -254,8 +258,8 @@ class Job:
     """
 
     id: str
-    seq: str
-    proc: str
+    seq: int
+    proc: int
     schedd: str
     cluster: bool
 
@@ -265,12 +269,17 @@ class Job:
         self.id = job_id
         m = Job._id_regexp.match(job_id)
         if m is None:
-            raise Exception(f'unable to parse job id "{job_id}"')
-        self.seq = m.group(1)
-        self.proc = m.group(2)
+            raise JobIdError(f'unable to parse job id "{job_id}"')
+        try:
+            self.seq = int(m.group(1))
+            self.proc = int(m.group(2))
+        except TypeError as e:
+            raise JobIdError(
+                f"error converting job seq {m.group(1)} or proc {m.group(2)} to ints"
+            ) from e
         self.cluster = False
         if self.proc is None:
-            self.proc = "0"
+            self.proc = 0
             self.cluster = True
         self.schedd = m.group(3)
 
@@ -308,7 +317,7 @@ class Job:
             raise Exception(f'attribute "{attr}" not found for job "{str(self)}"')
         return res[0].eval(attr)
 
-    def transfer_data(self):
+    def transfer_data(self) -> None:
         """
         Transfer the output sandbox, akin to calling condor_transfer_data.
         """
