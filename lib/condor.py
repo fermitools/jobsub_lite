@@ -236,3 +236,70 @@ def submit_dag(
             print("Execution failed: ", e)
 
     return submit(subfile, vargs, schedd_name)
+
+
+class Job:
+    """
+    Job represents a single HTCondor batch job or cluster with an id like
+        <cluster>[.<process>]@<schedd>
+
+    where if <process> is specified it is a single job, or if not then a cluster
+    of jobs. Examples:
+
+
+        123@schedd.example.com
+        123.0@schedd.example.com
+        123.456@schedd.example.com
+
+    """
+
+    id: str
+    seq: str
+    proc: str
+    schedd: str
+    cluster: bool
+
+    _id_regexp = re.compile(r"(\d+)(?:\.(\d+))?@([\w\.]+)")
+
+    def __init__(self, job_id: str):
+        self.id = job_id
+        m = Job._id_regexp.match(job_id)
+        if m is None:
+            raise Exception(f'unable to parse job id "{job_id}"')
+        self.seq = m.group(1)
+        self.proc = m.group(2)
+        self.cluster = False
+        if self.proc is None:
+            self.proc = "0"
+            self.cluster = True
+        self.schedd = m.group(3)
+
+    def __str__(self) -> str:
+        if self.cluster:
+            return f"{self.seq}@{self.schedd}"
+        return f"{self.seq}.{self.proc}@{self.schedd}"
+
+    def _get_schedd(self) -> htcondor.htcondor.Schedd:
+        c = htcondor.Collector(COLLECTOR_HOST)
+        s = c.locate(htcondor.DaemonTypes.Schedd, self.schedd)
+        if s is None:
+            raise Exception(f'unable to find schedd "{self.schedd}" in HTCondor pool')
+        return htcondor.Schedd(s)
+
+    def get_attribute(self, attr: str) -> Any:
+        """
+        Return the value of a single job attribute from the schedd. If self is a
+        cluster of jobs, the attribute will be returned from the first job found
+        on the schedd (not necessarily process 0).
+
+        """
+        s = self._get_schedd()
+        q = f"ClusterId=={self.seq}"
+        if not self.cluster:
+            q += f" && ProcId=={self.proc}"
+        res = s.query(q, [attr], limit=1)
+        if len(res) == 0:
+            raise Exception(f'job matching "{q}" not found on "{self.schedd}"')
+        if attr not in res[0]:
+            raise Exception(f'attribute "{attr}" not found for job "{str(self)}"')
+        return res[0].eval(attr)
