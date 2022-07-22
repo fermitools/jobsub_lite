@@ -1,0 +1,134 @@
+#!/usr/bin/python3 -I
+
+#
+# jobsub_fetchlog -- tool for downloading job output files from condor
+# COPYRIGHT 2022 FERMI NATIONAL ACCELERATOR LABORATORY
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+#
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import argparse
+import sys
+import os
+import os.path
+import subprocess
+
+import htcondor
+
+#
+# we are in prefix/bin/jobsub_fetchlog, so find our prefix
+#
+PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+#
+# find parts we need in package management
+#
+sys.path.append(os.path.join(PREFIX, "lib"))
+
+#
+# import our local parts
+#
+import creds
+from get_parser import StoreGroupinEnvironment
+from condor import Job
+
+def get_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-J","--jobid", help="job/submission ID", required=True)
+    parser.add_argument("--destdir", "--unzipdir", help="Directory to automatically unarchive logs into")
+    parser.add_argument("--archive-format", help="format for downloaded archive: \"tar\" (default, compressed with gzip) or \"zip\"",default="tar")
+    parser.add_argument(
+        "-G",
+        "--group",
+        help="Group/Experiment/Subgroup for priorities and accounting",
+        action=StoreGroupinEnvironment,
+        default=os.environ.get("GROUP",None)
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="dump internal state of program (useful for debugging)",
+    )
+
+    return parser
+
+def main():
+    """script mainline:
+    - parse args
+    - get credentials
+    - get job info
+    - condor_transfer_data
+    - make tarball
+    """
+    parser = get_parser()
+    args = parser.parse_args()
+
+    if args.verbose:
+        htcondor.set_subsystem("TOOL")
+        htcondor.param['TOOL_DEBUG'] = 'D_FULLDEBUG'
+        htcondor.enable_debug()
+
+    if os.environ.get('GROUP',None) is None:
+        raise AttributeError("%s needs -G group or $GROUP in the environment." %sys.argv[0])
+
+    proxy, token = creds.get_creds(vars(args))
+
+    if args.verbose:
+        print("proxy is : %s" % proxy)
+        print("token is : %s" % token)
+
+    # find where the condor_transfer_data will put the output
+    j = Job(args.jobid)
+    iwd = j.get_attribute("SUBMIT_Iwd")
+    if args.verbose:
+        print(f"job output to {iwd}")
+    # make sure it exists, create if not
+    try:
+        os.stat(iwd)
+    except FileNotFoundError:
+        os.mkdir(iwd, mode=0o750)
+
+    # get the output sandbox
+    j.transfer_data()
+
+    owd = iwd
+    # if the user wants output in a specific directory, rename it
+    if args.destdir is not None:
+        os.rename(iwd, args.destdir)
+        owd = args.destdir
+
+    # build tarball
+    files = os.listdir(owd)
+    cmd = []
+    if args.archive_format == "zip":
+       cmd = ["/usr/bin/zip","-jq",f"{str(j)}.zip"]+[owd+"/"+f for f in files]
+       # -j: junk (don't record) directory names
+       # -q: quiet
+    elif args.archive_format == "tar":
+       cmd = ["/usr/bin/tar","-C",owd,"-czf",f"{str(j)}.tgz"]+files
+       # -C: move into directory so paths are relative
+       # -c: create
+       # -z: gzip
+       # -f: filename
+    else:
+        raise Exception(f'unknown archive format "{args.archive_format}"')
+    if args.verbose:
+        print(f'running "{cmd}"')
+    p = subprocess.Popen(cmd)
+    if p.wait() != 0:
+        raise Exception(f'error creating archive')
+
+
+if __name__ == "__main__":
+    main()

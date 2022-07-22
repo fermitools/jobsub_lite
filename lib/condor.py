@@ -286,6 +286,12 @@ class Job:
             raise Exception(f'unable to find schedd "{self.schedd}" in HTCondor pool')
         return htcondor.Schedd(s)
 
+    def _constraint(self) -> str:
+        q = f"ClusterId=={self.seq}"
+        if not self.cluster:
+            q += f" && ProcId=={self.proc}"
+        return q
+
     def get_attribute(self, attr: str) -> Any:
         """
         Return the value of a single job attribute from the schedd. If self is a
@@ -294,12 +300,17 @@ class Job:
 
         """
         s = self._get_schedd()
-        q = f"ClusterId=={self.seq}"
-        if not self.cluster:
-            q += f" && ProcId=={self.proc}"
+        q = self._constraint()
         res = s.query(q, [attr], limit=1)
         if len(res) == 0:
             raise Exception(f'job matching "{q}" not found on "{self.schedd}"')
         if attr not in res[0]:
             raise Exception(f'attribute "{attr}" not found for job "{str(self)}"')
         return res[0].eval(attr)
+
+    def transfer_data(self):
+        """
+        Transfer the output sandbox, akin to calling condor_transfer_data.
+        """
+        s = self._get_schedd()
+        s.retrieve(self._constraint())
