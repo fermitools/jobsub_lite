@@ -15,6 +15,7 @@
 # limitations under the License.
 import os
 import sys
+from typing import Union, Any, Dict
 from packages import pkg_find
 
 pkg_find("poms_client","-g poms41")
@@ -23,7 +24,7 @@ import poms_client
 # translation of jobub_submit wrapper in poms_jobsub_wrapper...
 
 
-def poms_wrap(args):
+def poms_wrap(args: Dict[str,str])->None:
 
     if os.environ.get("POMS_TASK_ID", None) is None:
         # poms launch env not set, so skip...

@@ -50,7 +50,7 @@ COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", "gpcollector03.fnal.gov")
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser:argparse.ArgumentParser, namespace:Any, values:Dict[str,str], option_string=None:Union[None,str]):
         os.environ["GROUP"] = values
         setattr(namespace, self.dest, values)
 

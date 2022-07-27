@@ -31,17 +31,12 @@ import fake_ifdh
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: argparse.ArgumentParser, namespace:Any, values:dict[str,str], option_string=None:Union[None,str]):
         os.environ["GROUP"] = values
         setattr(namespace, self.dest, values)
 
 
-def backquote(cmd):
-    sp = subprocess.Popen(cmd, shell=True, encoding='UTF-8', stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    res, stderr = sp.communicate()
-    return res
-
-def main():
+def main()->None:
     parser = argparse.ArgumentParser(description = 'Condor command wrapper')
     parser.add_argument(
         "-G",

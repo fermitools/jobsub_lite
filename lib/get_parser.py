@@ -16,9 +16,10 @@
 import argparse
 import sys
 import os
+from typing import Union, Any, Dict
 
 
-def verify_executable_starts_with_file_colon(s):
+def verify_executable_starts_with_file_colon(s:str)->str:
     """routine to give argparse to verify the executable parameter,
     which is supposed to be given as a file:///path URL
     -- note we could check the file exists here, too.
@@ -32,12 +33,12 @@ def verify_executable_starts_with_file_colon(s):
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser:argparse.ArgumentParser, namespace:str, values, option_string:Union[None,str]=None):
         os.environ["GROUP"] = values
         setattr(namespace, self.dest, values)
 
 
-def get_parser():
+def get_parser()->argparse.ArgumentParser:
     """build the argument parser and return it"""
     parser = argparse.ArgumentParser()
     parser.add_argument(

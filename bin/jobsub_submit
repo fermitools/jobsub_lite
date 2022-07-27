@@ -28,6 +28,7 @@ import datetime
 import uuid
 import socket
 import shutil
+from typing import Union, List, Dict, Any
 
 #
 # we are in prefix/bin/jobsub_submit, so find our prefix
@@ -54,7 +55,7 @@ from tarfiles import do_tarballs
 from utils import fixquote, set_extras_n_fix_units
 from creds import get_creds
 
-def get_basefiles(dlist):
+def get_basefiles(dlist: List[str]) -> List[str]:
     res = []
     for d in dlist:
         flist = glob.glob("%s/*" % d)
@@ -62,7 +63,7 @@ def get_basefiles(dlist):
             res.append(os.path.basename(f))
     return res
 
-def render_files(srcdir, values, dest, dlist=None):
+def render_files(srcdir:str, values:Dict[str,str], dest:str, dlist:Union[None, List[str]]=None):
     """use jinja to render the templates from srcdir into the dest directory
     using values dict for substitutions
     """
@@ -100,13 +101,13 @@ in its entirety.
             os.chmod(ff, 0o755)
 
 
-def cleanup(tmp):
+def cleanup(tmp:str)->None:
     """cleanup /tmp etc."""
     # we actually leave everything in the sandbox right now..
     pass
 
 
-def do_dataset_defaults(varg):
+def do_dataset_defaults(varg:Dict[str,str])->None:
     """
     make sure to pass appropriate SAM_* environment variables if we
     are doing datasets.  Pick a SAM_PROJECT name if we don't have one.

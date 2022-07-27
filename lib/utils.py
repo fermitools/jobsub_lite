@@ -23,9 +23,10 @@ import subprocess
 import uuid
 import datetime
 import shutil
+from typing import Union, Any, Dict, List
 
 
-def fixquote(s):
+def fixquote(s:str)->str:
     """utility to put double quotes on value in string 'name=value'"""
     parts = s.split("=", 1)
     if len(parts) == 2:
@@ -34,7 +35,7 @@ def fixquote(s):
         return s
 
 
-def grep_n(regex, n, file):
+def grep_n(regex:str, n:int, file:str)->str:
     rre = re.compile(regex)
     with open(file, "r") as fd:
         for line in fd:
@@ -43,7 +44,7 @@ def grep_n(regex, n, file):
                 return m.group(n)
 
 
-def set_extras_n_fix_units(args, schedd_name, proxy, token):
+def set_extras_n_fix_units(args:Dict[str,str], schedd_name:str, proxy:Union[None,str], token: Union[None,str])->None:
     """add items to our args dictionary that are not given on the
     command line, but that are needed to render the condor submit
     file templates.
@@ -136,7 +137,7 @@ def set_extras_n_fix_units(args, schedd_name, proxy, token):
     args["jobsub_command"] = " ".join(sys.argv)
 
 
-def fix_unit(args, name, table, s_offset, s_list, c_offset):
+def fix_unit(args:Dict[str,str], name:str, table:Dict[str,Union[float,int]], s_offset:int, s_list:List[str], c_offset:int)->None:
     """
     unit conversions using appropriate conversion table
     """
@@ -149,7 +150,7 @@ def fix_unit(args, name, table, s_offset, s_list, c_offset):
         args[name] = float(args[name])
 
 
-def get_principal():
+def get_principal()->str:
     """get our kerberos principal name"""
     princ = None
     if sys.version_info.major >= 3:
@@ -165,7 +166,7 @@ def get_principal():
     return princ
 
 
-def get_client_dn(proxy=None):
+def get_client_dn(proxy:Union[None,str]=None)->str:
     """Get our proxy's DN if the proxy exists"""
     if proxy is None:
         proxy = os.getenv('X509_USER_PROXY')    

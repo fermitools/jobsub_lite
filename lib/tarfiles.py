@@ -24,6 +24,7 @@ import re
 import sys
 import time
 import traceback as tb
+from typing import Union, Any, Dict, Tuple, Callable
 from urllib.parse import quote as _quote
 
 import requests
@@ -42,7 +43,7 @@ except ValueError:
     raise
 
 
-def tar_up(directory, excludes):
+def tar_up(directory:str, excludes: str)->str:
     """build path/to/directory.tar from path/to/directory"""
     tarfile = "%s.tar.gz" % directory
     if not excludes:
@@ -52,7 +53,7 @@ def tar_up(directory, excludes):
     return tarfile
 
 
-def slurp_file(fname):
+def slurp_file(fname:str)->Tuple[str,bytes]:
     """pull in a tarfile while computing its hash"""
     h = hashlib.sha256()
     tfl = []
@@ -67,7 +68,7 @@ def slurp_file(fname):
     return h.hexdigest(), bytes().join(tfl)
 
 
-def dcache_persistent_path(exp, filename):
+def dcache_persistent_path(exp:str, filename:str)->str:
     """pick the reslient dcache path for a tarfile"""
     bf = os.path.basename(filename)
     f = os.popen("sha256sum %s" % filename, "r")
@@ -81,7 +82,7 @@ def dcache_persistent_path(exp, filename):
     return res
 
 
-def do_tarballs(args):
+def do_tarballs(args: Dict[str,str])->None:
     """handle tarfile argument;  we could have:
        a directory with tardir: prefix to tar up and upload
        a tarfile with dropbox: prefix to upload
@@ -161,7 +162,7 @@ class TarfilePublisherHandler(object):
         "^PRESENT:(.+)$"
     )  # RCDS returns this if a tarball represented by cid is present
 
-    def __init__(self, cid, proxy=None, token=None):
+    def __init__(self, cid:str, proxy:Union[None,str]=None, token:Union[None,str]=None):
         self.cid_url = _quote(cid, safe="")  # Encode CID for passing to URL
         self.proxy = proxy
         self.token = token
@@ -176,7 +177,7 @@ class TarfilePublisherHandler(object):
         )
 
     # Some sort of wrapper to wrap the above three
-    def pubapi_operation(func):
+    def pubapi_operation(func:Callable)->Callable:
         """Wrap various PubAPI operations, return path if we get it from response"""
 
         class SafeDict(dict):
@@ -213,7 +214,7 @@ class TarfilePublisherHandler(object):
         return wrapper
 
     @pubapi_operation
-    def update_cid(self):
+    def update_cid(self)->requests.Response:
         """Make PubAPI update call to check if we already have this tarfile
 
         Returns:
@@ -227,7 +228,7 @@ class TarfilePublisherHandler(object):
             return requests.get(url, cert=(self.proxy, self.proxy))
 
     @pubapi_operation
-    def publish(self, tarfile):
+    def publish(self, tarfile:str)->requests.Response:
         """Make PubAPI publish call to upload this tarfile
 
         Args:
@@ -248,7 +249,7 @@ class TarfilePublisherHandler(object):
             )
 
     @pubapi_operation
-    def cid_exists(self):
+    def cid_exists(self)->requests.Response:
         """Make PubAPI update call to check if we already have this tarfile
 
         Returns:
@@ -261,7 +262,7 @@ class TarfilePublisherHandler(object):
         else:
             return requests.get(url, cert=(self.proxy, self.proxy))
 
-    def __make_request_token_headers(self):
+    def __make_request_token_headers(self)->Dict[str,str]:
         """Create headers for token auth to dropbox server"""
         with open(self.token, "r") as f:
             token_string = f.read()
@@ -269,7 +270,7 @@ class TarfilePublisherHandler(object):
         header = {"Authorization": f"Bearer {token_string}"}
         return header
 
-    def __select_dropbox_server(self):
+    def __select_dropbox_server(self)->str:
         """Yield a dropbox server for client to upload tarball to"""
         dropbox_servers_working_list = []
         while True:
