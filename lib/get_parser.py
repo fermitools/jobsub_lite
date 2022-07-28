@@ -33,7 +33,7 @@ def verify_executable_starts_with_file_colon(s:str)->str:
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
 
-    def __call__(self, parser:argparse.ArgumentParser, namespace:str, values, option_string:Union[None,str]=None):
+    def __call__(self, parser:argparse.ArgumentParser, namespace:argparse.Namespace, values, option_string:Union[None,str]=None):
         os.environ["GROUP"] = values
         setattr(namespace, self.dest, values)
 
