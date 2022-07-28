@@ -20,9 +20,10 @@ import creds
 import os.path
 from get_parser import get_parser
 from utils import fixquote, set_extras_n_fix_units
+from typing import Union, Any, Dict
 
 
-def parse_dagnabbit(srcdir, values, dest, schedd_name, debug_comments=True):
+def parse_dagnabbit(srcdir:str, values:Dict[str,str], dest:str, schedd_name:str, debug_comments:bool=True):
     """
     parse a dagnabbit dag file generating a .dag file and .cmd files
     in the dest directory, using global cmdline options from values

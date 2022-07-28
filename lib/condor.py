@@ -18,16 +18,18 @@ import sys
 import glob
 import re
 import htcondor
+import classad
 import random
 import packages
 import subprocess
+from typing import Union, Any, Dict, List
 
 random.seed()
 
 COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", "gpcollector03.fnal.gov")
 
 
-def get_schedd(vargs):
+def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
     """get jobsub* schedd names from collector, pick one."""
     coll = htcondor.Collector(COLLECTOR_HOST)
     schedd_classads = coll.locateAll(htcondor.DaemonTypes.Schedd)
@@ -67,7 +69,7 @@ def get_schedd(vargs):
     return res
 
 
-def load_submit_file(filename):
+def load_submit_file(filename: str) -> Dict[str,str]:
     """pull in a condor submit file, make a dictionary"""
 
     #
@@ -95,7 +97,7 @@ def load_submit_file(filename):
     return htcondor.Submit(res), nqueue
 
 
-def submit(f, vargs, schedd_name, cmd_args=[]):
+def submit(f: str, vargs: Dict[str,str], schedd_name:str, cmd_args:List[str]=[]):
     """Actually submit the job, using condor python bindings"""
 
     schedd_args = "-remote %s" %(schedd_name)
@@ -157,7 +159,7 @@ def submit(f, vargs, schedd_name, cmd_args=[]):
     return
 
 
-def submit_dag(f, vargs, schedd_name, cmd_args=[]):
+def submit_dag(f:str, vargs: Dict[str,str], schedd_name: str, cmd_args:List[str]=[]):
     """
     Actually submit the dag
     for the moment, we call the commandline condor_submit_dag,

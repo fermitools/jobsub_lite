@@ -23,16 +23,17 @@ import sys
 import os
 import time
 import argparse
+from typing import Union, Any, Dict
 
 VAULT_HOST = "fermicloud543.fnal.gov"
 DEFAULT_ROLE = "Analysis"
 
 
-def getTmp():
+def getTmp()->str:
     return os.environ.get("TMPDIR", "/tmp")
 
 
-def getExp():
+def getExp()->str:
     for ev in ["GROUP", "EXPERIMENT", "SAM_EXPERIMENT"]:
         if os.environ.get(ev, None):
             return os.environ.get(ev)
@@ -45,7 +46,7 @@ def getExp():
     return exp
 
 
-def getRole(role_override=None):
+def getRole(role_override:Union[str,None]=None)->str:
     if role_override:
         return role_override
     elif os.environ["USER"][-3:] == "pro":
@@ -54,7 +55,7 @@ def getRole(role_override=None):
         return DEFAULT_ROLE 
 
 
-def checkToken(tokenfile):
+def checkToken(tokenfile:str)->bool:
     exp_time = None
     f = os.popen("decode_token.sh -e exp %s 2>/dev/null" % tokenfile, "r")
     if f:
@@ -62,7 +63,7 @@ def checkToken(tokenfile):
         f.close()
     return  exp_time and ((int(exp_time) - time.time()) > 60)
 
-def getToken(role=DEFAULT_ROLE):
+def getToken(role:str=DEFAULT_ROLE)-> str:
     pid = os.getuid()
     tmp = getTmp()
     exp = getExp()
@@ -94,7 +95,7 @@ def getToken(role=DEFAULT_ROLE):
         return(tokenfile)
 
 
-def getProxy(role=DEFAULT_ROLE):
+def getProxy(role:str=DEFAULT_ROLE)->str:
     pid = os.getuid()
     tmp = getTmp()
     exp = getExp()
@@ -129,7 +130,7 @@ def getProxy(role=DEFAULT_ROLE):
         return(vomsfile)
 
 
-def cp(src, dest):
+def cp(src:str, dest:str)->None:
     os.system("gfal-copy %s %s" % (src, dest))
 
 

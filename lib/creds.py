@@ -16,9 +16,10 @@
 import os
 import subprocess
 import fake_ifdh
+from typing import Union, Any, Dict
 
 
-def get_creds(args={}):
+def get_creds(args:Dict[str,str]={}):
     """get credentials -- Note this does not currently push to
     myproxy, nor does it yet deal with tokens, but those should
     be done here as needed.
