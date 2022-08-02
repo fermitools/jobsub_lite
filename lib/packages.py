@@ -41,23 +41,21 @@ def pkg_find(p: str, qual: str = "") -> None:
     path = None
     if not path and os.environ.get("SPACK_ROOT", None):
         cmd = f"spack find --paths --variants '{p} os=fe' 'py-{p} os=fe'" 
-        f = os.popen(cmd, "r")
-        for line in f:
-            if line[0] == "-":
-                continue
-            path = line.split()[1]
-            break
-        f.close()
+        with os.popen(cmd, "r", encoding="UTF-8") as f:
+            for line in f:
+                if line[0] == "-":
+                    continue
+                path = line.split()[1]
+                break
 
     if not path and os.environ.get("PRODUCTS", None):
         cmd = (
             f"ups list -a4 -Kproduct:@prod_dir {p} {qual}, -a0 -Kproduct:@prod_dir {p} {qual}"
         )
-        f = os.popen(cmd, "r")
-        for line in f:
-            path = line.split()[1].strip('"')
-            break
-        f.close()
+        with os.popen(cmd, "r", encoding="UTF-8") as f:
+            for line in f:
+                path = line.split()[1].strip('"')
+                break
 
     if path:
         os.environ[f"{p.upper()}_DIR"] = path

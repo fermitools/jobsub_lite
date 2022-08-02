@@ -57,7 +57,7 @@ def slurp_file(fname: str) -> Tuple[str, bytes]:
     """pull in a tarfile while computing its hash"""
     h = hashlib.sha256()
     tfl = []
-    with open(fname, "rb") as f:
+    with open(fname, "rb", encoding="UTF-8") as f:
         tff = f.read(4096)
         h.update(tff)
         tfl.append(tff)
@@ -71,9 +71,9 @@ def slurp_file(fname: str) -> Tuple[str, bytes]:
 def dcache_persistent_path(exp: str, filename: str) -> str:
     """pick the reslient dcache path for a tarfile"""
     bf = os.path.basename(filename)
-    f = os.popen(f"sha256sum {filename}", "r")
-    sha256_hash = f.read().strip().split(" ")[0]
-    f.close()
+ 
+    with os.popen(f"sha256sum {filename}", "r", encoding="UTF-8") as f:
+        sha256_hash = f.read().strip().split(" ")[0]
     res = f"/pnfs/{exp}/resilient/jobsub_stage/{sha256_hash}/{bf}"
     # for testing, we don't have a resilient area for "fermilab", so...
     if exp == "fermilab":
@@ -268,7 +268,7 @@ class TarfilePublisherHandler(object):
 
     def __make_request_token_headers(self) -> Dict[str, str]:
         """Create headers for token auth to dropbox server"""
-        with open(self.token, "r") as f:
+        with open(self.token, "r", encoding="UTF-8") as f:
             token_string = f.read()
         token_string = token_string.strip()  # Drop \n at end of token_string
         header = {"Authorization": f"Bearer {token_string}"}

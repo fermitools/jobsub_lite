@@ -91,7 +91,7 @@ def render_files(
         bf = os.path.basename(f)
         ff = os.path.join(dest, bf)
         try:
-            with open(ff, "w") as of:
+            with open(ff, "w", encoding="UTF-8") as of:
                 of.write(jinja_env.get_template(bf).render(**values))
         except jinja.exceptions.UndefinedError as e:
             err = f"""Cannot render template file {f} due to undefined template variables.

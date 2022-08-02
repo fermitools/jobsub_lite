@@ -39,10 +39,8 @@ def getExp() -> str:
             return os.environ.get(ev)
     # otherwise guess primary group...
     exp = None
-    f = os.popen("id -gn", "r")
-    if f:
+    with os.popen("id -gn", "r", encoding="UTF-8") as f:
         exp = f.read()
-        f.close()
     return exp
 
 
@@ -57,10 +55,9 @@ def getRole(role_override: Union[str, None] = None) -> str:
 
 def checkToken(tokenfile: str) -> bool:
     exp_time = None
-    f = os.popen(f"decode_token.sh -e exp {tokenfile} 2>/dev/null", "r")
-    if f:
+    cmd = f"decode_token.sh -e exp {tokenfile} 2>/dev/null"
+    with os.popen(cmd, "r", encoding="UTF-8") as f:
         exp_time = f.read()
-        f.close()
     return exp_time and ((int(exp_time) - time.time()) > 60)
 
 

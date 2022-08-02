@@ -84,23 +84,22 @@ def load_submit_file(filename: str) -> Dict[str, str]:
     #   if you run condor_submit --dump filename
     #   until that's done, we have to call real condor_submit.
     #
-    f = open(filename, "r")
-    res = {}
-    nqueue = None
-    for line in f:
-        line = line.strip()
-        if line.startswith("#"):
-            continue
-        t = re.split(r"\s*=\s*", line, maxsplit=1)
-        if len(t) == 2:
-            res[t[0]] = t[1]
-        elif line.startswith("queue"):
-            nqueue = int(line[5:])
-        elif not line:
-            pass  # blank lines ok
-        else:
-            raise SyntaxError(f"malformed line: {line}")
-    f.close()
+    with open(filename, "r", encoding="UTF-8") as f:
+        res = {}
+        nqueue = None
+        for line in f:
+            line = line.strip()
+            if line.startswith("#"):
+                continue
+            t = re.split(r"\s*=\s*", line, maxsplit=1)
+            if len(t) == 2:
+                res[t[0]] = t[1]
+            elif line.startswith("queue"):
+                nqueue = int(line[5:])
+            elif not line:
+                pass  # blank lines ok
+            else:
+                raise SyntaxError(f"malformed line: {line}")
     return htcondor.Submit(res), nqueue
 
 
