@@ -17,8 +17,8 @@ os.environ['PATH'] = (os.path.dirname(os.path.dirname(__file__)) +
 def job_envs():
     os.environ['IFDH_DEBUG']='1'
     os.environ['IFDH_FORCE']='https'
-    os.environ['IFDH_VERSION']='v2_6_5'
-    os.environ['IFDHC_CONFIG_DIR'] = '/grid/fermiapp/products/common/db/../prd/ifdhc_config/v2_6_5/NULL'
+    os.environ['IFDH_VERSION']='v2_6_6,ifdhc_config v2_6_6'
+    os.environ['IFDHC_CONFIG_DIR'] = '/grid/fermiapp/products/common/db/../prd/ifdhc_config/v2_6_6/NULL'
     os.environ['IFDH_TOKEN_ENABLE']='1'
     os.environ['IFDH_PROXY_ENABLE']='0'
     os.environ['IFDH_CP_MAXRETRIES']='2'
@@ -153,7 +153,7 @@ def fife_launch(extra):
           file://///grid/fermiapp/products/common/db/../prd/fife_utils/v3_3_2/NULL/libexec/fife_wrap \
             --find_setups \
             --setup-unquote 'hypotcode%%20v1_1' \
-            --setup-unquote 'ifdhc%%20v2_6_5,ifdhc_config%%20v2_6_5' \
+            --setup-unquote 'ifdhc%%20v2_6_6,ifdhc_config%%20v2_6_6' \
             --prescript-unquote 'ups%%20active' \
             --self_destruct_timer '700' \
             --debug \
