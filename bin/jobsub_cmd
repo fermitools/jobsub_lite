@@ -59,7 +59,7 @@ def main() -> None:
 
     if os.environ.get("GROUP", None) is None:
         raise AttributeError(
-            "%s needs -G group or $GROUP in the environment." % sys.argv[0]
+            f"{sys.argv[0]} needs -G group or $GROUP in the environment."
         )
 
     # make list of arguments to pass to condor command:

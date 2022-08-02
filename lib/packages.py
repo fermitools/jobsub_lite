@@ -40,7 +40,7 @@ def pkg_find(p: str, qual: str = "") -> None:
         SAVED_ENV = os.environ.copy()
     path = None
     if not path and os.environ.get("SPACK_ROOT", None):
-        cmd = "spack find --paths --variants '%s os=fe' 'py-%s os=fe'" % p
+        cmd = f"spack find --paths --variants '{p} os=fe' 'py-{p} os=fe'" 
         f = os.popen(cmd, "r")
         for line in f:
             if line[0] == "-":
@@ -51,8 +51,7 @@ def pkg_find(p: str, qual: str = "") -> None:
 
     if not path and os.environ.get("PRODUCTS", None):
         cmd = (
-            "ups list -a4 -Kproduct:@prod_dir %s %s, -a0 -Kproduct:@prod_dir %s %s"
-            % (p, qual, p, qual)
+            f"ups list -a4 -Kproduct:@prod_dir {p} {qual}, -a0 -Kproduct:@prod_dir {p} {qual}"
         )
         f = os.popen(cmd, "r")
         for line in f:
@@ -61,15 +60,15 @@ def pkg_find(p: str, qual: str = "") -> None:
         f.close()
 
     if path:
-        os.environ["%s_DIR" % p.upper()] = path
+        os.environ[f"{p.upper()}_DIR"] = path
         for fmt in [
-            "%s/lib/python*/site-packages/*.egg",
-            "%s/lib/python*/site-packages",
-            "%s/lib/python*",
-            "%s/python*",
+            f"{path}/lib/python*/site-packages/*.egg",
+            f"{path}/lib/python*/site-packages",
+            f"{path}/lib/python*",
+            f"{path}/python*",
         ]:
 
-            gl = glob(fmt % path)
+            gl = glob(fmt)
             if gl:
                 sys.path = sys.path + gl
                 return

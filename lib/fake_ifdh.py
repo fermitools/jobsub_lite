@@ -57,7 +57,7 @@ def getRole(role_override: Union[str, None] = None) -> str:
 
 def checkToken(tokenfile: str) -> bool:
     exp_time = None
-    f = os.popen("decode_token.sh -e exp %s 2>/dev/null" % tokenfile, "r")
+    f = os.popen(f"decode_token.sh -e exp {tokenfile} 2>/dev/null", "r")
     if f:
         exp_time = f.read()
         f.close()
@@ -79,21 +79,21 @@ def getToken(role: str = DEFAULT_ROLE) -> str:
         # if we have a bearer token file set already, keep that one
         tokenfile = os.environ["BEARER_TOKEN_FILE"]
     else:
-        tokenfile = "%s/bt_token_%s_%s_%s" % (tmp, issuer, role, pid)
+        tokenfile = f"{tmp}/bt_token_{issuer}_{role}_{pid}"
         os.environ["BEARER_TOKEN_FILE"] = tokenfile
 
     if not checkToken(tokenfile):
-        cmd = "htgettoken -a %s -i %s" % (VAULT_HOST, issuer)
+        cmd = f"htgettoken -a {VAULT_HOST} -i {issuer}"
         if role != DEFAULT_ROLE:
-            cmd = "%s -r %s" % (cmd, role.lower())  # Token-world wants all-lower
+            cmd = f"{cmd} -r {role.lower()}"  # Token-world wants all-lower
         # send htgettoken output to stderr because invokers read stdout
-        res = os.system("%s >&2" % cmd)
+        res = os.system(f"{cmd} >&2")
         if res != 0:
-            raise PermissionError("Failed attempting '%s'" % cmd)
+            raise PermissionError(f"Failed attempting '{cmd}'")
         if checkToken(tokenfile):
             return tokenfile
         else:
-            raise PermissionError("Failed attempting '%s'" % cmd)
+            raise PermissionError(f"Failed attempting '{cmd}'")
     else:
         return tokenfile
 
@@ -102,7 +102,7 @@ def getProxy(role: str = DEFAULT_ROLE) -> str:
     pid = os.getuid()
     tmp = getTmp()
     exp = getExp()
-    certfile = "%s/x509up_u%s" % (tmp, pid)
+    certfile = f"{tmp}/x509up_u{pid}"
     if exp == "samdev":
         issuer = "fermilab"
         igroup = "fermilab"
@@ -112,29 +112,28 @@ def getProxy(role: str = DEFAULT_ROLE) -> str:
     else:
         issuer = "fermilab"
         igroup = "fermilab/" + exp
-    vomsfile = "%s/x509up_%s_%s_%s" % (tmp, exp, role, pid)
-    chk_cmd = "voms-proxy-info -exists -valid 0:10 -file %s" % vomsfile
+    vomsfile = f"{tmp}/x509up_{exp}_{role}_{pid}"
+    chk_cmd = f"voms-proxy-info -exists -valid 0:10 -file {vomsfile}"
     if 0 != os.system(chk_cmd):
-        cmd = "cigetcert -i 'Fermi National Accelerator Laboratory' -n -o %s" % certfile
+        cmd = f"cigetcert -i 'Fermi National Accelerator Laboratory' -n -o {certfile}"
         # send htgettoken output to stderr because invokers read stdout
-        os.system("%s >&2" % cmd)
+        os.system(f"{cmd} >&2")
         cmd = (
-            "voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen -debug -cert %s -key %s -out %s -voms %s:/%s/Role=%s"
-            % (certfile, certfile, vomsfile, issuer, igroup, role)
+            f"voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen -debug -cert {certfile} -key {certfile} -out {vomsfile} -voms {issuer}:/{igroup}/Role={role}"
         )
 
         # send htgettoken output to stderr because invokers read stdout
-        os.system("%s >&2" % cmd)
+        os.system(f"{cmd} >&2")
         if 0 == os.system(chk_cmd):
             return vomsfile
         else:
-            raise PermissionError("Failed attempting '%s'" % cmd)
+            raise PermissionError(f"Failed attempting '{cmd}'")
     else:
         return vomsfile
 
 
 def cp(src: str, dest: str) -> None:
-    os.system("gfal-copy %s %s" % (src, dest))
+    os.system(f"gfal-copy {src} {dest}")
 
 
 if __name__ == "__main__":

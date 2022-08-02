@@ -99,7 +99,7 @@ def load_submit_file(filename: str) -> Dict[str, str]:
         elif not line:
             pass  # blank lines ok
         else:
-            raise SyntaxError("malformed line: %s" % line)
+            raise SyntaxError(f"malformed line: {line}")
     f.close()
     return htcondor.Submit(res), nqueue
 
@@ -107,32 +107,29 @@ def load_submit_file(filename: str) -> Dict[str, str]:
 def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []):
     """Actually submit the job, using condor python bindings"""
 
-    schedd_args = "-remote %s" % (schedd_name)
+    schedd_args = f"-remote {schedd_name}"
 
     if "no_submit" in vargs and vargs["no_submit"]:
-        print("NOT submitting file:\n%s\n" % f)
+        print(f"NOT submitting file:\n{f}\n")
         return
     if f:
-        print("submitting: %s" % f)
-        schedd_args = schedd_args + " %s" % (f)
+        print(f"submitting: {f}")
+        schedd_args = schedd_args + f" {f}"
         fl = glob.glob(f)
         if fl:
             f = fl[0]
 
-    print("cmd_args: %s" % cmd_args)
+    print(f"cmd_args: {cmd_args}")
 
     # commenting this out for now since the 'else' is not implemented
     #    if True:
 
-    cmd = "/usr/bin/condor_submit -pool %s %s %s" % (
-        COLLECTOR_HOST,
-        schedd_args,
-        " ".join(["'%s'" % x for x in cmd_args]),
-    )
-    cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
-    cmd = "_condor_CREDD_HOST=%s %s" % (schedd_name, cmd)
+    qargs = " ".join([f"'{x}'" for x in cmd_args])
+    cmd = f"/usr/bin/condor_submit -pool {COLLECTOR_HOST} {schedd_args} {qargs}"
+    cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
+    cmd = f"_condor_CREDD_HOST={schedd_name} {cmd}"
     packages.orig_env()
-    print("Running: %s" % cmd)
+    print(f"Running: {cmd}")
 
     try:
         output = subprocess.run(
@@ -147,13 +144,12 @@ def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] 
             m = re.search(r"\d+ job\(s\) submitted to cluster (\d+).", output.stdout)
             if m:
                 print(
-                    "Use job id %s.0@%s to retrieve output" % (m.group(1), schedd_name)
+                    f"Use job id {m.group(1)}.0@{schedd_name} to retrieve output"
                 )
 
             if "outdir" in vargs:
                 print(
-                    "Output will be in %s after running jobsub_transfer_data."
-                    % vargs["outdir"]
+                    f"Output will be in {vargs['outdir']} after running jobsub_transfer_data."
                 )
 
             return True
@@ -166,7 +162,7 @@ def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] 
     #        subm, nqueue = load_submit_file(f)
     #        with schedd.transaction() as txn:
     #            cluster = subm.queue(txn, count=nqueue)
-    #        print("jobid: %s@%s" % (cluster, schedd_name))
+    #        print(f"jobid: {cluster}@{schedd_name}")
 
     return
 
@@ -183,15 +179,15 @@ def submit_dag(
     fl = glob.glob(f)
     if fl:
         f = fl[0]
-    subfile = "%s.condor.sub" % f
+    subfile = f"{f}.condor.sub"
     if not os.path.exists(subfile):
+        qargs = " ".join([f"'{x}'" for x in cmd_args])
         cmd = (
-            '/usr/bin/condor_submit_dag -append "use_oauth_services = %s" -no_submit %s %s'
-            % (vargs["group"], f, " ".join(["'%s'" % x for x in cmd_args]))
+            f'/usr/bin/condor_submit_dag -append "use_oauth_services = {vargs['group']}" -no_submit {f} {qargs}'
         )
 
-        cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
-        print("Running: %s" % cmd)
+        cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
+        print(f"Running: {cmd}")
 
         try:
             output = subprocess.run(cmd, shell=True)
@@ -200,8 +196,7 @@ def submit_dag(
             else:
                 if "outdir" in vargs:
                     print(
-                        "Output will be in %s after running jobsub_transfer_data."
-                        % vargs["outdir"]
+                        f"Output will be in {vargs['outdir']} after running jobsub_transfer_data."
                     )
         except OSError as e:
             print("Execution failed: ", e)

@@ -42,7 +42,7 @@ def poms_wrap(args: Dict[str, str]) -> None:
             test=dest,
             experiment=args["group"],
             task_id=os.environ["POMS_TASK_ID"],
-            command_executed="jobsub_submit %s" % " ".join(sys.argv),
+            command_executed=f"jobsub_submit {' '.join(sys.argv)}",
             campaign=os.environ["POMS_CAMPAIGN"],
             parent_task_id=os.environ["POMS_PARENT_TASK_ID"],
         )
@@ -52,12 +52,7 @@ def poms_wrap(args: Dict[str, str]) -> None:
         args["environment"].append(estr)
 
     args["lines"].append(
-        'FIFE_CATEGORIES="POMS_TASK_ID_%s,POMS_CAMPAIGN_ID_%s%s"'
-        % (
-            os.environ["POMS_TASK_ID"],
-            os.environ["POMS_CAMPAIGN_ID"],
-            os.environ["POMS_CAMPAIGN_TAGS"],
-        )
+        f"FIFE_CATEGORIES=\"POMS_TASK_ID_{os.environ['POMS_TASK_ID']},POMS_CAMPAIGN_ID_{os.environ['POMS_CAMPAIGN_ID']}{os.environ['POMS_CAMPAIGN_TAGS']}\""
     )
 
     for lstr in (
@@ -73,6 +68,6 @@ def poms_wrap(args: Dict[str, str]) -> None:
         "POMS4_CAMPAIGN_TYPE",
         "POMS4_TEST_LAUNCH",
     ):
-        args["lines"].append("+%s=%s" % (lstr, os.environ[lstr]))
+        args["lines"].append(f"+{lstr}={os.environ[lstr]}")
 
     return

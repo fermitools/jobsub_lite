@@ -45,11 +45,11 @@ except ValueError:
 
 def tar_up(directory: str, excludes: str) -> str:
     """build path/to/directory.tar from path/to/directory"""
-    tarfile = "%s.tar.gz" % directory
+    tarfile = f"{directory}.tar.gz"
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
-    excludes = "--exclude-from %s" % excludes
-    os.system("tar czvf %s %s --directory %s ." % (tarfile, excludes, directory))
+    excludes = f"--exclude-from {excludes}"
+    os.system(f"tar czvf {tarfile} {excludes} --directory {directory} .")
     return tarfile
 
 
@@ -71,10 +71,10 @@ def slurp_file(fname: str) -> Tuple[str, bytes]:
 def dcache_persistent_path(exp: str, filename: str) -> str:
     """pick the reslient dcache path for a tarfile"""
     bf = os.path.basename(filename)
-    f = os.popen("sha256sum %s" % filename, "r")
+    f = os.popen(f"sha256sum {filename}", "r")
     sha256_hash = f.read().strip().split(" ")[0]
     f.close()
-    res = "/pnfs/%s/resilient/jobsub_stage/%s/%s" % (exp, sha256_hash, bf)
+    res = f"/pnfs/{exp}/resilient/jobsub_stage/{sha256_hash}/{bf}"
     # for testing, we don't have a resilient area for "fermilab", so...
     if exp == "fermilab":
         res = res.replace("fermilab/resilient", "fermilab/volatile")
@@ -95,7 +95,7 @@ def do_tarballs(args: Dict[str, str]) -> None:
         if tfn.startswith("tardir:"):
             # tar it up, pretend they gave us dropbox:
             tarfile = tar_up(tfn[7:], args.tarball_exclusion_file)
-            tfn = "dropbox:%s" % tarfile
+            tfn = f"dropbox:{tarfile}"
             clean_up.append(tarfile)
 
         if tfn.startswith("dropbox:"):
@@ -132,7 +132,7 @@ def do_tarballs(args: Dict[str, str]) -> None:
             else:
                 raise (
                     NotImplementedError(
-                        "unknown tar distribution method: %s" % args.use_dropbox
+                        f"unknown tar distribution method: {args.use_dropbox}"
                     )
                 )
             tfn = location
@@ -142,7 +142,7 @@ def do_tarballs(args: Dict[str, str]) -> None:
         try:
             os.unlink(tf)
         except:
-            print("Notice: unable to remove generated tarfile %s" % tf)
+            print(f"Notice: unable to remove generated tarfile {tf}")
             pass
 
     args.tar_file_name = res

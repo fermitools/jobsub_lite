@@ -82,7 +82,7 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--email-to",
-        default="%s@fnal.gov" % os.environ["USER"],
+        default=f"{os.environ['USER']}@fnal.gov",
         help="email address to send job reports/summaries to (default is $USER@fnal.gov)",
     )
     parser.add_argument(

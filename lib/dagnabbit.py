@@ -42,7 +42,7 @@ def parse_dagnabbit(
     linenum = 0
     df = open(values["dag"], "r")
     of = open(os.path.join(dest, "dag.dag"), "w")
-    of.write("DOT %s/dag.dot UPDATE\n" % dest)
+    of.write(f"DOT {dest}/dag.dot UPDATE\n")
     in_parallel = False
     in_serial = False
     last_serial = None
@@ -52,10 +52,9 @@ def parse_dagnabbit(
         line = os.path.expandvars(line)
         linenum = linenum + 1
         if debug_comments:
-            of.write("# line: %s\n" % line)
+            of.write(f"# line: {line}\n")
             of.write(
-                "# in_parallel: %s in_serial: %s last_serial: %s parallel_l: %s\n"
-                % (in_parallel, in_serial, last_serial, parallel_l)
+                f"# in_parallel: {in_parallel} in_serial: {in_serial} last_serial: {last_serial} parallel_l: {parallel_l}\n"
             )
 
         if line.find("<parallel>") >= 0:
@@ -68,7 +67,7 @@ def parse_dagnabbit(
                 of.write("# saw </parallel>\n")
             in_parallel = False
             parallels = " ".join(parallel_l)
-            of.write("PARENT %s CHILD %s\n" % (last_serial, parallels))
+            of.write(f"PARENT {last_serial} CHILD {parallels}\n")
             last_serial = parallels
         elif line.find("<serial>") >= 0:
             if debug_comments:
@@ -79,8 +78,7 @@ def parse_dagnabbit(
                 # in a parallel, and our parallel_l would need a start
                 # and end for each chain...
                 sys.stderr.write(
-                    "Error: file %s line %d: <serial> inside <parallel> not currently supported\n"
-                    % (values[dag], linenum)
+                    f"Error: file {values[dag]} line {linenum}: <serial> inside <parallel> not currently supported\n"
                 )
                 sys.exit(1)
         elif line.find("</serial>") >= 0:
@@ -90,37 +88,36 @@ def parse_dagnabbit(
         elif line.find("jobsub") >= 0:
             if not in_serial and not in_parallel:
                 sys.stderr.write(
-                    "Syntax Error: job not in <serial> or <parallel block> at line %d\n"
-                    % linenum
+                    f"Syntax Error: job not in <serial> or <parallel block> at line {linenum}\n"
                 )
             count = count + 1
-            name = "stage_%d" % count
+            name = f"stage_{count}"
             parser = get_parser()
             try:
                 res = parser.parse_args(line.strip().split()[1:])
             except:
                 sys.stderr.write(
-                    "Error at file %s line %s\n" % (values["dag"], linenum)
+                    f"Error at file {values['dag']} line {linenum}\n"
                 )
-                sys.stderr.write("parsing: %s\n" % line.strip().split())
+                sys.stderr.write(f"parsing: {line.strip().split()}\n")
                 sys.stderr.flush()
                 raise
-            print("vars(res): %s" % repr(vars(res)))
+            print(f"vars(res): {repr(vars(res))}")
             thesevalues = values.copy()
             thesevalues["N"] = 1
             thesevalues["dag"] = None
             thesevalues.update(vars(res))
-            cf = open(os.path.join(dest, "%s.cmd" % name), "w")
-            csf = open(os.path.join(dest, "%s.sh" % name), "w")
+            cf = open(os.path.join(dest, f"{name}.cmd"), "w")
+            csf = open(os.path.join(dest, f"{name}.sh"), "w")
             set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
-            thesevalues["script_name"] = "%s.sh" % name
+            thesevalues["script_name"] = f"{name}.sh"
             cf.write(jinja_env.get_template("simple.cmd").render(**thesevalues))
             csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
             cf.close()
-            of.write("JOB %s %s/%s.cmd\n" % (name, dest, name))
+            of.write(f"JOB {name} {dest}/{name}.cmd\n")
             if in_serial:
                 if last_serial:
-                    of.write("PARENT %s CHILD %s\n" % (last_serial, name))
+                    of.write(f"PARENT {last_serial} CHILD {name}\n")
                 last_serial = name
             if in_parallel:
                 parallel_l.append(name)
@@ -128,7 +125,7 @@ def parse_dagnabbit(
             # blank lines are fine
             pass
         else:
-            sys.stderr.write("Syntax Error: ignoring %s at line %d\n" % (line, linenum))
+            sys.stderr.write(f"Syntax Error: ignoring {line} at line {linenum}\n")
 
     if values["maxConcurrent"]:
         of.write("CONFIG dagmax.config\n")

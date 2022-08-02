@@ -111,7 +111,7 @@ def main():
 
     if group is None:
         raise AttributeError(
-            "%s needs -G group or $GROUP in the environment." % sys.argv[0]
+            f"{sys.argv[0]} needs -G group or $GROUP in the environment."
         )
 
     if args.test is not None:
@@ -121,8 +121,8 @@ def main():
         schedd_name = schedd_add.eval("Machine")
 
     if args.verbose:
-        print("schedd_name is : %s" % schedd_name)
-        print("cmd_args is : %s" % cmd_args)
+        print(f"schedd_name is : {schedd_name}")
+        print(f"cmd_args is : {cmd_args}")
 
     if args.spool:
         print("Spooling is done by default. No need to request it explicitly.")
@@ -146,8 +146,8 @@ def main():
 
     proxy, token = get_creds(cred_args)
     if args.verbose:
-        print("proxy is : %s" % proxy)
-        print("token is : %s" % token)
+        print(f"proxy is : {proxy}")
+        print(f"token is : {token}")
 
     #   SUBMIT
     submit("", {}, schedd_name, cmd_args)

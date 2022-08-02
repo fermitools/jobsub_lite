@@ -30,7 +30,7 @@ def fixquote(s: str) -> str:
     """utility to put double quotes on value in string 'name=value'"""
     parts = s.split("=", 1)
     if len(parts) == 2:
-        return '%s="%s"' % (parts[0], parts[1])
+        return f'{parts[0]}="{parts[1]}"'
     else:
         return s
 
@@ -60,10 +60,10 @@ def set_extras_n_fix_units(
     # outbase needs to be an area shared with schedd servers.
     #
     if args["debug"]:
-        sys.stderr.write("entering set_extras... args: %s\n" % repr(args))
+        sys.stderr.write(f"entering set_extras... args: {repr(args)}\n")
 
     args["outbase"] = os.environ.get(
-        "JOBSUB_SPOOL", "%s/.jobsub_lite" % os.environ.get("HOME")
+        "JOBSUB_SPOOL", f"{os.environ.get('HOME')}/.jobsub_lite"
     )
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
@@ -84,7 +84,7 @@ def set_extras_n_fix_units(
     args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
     if args["debug"]:
         sys.stderr.write(
-            "checking args[executable]: %s\n" % repr(args.get("executable", None))
+            f"checking args[executable]: {repr(args.get('executable', None))}\n"
         )
     if not args["executable"] and args["exe_arguments"]:
         args["executable"] = args["exe_arguments"][-1]
@@ -101,7 +101,7 @@ def set_extras_n_fix_units(
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
-    args["outdir"] = "%(outbase)s/%(group)s/%(user)s/%(date)s.%(uuid)s" % args
+    args["outdir"] = f"{args['outbase']}/{args['group']}/{args['user']}/{args['date']}.{args['uuid']}"
     args["submitdir"] = args["outdir"]
 
     if not os.path.exists(args["outdir"]):
@@ -110,15 +110,14 @@ def set_extras_n_fix_units(
     # copy executable to submit dir so schedd can see it
     if args["debug"]:
         sys.stderr.write(
-            "checking full_executable: %s\n" % repr(args.get("full_executable", None))
+            f"checking full_executable: {repr(args.get('full_executable', None))}\n"
         )
 
     if args.get("full_executable", False):
         dest = os.path.join(args["submitdir"], os.path.basename(args["executable"]))
         if args["debug"]:
             sys.stderr.write(
-                "copying  %s to %s\n"
-                % (repr(args.get("full_executable", None)), repr(dest))
+                f"copying  {repr(args.get('full_executable', None))} to {repr(dest)}\n"
             )
         shutil.copyfile(args["full_executable"], dest, follow_symlinks=True)
         args["full_executable"] = dest
@@ -141,13 +140,13 @@ def set_extras_n_fix_units(
             v = os.environ.get(e, None)
             if not v:
                 raise RuntimeError(
-                    "--environment %s was given but no value was in the environment" % e
+                    f"--environment {e} was given but no value was in the environment"
                 )
-            e = "%s=%s" % (e, v)
+            e = f"{e}={v}"
         newe.append(e)
     args["environment"] = newe
     if args["debug"]:
-        sys.stderr.write("leaving set_extras... args: %s\n" % repr(args))
+        sys.stderr.write(f"leaving set_extras... args: {repr(args)}\n")
     args["jobsub_command"] = " ".join(sys.argv)
 
 
@@ -162,11 +161,11 @@ def fix_unit(
     """
     unit conversions using appropriate conversion table
     """
-    # print("fix_unit: %s %s %s %d %s %d" % (name, args[name], repr(table),s_offset,s_list,c_offset))
+    # print(f"fix_unit: {name}, {args[name]}, {repr(table)},{s_offset},{repr(s_list)},{c_offset}")
     if args[name] and args[name][s_offset].lower() in s_list:
         cf = table[args[name][c_offset].lower()]
         args[name] = float(args[name][:c_offset]) * cf
-        # print("converted to %f" % args[name])
+        # print(f"converted to {args[name]}")
     elif args[name]:
         args[name] = float(args[name])
 
