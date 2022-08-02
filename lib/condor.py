@@ -45,7 +45,8 @@ def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
     # need to directQuery for the full classads to check for
     # SupportedVOList...
 
-    print("classads: ", schedd_classads)
+    if vargs.get("verbose"):
+        print("classads: ", schedd_classads)
 
     # pick schedds who do or do not have "dev" in their name, depending if
     # we have "devserver" set...
@@ -68,18 +69,32 @@ def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
             coll.directQuery(htcondor.DaemonTypes.Schedd, name=ca.eval("Machine"))
         )
 
-    # pick schedds who list our group in their vo list
-
+    # Filters to pick our schedds
     schedds = [
-        ca
-        for ca in full_schedd_classads
+        schedd_classad
+        for schedd_classad in full_schedd_classads
+        # Pick the jobsub_lite schedds in the pool
         if (
-            ("SupportedVOList" in ca)
-            and (ca.eval("SupportedVOList").find(vargs["group"]) != -1)
+            ("IsJobsubLite" in schedd_classad)
+            and (schedd_classad.eval("IsJobsubLite") == True)
         )
-        and ("InDownTime" not in ca)
-        or (("InDownTime" in ca) and (not ca.eval("InDownTime")))
+        # Only get schedds whose SupportedVOLists include our VO (group)
+        and (
+            (
+                ("SupportedVOList" in schedd_classad)
+                and (schedd_classad.eval("SupportedVOList").find(vargs["group"]) != -1)
+            )
+        )
+        # Make sure we don't pick any schedds in downtime
+        and (
+            ("InDownTime" not in schedd_classad)
+            or (
+                ("InDownTime" in schedd_classad)
+                and (schedd_classad.eval("InDownTime") != True)
+            )
+        )
     ]
+
     res = random.choice(schedds)
     return res
 
