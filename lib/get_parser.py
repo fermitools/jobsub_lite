@@ -19,7 +19,7 @@ import os
 from typing import Union, Any, Dict
 
 
-def verify_executable_starts_with_file_colon(s:str)->str:
+def verify_executable_starts_with_file_colon(s: str) -> str:
     """routine to give argparse to verify the executable parameter,
     which is supposed to be given as a file:///path URL
     -- note we could check the file exists here, too.
@@ -33,12 +33,18 @@ def verify_executable_starts_with_file_colon(s:str)->str:
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
 
-    def __call__(self, parser:argparse.ArgumentParser, namespace:argparse.Namespace, values, option_string:Union[None,str]=None):
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values,
+        option_string: Union[None, str] = None,
+    ):
         os.environ["GROUP"] = values
         setattr(namespace, self.dest, values)
 
 
-def get_parser()->argparse.ArgumentParser:
+def get_parser() -> argparse.ArgumentParser:
     """build the argument parser and return it"""
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -109,7 +115,7 @@ def get_parser()->argparse.ArgumentParser:
         "--group",
         help="Group/Experiment/Subgroup for priorities and accounting",
         action=StoreGroupinEnvironment,
-        default=os.environ.get("GROUP",None)
+        default=os.environ.get("GROUP", None),
     )
     parser.add_argument(
         "-L", "--log_file", help="Log file to hold log output from job."
@@ -248,16 +254,16 @@ def get_parser()->argparse.ArgumentParser:
         "--singularity-image",
         default="/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
         help="Singularity image to run jobs in.  Default is "
-            "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest"
+        "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
     )
     singularity_group.add_argument(
         "--no-singularity",
         action="store_true",
         help="Don't request a singularity container.  If the site your job "
-            "lands on runs all jobs in singularity containers, your job will "
-            "also run in one.  If the site does not run all jobs in "
-            "singularity containers, your job will run outside a singularity "
-            "container."
+        "lands on runs all jobs in singularity containers, your job will "
+        "also run in one.  If the site does not run all jobs in "
+        "singularity containers, your job will run outside a singularity "
+        "container.",
     )
 
     parser.add_argument(

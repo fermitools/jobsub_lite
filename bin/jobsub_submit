@@ -55,6 +55,7 @@ from tarfiles import do_tarballs
 from utils import fixquote, set_extras_n_fix_units
 from creds import get_creds
 
+
 def get_basefiles(dlist: List[str]) -> List[str]:
     res = []
     for d in dlist:
@@ -63,19 +64,22 @@ def get_basefiles(dlist: List[str]) -> List[str]:
             res.append(os.path.basename(f))
     return res
 
-def render_files(srcdir:str, values:Dict[str,str], dest:str, dlist:Union[None, List[str]]=None):
+
+def render_files(
+    srcdir: str, values: Dict[str, str], dest: str, dlist: Union[None, List[str]] = None
+):
     """use jinja to render the templates from srcdir into the dest directory
     using values dict for substitutions
     """
     print("trying to render files from %s\n" % srcdir)
 
     if dlist is None:
-        dlist = [ srcdir ]
+        dlist = [srcdir]
     values["transfer_files"] = get_basefiles(dlist)
 
     jinja_env = jinja.Environment(
-        loader=jinja.FileSystemLoader(srcdir),
-        undefined=jinja.StrictUndefined)
+        loader=jinja.FileSystemLoader(srcdir), undefined=jinja.StrictUndefined
+    )
     jinja_env.filters["basename"] = os.path.basename
     flist = glob.glob("%s/*" % srcdir)
 
@@ -101,13 +105,13 @@ in its entirety.
             os.chmod(ff, 0o755)
 
 
-def cleanup(tmp:str)->None:
+def cleanup(tmp: str) -> None:
     """cleanup /tmp etc."""
     # we actually leave everything in the sandbox right now..
     pass
 
 
-def do_dataset_defaults(varg:Dict[str,str])->None:
+def do_dataset_defaults(varg: Dict[str, str]) -> None:
     """
     make sure to pass appropriate SAM_* environment variables if we
     are doing datasets.  Pick a SAM_PROJECT name if we don't have one.
@@ -168,12 +172,14 @@ def main():
     """
     parser = get_parser()
     args = parser.parse_args()
-    
-    if os.environ.get('GROUP',None) is None:
-        raise AttributeError("%s needs -G group or $GROUP in the environment." %sys.argv[0])
+
+    if os.environ.get("GROUP", None) is None:
+        raise AttributeError(
+            "%s needs -G group or $GROUP in the environment." % sys.argv[0]
+        )
 
     proxy, token = get_creds(vars(args))
-    
+
     if args.verbose:
         print("proxy is : %s" % proxy)
         print("token is : %s" % token)
@@ -202,33 +208,33 @@ def main():
         d2 = os.path.join(PREFIX, "templates", "dag")
         parse_dagnabbit(d1, varg, submitdir, schedd_name)
         varg["N"] = 1
-        render_files(d2, varg, submitdir, dlist=[d1,d2,submitdir])
-        if not varg.get("no_submit",False):
+        render_files(d2, varg, submitdir, dlist=[d1, d2, submitdir])
+        if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     elif args.dataset_definition:
         do_dataset_defaults(varg)
         d1 = os.path.join(PREFIX, "templates", "dataset_dag")
         d2 = "%s/templates/simple" % PREFIX
-        render_files(d2, varg, submitdir, dlist=[d1,d2])
+        render_files(d2, varg, submitdir, dlist=[d1, d2])
         varg["N"] = 1
-        render_files(d1, varg, submitdir, dlist=[d1,d2, submitdir])
-        if not varg.get("no_submit",False):
+        render_files(d1, varg, submitdir, dlist=[d1, d2, submitdir])
+        if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     elif args.maxConcurrent:
         d1 = os.path.join(PREFIX, "templates", "maxconcurrent_dag")
         d2 = os.path.join(PREFIX, "templates", "simple")
-        render_files(d2, varg, submitdir, dlist=[d1,d2])
+        render_files(d2, varg, submitdir, dlist=[d1, d2])
         varg["N"] = 1
-        render_files(d1, varg, submitdir, dlist=[d1,d2,varg["dest"]])
-        if not varg.get("no_submit",False):
+        render_files(d1, varg, submitdir, dlist=[d1, d2, varg["dest"]])
+        if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     else:
         d = "%s/templates/simple" % PREFIX
         render_files(d, varg, submitdir)
-        if not varg.get("no_submit",False):
+        if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
             submit(os.path.join(submitdir, "*.cmd"), varg, schedd_name)
 

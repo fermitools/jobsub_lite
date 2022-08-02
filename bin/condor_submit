@@ -29,14 +29,14 @@ import htcondor
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # handle if we're installed as an RPM in /usr/bin..
-if PREFIX == '/usr':
-    PREFIX='/usr/lib64/python3.6/site-packages/jobsub_lite'
+if PREFIX == "/usr":
+    PREFIX = "/usr/lib64/python3.6/site-packages/jobsub_lite"
 
 #
 # find parts we need in package management
 # this means we don't need fancy ups dependencies..
 #
-sys.path.append(os.path.join(PREFIX,"lib"))
+sys.path.append(os.path.join(PREFIX, "lib"))
 import packages
 
 #
@@ -47,69 +47,72 @@ from creds import get_creds
 
 COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", "gpcollector03.fnal.gov")
 
+
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
 
-    def __call__(self, parser:argparse.ArgumentParser, namespace:argparse.Namespace, values:Dict[str,str], option_string=None:Union[None,str]):
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: Dict[str, str],
+        option_string: Union[None, str] = None,
+    ):
         os.environ["GROUP"] = values
         setattr(namespace, self.dest, values)
 
 
-
 def main():
-    """ script mainline:
-        - parse args
-        - get credentials
-        - handle tarfile options
-        - set added values from environment, etc.
-        - launch
+    """script mainline:
+    - parse args
+    - get credentials
+    - handle tarfile options
+    - set added values from environment, etc.
+    - launch
     """
 
     condor_parser = argparse.ArgumentParser(
-        description='Queue jobs for execution under HTCondor without the jobsub wrapper.')
+        description="Queue jobs for execution under HTCondor without the jobsub wrapper."
+    )
 
     condor_parser.add_argument(
         "-G",
         "--group",
         required=False,
         help="Group/Experiment/Subgroup for priorities and accounting",
-        action=StoreGroupinEnvironment)
+        action=StoreGroupinEnvironment,
+    )
 
     condor_parser.add_argument(
-        "-t",
-        "--test",
-        required=False,
-        help="For testing only: specify condor_schedd")
+        "-t", "--test", required=False, help="For testing only: specify condor_schedd"
+    )
 
     condor_parser.add_argument(
         "-spool",
         required=False,
         help="Spool all required input files, job event log, and proxy over the connection to the condor_schedd. This is done by default.",
-        action='store_true')
+        action="store_true",
+    )
 
     condor_parser.add_argument(
-        "-v",
-        "--verbose",
-        required=False,
-        help="Verbose output",
-        action='store_true')
+        "-v", "--verbose", required=False, help="Verbose output", action="store_true"
+    )
 
     # currently not used, but wanted to put the placeholder in
-    condor_parser.add_argument(
-        "--credentials",
-        help="credential information")
+    condor_parser.add_argument("--credentials", help="credential information")
 
-
-#   PARSE ARGS TO GET SUBMISSION ARGUMENTS
+    #   PARSE ARGS TO GET SUBMISSION ARGUMENTS
     args, cmd_args = condor_parser.parse_known_args()
 
     if args.group is not None:
         group = args.group
     else:
-        group = os.environ.get("GROUP",None)
+        group = os.environ.get("GROUP", None)
 
     if group is None:
-        raise AttributeError("%s needs -G group or $GROUP in the environment." %sys.argv[0])
+        raise AttributeError(
+            "%s needs -G group or $GROUP in the environment." % sys.argv[0]
+        )
 
     if args.test is not None:
         schedd_name = args.test
@@ -124,17 +127,19 @@ def main():
     if args.spool:
         print("Spooling is done by default. No need to request it explicitly.")
 
-    if '-name' in cmd_args:
-        print("You are running a wrapper for condor_submit. The schedd is chosen for you. Please remove the '-name <schedd_name>' arguments from your command line and re-run, OR use /usr/bin/condor_submit.")
+    if "-name" in cmd_args:
+        print(
+            "You are running a wrapper for condor_submit. The schedd is chosen for you. Please remove the '-name <schedd_name>' arguments from your command line and re-run, OR use /usr/bin/condor_submit."
+        )
         return
-    elif '-remote' in cmd_args:
-        print("You are running a wrapper for condor_submit. The schedd is chosen for you. Please remove the '-remote <schedd_name>' arguments from your command line and re-run, OR use /usr/bin/condor_submit.")
+    elif "-remote" in cmd_args:
+        print(
+            "You are running a wrapper for condor_submit. The schedd is chosen for you. Please remove the '-remote <schedd_name>' arguments from your command line and re-run, OR use /usr/bin/condor_submit."
+        )
         return
 
-
-
-#   GET CREDENTIALS
-#   these args may/may not come from the input args. for now let's keep it empty  
+    #   GET CREDENTIALS
+    #   these args may/may not come from the input args. for now let's keep it empty
     cred_args = {}
     if args.credentials is not None:
         cred_args = args.credentials
@@ -144,9 +149,8 @@ def main():
         print("proxy is : %s" % proxy)
         print("token is : %s" % token)
 
-
-#   SUBMIT
-    submit('', {}, schedd_name, cmd_args)
+    #   SUBMIT
+    submit("", {}, schedd_name, cmd_args)
 
 
 if __name__ == "__main__":

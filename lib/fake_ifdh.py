@@ -29,41 +29,42 @@ VAULT_HOST = "fermicloud543.fnal.gov"
 DEFAULT_ROLE = "Analysis"
 
 
-def getTmp()->str:
+def getTmp() -> str:
     return os.environ.get("TMPDIR", "/tmp")
 
 
-def getExp()->str:
+def getExp() -> str:
     for ev in ["GROUP", "EXPERIMENT", "SAM_EXPERIMENT"]:
         if os.environ.get(ev, None):
             return os.environ.get(ev)
     # otherwise guess primary group...
     exp = None
     f = os.popen("id -gn", "r")
-    if f: 
+    if f:
         exp = f.read()
         f.close()
     return exp
 
 
-def getRole(role_override:Union[str,None]=None)->str:
+def getRole(role_override: Union[str, None] = None) -> str:
     if role_override:
         return role_override
     elif os.environ["USER"][-3:] == "pro":
         return "Production"
     else:
-        return DEFAULT_ROLE 
+        return DEFAULT_ROLE
 
 
-def checkToken(tokenfile:str)->bool:
+def checkToken(tokenfile: str) -> bool:
     exp_time = None
     f = os.popen("decode_token.sh -e exp %s 2>/dev/null" % tokenfile, "r")
     if f:
         exp_time = f.read()
         f.close()
-    return  exp_time and ((int(exp_time) - time.time()) > 60)
+    return exp_time and ((int(exp_time) - time.time()) > 60)
 
-def getToken(role:str=DEFAULT_ROLE)-> str:
+
+def getToken(role: str = DEFAULT_ROLE) -> str:
     pid = os.getuid()
     tmp = getTmp()
     exp = getExp()
@@ -72,7 +73,9 @@ def getToken(role:str=DEFAULT_ROLE)-> str:
     else:
         issuer = exp
 
-    if os.environ.get("BEARER_TOKEN_FILE",None) and os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
+    if os.environ.get("BEARER_TOKEN_FILE", None) and os.path.exists(
+        os.environ["BEARER_TOKEN_FILE"]
+    ):
         # if we have a bearer token file set already, keep that one
         tokenfile = os.environ["BEARER_TOKEN_FILE"]
     else:
@@ -82,20 +85,20 @@ def getToken(role:str=DEFAULT_ROLE)-> str:
     if not checkToken(tokenfile):
         cmd = "htgettoken -a %s -i %s" % (VAULT_HOST, issuer)
         if role != DEFAULT_ROLE:
-            cmd = "%s -r %s" % (cmd, role.lower()) # Token-world wants all-lower
+            cmd = "%s -r %s" % (cmd, role.lower())  # Token-world wants all-lower
         # send htgettoken output to stderr because invokers read stdout
         res = os.system("%s >&2" % cmd)
         if res != 0:
             raise PermissionError("Failed attempting '%s'" % cmd)
         if checkToken(tokenfile):
-            return(tokenfile)
+            return tokenfile
         else:
             raise PermissionError("Failed attempting '%s'" % cmd)
     else:
-        return(tokenfile)
+        return tokenfile
 
 
-def getProxy(role:str=DEFAULT_ROLE)->str:
+def getProxy(role: str = DEFAULT_ROLE) -> str:
     pid = os.getuid()
     tmp = getTmp()
     exp = getExp()
@@ -123,14 +126,14 @@ def getProxy(role:str=DEFAULT_ROLE)->str:
         # send htgettoken output to stderr because invokers read stdout
         os.system("%s >&2" % cmd)
         if 0 == os.system(chk_cmd):
-            return(vomsfile)
+            return vomsfile
         else:
             raise PermissionError("Failed attempting '%s'" % cmd)
     else:
-        return(vomsfile)
+        return vomsfile
 
 
-def cp(src:str, dest:str)->None:
+def cp(src: str, dest: str) -> None:
     os.system("gfal-copy %s %s" % (src, dest))
 
 
@@ -157,7 +160,7 @@ if __name__ == "__main__":
             if res != None:
                 print(res)
     except PermissionError as pe:
-        sys.stderr.write(str(pe)+"\n")
+        sys.stderr.write(str(pe) + "\n")
         print("")
     except KeyError:
         print(

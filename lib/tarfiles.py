@@ -43,7 +43,7 @@ except ValueError:
     raise
 
 
-def tar_up(directory:str, excludes: str)->str:
+def tar_up(directory: str, excludes: str) -> str:
     """build path/to/directory.tar from path/to/directory"""
     tarfile = "%s.tar.gz" % directory
     if not excludes:
@@ -53,7 +53,7 @@ def tar_up(directory:str, excludes: str)->str:
     return tarfile
 
 
-def slurp_file(fname:str)->Tuple[str,bytes]:
+def slurp_file(fname: str) -> Tuple[str, bytes]:
     """pull in a tarfile while computing its hash"""
     h = hashlib.sha256()
     tfl = []
@@ -68,7 +68,7 @@ def slurp_file(fname:str)->Tuple[str,bytes]:
     return h.hexdigest(), bytes().join(tfl)
 
 
-def dcache_persistent_path(exp:str, filename:str)->str:
+def dcache_persistent_path(exp: str, filename: str) -> str:
     """pick the reslient dcache path for a tarfile"""
     bf = os.path.basename(filename)
     f = os.popen("sha256sum %s" % filename, "r")
@@ -82,7 +82,7 @@ def dcache_persistent_path(exp:str, filename:str)->str:
     return res
 
 
-def do_tarballs(args: Dict[str,str])->None:
+def do_tarballs(args: Dict[str, str]) -> None:
     """handle tarfile argument;  we could have:
        a directory with tardir: prefix to tar up and upload
        a tarfile with dropbox: prefix to upload
@@ -157,12 +157,17 @@ class TarfilePublisherHandler(object):
         proxy (str): Location of X509 Proxy file to authenticate to RCDS
         token (str): Location of JWT/Sci-token to authenticate to RCDS
     """
-    dropbox_server_string = os.getenv("JOBSUB_DROPBOX_SERVER_LIST", "rcds01.fnal.gov rcds02.fnal.gov")
+
+    dropbox_server_string = os.getenv(
+        "JOBSUB_DROPBOX_SERVER_LIST", "rcds01.fnal.gov rcds02.fnal.gov"
+    )
     check_tarball_present_re = re.compile(
         "^PRESENT:(.+)$"
     )  # RCDS returns this if a tarball represented by cid is present
 
-    def __init__(self, cid:str, proxy:Union[None,str]=None, token:Union[None,str]=None):
+    def __init__(
+        self, cid: str, proxy: Union[None, str] = None, token: Union[None, str] = None
+    ):
         self.cid_url = _quote(cid, safe="")  # Encode CID for passing to URL
         self.proxy = proxy
         self.token = token
@@ -177,15 +182,16 @@ class TarfilePublisherHandler(object):
         )
 
     # Some sort of wrapper to wrap the above three
-    def pubapi_operation(func:Callable)->Callable:
+    def pubapi_operation(func: Callable) -> Callable:
         """Wrap various PubAPI operations, return path if we get it from response"""
 
         class SafeDict(dict):
             """Use this object to allow us to not need all keys of dict when
-               running str.format_map method to do string interpolation.
-               Taken from https://stackoverflow.com/a/17215533"""
+            running str.format_map method to do string interpolation.
+            Taken from https://stackoverflow.com/a/17215533"""
+
             def __missing__(self, key):
-                return f"{{{key}}}" # "{<key>}"
+                return f"{{{key}}}"  # "{<key>}"
 
         def wrapper(self, *args, **kwargs):
             _dropbox_server_selector = self.__select_dropbox_server()
@@ -193,15 +199,17 @@ class TarfilePublisherHandler(object):
             while True:
                 try:
                     _dropbox_server = next(_dropbox_server_selector)
-                    self.pubapi_base_url_formatter = \
-                            self.pubapi_base_url_formatter.format_map(
-                                    SafeDict(dropbox_server=_dropbox_server))
+                    self.pubapi_base_url_formatter = (
+                        self.pubapi_base_url_formatter.format_map(
+                            SafeDict(dropbox_server=_dropbox_server)
+                        )
+                    )
                     response = func(self, *args, **kwargs)
-                except: 
+                except:
                     tb.print_exc()
                     if next(retry_count) == NUM_RETRIES:
                         print(f"Max retries {NUM_RETRIES} exceeded.  Exiting now.")
-                        raise 
+                        raise
                     print(f"Will retry in {RETRY_INTERVAL_SEC} seconds")
                     time.sleep(RETRY_INTERVAL_SEC)
                 else:
@@ -214,7 +222,7 @@ class TarfilePublisherHandler(object):
         return wrapper
 
     @pubapi_operation
-    def update_cid(self)->requests.Response:
+    def update_cid(self) -> requests.Response:
         """Make PubAPI update call to check if we already have this tarfile
 
         Returns:
@@ -228,7 +236,7 @@ class TarfilePublisherHandler(object):
             return requests.get(url, cert=(self.proxy, self.proxy))
 
     @pubapi_operation
-    def publish(self, tarfile:str)->requests.Response:
+    def publish(self, tarfile: str) -> requests.Response:
         """Make PubAPI publish call to upload this tarfile
 
         Args:
@@ -240,16 +248,12 @@ class TarfilePublisherHandler(object):
         """
         url = self.pubapi_base_url_formatter.format(endpoint="publish")
         if self.token:
-            return requests.post(
-                url, headers=self.request_headers, data=tarfile
-            )
+            return requests.post(url, headers=self.request_headers, data=tarfile)
         else:
-            return requests.post(
-                url, cert=(self.proxy, self.proxy), data=tarfile
-            )
+            return requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
 
     @pubapi_operation
-    def cid_exists(self)->requests.Response:
+    def cid_exists(self) -> requests.Response:
         """Make PubAPI update call to check if we already have this tarfile
 
         Returns:
@@ -262,7 +266,7 @@ class TarfilePublisherHandler(object):
         else:
             return requests.get(url, cert=(self.proxy, self.proxy))
 
-    def __make_request_token_headers(self)->Dict[str,str]:
+    def __make_request_token_headers(self) -> Dict[str, str]:
         """Create headers for token auth to dropbox server"""
         with open(self.token, "r") as f:
             token_string = f.read()
@@ -270,7 +274,7 @@ class TarfilePublisherHandler(object):
         header = {"Authorization": f"Bearer {token_string}"}
         return header
 
-    def __select_dropbox_server(self)->str:
+    def __select_dropbox_server(self) -> str:
         """Yield a dropbox server for client to upload tarball to"""
         dropbox_servers_working_list = []
         while True:
@@ -278,6 +282,3 @@ class TarfilePublisherHandler(object):
                 dropbox_servers_working_list = list(self.dropbox_servers)
                 random.shuffle(dropbox_servers_working_list)
             yield dropbox_servers_working_list.pop()
-
-
-

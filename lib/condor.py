@@ -43,10 +43,14 @@ def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
     # pick schedds who do or do not have "dev" in their name, depending if
     # we have "devserver" set...
 
-    if 'devserver' in vargs and vargs["devserver"]:
-        schedd_classads = [ca for ca in schedd_classads if ca.eval("Machine").find("dev") != -1]
+    if "devserver" in vargs and vargs["devserver"]:
+        schedd_classads = [
+            ca for ca in schedd_classads if ca.eval("Machine").find("dev") != -1
+        ]
     else:
-        schedd_classads = [ca for ca in schedd_classads if ca.eval("Machine").find("dev") == -1]
+        schedd_classads = [
+            ca for ca in schedd_classads if ca.eval("Machine").find("dev") == -1
+        ]
 
     # print("after dev check:" , [ca.eval("Machine") for ca in schedds])
 
@@ -61,15 +65,18 @@ def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
     schedds = [
         ca
         for ca in full_schedd_classads
-        if (("SupportedVOList" in ca) and (ca.eval("SupportedVOList").find(vargs["group"]) != -1))
+        if (
+            ("SupportedVOList" in ca)
+            and (ca.eval("SupportedVOList").find(vargs["group"]) != -1)
+        )
         and ("InDownTime" not in ca)
-            or (("InDownTime" in ca) and (ca.eval("InDownTime") != True))
+        or (("InDownTime" in ca) and (ca.eval("InDownTime") != True))
     ]
     res = random.choice(schedds)
     return res
 
 
-def load_submit_file(filename: str) -> Dict[str,str]:
+def load_submit_file(filename: str) -> Dict[str, str]:
     """pull in a condor submit file, make a dictionary"""
 
     #
@@ -97,25 +104,25 @@ def load_submit_file(filename: str) -> Dict[str,str]:
     return htcondor.Submit(res), nqueue
 
 
-def submit(f: str, vargs: Dict[str,str], schedd_name:str, cmd_args:List[str]=[]):
+def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []):
     """Actually submit the job, using condor python bindings"""
 
-    schedd_args = "-remote %s" %(schedd_name)
+    schedd_args = "-remote %s" % (schedd_name)
 
-    if 'no_submit' in vargs and vargs["no_submit"]:
+    if "no_submit" in vargs and vargs["no_submit"]:
         print("NOT submitting file:\n%s\n" % f)
         return
     if f:
         print("submitting: %s" % f)
-        schedd_args = schedd_args + " %s" %(f)
+        schedd_args = schedd_args + " %s" % (f)
         fl = glob.glob(f)
         if fl:
             f = fl[0]
 
     print("cmd_args: %s" % cmd_args)
 
-# commenting this out for now since the 'else' is not implemented
-#    if True:
+    # commenting this out for now since the 'else' is not implemented
+    #    if True:
 
     cmd = "/usr/bin/condor_submit -pool %s %s %s" % (
         COLLECTOR_HOST,
@@ -128,38 +135,45 @@ def submit(f: str, vargs: Dict[str,str], schedd_name:str, cmd_args:List[str]=[])
     print("Running: %s" % cmd)
 
     try:
-        output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='UTF-8')
+        output = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, encoding="UTF-8"
+        )
         sys.stdout.write(output.stdout)
 
         if output.returncode < 0:
             print("Child was terminated by signal", -output.returncode)
             return None
         else:
-            m = re.search(r'\d+ job\(s\) submitted to cluster (\d+).', output.stdout)
+            m = re.search(r"\d+ job\(s\) submitted to cluster (\d+).", output.stdout)
             if m:
-                print("Use job id %s.0@%s to retrieve output" % 
-                         (m.group(1), schedd_name))
+                print(
+                    "Use job id %s.0@%s to retrieve output" % (m.group(1), schedd_name)
+                )
 
-            if 'outdir' in vargs:
-                print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
+            if "outdir" in vargs:
+                print(
+                    "Output will be in %s after running jobsub_transfer_data."
+                    % vargs["outdir"]
+                )
 
             return True
     except OSError as e:
         print("Execution failed: ", e)
         return None
-         
 
-# This 'else' is not currently implemented
-#    else:
-#        subm, nqueue = load_submit_file(f)
-#        with schedd.transaction() as txn:
-#            cluster = subm.queue(txn, count=nqueue)
-#        print("jobid: %s@%s" % (cluster, schedd_name))
+    # This 'else' is not currently implemented
+    #    else:
+    #        subm, nqueue = load_submit_file(f)
+    #        with schedd.transaction() as txn:
+    #            cluster = subm.queue(txn, count=nqueue)
+    #        print("jobid: %s@%s" % (cluster, schedd_name))
 
     return
 
 
-def submit_dag(f:str, vargs: Dict[str,str], schedd_name: str, cmd_args:List[str]=[]):
+def submit_dag(
+    f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []
+):
     """
     Actually submit the dag
     for the moment, we call the commandline condor_submit_dag,
@@ -184,8 +198,11 @@ def submit_dag(f:str, vargs: Dict[str,str], schedd_name: str, cmd_args:List[str]
             if output.returncode < 0:
                 print("Child was terminated by signal", -output.returncode)
             else:
-                if 'outdir' in vargs:
-                    print("Output will be in %s after running jobsub_transfer_data." % vargs["outdir"])
+                if "outdir" in vargs:
+                    print(
+                        "Output will be in %s after running jobsub_transfer_data."
+                        % vargs["outdir"]
+                    )
         except OSError as e:
             print("Execution failed: ", e)
 

@@ -26,7 +26,7 @@ import shutil
 from typing import Union, Any, Dict, List
 
 
-def fixquote(s:str)->str:
+def fixquote(s: str) -> str:
     """utility to put double quotes on value in string 'name=value'"""
     parts = s.split("=", 1)
     if len(parts) == 2:
@@ -35,7 +35,7 @@ def fixquote(s:str)->str:
         return s
 
 
-def grep_n(regex:str, n:int, file:str)->str:
+def grep_n(regex: str, n: int, file: str) -> str:
     rre = re.compile(regex)
     with open(file, "r") as fd:
         for line in fd:
@@ -44,7 +44,12 @@ def grep_n(regex:str, n:int, file:str)->str:
                 return m.group(n)
 
 
-def set_extras_n_fix_units(args:Dict[str,str], schedd_name:str, proxy:Union[None,str], token: Union[None,str])->None:
+def set_extras_n_fix_units(
+    args: Dict[str, str],
+    schedd_name: str,
+    proxy: Union[None, str],
+    token: Union[None, str],
+) -> None:
     """add items to our args dictionary that are not given on the
     command line, but that are needed to render the condor submit
     file templates.
@@ -57,7 +62,9 @@ def set_extras_n_fix_units(args:Dict[str,str], schedd_name:str, proxy:Union[None
     if args["debug"]:
         sys.stderr.write("entering set_extras... args: %s\n" % repr(args))
 
-    args["outbase"] = os.environ.get("JOBSUB_SPOOL", "%s/.jobsub_lite" % os.environ.get("HOME"))
+    args["outbase"] = os.environ.get(
+        "JOBSUB_SPOOL", "%s/.jobsub_lite" % os.environ.get("HOME")
+    )
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
     ai = socket.getaddrinfo(socket.gethostname(), 80)
@@ -76,7 +83,9 @@ def set_extras_n_fix_units(args:Dict[str,str], schedd_name:str, proxy:Union[None
         args["uuid"] = str(uuid.uuid4())
     args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
     if args["debug"]:
-        sys.stderr.write("checking args[executable]: %s\n" % repr(args.get("executable",None)))
+        sys.stderr.write(
+            "checking args[executable]: %s\n" % repr(args.get("executable", None))
+        )
     if not args["executable"] and args["exe_arguments"]:
         args["executable"] = args["exe_arguments"][-1]
         args["exe_arguments"] = args["exe_arguments"][:-1]
@@ -100,12 +109,17 @@ def set_extras_n_fix_units(args:Dict[str,str], schedd_name:str, proxy:Union[None
 
     # copy executable to submit dir so schedd can see it
     if args["debug"]:
-        sys.stderr.write("checking full_executable: %s\n" % repr(args.get("full_executable",None)))
+        sys.stderr.write(
+            "checking full_executable: %s\n" % repr(args.get("full_executable", None))
+        )
 
-    if args.get("full_executable",False):
+    if args.get("full_executable", False):
         dest = os.path.join(args["submitdir"], os.path.basename(args["executable"]))
         if args["debug"]:
-            sys.stderr.write("copying  %s to %s\n" % (repr(args.get("full_executable",None)),repr(dest)))
+            sys.stderr.write(
+                "copying  %s to %s\n"
+                % (repr(args.get("full_executable", None)), repr(dest))
+            )
         shutil.copyfile(args["full_executable"], dest, follow_symlinks=True)
         args["full_executable"] = dest
 
@@ -137,7 +151,14 @@ def set_extras_n_fix_units(args:Dict[str,str], schedd_name:str, proxy:Union[None
     args["jobsub_command"] = " ".join(sys.argv)
 
 
-def fix_unit(args:Dict[str,str], name:str, table:Dict[str,Union[float,int]], s_offset:int, s_list:List[str], c_offset:int)->None:
+def fix_unit(
+    args: Dict[str, str],
+    name: str,
+    table: Dict[str, Union[float, int]],
+    s_offset: int,
+    s_list: List[str],
+    c_offset: int,
+) -> None:
     """
     unit conversions using appropriate conversion table
     """
@@ -150,7 +171,7 @@ def fix_unit(args:Dict[str,str], name:str, table:Dict[str,Union[float,int]], s_o
         args[name] = float(args[name])
 
 
-def get_principal()->str:
+def get_principal() -> str:
     """get our kerberos principal name"""
     princ = None
     if sys.version_info.major >= 3:
@@ -166,30 +187,30 @@ def get_principal()->str:
     return princ
 
 
-def get_client_dn(proxy:Union[None,str]=None)->str:
+def get_client_dn(proxy: Union[None, str] = None) -> str:
     """Get our proxy's DN if the proxy exists"""
     if proxy is None:
-        proxy = os.getenv('X509_USER_PROXY')    
+        proxy = os.getenv("X509_USER_PROXY")
         if proxy is None:
             uid = str(os.getuid())
             proxy = f"/tmp/x509up_u{uid}"
 
     executables = OrderedDict(
-        ( 
+        (
             (
                 "voms-proxy-info",
                 {
                     "args": ["-file", proxy, "-subject"],
-                    "parse_output": re.compile("(.+)")
+                    "parse_output": re.compile("(.+)"),
                 },
             ),
             (
                 "openssl",
                 {
                     "args": ["x509", "-in", proxy, "-noout", "-subject"],
-                    "parse_output": re.compile("subject= (.+)")
+                    "parse_output": re.compile("subject= (.+)"),
                 },
-            )
+            ),
         )
     )
 
@@ -197,17 +218,23 @@ def get_client_dn(proxy:Union[None,str]=None)->str:
         exe_path = shutil.which(executable)
         if exe_path is not None:
             try:
-                proc = subprocess.run([exe_path, *executables[executable]["args"]], stdout=subprocess.PIPE, encoding="utf-8")
+                proc = subprocess.run(
+                    [exe_path, *executables[executable]["args"]],
+                    stdout=subprocess.PIPE,
+                    encoding="utf-8",
+                )
                 assert proc.returncode == 0
             except Exception as e:
-                print("Warning:  There was an issue getting the client DN from the user proxy.  Please open a "
-                "ticket to the Service Desk and paste the entire error message in the ticket.")
+                print(
+                    "Warning:  There was an issue getting the client DN from the user proxy.  Please open a "
+                    "ticket to the Service Desk and paste the entire error message in the ticket."
+                )
                 print(e)
                 continue
             else:
                 raw_out = proc.stdout.strip()
 
-            out_match = executables[executable]["parse_output"].match(raw_out)            
+            out_match = executables[executable]["parse_output"].match(raw_out)
             if out_match is not None:
                 return out_match.group(1)
 
