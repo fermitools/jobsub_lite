@@ -23,7 +23,13 @@ from utils import fixquote, set_extras_n_fix_units
 from typing import Union, Any, Dict
 
 
-def parse_dagnabbit(srcdir:str, values:Dict[str,str], dest:str, schedd_name:str, debug_comments:bool=True):
+def parse_dagnabbit(
+    srcdir: str,
+    values: Dict[str, str],
+    dest: str,
+    schedd_name: str,
+    debug_comments: bool = True,
+):
     """
     parse a dagnabbit dag file generating a .dag file and .cmd files
     in the dest directory, using global cmdline options from values

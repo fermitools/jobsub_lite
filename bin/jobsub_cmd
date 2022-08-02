@@ -28,16 +28,23 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 
 import fake_ifdh
 
+
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
 
-    def __call__(self, parser: argparse.ArgumentParser, namespace:Any, values:dict[str,str], option_string=None:Union[None,str]):
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: Any,
+        values: dict[str, str],
+        option_string: Union[None, str] = None,
+    ):
         os.environ["GROUP"] = values
         setattr(namespace, self.dest, values)
 
 
-def main()->None:
-    parser = argparse.ArgumentParser(description = 'Condor command wrapper')
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Condor command wrapper")
     parser.add_argument(
         "-G",
         "--group",
@@ -48,11 +55,12 @@ def main()->None:
         "--role", help="VOMS Role for priorities and accounting", default="Analysis"
     )
 
+    arglist, passthru = parser.parse_known_args()
 
-    arglist,passthru = parser.parse_known_args()
-
-    if os.environ.get('GROUP',None) is None:
-        raise AttributeError("%s needs -G group or $GROUP in the environment." %sys.argv[0])
+    if os.environ.get("GROUP", None) is None:
+        raise AttributeError(
+            "%s needs -G group or $GROUP in the environment." % sys.argv[0]
+        )
 
     # make list of arguments to pass to condor command:
     # - the passthru arguments from above, except if we have
@@ -74,22 +82,23 @@ def main()->None:
 
     # also make sure we have suitable credentials...
     role = fake_ifdh.getRole(arglist.role)
-    os.environ['X509_USER_PROXY'] = fake_ifdh.getProxy(role)
-    os.environ['BEARER_TOKEN_FILE'] = fake_ifdh.getToken(role)
+    os.environ["X509_USER_PROXY"] = fake_ifdh.getProxy(role)
+    os.environ["BEARER_TOKEN_FILE"] = fake_ifdh.getToken(role)
 
     # and find the wrapped command name
     cmd = os.path.basename(sys.argv[0])
 
     # combine jobsub_q as well
-    if cmd == 'jobsub_q':
-        execargs.insert(0, '-global')
-          
-    cmd = cmd.replace('jobsub_','condor_')
+    if cmd == "jobsub_q":
+        execargs.insert(0, "-global")
+
+    cmd = cmd.replace("jobsub_", "condor_")
 
     execargs.insert(0, cmd)
-    
+
     # now run the command with those arguments
-    os.execvp("/usr/bin/"+cmd, execargs)
+    os.execvp("/usr/bin/" + cmd, execargs)
+
 
 if __name__ == "__main__":
     main()

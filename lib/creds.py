@@ -19,13 +19,13 @@ import fake_ifdh
 from typing import Union, Any, Dict
 
 
-def get_creds(args:Dict[str,str]={}):
+def get_creds(args: Dict[str, str] = {}):
     """get credentials -- Note this does not currently push to
     myproxy, nor does it yet deal with tokens, but those should
     be done here as needed.
     """
 
-    role = fake_ifdh.getRole(args.get('role',None))
+    role = fake_ifdh.getRole(args.get("role", None))
     p = fake_ifdh.getProxy(role)
     t = fake_ifdh.getToken(role)
 

@@ -23,14 +23,14 @@ from typing import Union, Any, Dict
 SAVED_ENV = None
 
 
-def orig_env()->None:
+def orig_env() -> None:
     global SAVED_ENV
     if SAVED_ENV:
         os.environ.clear()
         os.environ.update(SAVED_ENV)
 
 
-def pkg_find(p:str, qual:str="")->None:
+def pkg_find(p: str, qual: str = "") -> None:
     """
     Use Spack or UPS to find the package mentioned and stuff its
     various subdirectories on sys.path so we can 'import' from it.
@@ -59,7 +59,6 @@ def pkg_find(p:str, qual:str="")->None:
             path = line.split()[1].strip('"')
             break
         f.close()
-
 
     if path:
         os.environ["%s_DIR" % p.upper()] = path
