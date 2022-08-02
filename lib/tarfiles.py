@@ -58,7 +58,7 @@ def slurp_file(fname: str) -> Tuple[str, bytes]:
     """pull in a tarfile while computing its hash"""
     h = hashlib.sha256()
     tfl = []
-    with open(fname, "rb", encoding="UTF-8") as f:
+    with open(fname, "rb") as f:
         tff = f.read(4096)
         h.update(tff)
         tfl.append(tff)
