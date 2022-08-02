@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" misc. utility functions """
 from collections import OrderedDict
 import os
 import re
@@ -36,6 +37,7 @@ def fixquote(s: str) -> str:
 
 
 def grep_n(regex: str, n: int, file: str) -> str:
+    """ return n-th sub expression of first regex match in file """
     rre = re.compile(regex)
     with open(file, "r") as fd:
         for line in fd:

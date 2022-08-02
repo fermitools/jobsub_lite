@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" tarfile upload related code """
 from creds import get_creds
 from functools import wraps
 import hashlib
@@ -191,9 +192,11 @@ class TarfilePublisherHandler(object):
             Taken from https://stackoverflow.com/a/17215533"""
 
             def __missing__(self, key):
+                """ missing item handler"""
                 return f"{{{key}}}"  # "{<key>}"
 
         def wrapper(self, *args, **kwargs):
+            """ wrapper function for decorator """
             _dropbox_server_selector = self.__select_dropbox_server()
             retry_count = itertools.count()
             while True:

@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" replacement for jobsub_wrapper for POMS"""
 import os
 import sys
 from typing import Union, Any, Dict
@@ -25,6 +26,10 @@ import poms_client
 
 
 def poms_wrap(args: Dict[str, str]) -> None:
+    """
+       pass assorted POMS bookeeping into job submission and
+       back to monitoring and POMS
+    """
 
     if os.environ.get("POMS_TASK_ID", None) is None:
         # poms launch env not set, so skip...

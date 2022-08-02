@@ -17,6 +17,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""ifdh replacemnents to remove dependency"""
 
 import sys
 
@@ -30,10 +31,12 @@ DEFAULT_ROLE = "Analysis"
 
 
 def getTmp() -> str:
+    """ return temp directory path """
     return os.environ.get("TMPDIR", "/tmp")
 
 
 def getExp() -> str:
+    """ return current experiment name """
     for ev in ["GROUP", "EXPERIMENT", "SAM_EXPERIMENT"]:
         if os.environ.get(ev, None):
             return os.environ.get(ev)
@@ -45,6 +48,7 @@ def getExp() -> str:
 
 
 def getRole(role_override: Union[str, None] = None) -> str:
+    """ get current role """
     if role_override:
         return role_override
     elif os.environ["USER"][-3:] == "pro":
@@ -54,6 +58,7 @@ def getRole(role_override: Union[str, None] = None) -> str:
 
 
 def checkToken(tokenfile: str) -> bool:
+    """ check if token is (almost) expired """
     exp_time = None
     cmd = f"decode_token.sh -e exp {tokenfile} 2>/dev/null"
     with os.popen(cmd, "r", encoding="UTF-8") as f:
@@ -62,6 +67,7 @@ def checkToken(tokenfile: str) -> bool:
 
 
 def getToken(role: str = DEFAULT_ROLE) -> str:
+    """ get path to token file """
     pid = os.getuid()
     tmp = getTmp()
     exp = getExp()
@@ -96,6 +102,7 @@ def getToken(role: str = DEFAULT_ROLE) -> str:
 
 
 def getProxy(role: str = DEFAULT_ROLE) -> str:
+    """ get path to proxy certificate file"""
     pid = os.getuid()
     tmp = getTmp()
     exp = getExp()
@@ -130,6 +137,7 @@ def getProxy(role: str = DEFAULT_ROLE) -> str:
 
 
 def cp(src: str, dest: str) -> None:
+    """ copy a (remote) file with gfal-copy """
     os.system(f"gfal-copy {src} {dest}")
 
 

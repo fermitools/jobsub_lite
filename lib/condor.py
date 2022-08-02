@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" condor related routines """
 import os
 import sys
 import glob
@@ -182,7 +183,7 @@ def submit_dag(
     if not os.path.exists(subfile):
         qargs = " ".join([f"'{x}'" for x in cmd_args])
         cmd = (
-            f'/usr/bin/condor_submit_dag -append "use_oauth_services = {vargs['group']}" -no_submit {f} {qargs}'
+            f'/usr/bin/condor_submit_dag -append "use_oauth_services = {vargs["group"]}" -no_submit {f} {qargs}'
         )
 
         cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
