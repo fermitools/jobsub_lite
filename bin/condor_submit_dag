@@ -18,7 +18,7 @@
 # limitations under the License.
 
 """ wrapper for condor_submit_dag """
-#pylint: disable=wrong-import-position,wrong-import-order,import-error
+# pylint: disable=wrong-import-position,wrong-import-order,import-error
 import sys
 import os
 import os.path
@@ -32,18 +32,18 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 #
 # import our local parts
 #
-from condor import  get_schedd, submit_dag
+from condor import get_schedd, submit_dag
 from creds import get_creds
 
 
 def main():
-    """ script mainline:
-        - parse args
-        - get credentials
-        - handle tarfile options
-        - set added values from environment, etc.
-        - convert/render template files to submission files
-        - launch
+    """script mainline:
+    - parse args
+    - get credentials
+    - handle tarfile options
+    - set added values from environment, etc.
+    - convert/render template files to submission files
+    - launch
     """
     f = sys.argv[-1]
     cmd_args = sys.argv[1:-1]
@@ -51,17 +51,19 @@ def main():
     proxy, token = get_creds(cmd_args)
 
     # put in environment for condor libs to use
-    os.environ['X509_USER_PROXY'] = proxy
-    os.environ['BEARER_TOKEN_FILE'] = token
+    os.environ["X509_USER_PROXY"] = proxy
+    os.environ["BEARER_TOKEN_FILE"] = token
 
-    if os.environ.get('GROUP',None) is None:
-        raise AttributeError(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
-
+    if os.environ.get("GROUP", None) is None:
+        raise AttributeError(
+            f"{sys.argv[0]} needs -G group or $GROUP in the environment."
+        )
 
     schedd_add = get_schedd({})
-    #schedd_name = schedd_add.eval("Machine")
+    # schedd_name = schedd_add.eval("Machine")
 
     submit_dag(f, {}, schedd_add, cmd_args)
+
 
 if __name__ == "__main__":
     main()

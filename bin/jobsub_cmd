@@ -20,7 +20,7 @@
     jobsub generic wrapper for condor commands -- parse args like
     -G group,  find schedd, call generic condor cmd
 """
-#pylint: disable=wrong-import-position,wrong-import-order,import-error
+# pylint: disable=wrong-import-position,wrong-import-order,import-error
 
 import argparse
 import os
@@ -36,7 +36,8 @@ import fake_ifdh
 
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
-    #pylint: disable=too-few-public-methods
+
+    # pylint: disable=too-few-public-methods
 
     def __call__(
         self,
@@ -50,7 +51,7 @@ class StoreGroupinEnvironment(argparse.Action):
 
 
 def main() -> None:
-    """ main line of code, proces args, etc. """
+    """main line of code, proces args, etc."""
     parser = argparse.ArgumentParser(description="Condor command wrapper")
     parser.add_argument(
         "-G",

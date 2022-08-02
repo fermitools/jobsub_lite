@@ -21,7 +21,7 @@ from typing import Dict
 from packages import pkg_find
 
 pkg_find("poms_client", "-g poms41")
-#pylint: disable-next=wrong-import-position,wrong-import-order,import-error
+# pylint: disable-next=wrong-import-position,wrong-import-order,import-error
 import poms_client
 
 # translation of jobub_submit wrapper in poms_jobsub_wrapper...
@@ -29,8 +29,8 @@ import poms_client
 
 def poms_wrap(args: Dict[str, str]) -> None:
     """
-       pass assorted POMS bookeeping into job submission and
-       back to monitoring and POMS
+    pass assorted POMS bookeeping into job submission and
+    back to monitoring and POMS
     """
 
     if os.environ.get("POMS_TASK_ID", None) is None:
@@ -41,7 +41,7 @@ def poms_wrap(args: Dict[str, str]) -> None:
         # -e POMS_TASK_ID set, so already using poms_jobsub_wrapper
         return
 
-    if os.environ.get('POMS_TEST', None):
+    if os.environ.get("POMS_TEST", None):
         dest = os.environ["POMS_TEST"]
 
     os.environ["POMS_TASK_ID"] = str(

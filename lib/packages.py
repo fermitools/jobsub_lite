@@ -23,8 +23,8 @@ SAVED_ENV = None
 
 
 def orig_env() -> None:
-    """ put saved environment back """
-    #pylint: disable-next=global-variable-not-assigned
+    """put saved environment back"""
+    # pylint: disable-next=global-variable-not-assigned
     global SAVED_ENV
     if SAVED_ENV:
         os.environ.clear()
@@ -36,7 +36,7 @@ def pkg_find(p: str, qual: str = "") -> None:
     Use Spack or UPS to find the package mentioned and stuff its
     various subdirectories on sys.path so we can 'import' from it.
     """
-    #pylint: disable-next=global-statement
+    # pylint: disable-next=global-statement
     global SAVED_ENV
     if not SAVED_ENV:
         SAVED_ENV = os.environ.copy()
@@ -51,9 +51,7 @@ def pkg_find(p: str, qual: str = "") -> None:
                 break
 
     if not path and os.environ.get("PRODUCTS", None):
-        cmd = (
-            f"ups list -a4 -Kproduct:@prod_dir {p} {qual}, -a0 -Kproduct:@prod_dir {p} {qual}"
-        )
+        cmd = f"ups list -a4 -Kproduct:@prod_dir {p} {qual}, -a0 -Kproduct:@prod_dir {p} {qual}"
         with os.popen(cmd, "r") as f:
             for line in f:
                 path = line.split()[1].strip('"')

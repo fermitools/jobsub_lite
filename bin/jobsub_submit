@@ -18,7 +18,7 @@
 # limitations under the License.
 
 """ submit command for jobsub layer over condor """
-#pylint: disable=wrong-import-position,wrong-import-order,import-error
+# pylint: disable=wrong-import-position,wrong-import-order,import-error
 import glob
 import os
 import os.path
@@ -52,7 +52,7 @@ from creds import get_creds
 
 
 def get_basefiles(dlist: List[str]) -> List[str]:
-    """ get basename of files in directory """
+    """get basename of files in directory"""
     res = []
     for d in dlist:
         flist = glob.glob(f"{d}/*")
@@ -101,7 +101,7 @@ in its entirety.
             os.chmod(ff, 0o755)
 
 
-#pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument
 def cleanup(tmp: str) -> None:
     """cleanup /tmp etc."""
     # we actually leave everything in the sandbox right now..
@@ -136,10 +136,10 @@ def do_dataset_defaults(varg: Dict[str, str]) -> None:
     if not have_project:
         # if not, grab from the environment, or use dataset_$USER_$uuid
         varg["environment"].append(
-            "SAM_PROJECT="+
-            os.environ.get(
+            "SAM_PROJECT="
+            + os.environ.get(
                 "SAM_PROJECT",
-                f'{varg["dataset_definition"]}_{os.environ.get("USER", "")}_{varg["uuid"]}'
+                f'{varg["dataset_definition"]}_{os.environ.get("USER", "")}_{varg["uuid"]}',
             )
         )
     if not have_dataset:
@@ -161,7 +161,7 @@ def main():
     - convert/render template files to submission files
     - launch
     """
-    #pylint: disable=too-many-statements
+    # pylint: disable=too-many-statements
     parser = get_parser()
     args = parser.parse_args()
 

@@ -18,7 +18,7 @@
 # limitations under the License.
 
 """ wrapper for condor submit """
-#pylint: disable=wrong-import-position,wrong-import-order,import-error
+# pylint: disable=wrong-import-position,wrong-import-order,import-error
 import sys
 import os
 import os.path
@@ -45,7 +45,8 @@ COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", "gpcollector03.fnal.gov")
 
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
-    #pylint: disable=too-few-public-methods
+
+    # pylint: disable=too-few-public-methods
 
     def __call__(
         self,
@@ -87,8 +88,8 @@ def main():
         "-spool",
         required=False,
         help="Spool all required input files, job event log, and proxy"
-             " over the connection to the condor_schedd. This is done by"
-             " default.",
+        " over the connection to the condor_schedd. This is done by"
+        " default.",
         action="store_true",
     )
 

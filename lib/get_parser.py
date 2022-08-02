@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ argument parser, used multiple places, so defined here"""
-#pylint: disable=too-few-public-methods
+# pylint: disable=too-few-public-methods
 import argparse
 import os
 from typing import Union
@@ -70,9 +70,9 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--disk",
         help="Request worker nodes have at least NUMBER[UNITS] of disk space."
-             " If UNITS is not specified default is 'KB' (a typo in earlier"
-             " versions said that default was 'MB', this was wrong)."
-             " Allowed values for UNITS are 'KB','MB','GB', and 'TB'",
+        " If UNITS is not specified default is 'KB' (a typo in earlier"
+        " versions said that default was 'MB', this was wrong)."
+        " Allowed values for UNITS are 'KB','MB','GB', and 'TB'",
         default="100MB",
     )
     parser.add_argument(
@@ -82,15 +82,15 @@ def get_parser() -> argparse.ArgumentParser:
         default=[],
         metavar=("tag", "dir"),
         help="-d <tag> <dir> Writable directory $CONDOR_DIR_<tag> will exist"
-             " on the execution node. After job completion, its contents will"
-             " be moved to <dir> automatically."
-             " Specify as many <tag>/<dir> pairs as you need.",
+        " on the execution node. After job completion, its contents will"
+        " be moved to <dir> automatically."
+        " Specify as many <tag>/<dir> pairs as you need.",
     )
     parser.add_argument(
         "--email-to",
         default=f"{os.environ['USER']}@fnal.gov",
         help="email address to send job reports/summaries"
-             " (default is $USER@fnal.gov)",
+        " (default is $USER@fnal.gov)",
     )
     parser.add_argument(
         "-e",
@@ -98,32 +98,32 @@ def get_parser() -> argparse.ArgumentParser:
         default=[],
         action="append",
         help=" -e ADDED_ENVIRONMENT exports this variable with its local value"
-             " to worker node environment. For example export FOO='BAR';"
-             " jobsub -e FOO <more stuff> guarantees that the value of $FOO"
-             " on the worker node is 'BAR' . Alternate format which does not"
-             " require setting the env var first is the -e VAR=VAL idiom,"
-             " which sets the value of $VAR to 'VAL' in the worker environment."
-             " The -e option can be used as many times in one jobsub_submit"
-             " invocation as desired.",
+        " to worker node environment. For example export FOO='BAR';"
+        " jobsub -e FOO <more stuff> guarantees that the value of $FOO"
+        " on the worker node is 'BAR' . Alternate format which does not"
+        " require setting the env var first is the -e VAR=VAL idiom,"
+        " which sets the value of $VAR to 'VAL' in the worker environment."
+        " The -e option can be used as many times in one jobsub_submit"
+        " invocation as desired.",
     )
     parser.add_argument(
         "--expected-lifetime",
         help=" 'short'|'medium'|'long'|NUMBER[UNITS] Expected lifetime of the"
-            " job. Used to match against resources advertising that they have"
-            " REMAINING_LIFETIME seconds left. The shorter your EXPECTED_LIFTIME"
-            " is, the more resources (aka slots, cpus) your job can potentially"
-            " match against and the quicker it should start. If your job runs"
-            " longer than EXPECTED_LIFETIME it *may* be killed by the batch"
-            " system."
-            " If your specified EXPECTED_LIFETIME is too long your job may"
-            " take a long time to match against a resource a sufficiently long"
-            " REMAINING_LIFETIME. Valid inputs for this parameter are:"
-            " 'short', 'medium', 'long' IF [UNITS] is omitted, value is NUMBER"
-            " seconds. Allowed values for UNITS are 's', 'm', 'h', 'd'"
-            " representing seconds, minutes, etc.The values for"
-            " 'short','medium',and 'long' are configurable by Grid Operations,"
-            " they currently are '3h' , '8h' , and '85200s' but this may"
-            " change in the future.",
+        " job. Used to match against resources advertising that they have"
+        " REMAINING_LIFETIME seconds left. The shorter your EXPECTED_LIFTIME"
+        " is, the more resources (aka slots, cpus) your job can potentially"
+        " match against and the quicker it should start. If your job runs"
+        " longer than EXPECTED_LIFETIME it *may* be killed by the batch"
+        " system."
+        " If your specified EXPECTED_LIFETIME is too long your job may"
+        " take a long time to match against a resource a sufficiently long"
+        " REMAINING_LIFETIME. Valid inputs for this parameter are:"
+        " 'short', 'medium', 'long' IF [UNITS] is omitted, value is NUMBER"
+        " seconds. Allowed values for UNITS are 's', 'm', 'h', 'd'"
+        " representing seconds, minutes, etc.The values for"
+        " 'short','medium',and 'long' are configurable by Grid Operations,"
+        " they currently are '3h' , '8h' , and '85200s' but this may"
+        " change in the future.",
         default="8h",
     )
     parser.add_argument(
@@ -144,7 +144,7 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
         help="generate and mail a summary report of completed/failed/removed"
-             " jobs in a DAG",
+        " jobs in a DAG",
     )
     parser.add_argument(
         "-G",
@@ -191,35 +191,35 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--maxConcurrent",
         help="max number of jobs running concurrently at given time.  Use in"
-            " conjunction with -N option to protect a shared resource. Example:"
-            " jobsub -N 1000 -maxConcurrent 20 will only run 20 jobs at a time"
-            " until all 1000 have completed. This is implemented by running the"
-            " jobs in a DAG. Normally when jobs are run with the -N option, they"
-            " all have the same $CLUSTER number and differing, sequential"
-            " $PROCESS numbers, and many submission scripts take advantage of this."
-            " When jobs are run with this option in a DAG each job has a different"
-            " $CLUSTER number and a $PROCESS number of 0, which may break scripts"
-            " that rely on the normal -N numbering scheme for $CLUSTER and $PROCESS."
-            " Groups of jobs run with this option will have the same"
-            " $JOBSUBPARENTJOBID, each individual job will have a unique and"
-            " sequential $JOBSUBJOBSECTION. Scripts may need modification to take"
-            " this into account",
+        " conjunction with -N option to protect a shared resource. Example:"
+        " jobsub -N 1000 -maxConcurrent 20 will only run 20 jobs at a time"
+        " until all 1000 have completed. This is implemented by running the"
+        " jobs in a DAG. Normally when jobs are run with the -N option, they"
+        " all have the same $CLUSTER number and differing, sequential"
+        " $PROCESS numbers, and many submission scripts take advantage of this."
+        " When jobs are run with this option in a DAG each job has a different"
+        " $CLUSTER number and a $PROCESS number of 0, which may break scripts"
+        " that rely on the normal -N numbering scheme for $CLUSTER and $PROCESS."
+        " Groups of jobs run with this option will have the same"
+        " $JOBSUBPARENTJOBID, each individual job will have a unique and"
+        " sequential $JOBSUBJOBSECTION. Scripts may need modification to take"
+        " this into account",
     )
     parser.add_argument(
         "--memory",
         default="2GB",
         help="Request worker nodes have at least NUMBER[UNITS] of memory."
-             " If UNITS is not specified default is 'MB'.  Allowed values "
-             " for UNITS are 'KB','MB','GB', and 'TB'",
+        " If UNITS is not specified default is 'MB'.  Allowed values "
+        " for UNITS are 'KB','MB','GB', and 'TB'",
     )
     parser.add_argument(
         "-N",
         default=1,
         type=int,
         help="submit N copies of this job. Each job will have access to the"
-             " environment variable $PROCESS that provides the job number"
-             " (0 to NUM-1), equivalent to the number following the decimal"
-             " point in the job ID (the '2' in 134567.2).",
+        " environment variable $PROCESS that provides the job number"
+        " (0 to NUM-1), equivalent to the number following the decimal"
+        " point in the job ID (the '2' in 134567.2).",
     )
     parser.add_argument(
         "-n",
@@ -243,37 +243,36 @@ def get_parser() -> argparse.ArgumentParser:
         "--resource-provides",
         action="append",
         default=[""],
-        help='request specific resources by changing condor jdf file. For'
-             ' example: --resource-provides=CVMFS=OSG will add'
-             ' +DESIRED_CVMFS="OSG" to the job classad attributes and'
-             ' \'&&(CVMFS=="OSG")\' to the job requirements',
+        help="request specific resources by changing condor jdf file. For"
+        " example: --resource-provides=CVMFS=OSG will add"
+        ' +DESIRED_CVMFS="OSG" to the job classad attributes and'
+        " '&&(CVMFS==\"OSG\")' to the job requirements",
     )
     parser.add_argument(
-        "--role", help="VOMS Role for priorities and accounting",
-        default="Analysis"
+        "--role", help="VOMS Role for priorities and accounting", default="Analysis"
     )
     parser.add_argument("--site", help="submit jobs to these (comma-separated) sites")
     parser.add_argument(
         "--subgroup",
         help=" Subgroup for priorities and accounting. See"
-             " https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/"
-             "Jobsub_submit#Groups-Subgroups-Quotas-Priorities for more"
-             "documentation on using --subgroup to set job quotas and"
-             "priorities",
+        " https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/"
+        "Jobsub_submit#Groups-Subgroups-Quotas-Priorities for more"
+        "documentation on using --subgroup to set job quotas and"
+        "priorities",
     )
     parser.add_argument(
         "--tar_file_name",
         default=[],
         action="append",
         help="    dropbox://PATH/TO/TAR_FILE\n     tardir://PATH/TO/DIRECTORY\n"
-             "specify TAR_FILE or DIRECTORY to be transferred to worker node."
-             " TAR_FILE will be copied to an area specified in the jobsub"
-             " server configuration, transferred to the job and unpacked there."
-             " TAR_FILE will be accessible to the user job on the worker node"
-             " via the environment variable $INPUT_TAR_FILE. The unpacked"
-             " contents will be in the same directory as $INPUT_TAR_FILE."
-             " Successive --tar_file_name options will be in"
-             " $INPUT_TAR_FILE_1, $INPUT_TAR_FILE_2, etc.",
+        "specify TAR_FILE or DIRECTORY to be transferred to worker node."
+        " TAR_FILE will be copied to an area specified in the jobsub"
+        " server configuration, transferred to the job and unpacked there."
+        " TAR_FILE will be accessible to the user job on the worker node"
+        " via the environment variable $INPUT_TAR_FILE. The unpacked"
+        " contents will be in the same directory as $INPUT_TAR_FILE."
+        " Successive --tar_file_name options will be in"
+        " $INPUT_TAR_FILE_1, $INPUT_TAR_FILE_2, etc.",
     )
     parser.add_argument(
         "--tarball-exclusion-file",
@@ -283,8 +282,8 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--timeout",
         help="kill user job if still running after NUMBER[UNITS] of time."
-             " UNITS may be `s' for seconds (the default), `m' for minutes,"
-             " `h' for hours or `d' h for days.",
+        " UNITS may be `s' for seconds (the default), `m' for minutes,"
+        " `h' for hours or `d' h for days.",
     )
     parser.add_argument(
         "--use-cvmfs-dropbox",

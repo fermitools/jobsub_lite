@@ -45,7 +45,8 @@ def parse_dagnabbit(
     count = 0
     linenum = 0
     with open(values["dag"], "r", encoding="UTF-8") as df, open(
-                os.path.join(dest, "dag.dag"), "w", encoding="UTF-8") as of:
+        os.path.join(dest, "dag.dag"), "w", encoding="UTF-8"
+    ) as of:
         of.write(f"DOT {dest}/dag.dot UPDATE\n")
         in_parallel = False
         in_serial = False
@@ -102,9 +103,7 @@ def parse_dagnabbit(
                 try:
                     res = parser.parse_args(line.strip().split()[1:])
                 except:
-                    sys.stderr.write(
-                        f"Error at file {values['dag']} line {linenum}\n"
-                    )
+                    sys.stderr.write(f"Error at file {values['dag']} line {linenum}\n")
                     sys.stderr.write(f"parsing: {line.strip().split()}\n")
                     sys.stderr.flush()
                     raise
@@ -115,9 +114,13 @@ def parse_dagnabbit(
                 thesevalues.update(vars(res))
                 set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
                 thesevalues["script_name"] = f"{name}.sh"
-                with open(os.path.join(dest, f"{name}.cmd"), "w", encoding="UTF-8") as cf:
+                with open(
+                    os.path.join(dest, f"{name}.cmd"), "w", encoding="UTF-8"
+                ) as cf:
                     cf.write(jinja_env.get_template("simple.cmd").render(**thesevalues))
-                with open(os.path.join(dest, f"{name}.sh"), "w", encoding="UTF-8") as csf:
+                with open(
+                    os.path.join(dest, f"{name}.sh"), "w", encoding="UTF-8"
+                ) as csf:
                     csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
                 of.write(f"JOB {name} {dest}/{name}.cmd\n")
                 if in_serial:

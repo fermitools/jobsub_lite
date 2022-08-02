@@ -90,7 +90,7 @@ def do_tarballs(args: Dict[str, str]) -> None:
        a plain path to just use
     we convert the argument to the next type as we go...
     """
-    #pylint: disable=too-many-nested-blocks,too-many-branches
+    # pylint: disable=too-many-nested-blocks,too-many-branches
     res = []
     clean_up = []
     for tfn in args.tar_file_name:
@@ -119,7 +119,7 @@ def do_tarballs(args: Dict[str, str]) -> None:
                 location = publisher.cid_exists()
                 if location is None:
                     publisher.publish(tf)
-                    #pylint: disable-next=unused-variable
+                    # pylint: disable-next=unused-variable
                     for i in range(NUM_RETRIES):
                         time.sleep(RETRY_INTERVAL_SEC)
                         location = publisher.cid_exists()
@@ -144,13 +144,13 @@ def do_tarballs(args: Dict[str, str]) -> None:
     for tf in clean_up:
         try:
             os.unlink(tf)
-        except: #pylint: disable=bare-except
+        except:  # pylint: disable=bare-except
             print(f"Notice: unable to remove generated tarfile {tf}")
 
     args.tar_file_name = res
 
 
-class TarfilePublisherHandler():
+class TarfilePublisherHandler:
     """Handler to publish tarballs via HTTP to RCDS (or future dropbox server)
 
     Args:
@@ -185,7 +185,7 @@ class TarfilePublisherHandler():
 
     # Some sort of wrapper to wrap the above three
 
-    #pylint: disable-next=no-self-argument
+    # pylint: disable-next=no-self-argument
     def pubapi_operation(func: Callable) -> Callable:
         """Wrap various PubAPI operations, return path if we get it from response"""
 
@@ -195,12 +195,12 @@ class TarfilePublisherHandler():
             Taken from https://stackoverflow.com/a/17215533"""
 
             def __missing__(self, key):
-                """ missing item handler"""
+                """missing item handler"""
                 return f"{{{key}}}"  # "{<key>}"
 
         def wrapper(self, *args, **kwargs):
-            """ wrapper function for decorator """
-            #pylint: disable-next=protected-access
+            """wrapper function for decorator"""
+            # pylint: disable-next=protected-access
             _dropbox_server_selector = self.__select_dropbox_server()
             retry_count = itertools.count()
             while True:
@@ -211,9 +211,9 @@ class TarfilePublisherHandler():
                             SafeDict(dropbox_server=_dropbox_server)
                         )
                     )
-                    #pylint: disable-next=not-callable
+                    # pylint: disable-next=not-callable
                     response = func(self, *args, **kwargs)
-                except: #pylint: disable=bare-except
+                except:  # pylint: disable=bare-except
                     tb.print_exc()
                     if next(retry_count) == NUM_RETRIES:
                         print(f"Max retries {NUM_RETRIES} exceeded.  Exiting now.")

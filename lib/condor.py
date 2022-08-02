@@ -20,7 +20,7 @@ import glob
 import re
 import random
 import subprocess
-from typing import  Dict, List
+from typing import Dict, List
 
 import htcondor
 import classad
@@ -111,7 +111,8 @@ def load_submit_file(filename: str) -> Dict[str, str]:
     # pylint: disable-next=no-member
     return htcondor.Submit(res), nqueue
 
-#pylint: disable-next=dangerous-default-value
+
+# pylint: disable-next=dangerous-default-value
 def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []):
     """Actually submit the job, using condor python bindings"""
 
@@ -141,8 +142,7 @@ def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] 
 
     try:
         output = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE,
-            encoding="UTF-8", check=False
+            cmd, shell=True, stdout=subprocess.PIPE, encoding="UTF-8", check=False
         )
         sys.stdout.write(output.stdout)
 
@@ -152,9 +152,7 @@ def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] 
 
         m = re.search(r"\d+ job\(s\) submitted to cluster (\d+).", output.stdout)
         if m:
-            print(
-                f"Use job id {m.group(1)}.0@{schedd_name} to retrieve output"
-            )
+            print(f"Use job id {m.group(1)}.0@{schedd_name} to retrieve output")
 
         if "outdir" in vargs:
             print(
@@ -176,7 +174,7 @@ def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] 
     #        return True
 
 
-#pylint: disable-next=dangerous-default-value
+# pylint: disable-next=dangerous-default-value
 def submit_dag(
     f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []
 ):
@@ -193,7 +191,7 @@ def submit_dag(
     if not os.path.exists(subfile):
         qargs = " ".join([f"'{x}'" for x in cmd_args])
         cmd = (
-            f'/usr/bin/condor_submit_dag -append'
+            f"/usr/bin/condor_submit_dag -append"
             f' "use_oauth_services = {vargs["group"]}" -no_submit {f} {qargs}'
         )
 

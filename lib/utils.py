@@ -36,7 +36,7 @@ def fixquote(s: str) -> str:
 
 
 def grep_n(regex: str, n: int, file: str) -> str:
-    """ return n-th sub expression of first regex match in file """
+    """return n-th sub expression of first regex match in file"""
     rre = re.compile(regex)
     with open(file, "r", encoding="UTF-8") as fd:
         for line in fd:
@@ -53,13 +53,13 @@ def set_extras_n_fix_units(
     token: Union[None, str],
 ) -> None:
     """
-        add items to our args dictionary that are not given on the
-        command line, but that are needed to render the condor submit
-        file templates.
-        Also convert units on memory, disk, and times
-        Note: this has gotten excessively long, probably should be split up?
+    add items to our args dictionary that are not given on the
+    command line, but that are needed to render the condor submit
+    file templates.
+    Also convert units on memory, disk, and times
+    Note: this has gotten excessively long, probably should be split up?
     """
-    #pylint: disable=too-many-branches,too-many-statements
+    # pylint: disable=too-many-branches,too-many-statements
 
     #
     # outbase needs to be an area shared with schedd servers.
@@ -106,8 +106,10 @@ def set_extras_n_fix_units(
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
-    args["outdir"] = (f"{args['outbase']}/{args['group']}/"
-                      f"{args['user']}/{args['date']}.{args['uuid']}")
+    args["outdir"] = (
+        f"{args['outbase']}/{args['group']}/"
+        f"{args['user']}/{args['date']}.{args['uuid']}"
+    )
     args["submitdir"] = args["outdir"]
 
     if not os.path.exists(args["outdir"]):
@@ -156,7 +158,7 @@ def set_extras_n_fix_units(
     args["jobsub_command"] = " ".join(sys.argv)
 
 
-#pylint: disable-next=too-many-arguments
+# pylint: disable-next=too-many-arguments
 def fix_unit(
     args: Dict[str, str],
     name: str,
@@ -180,8 +182,9 @@ def fix_unit(
 def get_principal() -> str:
     """get our kerberos principal name"""
     princ = None
-    with subprocess.Popen(["/usr/bin/klist"],
-             stdout=subprocess.PIPE, encoding="UTF-8") as p:
+    with subprocess.Popen(
+        ["/usr/bin/klist"], stdout=subprocess.PIPE, encoding="UTF-8"
+    ) as p:
         line = p.stdout.readline()
         line = p.stdout.readline()
         princ = line[line.find(":") + 2 : -1]
@@ -226,7 +229,7 @@ def get_client_dn(proxy: Union[None, str] = None) -> str:
                     check=False,
                 )
                 assert proc.returncode == 0
-            #pylint: disable-next=broad-except
+            # pylint: disable-next=broad-except
             except Exception as e:
                 print(
                     "Warning:  There was an issue getting the client DN from"
