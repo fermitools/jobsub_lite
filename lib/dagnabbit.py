@@ -14,14 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ dagnabbit DAG parser """
-import jinja2 as jinja
-import os
 import sys
-import creds
+import os
 import os.path
+from typing import Dict
+
+import jinja2 as jinja
+
+import creds
 from get_parser import get_parser
-from utils import fixquote, set_extras_n_fix_units
-from typing import Union, Any, Dict
+from utils import set_extras_n_fix_units
 
 
 def parse_dagnabbit(
@@ -36,12 +38,14 @@ def parse_dagnabbit(
     in the dest directory, using global cmdline options from values
     along with ones parsed from dagnabbit file
     """
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
     jinja_env.filters["basename"] = os.path.basename
     proxy, token = creds.get_creds(values)
     count = 0
     linenum = 0
-    with open(values["dag"], "r", encoding="UTF-8") as df, open(os.path.join(dest, "dag.dag"), "w", encoding="UTF-8") as of:
+    with open(values["dag"], "r", encoding="UTF-8") as df, open(
+                os.path.join(dest, "dag.dag"), "w", encoding="UTF-8") as of:
         of.write(f"DOT {dest}/dag.dot UPDATE\n")
         in_parallel = False
         in_serial = False
@@ -54,7 +58,8 @@ def parse_dagnabbit(
             if debug_comments:
                 of.write(f"# line: {line}\n")
                 of.write(
-                    f"# in_parallel: {in_parallel} in_serial: {in_serial} last_serial: {last_serial} parallel_l: {parallel_l}\n"
+                    f"# in_parallel: {in_parallel} in_serial: {in_serial}"
+                    f" last_serial: {last_serial} parallel_l: {parallel_l}\n"
                 )
 
             if line.find("<parallel>") >= 0:
@@ -78,7 +83,8 @@ def parse_dagnabbit(
                     # in a parallel, and our parallel_l would need a start
                     # and end for each chain...
                     sys.stderr.write(
-                        f"Error: file {values[dag]} line {linenum}: <serial> inside <parallel> not currently supported\n"
+                        f"Error: file {values['dag']} line {linenum}: <serial>"
+                        f" inside <parallel> not currently supported\n"
                     )
                     sys.exit(1)
             elif line.find("</serial>") >= 0:
@@ -128,4 +134,3 @@ def parse_dagnabbit(
 
         if values["maxConcurrent"]:
             of.write("CONFIG dagmax.config\n")
-

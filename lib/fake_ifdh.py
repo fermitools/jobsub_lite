@@ -24,7 +24,7 @@ import sys
 import os
 import time
 import argparse
-from typing import Union, Any, Dict
+from typing import Union
 
 VAULT_HOST = "fermicloud543.fnal.gov"
 DEFAULT_ROLE = "Analysis"
@@ -42,7 +42,7 @@ def getExp() -> str:
             return os.environ.get(ev)
     # otherwise guess primary group...
     exp = None
-    with os.popen("id -gn", "r", encoding="UTF-8") as f:
+    with os.popen("id -gn", "r") as f:
         exp = f.read()
     return exp
 
@@ -51,17 +51,16 @@ def getRole(role_override: Union[str, None] = None) -> str:
     """ get current role """
     if role_override:
         return role_override
-    elif os.environ["USER"][-3:] == "pro":
+    if os.environ["USER"][-3:] == "pro":
         return "Production"
-    else:
-        return DEFAULT_ROLE
+    return DEFAULT_ROLE
 
 
 def checkToken(tokenfile: str) -> bool:
     """ check if token is (almost) expired """
     exp_time = None
     cmd = f"decode_token.sh -e exp {tokenfile} 2>/dev/null"
-    with os.popen(cmd, "r", encoding="UTF-8") as f:
+    with os.popen(cmd, "r") as f:
         exp_time = f.read()
     return exp_time and ((int(exp_time) - time.time()) > 60)
 
@@ -95,10 +94,8 @@ def getToken(role: str = DEFAULT_ROLE) -> str:
             raise PermissionError(f"Failed attempting '{cmd}'")
         if checkToken(tokenfile):
             return tokenfile
-        else:
-            raise PermissionError(f"Failed attempting '{cmd}'")
-    else:
-        return tokenfile
+        raise PermissionError(f"Failed attempting '{cmd}'")
+    return tokenfile
 
 
 def getProxy(role: str = DEFAULT_ROLE) -> str:
@@ -123,17 +120,17 @@ def getProxy(role: str = DEFAULT_ROLE) -> str:
         # send htgettoken output to stderr because invokers read stdout
         os.system(f"{cmd} >&2")
         cmd = (
-            f"voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen -debug -cert {certfile} -key {certfile} -out {vomsfile} -voms {issuer}:/{igroup}/Role={role}"
+            f"voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen"
+            f" -debug -cert {certfile} -key {certfile} -out {vomsfile}"
+            f" -voms {issuer}:/{igroup}/Role={role}"
         )
 
         # send htgettoken output to stderr because invokers read stdout
         os.system(f"{cmd} >&2")
         if 0 == os.system(chk_cmd):
             return vomsfile
-        else:
-            raise PermissionError(f"Failed attempting '{cmd}'")
-    else:
-        return vomsfile
+        raise PermissionError(f"Failed attempting '{cmd}'")
+    return vomsfile
 
 
 def cp(src: str, dest: str) -> None:
@@ -154,15 +151,15 @@ if __name__ == "__main__":
     )
 
     opts = parser.parse_args()
-    role = getRole(opts.role)
+    myrole = getRole(opts.role)
 
     try:
         if opts.command[0] == "cp":
             commands[opts.command[0]](*opts.cpargs[0])
         else:
-            res = commands[opts.command[0]](role)
-            if res != None:
-                print(res)
+            result = commands[opts.command[0]](myrole)
+            if result is not None:
+                print(result)
     except PermissionError as pe:
         sys.stderr.write(str(pe) + "\n")
         print("")

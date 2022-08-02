@@ -16,10 +16,12 @@
 """ replacement for jobsub_wrapper for POMS"""
 import os
 import sys
-from typing import Union, Any, Dict
+from typing import Dict
+
 from packages import pkg_find
 
 pkg_find("poms_client", "-g poms41")
+#pylint: disable-next=wrong-import-position,wrong-import-order,import-error
 import poms_client
 
 # translation of jobub_submit wrapper in poms_jobsub_wrapper...
@@ -39,7 +41,7 @@ def poms_wrap(args: Dict[str, str]) -> None:
         # -e POMS_TASK_ID set, so already using poms_jobsub_wrapper
         return
 
-    if os.environ.get(POMS_TEST, None):
+    if os.environ.get('POMS_TEST', None):
         dest = os.environ["POMS_TEST"]
 
     os.environ["POMS_TASK_ID"] = str(
@@ -57,7 +59,9 @@ def poms_wrap(args: Dict[str, str]) -> None:
         args["environment"].append(estr)
 
     args["lines"].append(
-        f"FIFE_CATEGORIES=\"POMS_TASK_ID_{os.environ['POMS_TASK_ID']},POMS_CAMPAIGN_ID_{os.environ['POMS_CAMPAIGN_ID']}{os.environ['POMS_CAMPAIGN_TAGS']}\""
+        f"FIFE_CATEGORIES=\"POMS_TASK_ID_{os.environ['POMS_TASK_ID']},"
+        f"POMS_CAMPAIGN_ID_{os.environ['POMS_CAMPAIGN_ID']}"
+        f"{os.environ['POMS_CAMPAIGN_TAGS']}\""
     )
 
     for lstr in (

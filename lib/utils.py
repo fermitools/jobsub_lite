@@ -15,16 +15,16 @@
 # limitations under the License.
 """ misc. utility functions """
 from collections import OrderedDict
+import datetime
 import os
-import re
 import os.path
+import re
 import socket
 import sys
 import subprocess
 import uuid
-import datetime
 import shutil
-from typing import Union, Any, Dict, List
+from typing import Union, Dict, List
 
 
 def fixquote(s: str) -> str:
@@ -32,18 +32,18 @@ def fixquote(s: str) -> str:
     parts = s.split("=", 1)
     if len(parts) == 2:
         return f'{parts[0]}="{parts[1]}"'
-    else:
-        return s
+    return s
 
 
 def grep_n(regex: str, n: int, file: str) -> str:
     """ return n-th sub expression of first regex match in file """
     rre = re.compile(regex)
-    with open(file, "r") as fd:
+    with open(file, "r", encoding="UTF-8") as fd:
         for line in fd:
             m = rre.match(line)
             if m:
                 return m.group(n)
+    return ""
 
 
 def set_extras_n_fix_units(
@@ -52,12 +52,15 @@ def set_extras_n_fix_units(
     proxy: Union[None, str],
     token: Union[None, str],
 ) -> None:
-    """add items to our args dictionary that are not given on the
-    command line, but that are needed to render the condor submit
-    file templates.
-    Also convert units on memory, disk, and times
-    Note: this has gotten excessively long, probably should be split up?
     """
+        add items to our args dictionary that are not given on the
+        command line, but that are needed to render the condor submit
+        file templates.
+        Also convert units on memory, disk, and times
+        Note: this has gotten excessively long, probably should be split up?
+    """
+    #pylint: disable=too-many-branches,too-many-statements
+
     #
     # outbase needs to be an area shared with schedd servers.
     #
@@ -103,7 +106,8 @@ def set_extras_n_fix_units(
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
-    args["outdir"] = f"{args['outbase']}/{args['group']}/{args['user']}/{args['date']}.{args['uuid']}"
+    args["outdir"] = (f"{args['outbase']}/{args['group']}/"
+                      f"{args['user']}/{args['date']}.{args['uuid']}")
     args["submitdir"] = args["outdir"]
 
     if not os.path.exists(args["outdir"]):
@@ -152,6 +156,7 @@ def set_extras_n_fix_units(
     args["jobsub_command"] = " ".join(sys.argv)
 
 
+#pylint: disable-next=too-many-arguments
 def fix_unit(
     args: Dict[str, str],
     name: str,
@@ -175,16 +180,11 @@ def fix_unit(
 def get_principal() -> str:
     """get our kerberos principal name"""
     princ = None
-    if sys.version_info.major >= 3:
-        enc = {"encoding": "UTF-8"}
-    else:
-        enc = {}
-    p = subprocess.Popen(["/usr/bin/klist"], stdout=subprocess.PIPE, **enc)
-    line = p.stdout.readline()
-    line = p.stdout.readline()
-    princ = line[line.find(":") + 2 : -1]
-    p.stdout.close()
-    p.wait()
+    with subprocess.Popen(["/usr/bin/klist"],
+             stdout=subprocess.PIPE, encoding="UTF-8") as p:
+        line = p.stdout.readline()
+        line = p.stdout.readline()
+        princ = line[line.find(":") + 2 : -1]
     return princ
 
 
@@ -223,12 +223,16 @@ def get_client_dn(proxy: Union[None, str] = None) -> str:
                     [exe_path, *executables[executable]["args"]],
                     stdout=subprocess.PIPE,
                     encoding="utf-8",
+                    check=False,
                 )
                 assert proc.returncode == 0
+            #pylint: disable-next=broad-except
             except Exception as e:
                 print(
-                    "Warning:  There was an issue getting the client DN from the user proxy.  Please open a "
-                    "ticket to the Service Desk and paste the entire error message in the ticket."
+                    "Warning:  There was an issue getting the client DN from"
+                    " the user proxy.  Please open a"
+                    " ticket to the Service Desk and paste the entire error"
+                    " message in the ticket."
                 )
                 print(e)
                 continue

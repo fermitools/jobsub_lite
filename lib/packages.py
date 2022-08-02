@@ -18,13 +18,13 @@
 import os
 import sys
 from glob import glob
-from typing import Union, Any, Dict
 
 SAVED_ENV = None
 
 
 def orig_env() -> None:
     """ put saved environment back """
+    #pylint: disable-next=global-variable-not-assigned
     global SAVED_ENV
     if SAVED_ENV:
         os.environ.clear()
@@ -36,13 +36,14 @@ def pkg_find(p: str, qual: str = "") -> None:
     Use Spack or UPS to find the package mentioned and stuff its
     various subdirectories on sys.path so we can 'import' from it.
     """
+    #pylint: disable-next=global-statement
     global SAVED_ENV
     if not SAVED_ENV:
         SAVED_ENV = os.environ.copy()
     path = None
     if not path and os.environ.get("SPACK_ROOT", None):
-        cmd = f"spack find --paths --variants '{p} os=fe' 'py-{p} os=fe'" 
-        with os.popen(cmd, "r", encoding="UTF-8") as f:
+        cmd = f"spack find --paths --variants '{p} os=fe' 'py-{p} os=fe'"
+        with os.popen(cmd, "r") as f:
             for line in f:
                 if line[0] == "-":
                     continue
@@ -53,7 +54,7 @@ def pkg_find(p: str, qual: str = "") -> None:
         cmd = (
             f"ups list -a4 -Kproduct:@prod_dir {p} {qual}, -a0 -Kproduct:@prod_dir {p} {qual}"
         )
-        with os.popen(cmd, "r", encoding="UTF-8") as f:
+        with os.popen(cmd, "r") as f:
             for line in f:
                 path = line.split()[1].strip('"')
                 break

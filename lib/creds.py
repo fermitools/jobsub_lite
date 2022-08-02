@@ -15,11 +15,11 @@
 # limitations under the License.
 """ credential related routines """
 import os
-import subprocess
+from typing import  Dict
+
 import fake_ifdh
-from typing import Union, Any, Dict
 
-
+#pylint: disable-next=dangerous-default-value
 def get_creds(args: Dict[str, str] = {}):
     """get credentials -- Note this does not currently push to
     myproxy, nor does it yet deal with tokens, but those should

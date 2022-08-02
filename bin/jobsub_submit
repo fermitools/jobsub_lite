@@ -17,18 +17,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
+""" submit command for jobsub layer over condor """
+#pylint: disable=wrong-import-position,wrong-import-order,import-error
+import glob
 import os
 import os.path
-import re
-import glob
-import requests
-import subprocess
-import datetime
-import uuid
-import socket
-import shutil
-from typing import Union, List, Dict, Any
+import sys
+from typing import Union, List, Dict
 
 #
 # we are in prefix/bin/jobsub_submit, so find our prefix
@@ -52,11 +47,12 @@ from get_parser import get_parser
 from condor import get_schedd, submit, submit_dag
 from dagnabbit import parse_dagnabbit
 from tarfiles import do_tarballs
-from utils import fixquote, set_extras_n_fix_units
+from utils import set_extras_n_fix_units
 from creds import get_creds
 
 
 def get_basefiles(dlist: List[str]) -> List[str]:
+    """ get basename of files in directory """
     res = []
     for d in dlist:
         flist = glob.glob(f"{d}/*")
@@ -105,10 +101,10 @@ in its entirety.
             os.chmod(ff, 0o755)
 
 
+#pylint: disable-next=unused-argument
 def cleanup(tmp: str) -> None:
     """cleanup /tmp etc."""
     # we actually leave everything in the sandbox right now..
-    pass
 
 
 def do_dataset_defaults(varg: Dict[str, str]) -> None:
@@ -143,8 +139,7 @@ def do_dataset_defaults(varg: Dict[str, str]) -> None:
             "SAM_PROJECT="+
             os.environ.get(
                 "SAM_PROJECT",
-                f'{varg["dataset_definition"]}_{os.environ.get("USER", ""}_{varg["uuid"]}'
-                ),
+                f'{varg["dataset_definition"]}_{os.environ.get("USER", "")}_{varg["uuid"]}'
             )
         )
     if not have_dataset:
@@ -166,6 +161,7 @@ def main():
     - convert/render template files to submission files
     - launch
     """
+    #pylint: disable=too-many-statements
     parser = get_parser()
     args = parser.parse_args()
 
