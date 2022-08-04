@@ -13,25 +13,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" condor related routines """
 import os
 import sys
 import glob
 import re
+import random
+import subprocess
+from typing import Dict, List
+
 import htcondor
 import classad
-import random
+
 import packages
-import subprocess
-from typing import Union, Any, Dict, List
 
 random.seed()
 
+# pylint: disable-next=no-member
 COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", "gpcollector03.fnal.gov")
 
 
+# pylint: disable-next=no-member
 def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
     """get jobsub* schedd names from collector, pick one."""
+    # pylint: disable-next=no-member
     coll = htcondor.Collector(COLLECTOR_HOST)
+    # pylint: disable-next=no-member
     schedd_classads = coll.locateAll(htcondor.DaemonTypes.Schedd)
 
     # locateAll gives a list of minimal classads... but
@@ -57,6 +64,7 @@ def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
     full_schedd_classads = []
     for ca in schedd_classads:
         full_schedd_classads.append(
+            # pylint: disable-next=no-member
             coll.directQuery(htcondor.DaemonTypes.Schedd, name=ca.eval("Machine"))
         )
 
@@ -70,7 +78,7 @@ def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
             and (ca.eval("SupportedVOList").find(vargs["group"]) != -1)
         )
         and ("InDownTime" not in ca)
-        or (("InDownTime" in ca) and (ca.eval("InDownTime") != True))
+        or (("InDownTime" in ca) and (not ca.eval("InDownTime")))
     ]
     res = random.choice(schedds)
     return res
@@ -84,79 +92,75 @@ def load_submit_file(filename: str) -> Dict[str, str]:
     #   if you run condor_submit --dump filename
     #   until that's done, we have to call real condor_submit.
     #
-    f = open(filename, "r")
-    res = {}
-    nqueue = None
-    for line in f:
-        line = line.strip()
-        if line.startswith("#"):
-            continue
-        t = re.split(r"\s*=\s*", line, maxsplit=1)
-        if len(t) == 2:
-            res[t[0]] = t[1]
-        elif line.startswith("queue"):
-            nqueue = int(line[5:])
-        elif not line:
-            pass  # blank lines ok
-        else:
-            raise SyntaxError("malformed line: %s" % line)
-    f.close()
+    with open(filename, "r", encoding="UTF-8") as f:
+        res = {}
+        nqueue = None
+        for line in f:
+            line = line.strip()
+            if line.startswith("#"):
+                continue
+            t = re.split(r"\s*=\s*", line, maxsplit=1)
+            if len(t) == 2:
+                res[t[0]] = t[1]
+            elif line.startswith("queue"):
+                nqueue = int(line[5:])
+            elif not line:
+                pass  # blank lines ok
+            else:
+                raise SyntaxError(f"malformed line: {line}")
+    # pylint: disable-next=no-member
     return htcondor.Submit(res), nqueue
 
 
+# pylint: disable-next=dangerous-default-value
 def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []):
     """Actually submit the job, using condor python bindings"""
 
-    schedd_args = "-remote %s" % (schedd_name)
+    schedd_args = f"-remote {schedd_name}"
 
     if "no_submit" in vargs and vargs["no_submit"]:
-        print("NOT submitting file:\n%s\n" % f)
-        return
+        print(f"NOT submitting file:\n{f}\n")
+        return False
     if f:
-        print("submitting: %s" % f)
-        schedd_args = schedd_args + " %s" % (f)
+        print(f"submitting: {f}")
+        schedd_args = schedd_args + f" {f}"
         fl = glob.glob(f)
         if fl:
             f = fl[0]
 
-    print("cmd_args: %s" % cmd_args)
+    print(f"cmd_args: {cmd_args}")
 
     # commenting this out for now since the 'else' is not implemented
     #    if True:
 
-    cmd = "/usr/bin/condor_submit -pool %s %s %s" % (
-        COLLECTOR_HOST,
-        schedd_args,
-        " ".join(["'%s'" % x for x in cmd_args]),
-    )
-    cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
-    cmd = "_condor_CREDD_HOST=%s %s" % (schedd_name, cmd)
+    qargs = " ".join([f"'{x}'" for x in cmd_args])
+    cmd = f"/usr/bin/condor_submit -pool {COLLECTOR_HOST} {schedd_args} {qargs}"
+    cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
+    cmd = f"_condor_CREDD_HOST={schedd_name} {cmd}"
     packages.orig_env()
-    print("Running: %s" % cmd)
+    print(f"Running: {cmd}")
 
     try:
         output = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE, encoding="UTF-8"
+            cmd, shell=True, stdout=subprocess.PIPE, encoding="UTF-8", check=False
         )
         sys.stdout.write(output.stdout)
 
         if output.returncode < 0:
             print("Child was terminated by signal", -output.returncode)
             return None
-        else:
-            m = re.search(r"\d+ job\(s\) submitted to cluster (\d+).", output.stdout)
-            if m:
-                print(
-                    "Use job id %s.0@%s to retrieve output" % (m.group(1), schedd_name)
-                )
 
-            if "outdir" in vargs:
-                print(
-                    "Output will be in %s after running jobsub_transfer_data."
-                    % vargs["outdir"]
-                )
+        m = re.search(r"\d+ job\(s\) submitted to cluster (\d+).", output.stdout)
+        if m:
+            print(f"Use job id {m.group(1)}.0@{schedd_name} to retrieve output")
 
-            return True
+        if "outdir" in vargs:
+            print(
+                f"Output will be in {vargs['outdir']} after running"
+                " jobsub_transfer_data."
+            )
+
+        return True
     except OSError as e:
         print("Execution failed: ", e)
         return None
@@ -166,11 +170,11 @@ def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] 
     #        subm, nqueue = load_submit_file(f)
     #        with schedd.transaction() as txn:
     #            cluster = subm.queue(txn, count=nqueue)
-    #        print("jobid: %s@%s" % (cluster, schedd_name))
+    #        print(f"jobid: {cluster}@{schedd_name}")
+    #        return True
 
-    return
 
-
+# pylint: disable-next=dangerous-default-value
 def submit_dag(
     f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []
 ):
@@ -183,25 +187,25 @@ def submit_dag(
     fl = glob.glob(f)
     if fl:
         f = fl[0]
-    subfile = "%s.condor.sub" % f
+    subfile = f"{f}.condor.sub"
     if not os.path.exists(subfile):
+        qargs = " ".join([f"'{x}'" for x in cmd_args])
         cmd = (
-            '/usr/bin/condor_submit_dag -append "use_oauth_services = %s" -no_submit %s %s'
-            % (vargs["group"], f, " ".join(["'%s'" % x for x in cmd_args]))
+            f"/usr/bin/condor_submit_dag -append"
+            f' "use_oauth_services = {vargs["group"]}" -no_submit {f} {qargs}'
         )
 
-        cmd = "BEARER_TOKEN_FILE=%s %s" % (os.environ["BEARER_TOKEN_FILE"], cmd)
-        print("Running: %s" % cmd)
+        cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
+        print(f"Running: {cmd}")
 
         try:
-            output = subprocess.run(cmd, shell=True)
+            output = subprocess.run(cmd, shell=True, check=False)
             if output.returncode < 0:
                 print("Child was terminated by signal", -output.returncode)
             else:
                 if "outdir" in vargs:
                     print(
-                        "Output will be in %s after running jobsub_transfer_data."
-                        % vargs["outdir"]
+                        f"Output will be in {vargs['outdir']} after running jobsub_transfer_data."
                     )
         except OSError as e:
             print("Execution failed: ", e)

@@ -17,54 +17,56 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""ifdh replacemnents to remove dependency"""
 
 import sys
 
 import os
 import time
 import argparse
-from typing import Union, Any, Dict
+from typing import Union
 
 VAULT_HOST = "fermicloud543.fnal.gov"
 DEFAULT_ROLE = "Analysis"
 
 
 def getTmp() -> str:
+    """return temp directory path"""
     return os.environ.get("TMPDIR", "/tmp")
 
 
 def getExp() -> str:
+    """return current experiment name"""
     for ev in ["GROUP", "EXPERIMENT", "SAM_EXPERIMENT"]:
         if os.environ.get(ev, None):
             return os.environ.get(ev)
     # otherwise guess primary group...
     exp = None
-    f = os.popen("id -gn", "r")
-    if f:
+    with os.popen("id -gn", "r") as f:
         exp = f.read()
-        f.close()
     return exp
 
 
 def getRole(role_override: Union[str, None] = None) -> str:
+    """get current role"""
     if role_override:
         return role_override
-    elif os.environ["USER"][-3:] == "pro":
+    if os.environ["USER"][-3:] == "pro":
         return "Production"
-    else:
-        return DEFAULT_ROLE
+    return DEFAULT_ROLE
 
 
 def checkToken(tokenfile: str) -> bool:
+    """check if token is (almost) expired"""
     exp_time = None
-    f = os.popen("decode_token.sh -e exp %s 2>/dev/null" % tokenfile, "r")
-    if f:
+    cmd = f"decode_token.sh -e exp {tokenfile} 2>/dev/null"
+    with os.popen(cmd, "r") as f:
         exp_time = f.read()
-        f.close()
     return exp_time and ((int(exp_time) - time.time()) > 60)
 
 
 def getToken(role: str = DEFAULT_ROLE) -> str:
+    """get path to token file"""
     pid = os.getuid()
     tmp = getTmp()
     exp = getExp()
@@ -79,30 +81,29 @@ def getToken(role: str = DEFAULT_ROLE) -> str:
         # if we have a bearer token file set already, keep that one
         tokenfile = os.environ["BEARER_TOKEN_FILE"]
     else:
-        tokenfile = "%s/bt_token_%s_%s_%s" % (tmp, issuer, role, pid)
+        tokenfile = f"{tmp}/bt_token_{issuer}_{role}_{pid}"
         os.environ["BEARER_TOKEN_FILE"] = tokenfile
 
     if not checkToken(tokenfile):
-        cmd = "htgettoken -a %s -i %s" % (VAULT_HOST, issuer)
+        cmd = f"htgettoken -a {VAULT_HOST} -i {issuer}"
         if role != DEFAULT_ROLE:
-            cmd = "%s -r %s" % (cmd, role.lower())  # Token-world wants all-lower
+            cmd = f"{cmd} -r {role.lower()}"  # Token-world wants all-lower
         # send htgettoken output to stderr because invokers read stdout
-        res = os.system("%s >&2" % cmd)
+        res = os.system(f"{cmd} >&2")
         if res != 0:
-            raise PermissionError("Failed attempting '%s'" % cmd)
+            raise PermissionError(f"Failed attempting '{cmd}'")
         if checkToken(tokenfile):
             return tokenfile
-        else:
-            raise PermissionError("Failed attempting '%s'" % cmd)
-    else:
-        return tokenfile
+        raise PermissionError(f"Failed attempting '{cmd}'")
+    return tokenfile
 
 
 def getProxy(role: str = DEFAULT_ROLE) -> str:
+    """get path to proxy certificate file"""
     pid = os.getuid()
     tmp = getTmp()
     exp = getExp()
-    certfile = "%s/x509up_u%s" % (tmp, pid)
+    certfile = f"{tmp}/x509up_u{pid}"
     if exp == "samdev":
         issuer = "fermilab"
         igroup = "fermilab"
@@ -112,29 +113,29 @@ def getProxy(role: str = DEFAULT_ROLE) -> str:
     else:
         issuer = "fermilab"
         igroup = "fermilab/" + exp
-    vomsfile = "%s/x509up_%s_%s_%s" % (tmp, exp, role, pid)
-    chk_cmd = "voms-proxy-info -exists -valid 0:10 -file %s" % vomsfile
+    vomsfile = f"{tmp}/x509up_{exp}_{role}_{pid}"
+    chk_cmd = f"voms-proxy-info -exists -valid 0:10 -file {vomsfile}"
     if 0 != os.system(chk_cmd):
-        cmd = "cigetcert -i 'Fermi National Accelerator Laboratory' -n -o %s" % certfile
+        cmd = f"cigetcert -i 'Fermi National Accelerator Laboratory' -n -o {certfile}"
         # send htgettoken output to stderr because invokers read stdout
-        os.system("%s >&2" % cmd)
+        os.system(f"{cmd} >&2")
         cmd = (
-            "voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen -debug -cert %s -key %s -out %s -voms %s:/%s/Role=%s"
-            % (certfile, certfile, vomsfile, issuer, igroup, role)
+            f"voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen"
+            f" -debug -cert {certfile} -key {certfile} -out {vomsfile}"
+            f" -voms {issuer}:/{igroup}/Role={role}"
         )
 
         # send htgettoken output to stderr because invokers read stdout
-        os.system("%s >&2" % cmd)
+        os.system(f"{cmd} >&2")
         if 0 == os.system(chk_cmd):
             return vomsfile
-        else:
-            raise PermissionError("Failed attempting '%s'" % cmd)
-    else:
-        return vomsfile
+        raise PermissionError(f"Failed attempting '{cmd}'")
+    return vomsfile
 
 
 def cp(src: str, dest: str) -> None:
-    os.system("gfal-copy %s %s" % (src, dest))
+    """copy a (remote) file with gfal-copy"""
+    os.system(f"gfal-copy {src} {dest}")
 
 
 if __name__ == "__main__":
@@ -150,15 +151,15 @@ if __name__ == "__main__":
     )
 
     opts = parser.parse_args()
-    role = getRole(opts.role)
+    myrole = getRole(opts.role)
 
     try:
         if opts.command[0] == "cp":
             commands[opts.command[0]](*opts.cpargs[0])
         else:
-            res = commands[opts.command[0]](role)
-            if res != None:
-                print(res)
+            result = commands[opts.command[0]](myrole)
+            if result is not None:
+                print(result)
     except PermissionError as pe:
         sys.stderr.write(str(pe) + "\n")
         print("")

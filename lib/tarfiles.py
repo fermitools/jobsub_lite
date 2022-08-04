@@ -13,8 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from creds import get_creds
-from functools import wraps
+""" tarfile upload related code """
+from typing import Union, Dict, Tuple, Callable
+from urllib.parse import quote as _quote
 import hashlib
 import itertools
 import os
@@ -24,16 +25,16 @@ import re
 import sys
 import time
 import traceback as tb
-from typing import Union, Any, Dict, Tuple, Callable
-from urllib.parse import quote as _quote
 
 import requests
+
 import fake_ifdh
+from creds import get_creds
 
 try:
-    _NUM_RETRIES_ENV = os.getenv("JOBSUB_UPLOAD_NUM_RETRIES", 20)
+    _NUM_RETRIES_ENV = os.getenv("JOBSUB_UPLOAD_NUM_RETRIES", "20")
     NUM_RETRIES = int(_NUM_RETRIES_ENV)
-    _RETRY_INTERVAL_SEC_ENV = os.getenv("JOBSUB_UPLOAD_RETRY_INTERVAL_SEC", 30)
+    _RETRY_INTERVAL_SEC_ENV = os.getenv("JOBSUB_UPLOAD_RETRY_INTERVAL_SEC", "30")
     RETRY_INTERVAL_SEC = int(_RETRY_INTERVAL_SEC_ENV)
 except ValueError:
     print(
@@ -45,11 +46,11 @@ except ValueError:
 
 def tar_up(directory: str, excludes: str) -> str:
     """build path/to/directory.tar from path/to/directory"""
-    tarfile = "%s.tar.gz" % directory
+    tarfile = f"{directory}.tar.gz"
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
-    excludes = "--exclude-from %s" % excludes
-    os.system("tar czvf %s %s --directory %s ." % (tarfile, excludes, directory))
+    excludes = f"--exclude-from {excludes}"
+    os.system(f"tar czvf {tarfile} {excludes} --directory {directory} .")
     return tarfile
 
 
@@ -71,10 +72,10 @@ def slurp_file(fname: str) -> Tuple[str, bytes]:
 def dcache_persistent_path(exp: str, filename: str) -> str:
     """pick the reslient dcache path for a tarfile"""
     bf = os.path.basename(filename)
-    f = os.popen("sha256sum %s" % filename, "r")
-    sha256_hash = f.read().strip().split(" ")[0]
-    f.close()
-    res = "/pnfs/%s/resilient/jobsub_stage/%s/%s" % (exp, sha256_hash, bf)
+
+    with os.popen(f"sha256sum {filename}", "r") as f:
+        sha256_hash = f.read().strip().split(" ")[0]
+    res = f"/pnfs/{exp}/resilient/jobsub_stage/{sha256_hash}/{bf}"
     # for testing, we don't have a resilient area for "fermilab", so...
     if exp == "fermilab":
         res = res.replace("fermilab/resilient", "fermilab/volatile")
@@ -89,13 +90,14 @@ def do_tarballs(args: Dict[str, str]) -> None:
        a plain path to just use
     we convert the argument to the next type as we go...
     """
+    # pylint: disable=too-many-nested-blocks,too-many-branches
     res = []
     clean_up = []
     for tfn in args.tar_file_name:
         if tfn.startswith("tardir:"):
             # tar it up, pretend they gave us dropbox:
             tarfile = tar_up(tfn[7:], args.tarball_exclusion_file)
-            tfn = "dropbox:%s" % tarfile
+            tfn = f"dropbox:{tarfile}"
             clean_up.append(tarfile)
 
         if tfn.startswith("dropbox:"):
@@ -117,6 +119,7 @@ def do_tarballs(args: Dict[str, str]) -> None:
                 location = publisher.cid_exists()
                 if location is None:
                     publisher.publish(tf)
+                    # pylint: disable-next=unused-variable
                     for i in range(NUM_RETRIES):
                         time.sleep(RETRY_INTERVAL_SEC)
                         location = publisher.cid_exists()
@@ -132,7 +135,7 @@ def do_tarballs(args: Dict[str, str]) -> None:
             else:
                 raise (
                     NotImplementedError(
-                        "unknown tar distribution method: %s" % args.use_dropbox
+                        f"unknown tar distribution method: {args.use_dropbox}"
                     )
                 )
             tfn = location
@@ -141,14 +144,13 @@ def do_tarballs(args: Dict[str, str]) -> None:
     for tf in clean_up:
         try:
             os.unlink(tf)
-        except:
-            print("Notice: unable to remove generated tarfile %s" % tf)
-            pass
+        except:  # pylint: disable=bare-except
+            print(f"Notice: unable to remove generated tarfile {tf}")
 
     args.tar_file_name = res
 
 
-class TarfilePublisherHandler(object):
+class TarfilePublisherHandler:
     """Handler to publish tarballs via HTTP to RCDS (or future dropbox server)
 
     Args:
@@ -182,6 +184,8 @@ class TarfilePublisherHandler(object):
         )
 
     # Some sort of wrapper to wrap the above three
+
+    # pylint: disable-next=no-self-argument
     def pubapi_operation(func: Callable) -> Callable:
         """Wrap various PubAPI operations, return path if we get it from response"""
 
@@ -191,9 +195,12 @@ class TarfilePublisherHandler(object):
             Taken from https://stackoverflow.com/a/17215533"""
 
             def __missing__(self, key):
+                """missing item handler"""
                 return f"{{{key}}}"  # "{<key>}"
 
         def wrapper(self, *args, **kwargs):
+            """wrapper function for decorator"""
+            # pylint: disable-next=protected-access
             _dropbox_server_selector = self.__select_dropbox_server()
             retry_count = itertools.count()
             while True:
@@ -204,8 +211,9 @@ class TarfilePublisherHandler(object):
                             SafeDict(dropbox_server=_dropbox_server)
                         )
                     )
+                    # pylint: disable-next=not-callable
                     response = func(self, *args, **kwargs)
-                except:
+                except:  # pylint: disable=bare-except
                     tb.print_exc()
                     if next(retry_count) == NUM_RETRIES:
                         print(f"Max retries {NUM_RETRIES} exceeded.  Exiting now.")
@@ -232,8 +240,7 @@ class TarfilePublisherHandler(object):
         url = self.pubapi_base_url_formatter.format(endpoint="update")
         if self.token:
             return requests.get(url, headers=self.request_headers)
-        else:
-            return requests.get(url, cert=(self.proxy, self.proxy))
+        return requests.get(url, cert=(self.proxy, self.proxy))
 
     @pubapi_operation
     def publish(self, tarfile: str) -> requests.Response:
@@ -249,8 +256,7 @@ class TarfilePublisherHandler(object):
         url = self.pubapi_base_url_formatter.format(endpoint="publish")
         if self.token:
             return requests.post(url, headers=self.request_headers, data=tarfile)
-        else:
-            return requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
+        return requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
 
     @pubapi_operation
     def cid_exists(self) -> requests.Response:
@@ -263,12 +269,11 @@ class TarfilePublisherHandler(object):
         url = self.pubapi_base_url_formatter.format(endpoint="exists")
         if self.token:
             return requests.get(url, headers=self.request_headers)
-        else:
-            return requests.get(url, cert=(self.proxy, self.proxy))
+        return requests.get(url, cert=(self.proxy, self.proxy))
 
     def __make_request_token_headers(self) -> Dict[str, str]:
         """Create headers for token auth to dropbox server"""
-        with open(self.token, "r") as f:
+        with open(self.token, "r", encoding="UTF-8") as f:
             token_string = f.read()
         token_string = token_string.strip()  # Drop \n at end of token_string
         header = {"Authorization": f"Bearer {token_string}"}

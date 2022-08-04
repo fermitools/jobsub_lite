@@ -13,17 +13,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+""" find python code in UPS or Spack packages """
 
 import os
 import sys
 from glob import glob
-from typing import Union, Any, Dict
 
 SAVED_ENV = None
 
 
 def orig_env() -> None:
+    """put saved environment back"""
+    # pylint: disable-next=global-variable-not-assigned
     global SAVED_ENV
     if SAVED_ENV:
         os.environ.clear()
@@ -35,41 +36,37 @@ def pkg_find(p: str, qual: str = "") -> None:
     Use Spack or UPS to find the package mentioned and stuff its
     various subdirectories on sys.path so we can 'import' from it.
     """
+    # pylint: disable-next=global-statement
     global SAVED_ENV
     if not SAVED_ENV:
         SAVED_ENV = os.environ.copy()
     path = None
     if not path and os.environ.get("SPACK_ROOT", None):
-        cmd = "spack find --paths --variants '%s os=fe' 'py-%s os=fe'" % p
-        f = os.popen(cmd, "r")
-        for line in f:
-            if line[0] == "-":
-                continue
-            path = line.split()[1]
-            break
-        f.close()
+        cmd = f"spack find --paths --variants '{p} os=fe' 'py-{p} os=fe'"
+        with os.popen(cmd, "r") as f:
+            for line in f:
+                if line[0] == "-":
+                    continue
+                path = line.split()[1]
+                break
 
     if not path and os.environ.get("PRODUCTS", None):
-        cmd = (
-            "ups list -a4 -Kproduct:@prod_dir %s %s, -a0 -Kproduct:@prod_dir %s %s"
-            % (p, qual, p, qual)
-        )
-        f = os.popen(cmd, "r")
-        for line in f:
-            path = line.split()[1].strip('"')
-            break
-        f.close()
+        cmd = f"ups list -a4 -Kproduct:@prod_dir {p} {qual}, -a0 -Kproduct:@prod_dir {p} {qual}"
+        with os.popen(cmd, "r") as f:
+            for line in f:
+                path = line.split()[1].strip('"')
+                break
 
     if path:
-        os.environ["%s_DIR" % p.upper()] = path
+        os.environ[f"{p.upper()}_DIR"] = path
         for fmt in [
-            "%s/lib/python*/site-packages/*.egg",
-            "%s/lib/python*/site-packages",
-            "%s/lib/python*",
-            "%s/python*",
+            f"{path}/lib/python*/site-packages/*.egg",
+            f"{path}/lib/python*/site-packages",
+            f"{path}/lib/python*",
+            f"{path}/python*",
         ]:
 
-            gl = glob(fmt % path)
+            gl = glob(fmt)
             if gl:
                 sys.path = sys.path + gl
                 return

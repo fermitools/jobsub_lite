@@ -17,72 +17,52 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+""" wrapper for condor_submit_dag """
+# pylint: disable=wrong-import-position,wrong-import-order,import-error
 import sys
 import os
 import os.path
-import re
-import glob
-import requests
-import subprocess
-import datetime
-import uuid
-import socket
-import shutil
 
 #
 # we are in prefix/bin/jobsub_submit, so find our prefix
 #
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-#
-# find parts we need in package management
-# this means we don't need fancy ups dependencies..
-#
-sys.path.append(os.path.join(PREFIX,"lib"))
-from packages import pkg_find
-pkg_find("ifdhc","v2_5_15 -g jobsub_lite -q python36")
-pkg_find("ifdhc_config", "v2_5_15 -q tokens")
-pkg_find("jinja")
-import jinja2 as jinja
-import ifdh
-
+sys.path.append(os.path.join(PREFIX, "lib"))
 #
 # import our local parts
 #
-from get_parser import get_parser 
-from condor import  get_schedd, submit, submit_dag
-from dagnabbit import parse_dagnabbit
+from condor import get_schedd, submit_dag
 from creds import get_creds
-from tarfiles import do_tarballs
-from utils import fixquote, set_extras_n_fix_units
 
 
 def main():
-    """ script mainline:
-        - parse args
-        - get credentials
-        - handle tarfile options
-        - set added values from environment, etc.
-        - convert/render template files to submission files
-        - launch
+    """script mainline:
+    - parse args
+    - get credentials
+    - handle tarfile options
+    - set added values from environment, etc.
+    - convert/render template files to submission files
+    - launch
     """
     f = sys.argv[-1]
     cmd_args = sys.argv[1:-1]
 
-    proxy, token = get_creds(args)
+    proxy, token = get_creds(cmd_args)
 
     # put in environment for condor libs to use
-    os.environ['X509_USER_PROXY'] = proxy
-    os.environ['BEARER_TOKEN_FILE'] = token
+    os.environ["X509_USER_PROXY"] = proxy
+    os.environ["BEARER_TOKEN_FILE"] = token
 
-    if os.environ.get('GROUP',None) is None:
-        raise AttributeError("%s needs -G group or $GROUP in the environment." %sys.argv[0])
-
+    if os.environ.get("GROUP", None) is None:
+        raise AttributeError(
+            f"{sys.argv[0]} needs -G group or $GROUP in the environment."
+        )
 
     schedd_add = get_schedd({})
-    schedd_name = schedd_add.eval("Machine")
 
     submit_dag(f, {}, schedd_add, cmd_args)
+
 
 if __name__ == "__main__":
     main()

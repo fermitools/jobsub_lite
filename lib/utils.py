@@ -13,35 +13,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" misc. utility functions """
 from collections import OrderedDict
+import datetime
 import os
-import re
 import os.path
+import re
 import socket
 import sys
 import subprocess
 import uuid
-import datetime
 import shutil
-from typing import Union, Any, Dict, List
+from typing import Union, Dict, List
 
 
 def fixquote(s: str) -> str:
     """utility to put double quotes on value in string 'name=value'"""
     parts = s.split("=", 1)
     if len(parts) == 2:
-        return '%s="%s"' % (parts[0], parts[1])
-    else:
-        return s
+        return f'{parts[0]}="{parts[1]}"'
+    return s
 
 
 def grep_n(regex: str, n: int, file: str) -> str:
+    """return n-th sub expression of first regex match in file"""
     rre = re.compile(regex)
-    with open(file, "r") as fd:
+    with open(file, "r", encoding="UTF-8") as fd:
         for line in fd:
             m = rre.match(line)
             if m:
                 return m.group(n)
+    return ""
 
 
 def set_extras_n_fix_units(
@@ -50,20 +52,23 @@ def set_extras_n_fix_units(
     proxy: Union[None, str],
     token: Union[None, str],
 ) -> None:
-    """add items to our args dictionary that are not given on the
+    """
+    add items to our args dictionary that are not given on the
     command line, but that are needed to render the condor submit
     file templates.
     Also convert units on memory, disk, and times
     Note: this has gotten excessively long, probably should be split up?
     """
+    # pylint: disable=too-many-branches,too-many-statements
+
     #
     # outbase needs to be an area shared with schedd servers.
     #
     if args["debug"]:
-        sys.stderr.write("entering set_extras... args: %s\n" % repr(args))
+        sys.stderr.write(f"entering set_extras... args: {repr(args)}\n")
 
     args["outbase"] = os.environ.get(
-        "JOBSUB_SPOOL", "%s/.jobsub_lite" % os.environ.get("HOME")
+        "JOBSUB_SPOOL", f"{os.environ.get('HOME')}/.jobsub_lite"
     )
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
@@ -84,7 +89,7 @@ def set_extras_n_fix_units(
     args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
     if args["debug"]:
         sys.stderr.write(
-            "checking args[executable]: %s\n" % repr(args.get("executable", None))
+            f"checking args[executable]: {repr(args.get('executable', None))}\n"
         )
     if not args["executable"] and args["exe_arguments"]:
         args["executable"] = args["exe_arguments"][-1]
@@ -101,7 +106,10 @@ def set_extras_n_fix_units(
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
-    args["outdir"] = "%(outbase)s/%(group)s/%(user)s/%(date)s.%(uuid)s" % args
+    args["outdir"] = (
+        f"{args['outbase']}/{args['group']}/"
+        f"{args['user']}/{args['date']}.{args['uuid']}"
+    )
     args["submitdir"] = args["outdir"]
 
     if not os.path.exists(args["outdir"]):
@@ -110,15 +118,14 @@ def set_extras_n_fix_units(
     # copy executable to submit dir so schedd can see it
     if args["debug"]:
         sys.stderr.write(
-            "checking full_executable: %s\n" % repr(args.get("full_executable", None))
+            f"checking full_executable: {repr(args.get('full_executable', None))}\n"
         )
 
     if args.get("full_executable", False):
         dest = os.path.join(args["submitdir"], os.path.basename(args["executable"]))
         if args["debug"]:
             sys.stderr.write(
-                "copying  %s to %s\n"
-                % (repr(args.get("full_executable", None)), repr(dest))
+                f"copying  {repr(args.get('full_executable', None))} to {repr(dest)}\n"
             )
         shutil.copyfile(args["full_executable"], dest, follow_symlinks=True)
         args["full_executable"] = dest
@@ -141,16 +148,17 @@ def set_extras_n_fix_units(
             v = os.environ.get(e, None)
             if not v:
                 raise RuntimeError(
-                    "--environment %s was given but no value was in the environment" % e
+                    f"--environment {e} was given but no value was in the environment"
                 )
-            e = "%s=%s" % (e, v)
+            e = f"{e}={v}"
         newe.append(e)
     args["environment"] = newe
     if args["debug"]:
-        sys.stderr.write("leaving set_extras... args: %s\n" % repr(args))
+        sys.stderr.write(f"leaving set_extras... args: {repr(args)}\n")
     args["jobsub_command"] = " ".join(sys.argv)
 
 
+# pylint: disable-next=too-many-arguments
 def fix_unit(
     args: Dict[str, str],
     name: str,
@@ -162,11 +170,11 @@ def fix_unit(
     """
     unit conversions using appropriate conversion table
     """
-    # print("fix_unit: %s %s %s %d %s %d" % (name, args[name], repr(table),s_offset,s_list,c_offset))
+    # print(f"fix_unit: {name}, {args[name]}, {repr(table)},{s_offset},{repr(s_list)},{c_offset}")
     if args[name] and args[name][s_offset].lower() in s_list:
         cf = table[args[name][c_offset].lower()]
         args[name] = float(args[name][:c_offset]) * cf
-        # print("converted to %f" % args[name])
+        # print(f"converted to {args[name]}")
     elif args[name]:
         args[name] = float(args[name])
 
@@ -174,16 +182,12 @@ def fix_unit(
 def get_principal() -> str:
     """get our kerberos principal name"""
     princ = None
-    if sys.version_info.major >= 3:
-        enc = {"encoding": "UTF-8"}
-    else:
-        enc = {}
-    p = subprocess.Popen(["/usr/bin/klist"], stdout=subprocess.PIPE, **enc)
-    line = p.stdout.readline()
-    line = p.stdout.readline()
-    princ = line[line.find(":") + 2 : -1]
-    p.stdout.close()
-    p.wait()
+    with subprocess.Popen(
+        ["/usr/bin/klist"], stdout=subprocess.PIPE, encoding="UTF-8"
+    ) as p:
+        line = p.stdout.readline()
+        line = p.stdout.readline()
+        princ = line[line.find(":") + 2 : -1]
     return princ
 
 
@@ -222,12 +226,16 @@ def get_client_dn(proxy: Union[None, str] = None) -> str:
                     [exe_path, *executables[executable]["args"]],
                     stdout=subprocess.PIPE,
                     encoding="utf-8",
+                    check=False,
                 )
                 assert proc.returncode == 0
+            # pylint: disable-next=broad-except
             except Exception as e:
                 print(
-                    "Warning:  There was an issue getting the client DN from the user proxy.  Please open a "
-                    "ticket to the Service Desk and paste the entire error message in the ticket."
+                    "Warning:  There was an issue getting the client DN from"
+                    " the user proxy.  Please open a"
+                    " ticket to the Service Desk and paste the entire error"
+                    " message in the ticket."
                 )
                 print(e)
                 continue

@@ -17,18 +17,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
+""" submit command for jobsub layer over condor """
+# pylint: disable=wrong-import-position,wrong-import-order,import-error
+import glob
 import os
 import os.path
-import re
-import glob
-import requests
-import subprocess
-import datetime
-import uuid
-import socket
-import shutil
-from typing import Union, List, Dict, Any
+import sys
+from typing import Union, List, Dict
 
 #
 # we are in prefix/bin/jobsub_submit, so find our prefix
@@ -52,14 +47,15 @@ from get_parser import get_parser
 from condor import get_schedd, submit, submit_dag
 from dagnabbit import parse_dagnabbit
 from tarfiles import do_tarballs
-from utils import fixquote, set_extras_n_fix_units
+from utils import set_extras_n_fix_units
 from creds import get_creds
 
 
 def get_basefiles(dlist: List[str]) -> List[str]:
+    """get basename of files in directory"""
     res = []
     for d in dlist:
-        flist = glob.glob("%s/*" % d)
+        flist = glob.glob(f"{d}/*")
         for f in flist:
             res.append(os.path.basename(f))
     return res
@@ -71,7 +67,7 @@ def render_files(
     """use jinja to render the templates from srcdir into the dest directory
     using values dict for substitutions
     """
-    print("trying to render files from %s\n" % srcdir)
+    print(f"trying to render files from {srcdir}\n")
 
     if dlist is None:
         dlist = [srcdir]
@@ -81,17 +77,17 @@ def render_files(
         loader=jinja.FileSystemLoader(srcdir), undefined=jinja.StrictUndefined
     )
     jinja_env.filters["basename"] = os.path.basename
-    flist = glob.glob("%s/*" % srcdir)
+    flist = glob.glob(f"{srcdir}/*")
 
     # add destination dir to values for template
     values["cwd"] = dest
 
     for f in flist:
-        print("rendering: %s" % f)
+        print(f"rendering: {f}")
         bf = os.path.basename(f)
         ff = os.path.join(dest, bf)
         try:
-            with open(ff, "w") as of:
+            with open(ff, "w", encoding="UTF-8") as of:
                 of.write(jinja_env.get_template(bf).render(**values))
         except jinja.exceptions.UndefinedError as e:
             err = f"""Cannot render template file {f} due to undefined template variables.
@@ -105,10 +101,10 @@ in its entirety.
             os.chmod(ff, 0o755)
 
 
+# pylint: disable-next=unused-argument
 def cleanup(tmp: str) -> None:
     """cleanup /tmp etc."""
     # we actually leave everything in the sandbox right now..
-    pass
 
 
 def do_dataset_defaults(varg: Dict[str, str]) -> None:
@@ -140,25 +136,20 @@ def do_dataset_defaults(varg: Dict[str, str]) -> None:
     if not have_project:
         # if not, grab from the environment, or use dataset_$USER_$uuid
         varg["environment"].append(
-            "SAM_PROJECT=%s"
-            % os.environ.get(
+            "SAM_PROJECT="
+            + os.environ.get(
                 "SAM_PROJECT",
-                "%s_%s_%s"
-                % (
-                    varg["dataset_definition"],
-                    os.environ.get("USER", ""),
-                    varg["uuid"],
-                ),
+                f'{varg["dataset_definition"]}_{os.environ.get("USER", "")}_{varg["uuid"]}',
             )
         )
     if not have_dataset:
-        varg["environment"].append("SAM_DATASET=%s" % varg["dataset_definition"])
+        varg["environment"].append(f"SAM_DATASET={varg['dataset_definition']}")
     if not have_station:
-        varg["environment"].append("SAM_STATION=%s" % experiment)
+        varg["environment"].append(f"SAM_STATION={experiment}")
     if not have_user:
-        varg["environment"].append("SAM_USER=%s" % os.environ["USER"])
+        varg["environment"].append(f"SAM_USER={os.environ['USER']}")
     if not have_group:
-        varg["environment"].append("SAM_GROUP=%s" % experiment)
+        varg["environment"].append(f"SAM_GROUP={experiment}")
 
 
 def main():
@@ -170,25 +161,26 @@ def main():
     - convert/render template files to submission files
     - launch
     """
+    # pylint: disable=too-many-statements
     parser = get_parser()
     args = parser.parse_args()
 
     if os.environ.get("GROUP", None) is None:
         raise AttributeError(
-            "%s needs -G group or $GROUP in the environment." % sys.argv[0]
+            f"{sys.argv[0]} needs -G group or $GROUP in the environment."
         )
 
     proxy, token = get_creds(vars(args))
 
     if args.verbose:
-        print("proxy is : %s" % proxy)
-        print("token is : %s" % token)
+        print(f"proxy is : {proxy}")
+        print(f"token is : {token}")
 
     do_tarballs(args)
 
     varg = vars(args)
     if args.debug:
-        sys.stderr.write("varg: %s" % repr(varg))
+        sys.stderr.write(f"varg: {repr(varg)}")
     schedd_add = get_schedd(varg)
     schedd_name = schedd_add.eval("Machine")
     set_extras_n_fix_units(varg, schedd_name, proxy, token)
@@ -215,7 +207,7 @@ def main():
     elif args.dataset_definition:
         do_dataset_defaults(varg)
         d1 = os.path.join(PREFIX, "templates", "dataset_dag")
-        d2 = "%s/templates/simple" % PREFIX
+        d2 = f"{PREFIX}/templates/simple"
         render_files(d2, varg, submitdir, dlist=[d1, d2])
         varg["N"] = 1
         render_files(d1, varg, submitdir, dlist=[d1, d2, submitdir])
@@ -232,7 +224,7 @@ def main():
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     else:
-        d = "%s/templates/simple" % PREFIX
+        d = f"{PREFIX}/templates/simple"
         render_files(d, varg, submitdir)
         if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])

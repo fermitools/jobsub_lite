@@ -13,18 +13,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" replacement for jobsub_wrapper for POMS"""
 import os
 import sys
-from typing import Union, Any, Dict
+from typing import Dict
+
 from packages import pkg_find
 
 pkg_find("poms_client", "-g poms41")
+# pylint: disable-next=wrong-import-position,wrong-import-order,import-error
 import poms_client
 
 # translation of jobub_submit wrapper in poms_jobsub_wrapper...
 
 
 def poms_wrap(args: Dict[str, str]) -> None:
+    """
+    pass assorted POMS bookeeping into job submission and
+    back to monitoring and POMS
+    """
 
     if os.environ.get("POMS_TASK_ID", None) is None:
         # poms launch env not set, so skip...
@@ -34,7 +41,7 @@ def poms_wrap(args: Dict[str, str]) -> None:
         # -e POMS_TASK_ID set, so already using poms_jobsub_wrapper
         return
 
-    if os.environ.get(POMS_TEST, None):
+    if os.environ.get("POMS_TEST", None):
         dest = os.environ["POMS_TEST"]
 
     os.environ["POMS_TASK_ID"] = str(
@@ -42,7 +49,7 @@ def poms_wrap(args: Dict[str, str]) -> None:
             test=dest,
             experiment=args["group"],
             task_id=os.environ["POMS_TASK_ID"],
-            command_executed="jobsub_submit %s" % " ".join(sys.argv),
+            command_executed=f"jobsub_submit {' '.join(sys.argv)}",
             campaign=os.environ["POMS_CAMPAIGN"],
             parent_task_id=os.environ["POMS_PARENT_TASK_ID"],
         )
@@ -52,12 +59,9 @@ def poms_wrap(args: Dict[str, str]) -> None:
         args["environment"].append(estr)
 
     args["lines"].append(
-        'FIFE_CATEGORIES="POMS_TASK_ID_%s,POMS_CAMPAIGN_ID_%s%s"'
-        % (
-            os.environ["POMS_TASK_ID"],
-            os.environ["POMS_CAMPAIGN_ID"],
-            os.environ["POMS_CAMPAIGN_TAGS"],
-        )
+        f"FIFE_CATEGORIES=\"POMS_TASK_ID_{os.environ['POMS_TASK_ID']},"
+        f"POMS_CAMPAIGN_ID_{os.environ['POMS_CAMPAIGN_ID']}"
+        f"{os.environ['POMS_CAMPAIGN_TAGS']}\""
     )
 
     for lstr in (
@@ -73,6 +77,6 @@ def poms_wrap(args: Dict[str, str]) -> None:
         "POMS4_CAMPAIGN_TYPE",
         "POMS4_TEST_LAUNCH",
     ):
-        args["lines"].append("+%s=%s" % (lstr, os.environ[lstr]))
+        args["lines"].append(f"+{lstr}={os.environ[lstr]}")
 
     return
