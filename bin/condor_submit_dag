@@ -60,7 +60,6 @@ def main():
         )
 
     schedd_add = get_schedd({})
-    # schedd_name = schedd_add.eval("Machine")
 
     submit_dag(f, {}, schedd_add, cmd_args)
 
