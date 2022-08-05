@@ -133,23 +133,23 @@ def set_extras_n_fix_units(
     #
     # conversion factors for memory suffixes
     #
-    dsktable: Dict[str, Union[float, int]] = {
-        "k": 1,
-        "m": 1024,
-        "g": 1024 * 1024,
-        "t": 1024 * 1024 * 1024,
+    dsktable: Dict[str, float] = {
+        "k": 1.0,
+        "m": 1024.0,
+        "g": 1024 * 1024.0,
+        "t": 1024 * 1024 * 1024.0,
     }
-    memtable: Dict[str, Union[float, int]] = {
+    memtable: Dict[str, float] = {
         "k": 1.0 / 1024,
-        "m": 1,
-        "g": 1024,
-        "t": 1024 * 1024,
+        "m": 1.0,
+        "g": 1024.0,
+        "t": 1024 * 1024.0,
     }
-    timtable: Dict[str, Union[float, int]] = {
-        "s": 1,
-        "m": 60,
-        "h": 60 * 60,
-        "d": 60 * 60 * 24,
+    timtable: Dict[str, float] = {
+        "s": 1.0,
+        "m": 60.0,
+        "h": 60 * 60.0,
+        "d": 60 * 60 * 24.0,
     }
 
     fix_unit(args, "disk", dsktable, -1, "b", -2)
@@ -177,7 +177,7 @@ def set_extras_n_fix_units(
 def fix_unit(
     args: Dict[str, Any],
     name: str,
-    table: Dict[str, Union[float, int]],
+    table: Dict[str, float],
     s_offset: int,
     s_list: str,
     c_offset: int,
