@@ -1,13 +1,13 @@
 ....F.......F....F....FF.F
-Test --append_condor_requirements ------------------------- 
+Test --append_condor_requirements -------------------------
 test --append_condor_requirements SUCCEEDED.
-Test --blacklist ------------------------- 
+Test --blacklist -------------------------
 test --blacklist SUCCEEDED.
-Test --cpu ------------------------- 
+Test --cpu -------------------------
 test --cpu SUCCEEDED.
-Test --dataset_definition ------------------------- 
+Test --dataset_definition -------------------------
 test --dataset_definition SUCCEEDED.
-Test --debug ------------------------- 
+Test --debug -------------------------
 test --debug FAILED:
 subdir was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151219.d3d7e015-3631-4ab6-95ce-cc2b33ff13b0'
 subfile was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151219.d3d7e015-3631-4ab6-95ce-cc2b33ff13b0/*.cmd'
@@ -23,21 +23,21 @@ rendering: /home/gcounpriv/mengel/jobsub/lite/templates/simple/simple.cmd
 NOT submitting file:
 /home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151219.d3d7e015-3631-4ab6-95ce-cc2b33ff13b0/*.cmd
 
-Test --disk ------------------------- 
+Test --disk -------------------------
 test --disk SUCCEEDED.
-Test -d ------------------------- 
+Test -d -------------------------
 test -d SUCCEEDED.
-Test --email-to ------------------------- 
+Test --email-to -------------------------
 test --email-to SUCCEEDED.
-Test -e ------------------------- 
+Test -e -------------------------
 test -e SUCCEEDED.
-Test --expected-lifetime ------------------------- 
+Test --expected-lifetime -------------------------
 test --expected-lifetime SUCCEEDED.
-Test -f ------------------------- 
+Test -f -------------------------
 test -f SUCCEEDED.
-Test -G ------------------------- 
+Test -G -------------------------
 test -G SUCCEEDED.
-Test -L ------------------------- 
+Test -L -------------------------
 test -L FAILED:
 subdir was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151223.bea57301-d198-40be-9e59-c6f7de49bb6a'
 subfile was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151223.bea57301-d198-40be-9e59-c6f7de49bb6a/*.cmd'
@@ -53,15 +53,15 @@ rendering: /home/gcounpriv/mengel/jobsub/lite/templates/simple/simple.cmd
 NOT submitting file:
 /home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151223.bea57301-d198-40be-9e59-c6f7de49bb6a/*.cmd
 
-Test -l ------------------------- 
+Test -l -------------------------
 test -l SUCCEEDED.
-Test --memory ------------------------- 
+Test --memory -------------------------
 test --memory SUCCEEDED.
-Test -N ------------------------- 
+Test -N -------------------------
 test -N SUCCEEDED.
-Test --OS ------------------------- 
+Test --OS -------------------------
 test --OS SUCCEEDED.
-Test --overwrite_condor_requirements ------------------------- 
+Test --overwrite_condor_requirements -------------------------
 test --overwrite_condor_requirements FAILED:
 subdir was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151225.833ce9b2-25fe-46ad-bf2a-2d8958b7422c'
 subfile was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151225.833ce9b2-25fe-46ad-bf2a-2d8958b7422c/*.cmd'
@@ -77,15 +77,15 @@ rendering: /home/gcounpriv/mengel/jobsub/lite/templates/simple/simple.cmd
 NOT submitting file:
 /home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151225.833ce9b2-25fe-46ad-bf2a-2d8958b7422c/*.cmd
 
-Test --resource-provides ------------------------- 
+Test --resource-provides -------------------------
 test --resource-provides SUCCEEDED.
-Test --role ------------------------- 
+Test --role -------------------------
 test --role SUCCEEDED.
-Test --site ------------------------- 
+Test --site -------------------------
 test --site SUCCEEDED.
-Test --subgroup ------------------------- 
+Test --subgroup -------------------------
 test --subgroup SUCCEEDED.
-Test --tar_file_name ------------------------- 
+Test --tar_file_name -------------------------
 test --tar_file_name FAILED:
 subdir was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151228.d9b79b71-bdfe-4336-a2e9-b56b22c90d3f'
 subfile was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151228.d9b79b71-bdfe-4336-a2e9-b56b22c90d3f/*.cmd'
@@ -101,7 +101,7 @@ rendering: /home/gcounpriv/mengel/jobsub/lite/templates/simple/simple.cmd
 NOT submitting file:
 /home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151228.d9b79b71-bdfe-4336-a2e9-b56b22c90d3f/*.cmd
 
-Test --tarball-exclusion-file ------------------------- 
+Test --tarball-exclusion-file -------------------------
 test --tarball-exclusion-file FAILED:
 subdir was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151228.458c9afa-e73a-4d1c-ac64-10bd200f7cb0'
 subfile was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151228.458c9afa-e73a-4d1c-ac64-10bd200f7cb0/*.cmd'
@@ -117,9 +117,9 @@ rendering: /home/gcounpriv/mengel/jobsub/lite/templates/simple/simple.cmd
 NOT submitting file:
 /home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151228.458c9afa-e73a-4d1c-ac64-10bd200f7cb0/*.cmd
 
-Test --timeout ------------------------- 
+Test --timeout -------------------------
 test --timeout SUCCEEDED.
-Test --use-cvmfs-dropbox ------------------------- 
+Test --use-cvmfs-dropbox -------------------------
 test --use-cvmfs-dropbox FAILED:
 subdir was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151229.48509d1d-a83e-4671-a8cb-82d9e9020484'
 subfile was '/home/gcounpriv/mengel/scratch/None/gcounpriv/2020_10_06_151229.48509d1d-a83e-4671-a8cb-82d9e9020484/*.cmd'

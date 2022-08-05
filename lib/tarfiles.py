@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ tarfile upload related code """
-from typing import Union, Dict, Tuple, Callable
-from urllib.parse import quote as _quote
+import argparse
 import hashlib
 import itertools
 import os
@@ -25,8 +24,10 @@ import re
 import sys
 import time
 import traceback as tb
+from typing import Union, Dict, Tuple, Callable, List, Any, Iterator
+from urllib.parse import quote as _quote
 
-import requests
+import requests  # type: ignore
 
 import fake_ifdh
 from creds import get_creds
@@ -83,7 +84,7 @@ def dcache_persistent_path(exp: str, filename: str) -> str:
     return res
 
 
-def do_tarballs(args: Dict[str, str]) -> None:
+def do_tarballs(args: argparse.Namespace) -> None:
     """handle tarfile argument;  we could have:
        a directory with tardir: prefix to tar up and upload
        a tarfile with dropbox: prefix to upload
@@ -92,7 +93,7 @@ def do_tarballs(args: Dict[str, str]) -> None:
     """
     # pylint: disable=too-many-nested-blocks,too-many-branches
     res = []
-    clean_up = []
+    clean_up: List[Any] = []
     for tfn in args.tar_file_name:
         if tfn.startswith("tardir:"):
             # tar it up, pretend they gave us dropbox:
@@ -145,7 +146,7 @@ def do_tarballs(args: Dict[str, str]) -> None:
         try:
             os.unlink(tf)
         except:  # pylint: disable=bare-except
-            print(f"Notice: unable to remove generated tarfile {tf}")
+            print(f"Notice: unable to remove generated tarfile {tf}")  # type: ignore
 
     args.tar_file_name = res
 
@@ -183,22 +184,20 @@ class TarfilePublisherHandler:
             f"https://{{dropbox_server}}/pubapi/{{endpoint}}?cid={self.cid_url}"
         )
 
-    # Some sort of wrapper to wrap the above three
-
     # pylint: disable-next=no-self-argument
-    def pubapi_operation(func: Callable) -> Callable:
+    def pubapi_operation(func: Callable) -> Callable:  # type: ignore
         """Wrap various PubAPI operations, return path if we get it from response"""
 
-        class SafeDict(dict):
+        class SafeDict(dict):  # type: ignore
             """Use this object to allow us to not need all keys of dict when
             running str.format_map method to do string interpolation.
             Taken from https://stackoverflow.com/a/17215533"""
 
-            def __missing__(self, key):
+            def __missing__(self, key: str) -> str:
                 """missing item handler"""
                 return f"{{{key}}}"  # "{<key>}"
 
-        def wrapper(self, *args, **kwargs):
+        def wrapper(self, *args, **kwargs):  # type: ignore
             """wrapper function for decorator"""
             # pylint: disable-next=protected-access
             _dropbox_server_selector = self.__select_dropbox_server()
@@ -273,15 +272,15 @@ class TarfilePublisherHandler:
 
     def __make_request_token_headers(self) -> Dict[str, str]:
         """Create headers for token auth to dropbox server"""
-        with open(self.token, "r", encoding="UTF-8") as f:
+        with open(self.token, "r", encoding="UTF-8") as f:  # type: ignore
             token_string = f.read()
         token_string = token_string.strip()  # Drop \n at end of token_string
         header = {"Authorization": f"Bearer {token_string}"}
         return header
 
-    def __select_dropbox_server(self) -> str:
+    def __select_dropbox_server(self) -> Iterator[str]:
         """Yield a dropbox server for client to upload tarball to"""
-        dropbox_servers_working_list = []
+        dropbox_servers_working_list: List[str] = []
         while True:
             if len(dropbox_servers_working_list) == 0:
                 dropbox_servers_working_list = list(self.dropbox_servers)

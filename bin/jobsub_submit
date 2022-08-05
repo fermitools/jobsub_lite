@@ -23,7 +23,7 @@ import glob
 import os
 import os.path
 import sys
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Any
 
 #
 # we are in prefix/bin/jobsub_submit, so find our prefix
@@ -62,7 +62,7 @@ def get_basefiles(dlist: List[str]) -> List[str]:
 
 
 def render_files(
-    srcdir: str, values: Dict[str, str], dest: str, dlist: Union[None, List[str]] = None
+    srcdir: str, values: Dict[str, Any], dest: str, dlist: Union[None, List[str]] = None
 ):
     """use jinja to render the templates from srcdir into the dest directory
     using values dict for substitutions
@@ -92,7 +92,7 @@ def render_files(
         except jinja.exceptions.UndefinedError as e:
             err = f"""Cannot render template file {f} due to undefined template variables.
 {e}
-Please open a ticket to the Service Desk and include this error message 
+Please open a ticket to the Service Desk and include this error message
 in its entirety.
 """
             print(err)
@@ -107,7 +107,7 @@ def cleanup(tmp: str) -> None:
     # we actually leave everything in the sandbox right now..
 
 
-def do_dataset_defaults(varg: Dict[str, str]) -> None:
+def do_dataset_defaults(varg: Dict[str, Any]) -> None:
     """
     make sure to pass appropriate SAM_* environment variables if we
     are doing datasets.  Pick a SAM_PROJECT name if we don't have one.

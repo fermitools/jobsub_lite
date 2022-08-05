@@ -24,7 +24,7 @@ import sys
 import subprocess
 import uuid
 import shutil
-from typing import Union, Dict, List
+from typing import Union, Dict, Any
 
 
 def fixquote(s: str) -> str:
@@ -47,7 +47,7 @@ def grep_n(regex: str, n: int, file: str) -> str:
 
 
 def set_extras_n_fix_units(
-    args: Dict[str, str],
+    args: Dict[str, Any],
     schedd_name: str,
     proxy: Union[None, str],
     token: Union[None, str],
@@ -133,9 +133,24 @@ def set_extras_n_fix_units(
     #
     # conversion factors for memory suffixes
     #
-    dsktable = {"k": 1, "m": 1024, "g": 1024 * 1024, "t": 1024 * 1024 * 1024}
-    memtable = {"k": 1.0 / 1024, "m": 1, "g": 1024, "t": 1024 * 1024}
-    timtable = {"s": 1, "m": 60, "h": 60 * 60, "d": 60 * 60 * 24}
+    dsktable: Dict[str, Union[float, int]] = {
+        "k": 1,
+        "m": 1024,
+        "g": 1024 * 1024,
+        "t": 1024 * 1024 * 1024,
+    }
+    memtable: Dict[str, Union[float, int]] = {
+        "k": 1.0 / 1024,
+        "m": 1,
+        "g": 1024,
+        "t": 1024 * 1024,
+    }
+    timtable: Dict[str, Union[float, int]] = {
+        "s": 1,
+        "m": 60,
+        "h": 60 * 60,
+        "d": 60 * 60 * 24,
+    }
 
     fix_unit(args, "disk", dsktable, -1, "b", -2)
     fix_unit(args, "memory", memtable, -1, "b", -2)
@@ -160,11 +175,11 @@ def set_extras_n_fix_units(
 
 # pylint: disable-next=too-many-arguments
 def fix_unit(
-    args: Dict[str, str],
+    args: Dict[str, Any],
     name: str,
     table: Dict[str, Union[float, int]],
     s_offset: int,
-    s_list: List[str],
+    s_list: str,
     c_offset: int,
 ) -> None:
     """
@@ -185,13 +200,13 @@ def get_principal() -> str:
     with subprocess.Popen(
         ["/usr/bin/klist"], stdout=subprocess.PIPE, encoding="UTF-8"
     ) as p:
-        line = p.stdout.readline()
-        line = p.stdout.readline()
+        line = p.stdout.readline()  # type: ignore
+        line = p.stdout.readline()  # type: ignore
         princ = line[line.find(":") + 2 : -1]
     return princ
 
 
-def get_client_dn(proxy: Union[None, str] = None) -> str:
+def get_client_dn(proxy: Union[None, str] = None) -> Union[str, Any]:
     """Get our proxy's DN if the proxy exists"""
     if proxy is None:
         proxy = os.getenv("X509_USER_PROXY")
@@ -199,7 +214,7 @@ def get_client_dn(proxy: Union[None, str] = None) -> str:
             uid = str(os.getuid())
             proxy = f"/tmp/x509up_u{uid}"
 
-    executables = OrderedDict(
+    executables: OrderedDict[str, Dict[str, Any]] = OrderedDict(
         (
             (
                 "voms-proxy-info",

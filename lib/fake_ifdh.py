@@ -24,7 +24,7 @@ import sys
 import os
 import time
 import argparse
-from typing import Union
+from typing import Union, Optional
 
 VAULT_HOST = "fermicloud543.fnal.gov"
 DEFAULT_ROLE = "Analysis"
@@ -35,7 +35,7 @@ def getTmp() -> str:
     return os.environ.get("TMPDIR", "/tmp")
 
 
-def getExp() -> str:
+def getExp() -> Union[str, None]:
     """return current experiment name"""
     for ev in ["GROUP", "EXPERIMENT", "SAM_EXPERIMENT"]:
         if os.environ.get(ev, None):
@@ -47,7 +47,7 @@ def getExp() -> str:
     return exp
 
 
-def getRole(role_override: Union[str, None] = None) -> str:
+def getRole(role_override: Optional[str] = None) -> str:
     """get current role"""
     if role_override:
         return role_override
@@ -62,7 +62,7 @@ def checkToken(tokenfile: str) -> bool:
     cmd = f"decode_token.sh -e exp {tokenfile} 2>/dev/null"
     with os.popen(cmd, "r") as f:
         exp_time = f.read()
-    return exp_time and ((int(exp_time) - time.time()) > 60)
+    return bool(exp_time) and ((int(exp_time) - time.time()) > 60)
 
 
 def getToken(role: str = DEFAULT_ROLE) -> str:
@@ -71,7 +71,7 @@ def getToken(role: str = DEFAULT_ROLE) -> str:
     tmp = getTmp()
     exp = getExp()
     if exp == "samdev":
-        issuer = "fermilab"
+        issuer: Optional[str] = "fermilab"
     else:
         issuer = exp
 
@@ -112,7 +112,7 @@ def getProxy(role: str = DEFAULT_ROLE) -> str:
         igroup = exp
     else:
         issuer = "fermilab"
-        igroup = "fermilab/" + exp
+        igroup = f"fermilab/{exp}"
     vomsfile = f"{tmp}/x509up_{exp}_{role}_{pid}"
     chk_cmd = f"voms-proxy-info -exists -valid 0:10 -file {vomsfile}"
     if 0 != os.system(chk_cmd):
@@ -155,9 +155,9 @@ if __name__ == "__main__":
 
     try:
         if opts.command[0] == "cp":
-            commands[opts.command[0]](*opts.cpargs[0])
+            commands[opts.command[0]](*opts.cpargs[0])  # type: ignore
         else:
-            result = commands[opts.command[0]](myrole)
+            result = commands[opts.command[0]](myrole)  # type: ignore
             if result is not None:
                 print(result)
     except PermissionError as pe:

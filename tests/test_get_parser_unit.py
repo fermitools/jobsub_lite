@@ -1,10 +1,9 @@
 import os
 import sys
-import time
 import pytest
 
 #
-# we assume everwhere our current directory is in the package 
+# we assume everwhere our current directory is in the package
 # test area, so go ahead and cd there
 #
 os.chdir(os.path.dirname(__file__))
@@ -16,19 +15,20 @@ os.chdir(os.path.dirname(__file__))
 sys.path.append("../lib")
 import get_parser
 
-from test_unit import TestUnit 
+from test_unit import TestUnit
+
 
 @pytest.fixture
 def find_all_arguments():
     # try to extract all the --foo arguments from the source
     # and track which ones are flags
-    # we assume 
+    # we assume
     # * there are mostly calls to add_argument in the source file
     # * the add_argument lines may span multiple lines, but
     # * we don't have more than one add_argument call per line
-    # so we look for various parts of the add_argument calls 
+    # so we look for various parts of the add_argument calls
     # separately on each line
-    f = open("../lib/get_parser.py","r")
+    f = open("../lib/get_parser.py", "r")
     flagargs = set()
     listargs = set()
     allargs = []
@@ -36,16 +36,16 @@ def find_all_arguments():
     for line in f.readlines():
         p = line.find('"--')
         mq = '"'
-        if p < 0: 
-           p = line.find("'--")
-           mq = "'"
+        if p < 0:
+            p = line.find("'--")
+            mq = "'"
 
         if p > 0:
             # we saw a '"--...' or "'--..." which we assume is a parameter
             # to add_argument (or similar), so pull the argument name
-            # and mark that as "arg" -- the argument we're currently 
+            # and mark that as "arg" -- the argument we're currently
             # working on
-            arg = line[p+3:]
+            arg = line[p + 3 :]
             p2 = arg.find(mq)
             arg = arg[0:p2]
             # sometimes we find '--arg=whatever' in a help message
@@ -55,13 +55,13 @@ def find_all_arguments():
             if p2 >= 0:
                 arg = arg[0:p2]
             allargs.append(arg)
-            dest[arg] = arg # destination starts off as flag name
+            dest[arg] = arg  # destination starts off as flag name
         if line.find('dest="') > 0 or line.find("dest='") > 0:
-            # add_argument may take a dest= parameter, so if we see 
+            # add_argument may take a dest= parameter, so if we see
             # one make a note about the last argument we saw
-            dest[arg] = line[line.find('dest=')+6:]
+            dest[arg] = line[line.find("dest=") + 6 :]
             p2 = dest[arg].find('"')
-            if p2 < 0: 
+            if p2 < 0:
                 p2 = dest[arg].find("'")
             dest[arg] = dest[arg][0:p2]
         if line.find('"-d"') > 0 or line.find("'-d'") > 0:
@@ -83,97 +83,128 @@ def find_all_arguments():
             listargs.add(arg)
 
     f.close()
-    return allargs, flagargs, listargs, dest 
+    return allargs, flagargs, listargs, dest
+
 
 @pytest.fixture
 def all_test_args():
     return [
-         '--append_condor_requirements', 'xxappend_condor_requirementsxx',
-         '--blacklist', 'xxblacklistxx',
-         '--cmtconfig', 'xxcmtconfigxx',
-         '--cpu', 'xxcpuxx',
-         '--dag', 'xxdagxx',
-         '--dataset_definition', 'xxdataset_definitionxx',
-         '--debug', 'xxdebugxx',
-         '--disk', 'xxdiskxx',
-         '-d', 'dtag', 'dpath',
-         '--email-to', 'xxemail-toxx',
-         '--environment', 'xxenvironmentxx',
-         '--expected-lifetime', 'xxexpected-lifetimexx',
-         '-f', 'xxfxx',
-         '--generate-email-summary',
-         '--group', 'xxgroupxx',
-         '--log_file', 'xxlog_filexx',
-         '--lines', 'xxlinesxx',
-         '--mail_never',
-         '--mail_on_error',
-         '--mail_always',
-         '--maxConcurrent', 'xxmaxConcurrentxx',
-         '--memory', 'xxmemoryxx',
-         '--no-singularity',
-         '--no_submit',
-         '--OS', 'xxOSxx',
-         '--overwrite_condor_requirements', 'xxoverwrite_condor_requirementsxx',
-         '--resource-provides', 'xxresource-providesxx',
-         '--role', 'xxrolexx',
-         '--singularity-image', 'xxsingularity-imagexx',
-         '--site', 'xxsitexx',
-         '--subgroup', 'xxsubgroupxx',
-         '--tar_file_name', 'xxtar_file_namexx',
-         '--tarball-exclusion-file', 'xxtarball-exclusion-filexx',
-         '--timeout', 'xxtimeoutxx',
-         '--use-cvmfs-dropbox',
-         '--use-pnfs-dropbox',
-         '--verbose',
-         '--devserver',
-         'file:///bin/true',
-         'xx_executable_arg_0_xx',
-         'xx_executable_arg_1_xx',
-         'xx_executable_arg_2_xx',
-         'xx_executable_arg_3_xx',
+        "--append_condor_requirements",
+        "xxappend_condor_requirementsxx",
+        "--blacklist",
+        "xxblacklistxx",
+        "--cmtconfig",
+        "xxcmtconfigxx",
+        "--cpu",
+        "xxcpuxx",
+        "--dag",
+        "xxdagxx",
+        "--dataset_definition",
+        "xxdataset_definitionxx",
+        "--debug",
+        "xxdebugxx",
+        "--disk",
+        "xxdiskxx",
+        "-d",
+        "dtag",
+        "dpath",
+        "--email-to",
+        "xxemail-toxx",
+        "--environment",
+        "xxenvironmentxx",
+        "--expected-lifetime",
+        "xxexpected-lifetimexx",
+        "-f",
+        "xxfxx",
+        "--generate-email-summary",
+        "--group",
+        "xxgroupxx",
+        "--log_file",
+        "xxlog_filexx",
+        "--lines",
+        "xxlinesxx",
+        "--mail_never",
+        "--mail_on_error",
+        "--mail_always",
+        "--maxConcurrent",
+        "xxmaxConcurrentxx",
+        "--memory",
+        "xxmemoryxx",
+        "--no-singularity",
+        "--no_submit",
+        "--OS",
+        "xxOSxx",
+        "--overwrite_condor_requirements",
+        "xxoverwrite_condor_requirementsxx",
+        "--resource-provides",
+        "xxresource-providesxx",
+        "--role",
+        "xxrolexx",
+        "--singularity-image",
+        "xxsingularity-imagexx",
+        "--site",
+        "xxsitexx",
+        "--subgroup",
+        "xxsubgroupxx",
+        "--tar_file_name",
+        "xxtar_file_namexx",
+        "--tarball-exclusion-file",
+        "xxtarball-exclusion-filexx",
+        "--timeout",
+        "xxtimeoutxx",
+        "--use-cvmfs-dropbox",
+        "--use-pnfs-dropbox",
+        "--verbose",
+        "--devserver",
+        "file:///bin/true",
+        "xx_executable_arg_0_xx",
+        "xx_executable_arg_1_xx",
+        "xx_executable_arg_2_xx",
+        "xx_executable_arg_3_xx",
     ]
+
 
 class TestGetParserUnit:
     """
-        Use with pytest... unit tests for ../lib/*.py
+    Use with pytest... unit tests for ../lib/*.py
     """
-
 
     # lib/get_parser.py routines...
 
     def test_get_parser_small(self):
         """
-            Try a few common arguments on a get_parser() generated parser
+        Try a few common arguments on a get_parser() generated parser
         """
         parser = get_parser.get_parser()
-        line = "jobsub_submit --devserver -e SAM_EXPERIMENT -G {0} --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/lookaround.sh".format(TestUnit.test_group)
+        line = "jobsub_submit --devserver -e SAM_EXPERIMENT -G {0} --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/lookaround.sh".format(
+            TestUnit.test_group
+        )
         line_argv = line.strip().split()[1:]
         res = parser.parse_args(line_argv)
         assert res.devserver
-        assert 'SAM_EXPERIMENT' in res.environment
+        assert "SAM_EXPERIMENT" in res.environment
         assert res.group == TestUnit.test_group
 
-
-    def test_check_all_test_args(self,find_all_arguments, all_test_args):
-        # make sure we have a test argument for all the arguments in 
+    def test_check_all_test_args(self, find_all_arguments, all_test_args):
+        # make sure we have a test argument for all the arguments in
         # the source, and that we find all the arguments in the source
         # we think we should.  This way we maintain a list here in
         # the test code, but check it against the source...
         allargs, flagargs, listargs, dest = find_all_arguments
         for arg in allargs:
             if len(arg) > 1:
-               arg = "--"+arg
+                arg = "--" + arg
             else:
-               arg = "-"+arg
-            assert arg in all_test_args 
+                arg = "-" + arg
+            assert arg in all_test_args
         for arg in all_test_args:
             if arg[0] == "-":
                 arg = arg.lstrip("-")
                 assert arg in allargs
 
-    def test_get_parser_all(self,find_all_arguments, all_test_args):
+    def test_get_parser_all(self, find_all_arguments, all_test_args):
         """
-            Validate an all arguments list
+        Validate an all arguments list
         """
 
         allargs, flagargs, listargs, dest = find_all_arguments
@@ -182,34 +213,34 @@ class TestGetParserUnit:
         # for example, mutually exclusive groups defined in the parser.
         # Currently, the testing code here tries to parse all args, which
         # works until you have a mutually exclusive group.  So the
-        # variable args_exclude_list should contain all the args in a 
+        # variable args_exclude_list should contain all the args in a
         # mutually exclusive group, except for one
         # e.g. For the mutually exclusive group (--singularity-image,
         # --no-singularity), we pick one and enter it into args_exclude_list
-        args_exclude_list = ['--no-singularity'] 
+        args_exclude_list = ["--no-singularity"]
 
         def filter_excluded(arg_list):
-            _stripped_args_exclude_list = [arg.strip('-') for arg in args_exclude_list]
+            _stripped_args_exclude_list = [arg.strip("-") for arg in args_exclude_list]
+
             def is_arg_excluded(arg):
                 return arg in args_exclude_list or arg in _stripped_args_exclude_list
 
             return [arg for arg in arg_list if not is_arg_excluded(arg)]
 
         allargs = filter_excluded(allargs)
-        flagargs = filter_excluded(flagargs) 
-        listargs = filter_excluded(listargs) 
-        all_test_args =  filter_excluded(all_test_args)
+        flagargs = filter_excluded(flagargs)
+        listargs = filter_excluded(listargs)
+        all_test_args = filter_excluded(all_test_args)
 
         print("trying command flags: ", all_test_args)
-        
+
         parser = get_parser.get_parser()
         res = parser.parse_args(all_test_args)
-        vres = vars(res)  
+        vres = vars(res)
         for arg in args_exclude_list:
-            remove_key = arg.strip('-').replace('-', '_')
+            remove_key = arg.strip("-").replace("-", "_")
             vres.pop(remove_key, None)
 
-        
         print("vres is ", vres)
 
         #
@@ -219,27 +250,32 @@ class TestGetParserUnit:
         for arg in allargs:
             # figure out what arg is called in the result
             # using dest table and fixing dashes
-            uarg = dest[arg].replace('-','_')
+            uarg = dest[arg].replace("-", "_")
 
             if arg in flagargs:
                 # its a flag, just assert it
                 assert vres[uarg]
             elif arg == "d":
                 # -d special case -- makes list of *pairs* of args
-                assert vres['d'] == [['dtag','dpath']]
+                assert vres["d"] == [["dtag", "dpath"]]
             elif arg in listargs:
                 # args are in a list, so look for list containing xxflagxx
-                if arg in ['resource-provides', 'lines']:
+                if arg in ["resource-provides", "lines"]:
                     # some of our arguments start with blank in the list
                     # so a "\nprefix:".join(list) prefixes the useful items
-                    assert vres[uarg] == ['', "xx%sxx" % arg,]
+                    assert vres[uarg] == [
+                        "",
+                        "xx%sxx" % arg,
+                    ]
                 else:
-                    assert vres[uarg] == ["xx%sxx" % arg,]
+                    assert vres[uarg] == [
+                        "xx%sxx" % arg,
+                    ]
             else:
                 # general string argument, look for xxflagxx
                 assert vres[uarg] == "xx%sxx" % arg
 
         # also make sure we got the executable and arguments...
-        assert 'file:///bin/true' == vres['executable']
+        assert "file:///bin/true" == vres["executable"]
         for i in range(4):
-            assert 'xx_executable_arg_%s_xx' % i in vres['exe_arguments']
+            assert "xx_executable_arg_%s_xx" % i in vres["exe_arguments"]

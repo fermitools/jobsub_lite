@@ -1,5 +1,5 @@
 DOT dataset.dag.dot UPDATE
 {%for i in range(N) %}
-JOB WORKER_{{i}} simple.cmd 
+JOB WORKER_{{i}} simple.cmd
 {%endfor%}
 CONFIG dagmax.config

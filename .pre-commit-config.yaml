@@ -1,0 +1,26 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.931
+    hooks:
+      - id: mypy
+        name: mypy (no tests or bin)
+        exclude: ^(tests/|bin/)
+        args: [--strict]
+      - id: mypy
+        name: mypy (bin)
+        files: bin/
+        args: [ --scripts-are-modules,  --ignore-missing-imports ]
+  - repo: https://github.com/PyCQA/pylint
+    rev:  v2.13.9
+    hooks:
+      - id: pylint
+        args: [--disable=all, --enable=unused-import] # Go through this.  Maybe we want to modify this list
+  - repo: https://github.com/psf/black
+    rev: 22.6.0
+    hooks:
+      - id: black

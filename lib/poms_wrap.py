@@ -16,18 +16,18 @@
 """ replacement for jobsub_wrapper for POMS"""
 import os
 import sys
-from typing import Dict
+from typing import Dict, Any
 
 from packages import pkg_find
 
 pkg_find("poms_client", "-g poms41")
 # pylint: disable-next=wrong-import-position,wrong-import-order,import-error
-import poms_client
+import poms_client  # type: ignore
 
 # translation of jobub_submit wrapper in poms_jobsub_wrapper...
 
 
-def poms_wrap(args: Dict[str, str]) -> None:
+def poms_wrap(args: Dict[str, Any]) -> None:
     """
     pass assorted POMS bookeeping into job submission and
     back to monitoring and POMS

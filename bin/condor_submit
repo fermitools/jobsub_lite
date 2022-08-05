@@ -23,7 +23,6 @@ import sys
 import os
 import os.path
 import argparse
-from typing import Dict, Union
 import htcondor
 
 #
@@ -48,13 +47,7 @@ class StoreGroupinEnvironment(argparse.Action):
 
     # pylint: disable=too-few-public-methods
 
-    def __call__(
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: Dict[str, str],
-        option_string: Union[None, str] = None,
-    ):
+    def __call__(self, parser, namespace, values, option_string):  # type: ignore
         os.environ["GROUP"] = values
         setattr(namespace, self.dest, values)
 

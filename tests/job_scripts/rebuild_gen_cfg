@@ -15,9 +15,9 @@ do
    echo "checking $e files in $g..."
 
 
-    srcf=$HYPOTCODE_DIR/fcl/gen_nova.fcl 
+    srcf=$HYPOTCODE_DIR/fcl/gen_nova.fcl
     ddir=/pnfs/$g/$USER/poms_test/gen_cfg
-    flist=" 
+    flist="
         c47fe3af-8fdb-4a5a-a110-3f3d52f3cfea-a.fcl
         f6b1e050-4ea4-4045-b45d-190b6715a4ac-b.fcl
         e0d98f93-e5a3-41de-bf2d-207d57ea8b53-c.fcl
@@ -33,23 +33,23 @@ do
 
     cat > a.json <<EOF
     {
-     "file_name": "c47fe3af-8fdb-4a5a-a110-3f3d52f3cfea-a.fcl", 
-     "file_id": 3647554, 
-     "create_date": "2016-10-11T15:49:15+00:00", 
-     "user": "mengel", 
-     "update_date": "2018-09-11T15:30:42+00:00", 
-     "update_user": "mengel", 
-     "file_size": $filesize, 
+     "file_name": "c47fe3af-8fdb-4a5a-a110-3f3d52f3cfea-a.fcl",
+     "file_id": 3647554,
+     "create_date": "2016-10-11T15:49:15+00:00",
+     "user": "mengel",
+     "update_date": "2018-09-11T15:30:42+00:00",
+     "update_user": "mengel",
+     "file_size": $filesize,
      "checksum": $checksum,
-     "content_status": "good", 
-     "file_type": "unknown", 
-     "file_format": "unknown", 
-     "end_time": "2016-10-01T00:00:00+00:00", 
-     "Dataset.Tag": "gen_cfg", 
+     "content_status": "good",
+     "file_type": "unknown",
+     "file_format": "unknown",
+     "end_time": "2016-10-01T00:00:00+00:00",
+     "Dataset.Tag": "gen_cfg",
      "runs": [
       [
-       1, 
-       0, 
+       1,
+       0,
        "test"
       ]
      ]
@@ -57,23 +57,23 @@ do
 EOF
     cat > b.json <<EOF
     {
-     "file_name": "f6b1e050-4ea4-4045-b45d-190b6715a4ac-b.fcl", 
-     "file_id": 3647704, 
-     "create_date": "2016-10-11T15:49:15+00:00", 
-     "user": "mengel", 
-     "update_date": "2018-09-11T15:30:42+00:00", 
-     "update_user": "mengel", 
-     "file_size": $filesize, 
+     "file_name": "f6b1e050-4ea4-4045-b45d-190b6715a4ac-b.fcl",
+     "file_id": 3647704,
+     "create_date": "2016-10-11T15:49:15+00:00",
+     "user": "mengel",
+     "update_date": "2018-09-11T15:30:42+00:00",
+     "update_user": "mengel",
+     "file_size": $filesize,
      "checksum": $checksum,
-     "content_status": "good", 
-     "file_type": "unknown", 
-     "file_format": "unknown", 
-     "end_time": "2016-10-02T00:00:00+00:00", 
-     "Dataset.Tag": "gen_cfg", 
+     "content_status": "good",
+     "file_type": "unknown",
+     "file_format": "unknown",
+     "end_time": "2016-10-02T00:00:00+00:00",
+     "Dataset.Tag": "gen_cfg",
      "runs": [
       [
-       1, 
-       0, 
+       1,
+       0,
        "test"
       ]
      ]
@@ -81,23 +81,23 @@ EOF
 EOF
     cat > c.json <<EOF
     {
-     "file_name": "e0d98f93-e5a3-41de-bf2d-207d57ea8b53-c.fcl", 
-     "file_id": 3647854, 
-     "create_date": "2016-10-11T15:49:15+00:00", 
-     "user": "mengel", 
-     "update_date": "2018-09-11T15:30:42+00:00", 
-     "update_user": "mengel", 
-     "file_size": $filesize, 
+     "file_name": "e0d98f93-e5a3-41de-bf2d-207d57ea8b53-c.fcl",
+     "file_id": 3647854,
+     "create_date": "2016-10-11T15:49:15+00:00",
+     "user": "mengel",
+     "update_date": "2018-09-11T15:30:42+00:00",
+     "update_user": "mengel",
+     "file_size": $filesize,
      "checksum": $checksum,
-     "content_status": "good", 
-     "file_type": "unknown", 
-     "file_format": "unknown", 
-     "end_time": "2016-10-03T00:00:00+00:00", 
-     "Dataset.Tag": "gen_cfg", 
+     "content_status": "good",
+     "file_type": "unknown",
+     "file_format": "unknown",
+     "end_time": "2016-10-03T00:00:00+00:00",
+     "Dataset.Tag": "gen_cfg",
      "runs": [
       [
-       2, 
-       0, 
+       2,
+       0,
        "test"
       ]
      ]
@@ -105,23 +105,23 @@ EOF
 EOF
     cat > d.json <<EOF
     {
-     "file_name": "a9d1b4da-74ad-4c4f-8d72-c9e6507531b8-d.fcl", 
-     "file_id": 3648004, 
-     "create_date": "2016-10-11T15:49:15+00:00", 
-     "user": "mengel", 
-     "update_date": "2018-09-11T15:30:42+00:00", 
-     "update_user": "mengel", 
-     "file_size": $filesize, 
-     "checksum": $checksum, 
-     "content_status": "good", 
-     "file_type": "unknown", 
-     "file_format": "unknown", 
-     "end_time": "2016-10-04T00:00:00+00:00", 
-     "Dataset.Tag": "gen_cfg", 
+     "file_name": "a9d1b4da-74ad-4c4f-8d72-c9e6507531b8-d.fcl",
+     "file_id": 3648004,
+     "create_date": "2016-10-11T15:49:15+00:00",
+     "user": "mengel",
+     "update_date": "2018-09-11T15:30:42+00:00",
+     "update_user": "mengel",
+     "file_size": $filesize,
+     "checksum": $checksum,
+     "content_status": "good",
+     "file_type": "unknown",
+     "file_format": "unknown",
+     "end_time": "2016-10-04T00:00:00+00:00",
+     "Dataset.Tag": "gen_cfg",
      "runs": [
       [
-       2, 
-       0, 
+       2,
+       0,
        "test"
       ]
      ]
@@ -129,23 +129,23 @@ EOF
 EOF
     cat > e.json <<EOF
     {
-     "file_name": "fa9fff96-99b8-4a97-a0a7-6fb2612f1b46-e.fcl", 
-     "file_id": 3648154, 
-     "create_date": "2016-10-11T15:49:15+00:00", 
-     "user": "mengel", 
-     "update_date": "2017-11-30T22:41:54+00:00", 
-     "update_user": "mengel", 
-     "file_size": $filesize, 
-     "checksum": $checksum, 
-     "content_status": "good", 
-     "file_type": "unknown", 
-     "file_format": "unknown", 
-     "end_time": "2016-10-05T00:00:00+00:00", 
-     "Dataset.Tag": "gen_cfg", 
+     "file_name": "fa9fff96-99b8-4a97-a0a7-6fb2612f1b46-e.fcl",
+     "file_id": 3648154,
+     "create_date": "2016-10-11T15:49:15+00:00",
+     "user": "mengel",
+     "update_date": "2017-11-30T22:41:54+00:00",
+     "update_user": "mengel",
+     "file_size": $filesize,
+     "checksum": $checksum,
+     "content_status": "good",
+     "file_type": "unknown",
+     "file_format": "unknown",
+     "end_time": "2016-10-05T00:00:00+00:00",
+     "Dataset.Tag": "gen_cfg",
      "runs": [
       [
-       3, 
-       0, 
+       3,
+       0,
        "test"
       ]
      ]

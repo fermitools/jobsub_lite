@@ -41,7 +41,7 @@ def pkg_find(p: str, qual: str = "") -> None:
     if not SAVED_ENV:
         SAVED_ENV = os.environ.copy()
     path = None
-    if not path and os.environ.get("SPACK_ROOT", None):
+    if not path and os.environ.get("SPACK_ROOT"):
         cmd = f"spack find --paths --variants '{p} os=fe' 'py-{p} os=fe'"
         with os.popen(cmd, "r") as f:
             for line in f:
@@ -50,7 +50,7 @@ def pkg_find(p: str, qual: str = "") -> None:
                 path = line.split()[1]
                 break
 
-    if not path and os.environ.get("PRODUCTS", None):
+    if not path and os.environ.get("PRODUCTS"):
         cmd = f"ups list -a4 -Kproduct:@prod_dir {p} {qual}, -a0 -Kproduct:@prod_dir {p} {qual}"
         with os.popen(cmd, "r") as f:
             for line in f:
