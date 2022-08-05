@@ -19,7 +19,7 @@ repos:
     rev:  v2.13.9
     hooks:
       - id: pylint
-        args: [--disable=all, --enable=unused-import] # Go through this.  Maybe we want to modify this list
+        args: [ --disable=all, --rcfile=.pylintrc ] # Go through this.  Maybe we want to modify this list
   - repo: https://github.com/psf/black
     rev: 22.6.0
     hooks:

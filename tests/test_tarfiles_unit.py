@@ -17,6 +17,7 @@ import tarfiles
 import get_parser
 
 from test_unit import TestUnit
+from test_creds_unit import needs_credentials
 
 
 class TestTarfilesUnit:

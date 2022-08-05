@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long
 import os
 import sys
 import pytest
@@ -16,6 +17,7 @@ sys.path.append("../lib")
 import condor
 
 from test_unit import TestUnit
+from test_creds_unit import needs_credentials
 
 
 @pytest.fixture

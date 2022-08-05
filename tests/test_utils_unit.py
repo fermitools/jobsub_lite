@@ -15,6 +15,8 @@ sys.path.append("../lib")
 import utils
 
 from test_unit import TestUnit
+from test_creds_unit import needs_credentials  # pylint: disable=unused-import
+from test_creds_unit import clear_x509_user_proxy  # pylint: disable=unused-import
 
 
 class TestUtilsUnit:
