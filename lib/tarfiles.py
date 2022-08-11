@@ -93,7 +93,7 @@ def do_tarballs(args: argparse.Namespace) -> None:
     """
     # pylint: disable=too-many-nested-blocks,too-many-branches
     res = []
-    clean_up: List[Any] = []
+    clean_up: List[str] = []
     for tfn in args.tar_file_name:
         if tfn.startswith("tardir:"):
             # tar it up, pretend they gave us dropbox:
@@ -142,11 +142,11 @@ def do_tarballs(args: argparse.Namespace) -> None:
             tfn = location
         res.append(tfn)
     # clean up tarfiles we made...
-    for tf in clean_up:
+    for tarfile in clean_up:
         try:
-            os.unlink(tf)
+            os.unlink(tarfile)
         except:  # pylint: disable=bare-except
-            print(f"Notice: unable to remove generated tarfile {tf}")  # type: ignore
+            print(f"Notice: unable to remove generated tarfile {tarfile}")
 
     args.tar_file_name = res
 
