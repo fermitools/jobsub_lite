@@ -58,11 +58,22 @@ def getRole(role_override: Optional[str] = None) -> str:
 
 def checkToken(tokenfile: str) -> bool:
     """check if token is (almost) expired"""
+    if not os.path.exists(tokenfile):
+        return False
     exp_time = None
     cmd = f"decode_token.sh -e exp {tokenfile} 2>/dev/null"
     with os.popen(cmd, "r") as f:
         exp_time = f.read()
-    return bool(exp_time) and ((int(exp_time) - time.time()) > 60)
+    try:
+        return int(exp_time) - time.time() > 60
+    except ValueError as e:
+        print(
+            "decode_token.sh could not successfully extract the "
+            f"expiration time from token file {tokenfile}. Please open "
+            "a ticket to Distributed Computing Support if you need further "
+            "assistance."
+        )
+        raise
 
 
 def getToken(role: str = DEFAULT_ROLE) -> str:

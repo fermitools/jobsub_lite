@@ -54,12 +54,6 @@ def test_getRole_override():
     assert res == override_role
 
 
-def test_checkToken_fail():
-    tokenfile = "/dev/null"
-    res = fake_ifdh.checkToken(tokenfile)
-    assert res
-
-
 @pytest.fixture
 def clear_token():
     if os.environ.get("BEARER_TOKEN_FILE", None):
@@ -74,8 +68,8 @@ def fermilab_token(clear_token):
 
 def test_checkToken_fail():
     tokenfile = "/dev/null"
-    res = fake_ifdh.checkToken(tokenfile)
-    assert not res
+    with pytest.raises(ValueError):
+        res = fake_ifdh.checkToken(tokenfile)
 
 
 def test_checkToken_success(fermilab_token):
@@ -88,13 +82,9 @@ def test_getToken_good(clear_token, fermilab_token):
 
 
 def test_getToken_fail(clear_token):
-    try:
+    with pytest.raises(PermissionError):
         os.environ["GROUP"] = "bozo"
         fake_ifdh.getToken("Analysis")
-    except PermissionError:
-        assert True
-    else:
-        assert False
 
 
 def test_getProxy_good(clear_token):
