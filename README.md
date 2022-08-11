@@ -3,7 +3,7 @@
 jobsub_lite is a wrapper for Condor job submission, intended
 to be backwards compatible with the actively used options of
 the past Fermilab jobsub tools, while being smaller and easier
-to maintain, and handling new requirements (i.e SciTokens 
+to maintain, and handling new requirements (i.e SciTokens
 authentication, etc.)
 
 The basic design of jobsub_lite is straightforward. It will:
@@ -35,4 +35,3 @@ This is currently implemented using Python's `requests` module for https access 
 ## Tempates of .cmd .sh, and .dag files
 
 The [Jinja](http://jinja.pocoo.org/docs/dev/templates/) template code is used to generate the job submission files.  For example, the template for the .cmd file for a simple submission is [simple.cmd](https://github.com/marcmengel/jobsub_lite/blob/master/templates/simple/simple.cmd) where a name (or expression) in doubled curly braces `{{name}}` is replaced when generating the output, and conditional geneartion is done with `{%if expr%}...{%endif%}`.  (There are other Jinja features, but that is mainly what is used now in jobsub_lite).  The majority of template replacement values are directly command line options or their defaults, which makes adding new features easy; you add an option (say `--fred` ) to the command line parser, and then add a suitable entry to the appropriate template(s) using that value ( `{{fred}}` or `{%if fred %} xyzzy={{fred}} {%endif%}` .
-

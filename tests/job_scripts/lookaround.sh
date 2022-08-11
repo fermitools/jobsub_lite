@@ -27,7 +27,7 @@ then
 fi
 done
 setup htgettoken
-setup ifdhc v2_6_0 -q python36, ifdhc_config v2_6_0 
+setup ifdhc v2_6_0 -q python36, ifdhc_config v2_6_0
 export IFDH_TOKEN_ENABLE=1
 export IFDH_PROXY_ENABLE=0
 ups active

@@ -48,11 +48,11 @@ do
 	subdir=`dirname "$subfile"`
 	if grep "$val" $subdir/* > /tmp/go.log 2>/dev/null
 	then
-	    printf "."   
+	    printf "."
 	    sc=$((sc + 1))
 	    echo "test $opt SUCCEEDED." >> $out
 	else
-	    printf "F" 
+	    printf "F"
 	    echo "test $opt FAILED:" >> $out
 	    echo "subdir was '$subdir'" >> $out
 	    echo "subfile was '$subfile'" >> $out

@@ -3,7 +3,7 @@ import sys
 import time
 
 #
-# we assume everwhere our current directory is in the package 
+# we assume everwhere our current directory is in the package
 # test area, so go ahead and cd there
 #
 os.chdir(os.path.dirname(__file__))
@@ -13,38 +13,38 @@ os.chdir(os.path.dirname(__file__))
 # import modules we need to test, since we chdir()ed, can use relative path
 #
 sys.path.append("../lib")
-import creds
 import tarfiles
 import get_parser
 
-from test_unit import TestUnit 
+from test_unit import TestUnit
 from test_creds_unit import needs_credentials
+
 
 class TestTarfilesUnit:
     """
-        Use with pytest... unit tests for ../lib/*.py
+    Use with pytest... unit tests for ../lib/*.py
     """
 
     # lib/tarfiles.py routines...
 
     def test_tar_up_1(self):
-        """ make sure tar up makes a tarfile """
+        """make sure tar up makes a tarfile"""
         tarfile = tarfiles.tar_up(os.path.dirname(__file__), None)
         assert os.path.exists(tarfile)
         os.unlink(tarfile)
 
     def test_slurp_file_1(self):
-        """ make sure tar slurp_file makes a digest """
+        """make sure tar slurp_file makes a digest"""
         digest, tf = tarfiles.slurp_file(__file__)
         assert len(digest) == 64
 
     def test_dcache_persistent_path_1(self):
-        """ make sure persistent path gives /pnfs/ path digest """
+        """make sure persistent path gives /pnfs/ path digest"""
         path = tarfiles.dcache_persistent_path(TestUnit.test_group, __file__)
-        assert path[:6] == '/pnfs/'
+        assert path[:6] == "/pnfs/"
 
     def test_tarfile_publisher_1(self, needs_credentials):
-        """ test the tarfile publisher object """
+        """test the tarfile publisher object"""
         proxy, token = needs_credentials
         # need something to publish...
         tarfile = tarfiles.tar_up(os.path.dirname(__file__), None)
@@ -61,24 +61,26 @@ class TestTarfilesUnit:
         if location is None:
             publisher.publish(tf)
             for i in range(20):
-                 time.sleep(30)
-                 location = publisher.cid_exists()
-                 if location is not None:
-                      break
+                time.sleep(30)
+                location = publisher.cid_exists()
+                if location is not None:
+                    break
         else:
             publisher.update_cid()
 
         assert location is not None
 
     def test_do_tarballs_1(self, needs_credentials):
-        """ test that the do_tarballs method does a dropbox:path
-            processing """
+        """test that the do_tarballs method does a dropbox:path
+        processing"""
         tdir = os.path.dirname(__file__)
-        for dropbox_type in [ "cvmfs", "pnfs" ]:
+        for dropbox_type in ["cvmfs", "pnfs"]:
             argv = [
-                "--tar_file_name", "tardir:{0}".format(tdir),
+                "--tar_file_name",
+                "tardir:{0}".format(tdir),
                 "--use-{0}-dropbox".format(dropbox_type),
-                "--group", TestUnit.test_group,
+                "--group",
+                TestUnit.test_group,
                 "file:///bin/true",
             ]
             parser = get_parser.get_parser()
@@ -87,10 +89,9 @@ class TestTarfilesUnit:
             assert args.tar_file_name[0][:6] == "/{0}/".format(dropbox_type)[:6]
 
     def x_test_do_tarballs_2(self):
-        # should have another one here to test dropbox:xxx 
+        # should have another one here to test dropbox:xxx
         pass
 
     def x_test_do_tarballs_3(self):
         # should have another one here to test existing /cvmfs path
         pass
-

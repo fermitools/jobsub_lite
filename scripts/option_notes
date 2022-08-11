@@ -4,8 +4,8 @@ Need to add:
 --drain?
 --schedd (name(Pattern?) of schedd)
 
-need to test separately: 
-   --dag dagnabbitfile 
+need to test separately:
+   --dag dagnabbitfile
    --maxConcurrent
 
 and tarfile tests
@@ -25,4 +25,3 @@ flags:
 	--mail_on_error
 	--mail_always
 	--verbose
-

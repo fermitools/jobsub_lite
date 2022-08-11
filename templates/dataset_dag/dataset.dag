@@ -2,8 +2,8 @@ DOT dataset.dag.dot UPDATE
 JOB SAM_START dagbegin.cmd
 
 {%for i in range(N) %}
-JOB WORKER_{{i}} simple.cmd 
-PARENT SAM_START CHILD WORKER_{{i}} 
+JOB WORKER_{{i}} simple.cmd
+PARENT SAM_START CHILD WORKER_{{i}}
 PARENT WORKER_{{i}} CHILD SAM_END
 {%endfor%}
 

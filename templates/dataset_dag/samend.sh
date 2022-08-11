@@ -46,7 +46,7 @@ fi
 _HEREDOC_
 chmod +x ${JSB_TMP}/ifdh.sh
 }
-            
+
 
 echo `date` BEGIN executing /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.samend.sh
 >&2 echo `date` BEGIN executing /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.samend.sh
@@ -64,8 +64,8 @@ if [ "${KRB5CCNAME}" != "" ]; then
       (while [ 0 ]; do kinit -R; sleep 3600 ; done ) &
    fi
 fi
-            
-CPURL=`${JSB_TMP}/ifdh.sh findProject $PRJ_NAME ''` 
+
+CPURL=`${JSB_TMP}/ifdh.sh findProject $PRJ_NAME ''`
 ${JSB_TMP}/ifdh.sh  endProject $CPURL
 EXITSTATUS=$?
 echo `date` ifdh endProject $CPURL exited with status $EXITSTATUS

@@ -9,8 +9,8 @@
 decode_token() {
     #
     # token is 3 base64 segments separated by dots
-    # we want the middle one. 
-    # the ending of the base64 segment is sometimes 
+    # we want the middle one.
+    # the ending of the base64 segment is sometimes
     # chopped, so ignore errors about that
     #
     sed -e 's/.*\.\(.*\)\..*/\1==/' "$1" 2>/dev/null | base64 -d  2>/dev/null
@@ -20,9 +20,9 @@ get_field() {
     #
     # filter out a field from a json block
     # rip off up to "fieldname":, then rip off everything
-    # after the comma.  
+    # after the comma.
     #
-    # BUGS 
+    # BUGS
     #    Borked for fields that contain commas.
     #
     sed -e "s/.*\"$1\"://" -e s'/,.*//'
@@ -35,7 +35,7 @@ usage() {
     echo "option -e lets you extract a particular field"
 }
 
-case x$1 in 
+case x$1 in
 x-e) extractfilt="get_field $2"; shift; shift;;
 x-h) usage; exit 0;;
 x)   usage; exit 1;;

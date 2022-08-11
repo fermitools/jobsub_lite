@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 cd $_CONDOR_SCRATCH_DIR
 ###################################################
 function logit {
@@ -22,7 +22,7 @@ function log_environment {
   logit "OSG_SITE_NAME...... $OSG_SITE_NAME"
   logit "HOME............... $HOME"
   logit "OSG_WN_TMP......... $OSG_WN_TMP  "
-  logit "-------------------------------------------" 
+  logit "-------------------------------------------"
   logit "All environmental variables:
 $(env | sort)
 "
@@ -70,13 +70,13 @@ function timing_loop {
   start_time=$(date +'%s')
   last=$(date +'%s')
   elapsed=0
-  while 
+  while
     [ $elapsed -le $mintime ]
-  do 
+  do
     #--- create cpu/io ----
     local cycles=100
     local cnt=0
-    while 
+    while
       [ $cnt -lt $cycles ]
     do
       echo "`date`" >$file
@@ -93,7 +93,7 @@ function timing_loop {
    fi
   done
   log_running_jobs
-} 
+}
 #---------------
 function capture_condor_logs {
   logit "######## glidein Condor logs start ##########"
@@ -112,12 +112,12 @@ $(ls -la $dir)
   for log in $(ls $dir4/*Log)
   do
     logit " -------------------------------------------
-LOG: $log 
+LOG: $log
 $(cat $log)
 "
   done
   logit "######## glidein Condor logs end ############"
-} 
+}
 #---------------
 function cleanup_files {
   if [ ! -f "$file" ];then
@@ -148,7 +148,7 @@ fi
 
 logit "-------------------------------------------"
 logit "JOB STARTED: $(/bin/date)"
-log_environment 
+log_environment
 log_glexec_conf
 
 export file=$_CONDOR_SCRATCH_DIR/$(/usr/bin/whoami).tmpfile.$PID
@@ -160,13 +160,13 @@ touch $file
 touch $timing
 rslt=`ls -la $timing`
 logit "before result of ls -la $timing is $rslt"
-(time -p timing_loop) 2>$timing 
+(time -p timing_loop) 2>$timing
 rslt=`ls -la $timing`
 logit "after result of ls -la $timing is $rslt"
 logit
-#log_timing_data 
+#log_timing_data
 capture_condor_logs
-cleanup_files 
+cleanup_files
 
 job_end=$(date '+%s')
 total_elapsed=$(($job_end -$job_start))

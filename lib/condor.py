@@ -20,10 +20,10 @@ import glob
 import re
 import random
 import subprocess
-from typing import Dict, List
+from typing import Dict, List, Any, Tuple, Optional, Union
 
-import htcondor
-import classad
+import htcondor  # type: ignore
+import classad  # type: ignore
 
 import packages
 
@@ -84,7 +84,7 @@ def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
     return res
 
 
-def load_submit_file(filename: str) -> Dict[str, str]:
+def load_submit_file(filename: str) -> Tuple[Any, Optional[int]]:
     """pull in a condor submit file, make a dictionary"""
 
     #
@@ -113,7 +113,9 @@ def load_submit_file(filename: str) -> Dict[str, str]:
 
 
 # pylint: disable-next=dangerous-default-value
-def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []):
+def submit(
+    f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []
+) -> Union[Any, bool]:
     """Actually submit the job, using condor python bindings"""
 
     schedd_args = f"-remote {schedd_name}"
@@ -177,7 +179,7 @@ def submit(f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] 
 # pylint: disable-next=dangerous-default-value
 def submit_dag(
     f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []
-):
+) -> Union[Any, bool]:
     """
     Actually submit the dag
     for the moment, we call the commandline condor_submit_dag,

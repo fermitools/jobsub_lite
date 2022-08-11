@@ -17,9 +17,9 @@
 import sys
 import os
 import os.path
-from typing import Dict
+from typing import Dict, List, Any
 
-import jinja2 as jinja
+import jinja2 as jinja  # type: ignore
 
 import creds
 from get_parser import get_parser
@@ -28,11 +28,11 @@ from utils import set_extras_n_fix_units
 
 def parse_dagnabbit(
     srcdir: str,
-    values: Dict[str, str],
+    values: Dict[str, Any],
     dest: str,
     schedd_name: str,
     debug_comments: bool = True,
-):
+) -> None:
     """
     parse a dagnabbit dag file generating a .dag file and .cmd files
     in the dest directory, using global cmdline options from values
@@ -51,7 +51,7 @@ def parse_dagnabbit(
         in_parallel = False
         in_serial = False
         last_serial = None
-        parallel_l = []
+        parallel_l: List[str] = []
         for line in df:
             line = line.strip()
             line = os.path.expandvars(line)

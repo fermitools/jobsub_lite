@@ -17,7 +17,7 @@
 # pylint: disable=too-few-public-methods
 import argparse
 import os
-from typing import Union
+from typing import Union, Any
 
 
 def verify_executable_starts_with_file_colon(s: str) -> str:
@@ -37,9 +37,9 @@ class StoreGroupinEnvironment(argparse.Action):
         self,
         parser: argparse.ArgumentParser,
         namespace: argparse.Namespace,
-        values,
+        values: Any,
         option_string: Union[None, str] = None,
-    ):
+    ) -> None:
         os.environ["GROUP"] = values
         setattr(namespace, self.dest, values)
 
