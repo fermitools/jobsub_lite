@@ -22,6 +22,8 @@
 import sys
 
 import os
+import shlex
+import subprocess
 import time
 import argparse
 from typing import Union, Optional
@@ -128,15 +130,26 @@ def getProxy(role: str = DEFAULT_ROLE) -> str:
     chk_cmd = f"voms-proxy-info -exists -valid 0:10 -file {vomsfile}"
     if 0 != os.system(chk_cmd):
         cmd = f"cigetcert -i 'Fermi National Accelerator Laboratory' -n -o {certfile}"
-        # send htgettoken output to stderr because invokers read stdout
-        os.system(f"{cmd} >&2")
+        # send output to stderr because invokers read stdout
+        completed_cmd = subprocess.run(
+            shlex.split(cmd),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding="UTF-8",
+        )
+        if completed_cmd.returncode != 0:
+            if "Kerberos initialization failed" in completed_cmd.stdout:
+                raise Exception(
+                    "Cigetcert failed to get proxy due to kerberos issue.  Please ensure "
+                    "you have valid kerberos credentials."
+                )
         cmd = (
             f"voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen"
             f" -debug -cert {certfile} -key {certfile} -out {vomsfile}"
             f" -voms {issuer}:/{igroup}/Role={role}"
         )
 
-        # send htgettoken output to stderr because invokers read stdout
+        # send output to stderr because invokers read stdout
         os.system(f"{cmd} >&2")
         if 0 == os.system(chk_cmd):
             return vomsfile
