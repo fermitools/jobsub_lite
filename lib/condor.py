@@ -129,7 +129,7 @@ def load_submit_file(filename: str) -> Tuple[Any, Optional[int]]:
 
 # pylint: disable-next=dangerous-default-value
 def submit(
-    f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []
+    f: str, vargs: Dict[str, Any], schedd_name: str, cmd_args: List[str] = []
 ) -> Union[Any, bool]:
     """Actually submit the job, using condor python bindings"""
 
@@ -139,13 +139,15 @@ def submit(
         print(f"NOT submitting file:\n{f}\n")
         return False
     if f:
-        print(f"submitting: {f}")
+        if vargs["debug"] > 0:
+            print(f"submitting: {f}")
         schedd_args = schedd_args + f" {f}"
         fl = glob.glob(f)
         if fl:
             f = fl[0]
 
-    print(f"cmd_args: {cmd_args}")
+    if vargs["debug"] > 1:
+        print(f"cmd_args: {cmd_args}")
 
     # commenting this out for now since the 'else' is not implemented
     #    if True:
@@ -155,7 +157,8 @@ def submit(
     cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
     cmd = f"_condor_CREDD_HOST={schedd_name} {cmd}"
     packages.orig_env()
-    print(f"Running: {cmd}")
+    if vargs["debug"] > 0:
+        print(f"Running: {cmd}")
 
     try:
         output = subprocess.run(
@@ -164,7 +167,9 @@ def submit(
         sys.stdout.write(output.stdout)
 
         if output.returncode < 0:
-            print("Child was terminated by signal", -output.returncode)
+            sys.stderr.write(
+                f"Error: Child was terminated by signal {-output.returncode}"
+            )
             return None
 
         m = re.search(r"\d+ job\(s\) submitted to cluster (\d+).", output.stdout)
@@ -193,7 +198,7 @@ def submit(
 
 # pylint: disable-next=dangerous-default-value
 def submit_dag(
-    f: str, vargs: Dict[str, str], schedd_name: str, cmd_args: List[str] = []
+    f: str, vargs: Dict[str, Any], schedd_name: str, cmd_args: List[str] = []
 ) -> Union[Any, bool]:
     """
     Actually submit the dag
@@ -213,12 +218,15 @@ def submit_dag(
         )
 
         cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
-        print(f"Running: {cmd}")
+        if vargs["debug"] > 0:
+            print(f"Running: {cmd}")
 
         try:
             output = subprocess.run(cmd, shell=True, check=False)
             if output.returncode < 0:
-                print("Child was terminated by signal", -output.returncode)
+                sys.stderr.write(
+                    f"Error: Child was terminated by signal {-output.returncode}"
+                )
             else:
                 if "outdir" in vargs:
                     print(

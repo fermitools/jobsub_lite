@@ -64,7 +64,7 @@ def set_extras_n_fix_units(
     #
     # outbase needs to be an area shared with schedd servers.
     #
-    if args["debug"]:
+    if args["debug"] > 1:
         sys.stderr.write(f"entering set_extras... args: {repr(args)}\n")
 
     args["outbase"] = os.environ.get(
@@ -87,7 +87,7 @@ def set_extras_n_fix_units(
     if not "uuid" in args:
         args["uuid"] = str(uuid.uuid4())
     args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
-    if args["debug"]:
+    if args["debug"] > 1:
         sys.stderr.write(
             f"checking args[executable]: {repr(args.get('executable', None))}\n"
         )
@@ -116,14 +116,14 @@ def set_extras_n_fix_units(
         os.makedirs(args["outdir"])
 
     # copy executable to submit dir so schedd can see it
-    if args["debug"]:
+    if args["debug"] > 1:
         sys.stderr.write(
             f"checking full_executable: {repr(args.get('full_executable', None))}\n"
         )
 
     if args.get("full_executable", False):
         dest = os.path.join(args["submitdir"], os.path.basename(args["executable"]))
-        if args["debug"]:
+        if args["debug"] > 1:
             sys.stderr.write(
                 f"copying  {repr(args.get('full_executable', None))} to {repr(dest)}\n"
             )
@@ -168,7 +168,7 @@ def set_extras_n_fix_units(
             e = f"{e}={v}"
         newe.append(e)
     args["environment"] = newe
-    if args["debug"]:
+    if args["debug"] > 1:
         sys.stderr.write(f"leaving set_extras... args: {repr(args)}\n")
     args["jobsub_command"] = " ".join(sys.argv)
 

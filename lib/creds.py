@@ -15,20 +15,20 @@
 # limitations under the License.
 """ credential related routines """
 import os
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 import fake_ifdh
 
 # pylint: disable-next=dangerous-default-value
-def get_creds(args: Dict[str, str] = {}) -> Tuple[str, str]:
+def get_creds(args: Dict[str, Any] = {}) -> Tuple[str, str]:
     """get credentials -- Note this does not currently push to
     myproxy, nor does it yet deal with tokens, but those should
     be done here as needed.
     """
 
     role = fake_ifdh.getRole(args.get("role", None))
-    p = fake_ifdh.getProxy(role)
-    t = fake_ifdh.getToken(role)
+    p = fake_ifdh.getProxy(role, args.get("debug", 0))
+    t = fake_ifdh.getToken(role, args.get("debug", 0))
 
     p = p.strip()
     t = t.strip()
