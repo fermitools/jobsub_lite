@@ -23,6 +23,7 @@ import jinja2 as jinja  # type: ignore
 
 import creds
 from get_parser import get_parser
+from tarfiles import do_tarballs
 from utils import set_extras_n_fix_units
 
 
@@ -108,6 +109,8 @@ def parse_dagnabbit(
                     sys.stderr.flush()
                     raise
                 print(f"vars(res): {repr(vars(res))}")
+                # handle -f drobpox: etc. in dag stages
+                do_tarballs(res)
                 thesevalues = values.copy()
                 thesevalues["N"] = 1
                 thesevalues["dag"] = None
