@@ -98,11 +98,12 @@ def set_extras_n_fix_units(
     if args["executable"]:
         args["full_executable"] = args["executable"]
         args["full_executable"] = args["full_executable"].replace("file://", "")
+        if args["full_executable"][0] != "/":
+            args["full_executable"] = os.path.join(os.getcwd(), args["full_executable"])
     else:
-        sys.stderr.write("Ouch! no executable?\n")
+        if not args["dag"]:
+            sys.stderr.write("Warning: No executable given to job launch\n")
         args["full_executable"] = "/bin/false"
-    if args["full_executable"][0] != "/":
-        args["full_executable"] = os.path.join(os.getcwd(), args["full_executable"])
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 

@@ -45,14 +45,13 @@ except ValueError:
     raise
 
 
-def tar_up(directory: str, excludes: str, tarfile: str = "") -> str:
+def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     """build path/to/directory.tar from path/to/directory"""
-    if not tarfile:
-        tarfile = f"{directory}.tar.gz"
+    tarfile = f"{directory}.tar.gz"
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
     excludes = f"--exclude-from {excludes}"
-    os.system(f"tar czvf {tarfile} {excludes} --directory {directory} .")
+    os.system(f"tar czvf {tarfile} {excludes} --directory {directory} {file}")
     return tarfile
 
 
@@ -98,7 +97,9 @@ def do_tarballs(args: argparse.Namespace) -> None:
     path: Optional[str] = None
     for fn in args.input_file:
         if fn.startswith("dropbox:"):
-            tarfile = tar_up(fn[8:], "/dev/null")
+            tarfile = tar_up(
+                os.path.dirname(fn[8:]), "/dev/null", os.path.basename(fn[8:])
+            )
             clean_up.append(tarfile)
             path = tarfile_in_dropbox(args, tarfile)
             if path:
