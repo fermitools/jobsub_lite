@@ -114,7 +114,16 @@ def parse_dagnabbit(
                 thesevalues = values.copy()
                 thesevalues["N"] = 1
                 thesevalues["dag"] = None
-                thesevalues.update(vars(res))
+
+                # we get a bunch of defaults from the command line parser that
+                # we don't want to override from the initial command line
+                update_with: Dict[str, Any] = vars(res)
+                kl = list(update_with.keys())
+                for k in kl:
+                    if update_with[k] is parser.get_default(k):
+                        del update_with[k]
+
+                thesevalues.update(update_with)
                 set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
                 thesevalues["script_name"] = f"{name}.sh"
                 with open(

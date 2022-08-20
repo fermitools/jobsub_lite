@@ -187,6 +187,9 @@ def fix_unit(
     unit conversions using appropriate conversion table
     """
     # print(f"fix_unit: {name}, {args[name]}, {repr(table)},{s_offset},{repr(s_list)},{c_offset}")
+    if isinstance(args[name], float):
+        # already converted...
+        return
     if args[name] and args[name][s_offset].lower() in s_list:
         cf = table[args[name][c_offset].lower()]
         args[name] = float(args[name][:c_offset]) * cf
