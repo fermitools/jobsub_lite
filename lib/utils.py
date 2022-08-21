@@ -84,9 +84,11 @@ def set_extras_n_fix_units(
     args["kerberos_principal"] = get_principal()
     args["usage_model"] = "ONSITE"
     args["uid"] = str(os.getuid())
+
     if not "uuid" in args:
         args["uuid"] = str(uuid.uuid4())
-    args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
+    if not "date" in args:
+        args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
     if args["debug"]:
         sys.stderr.write(
             f"checking args[executable]: {repr(args.get('executable', None))}\n"
@@ -107,11 +109,12 @@ def set_extras_n_fix_units(
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
-    args["outdir"] = (
-        f"{args['outbase']}/{args['group']}/"
-        f"{args['user']}/{args['date']}.{args['uuid']}"
-    )
-    args["submitdir"] = args["outdir"]
+    if not "outdir" in args:
+        args["outdir"] = (
+            f"{args['outbase']}/{args['group']}/"
+            f"{args['user']}/{args['date']}.{args['uuid']}"
+        )
+        args["submitdir"] = args["outdir"]
 
     if not os.path.exists(args["outdir"]):
         os.makedirs(args["outdir"])
