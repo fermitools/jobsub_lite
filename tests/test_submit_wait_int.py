@@ -157,7 +157,6 @@ def dagnabbit_launch(extra, which=""):
           -e SAM_EXPERIMENT {extra} \
           --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE \
           --dag dagTest{which} \
-          file:///dev/null
         """
     )
     os.chdir(os.path.dirname(__file__))

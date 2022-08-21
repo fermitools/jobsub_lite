@@ -115,8 +115,10 @@ def parse_dagnabbit(
                 thesevalues["N"] = 1
                 thesevalues["dag"] = None
                 # don't take executable from command line, only from DAG file
-                del thesevalues["full_executable"]
-                del thesevalues["executable"]
+                if "full_executable" in thesevalues:
+                    del thesevalues["full_executable"]
+                if "executable" in thesevalues:
+                    del thesevalues["executable"]
 
                 # we get a bunch of defaults from the command line parser that
                 # we don't want to override from the initial command line

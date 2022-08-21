@@ -105,7 +105,6 @@ def set_extras_n_fix_units(
     else:
         if not args["dag"]:
             sys.stderr.write("Warning: No executable given to job launch\n")
-        args["full_executable"] = "/bin/false"
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
