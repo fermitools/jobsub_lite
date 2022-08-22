@@ -97,17 +97,28 @@ def do_tarballs(args: argparse.Namespace) -> None:
     path: Optional[str] = None
     for fn in args.input_file:
         if fn.startswith("dropbox:"):
-            tarfile = tar_up(
-                os.path.dirname(fn[8:]), "/dev/null", os.path.basename(fn[8:])
-            )
-            clean_up.append(tarfile)
-            path = tarfile_in_dropbox(args, tarfile)
-            if path:
-                res.append(os.path.join(path, os.path.basename(fn)))
+            pfn = fn.replace("dropbox:", "")
+            if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
+                tarfile = tar_up(
+                    os.path.dirname(pfn), "/dev/null", os.path.basename(pfn)
+                )
+                clean_up.append(tarfile)
+                path = tarfile_in_dropbox(args, tarfile)
+                if path:
+                    res.append(os.path.join(path, os.path.basename(fn)))
+                else:
+                    res.append(pfn)
+
+            elif args.use_dropbox == "pnfs":
+                location = dcache_persistent_path(args.group, pfn)
+                fake_ifdh.cp(pfn, location)
+                res.append(location)
             else:
-                res.append(fn)
+
+                res.append(pfn)
         else:
             res.append(fn)
+
     args.input_file = res
 
     res = []
@@ -124,7 +135,7 @@ def do_tarballs(args: argparse.Namespace) -> None:
             if path:
                 res.append(path)
             else:
-                res.append(tfn[8:])
+                res.append(tfn.replace("dropbox:", ""))
 
         res.append(tfn)
     args.tar_file_name = res
