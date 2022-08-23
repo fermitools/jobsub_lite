@@ -191,7 +191,7 @@ export PATH="${PATH}:."
 
 # -f files for input
 {%for fname in input_file%}
-${JSB_TMP}/ifdh.sh cp -D {{fname}} .
+${JSB_TMP}/ifdh.sh cp -D {{fname}} ${CONDOR_DIR_INPUT}
 {%endfor%}
 
 # --tar_file_name for input

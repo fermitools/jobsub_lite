@@ -41,7 +41,7 @@ notify_user = {{email_to}}
 +JobsubJobId="$(CLUSTER).$(PROCESS)@{{schedd}}"
 +Drain = False
 
-{% if site is defined and site != 'LOCAL' %}
+{% if site is defined and site and site != 'LOCAL' %}
 +DESIRED_SITES = "{{site}}"
 {% endif %}
 {%if blacklist is defined and blacklist  %}

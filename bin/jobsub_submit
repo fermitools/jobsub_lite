@@ -200,7 +200,7 @@ def main():
         d2 = os.path.join(PREFIX, "templates", "dag")
         parse_dagnabbit(d1, varg, submitdir, schedd_name)
         varg["N"] = 1
-        render_files(d2, varg, submitdir, dlist=[d1, d2, submitdir])
+        render_files(d2, varg, submitdir, dlist=[d2, submitdir])
         if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
