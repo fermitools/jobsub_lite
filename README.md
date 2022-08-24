@@ -1,3 +1,5 @@
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/shreyb/jobsub_lite/master.svg)](https://results.pre-commit.ci/latest/github/shreyb/jobsub_lite/master)
+
 #  `jobsub_lite` Overview
 
 jobsub_lite is a wrapper for Condor job submission, intended
@@ -22,7 +24,7 @@ There is also a simplified dagnabbit parser (again for past jobsub DAG tools com
 
 ## Credentials
 
-This version of jobsub is expected to deal with SciTokens credentials; and will use the new ifdhc getToken call to fetch them, which in turn will call the htgettoken utility.  Current thinking is that production accounts will have special production tokens pushed to them, and the utility will not have to get those tokens.
+This version of jobsub is expected to deal with SciTokens credentials; and will use the new ifdhc getToken call to fetch them, which in turn will call the htgettoken utility. Production accounts will have special production tokens pushed to them via the Managed Tokens Service, and this utility will not have to get those tokens.
 
 ## Command line parsing
 
