@@ -48,7 +48,10 @@ def get_parser() -> argparse.ArgumentParser:
     """build the argument parser and return it"""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-c", "--append_condor_requirements", help="append condor requirements"
+        "-c",
+        "--append-condor-requirements",
+        "--append_condor_requirements",
+        help="append condor requirements",
     )
     parser.add_argument(
         "--blacklist", help="enusure that jobs do not land at these sites"
@@ -63,6 +66,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument("--cpu", help="request worker nodes have at least NUMBER cpus")
     parser.add_argument("--dag", help="submit and run a dagNabbit input file")
     parser.add_argument(
+        "--dataset-definition",
         "--dataset_definition",
         help="SAM dataset definition used in a Directed Acyclic Graph (DAG)",
     )
@@ -154,7 +158,7 @@ def get_parser() -> argparse.ArgumentParser:
         default=os.environ.get("GROUP", None),
     )
     parser.add_argument(
-        "-L", "--log_file", help="Log file to hold log output from job."
+        "-L", "--log-file", "--log_file", help="Log file to hold log output from job."
     )
     parser.add_argument(
         "-l",
@@ -165,6 +169,7 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-Q",
+        "--mail-never",
         "--mail_never",
         dest="mail",
         action="store_const",
@@ -174,6 +179,7 @@ def get_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--mail-on-error",
         "--mail_on_error",
         dest="mail",
         action="store_const",
@@ -181,6 +187,7 @@ def get_parser() -> argparse.ArgumentParser:
         help="never send mail about job results (default)",
     )
     parser.add_argument(
+        "--mail-always",
         "--mail_always",
         dest="mail",
         action="store_const",
@@ -223,6 +230,7 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-n",
+        "--no-submit",
         "--no_submit",
         default=False,
         action="store_true",
@@ -236,6 +244,7 @@ def get_parser() -> argparse.ArgumentParser:
         " available OS",
     )
     parser.add_argument(
+        "--overwrite-condor-requirements",
         "--overwrite_condor_requirements",
         help="overwrite default condor requirements with supplied requirements",
     )
@@ -261,6 +270,7 @@ def get_parser() -> argparse.ArgumentParser:
         "priorities",
     )
     parser.add_argument(
+        "--tar-file-name",
         "--tar_file_name",
         default=[],
         action="append",
