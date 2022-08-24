@@ -39,9 +39,8 @@ def getTmp() -> str:
 
 def getExp() -> Union[str, None]:
     """return current experiment name"""
-    for ev in ["GROUP", "EXPERIMENT", "SAM_EXPERIMENT"]:
-        if os.environ.get(ev, None):
-            return os.environ.get(ev)
+    if os.environ.get("GROUP", None):
+        return os.environ.get("GROUP")
     # otherwise guess primary group...
     exp = None
     with os.popen("id -gn", "r") as f:

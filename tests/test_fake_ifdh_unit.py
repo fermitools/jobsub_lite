@@ -36,13 +36,6 @@ def test_getExp_GROUP():
     assert res == "samdev"
 
 
-def test_getExp_GROUP():
-    os.environ["GROUP"] = ""
-    os.environ["EXPERIMENT"] = "samdev"
-    res = fake_ifdh.getExp()
-    assert res == "samdev"
-
-
 def test_getRole():
     res = fake_ifdh.getRole()
     assert res == fake_ifdh.DEFAULT_ROLE
