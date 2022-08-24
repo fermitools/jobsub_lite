@@ -20,7 +20,7 @@ The basic design of jobsub_lite is straightforward. It will:
         - condor dagman .dag files (in some cases)
 * use the Condor python bindings and command line tools to submit the above
 
-There is also a simplified dagnabbit parser (again for past jobsub DAG tools compatbilit) that reuses the same command line parser to generate .cmd and .sh files for each stage in the DAG.
+There is also a simplified dagnabbit parser (again for past jobsub DAG tools compatbility) that reuses the same command line parser to generate .cmd and .sh files for each stage in the DAG.
 
 ## Credentials
 
