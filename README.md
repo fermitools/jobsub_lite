@@ -28,7 +28,7 @@ This version of jobsub is expected to deal with SciTokens credentials; and will 
 
 ## Command line parsing
 
-This is done with the usual Python argument parser. Options supported are those from Dennis Box's summary of jobsub options actually used in the last 6 months. [list](https://cdcvs.fnal.gov/redmine/issues/23558) (Sorry, Fermilab folks only)
+This is done with the usual Python argument parser. Options supported are those from Dennis Box's summary of jobsub options actually used in the last 6 months. [list](https://cdcvs.fnal.gov/redmine/issues/23558) (Sorry - Fermilab folks only)
 
 ##  Tarball uploads
 
