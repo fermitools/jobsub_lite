@@ -24,7 +24,7 @@ import re
 import sys
 import time
 import traceback as tb
-from typing import Union, Dict, Tuple, Callable, List, Any, Iterator
+from typing import Union, Dict, Tuple, Callable, List, Any, Iterator, Optional
 from urllib.parse import quote as _quote
 
 import requests  # type: ignore
@@ -45,13 +45,13 @@ except ValueError:
     raise
 
 
-def tar_up(directory: str, excludes: str) -> str:
+def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     """build path/to/directory.tar from path/to/directory"""
     tarfile = f"{directory}.tar.gz"
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
     excludes = f"--exclude-from {excludes}"
-    os.system(f"tar czvf {tarfile} {excludes} --directory {directory} .")
+    os.system(f"tar czvf {tarfile} {excludes} --directory {directory} {file}")
     return tarfile
 
 
@@ -92,8 +92,36 @@ def do_tarballs(args: argparse.Namespace) -> None:
     we convert the argument to the next type as we go...
     """
     # pylint: disable=too-many-nested-blocks,too-many-branches
-    res = []
     clean_up: List[str] = []
+    res: List[str] = []
+    path: Optional[str] = None
+    for fn in args.input_file:
+        if fn.startswith("dropbox:"):
+            pfn = fn.replace("dropbox:", "")
+            if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
+                tarfile = tar_up(
+                    os.path.dirname(pfn), "/dev/null", os.path.basename(pfn)
+                )
+                clean_up.append(tarfile)
+                path = tarfile_in_dropbox(args, tarfile)
+                if path:
+                    res.append(os.path.join(path, os.path.basename(fn)))
+                else:
+                    res.append(pfn)
+
+            elif args.use_dropbox == "pnfs":
+                location = dcache_persistent_path(args.group, pfn)
+                fake_ifdh.cp(pfn, location)
+                res.append(location)
+            else:
+
+                res.append(pfn)
+        else:
+            res.append(fn)
+
+    args.input_file = res
+
+    res = []
     for tfn in args.tar_file_name:
         if tfn.startswith("tardir:"):
             # tar it up, pretend they gave us dropbox:
@@ -103,44 +131,15 @@ def do_tarballs(args: argparse.Namespace) -> None:
 
         if tfn.startswith("dropbox:"):
             # move it to dropbox area, pretend they gave us plain path
-
-            if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
-                digest, tf = slurp_file(tfn[8:])
-                proxy, token = get_creds(vars(args))
-
-                if not args.group:
-                    raise ValueError("No --group specified!")
-
-                # cid looks something like dune/bf6a15b4238b72f82...(long hash)
-                cid = f"{args.group}/{digest}"
-                if args.verbose:
-                    print(f"Using RCDS to publish tarball\ncid: {cid}")
-
-                publisher = TarfilePublisherHandler(cid, proxy, token)
-                location = publisher.cid_exists()
-                if location is None:
-                    publisher.publish(tf)
-                    # pylint: disable-next=unused-variable
-                    for i in range(NUM_RETRIES):
-                        time.sleep(RETRY_INTERVAL_SEC)
-                        location = publisher.cid_exists()
-                        if location is not None:
-                            break
-                else:
-                    # tag it so it stays around
-                    publisher.update_cid()
-
-            elif args.use_dropbox == "pnfs":
-                location = dcache_persistent_path(args.group, tfn[8:])
-                fake_ifdh.cp(tfn[8:], location)
+            path = tarfile_in_dropbox(args, tfn[8:])
+            if path:
+                res.append(path)
             else:
-                raise (
-                    NotImplementedError(
-                        f"unknown tar distribution method: {args.use_dropbox}"
-                    )
-                )
-            tfn = location
+                res.append(tfn.replace("dropbox:", ""))
+
         res.append(tfn)
+    args.tar_file_name = res
+
     # clean up tarfiles we made...
     for tarfile in clean_up:
         try:
@@ -148,7 +147,46 @@ def do_tarballs(args: argparse.Namespace) -> None:
         except:  # pylint: disable=bare-except
             print(f"Notice: unable to remove generated tarfile {tarfile}")
 
-    args.tar_file_name = res
+
+def tarfile_in_dropbox(args: argparse.Namespace, tfn: str) -> Optional[str]:
+    """
+    upload a tarfile to the dropbox, return its path there
+    """
+    location: Optional[str] = ""
+    if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
+        digest, tf = slurp_file(tfn)
+        proxy, token = get_creds(vars(args))
+
+        if not args.group:
+            raise ValueError("No --group specified!")
+
+        # cid looks something like dune/bf6a15b4238b72f82...(long hash)
+        cid = f"{args.group}/{digest}"
+        if args.verbose:
+            print(f"Using RCDS to publish tarball\ncid: {cid}")
+
+        publisher = TarfilePublisherHandler(cid, proxy, token)
+        location = publisher.cid_exists()
+        if location is None:
+            publisher.publish(tf)
+            # pylint: disable-next=unused-variable
+            for i in range(NUM_RETRIES):
+                time.sleep(RETRY_INTERVAL_SEC)
+                location = publisher.cid_exists()
+                if location is not None:
+                    break
+        else:
+            # tag it so it stays around
+            publisher.update_cid()
+
+    elif args.use_dropbox == "pnfs":
+        location = dcache_persistent_path(args.group, tfn[8:])
+        fake_ifdh.cp(tfn[8:], location)
+    else:
+        raise (
+            NotImplementedError(f"unknown tar distribution method: {args.use_dropbox}")
+        )
+    return location
 
 
 class TarfilePublisherHandler:

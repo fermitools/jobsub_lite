@@ -164,6 +164,8 @@ logit "before result of ls -la $timing is $rslt"
 rslt=`ls -la $timing`
 logit "after result of ls -la $timing is $rslt"
 logit
+logit "recursive listing:"
+ls -R
 #log_timing_data
 capture_condor_logs
 cleanup_files

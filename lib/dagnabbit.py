@@ -23,6 +23,7 @@ import jinja2 as jinja  # type: ignore
 
 import creds
 from get_parser import get_parser
+from tarfiles import do_tarballs
 from utils import set_extras_n_fix_units
 
 
@@ -47,7 +48,7 @@ def parse_dagnabbit(
     with open(values["dag"], "r", encoding="UTF-8") as df, open(
         os.path.join(dest, "dag.dag"), "w", encoding="UTF-8"
     ) as of:
-        of.write(f"DOT {dest}/dag.dot UPDATE\n")
+        of.write(f"DOT dag.dot UPDATE\n")
         in_parallel = False
         in_serial = False
         last_serial = None
@@ -108,10 +109,26 @@ def parse_dagnabbit(
                     sys.stderr.flush()
                     raise
                 print(f"vars(res): {repr(vars(res))}")
+                # handle -f drobpox: etc. in dag stages
+                do_tarballs(res)
                 thesevalues = values.copy()
                 thesevalues["N"] = 1
                 thesevalues["dag"] = None
-                thesevalues.update(vars(res))
+                # don't take executable from command line, only from DAG file
+                if "full_executable" in thesevalues:
+                    del thesevalues["full_executable"]
+                if "executable" in thesevalues:
+                    del thesevalues["executable"]
+
+                # we get a bunch of defaults from the command line parser that
+                # we don't want to override from the initial command line
+                update_with: Dict[str, Any] = vars(res)
+                kl = list(update_with.keys())
+                for k in kl:
+                    if update_with[k] is parser.get_default(k):
+                        del update_with[k]
+
+                thesevalues.update(update_with)
                 set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
                 thesevalues["script_name"] = f"{name}.sh"
                 with open(
@@ -122,7 +139,7 @@ def parse_dagnabbit(
                     os.path.join(dest, f"{name}.sh"), "w", encoding="UTF-8"
                 ) as csf:
                     csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
-                of.write(f"JOB {name} {dest}/{name}.cmd\n")
+                of.write(f"JOB {name} {name}.cmd\n")
                 if in_serial:
                     if last_serial:
                         of.write(f"PARENT {last_serial} CHILD {name}\n")

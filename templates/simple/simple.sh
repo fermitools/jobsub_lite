@@ -7,6 +7,15 @@
 
 umask 002
 
+#
+# clear out variables that sometimes bleed into containers
+# causing problems.  See for example INC000001136681...
+#
+for env_var in CPATH LIBRARY_PATH
+do
+   eval unset $env_var
+done
+
 {% if role is defined and role and role != 'Analysis' %}
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role}}.use
 {% else %}
@@ -191,7 +200,7 @@ export PATH="${PATH}:."
 
 # -f files for input
 {%for fname in input_file%}
-${JSB_TMP}/ifdh.sh cp -D {{fname}} .
+${JSB_TMP}/ifdh.sh cp -D {{fname}} ${CONDOR_DIR_INPUT}
 {%endfor%}
 
 # --tar_file_name for input

@@ -84,9 +84,11 @@ def set_extras_n_fix_units(
     args["kerberos_principal"] = get_principal()
     args["usage_model"] = "ONSITE"
     args["uid"] = str(os.getuid())
+
     if not "uuid" in args:
         args["uuid"] = str(uuid.uuid4())
-    args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
+    if not "date" in args:
+        args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
     if args["debug"] > 1:
         sys.stderr.write(
             f"checking args[executable]: {repr(args.get('executable', None))}\n"
@@ -98,19 +100,20 @@ def set_extras_n_fix_units(
     if args["executable"]:
         args["full_executable"] = args["executable"]
         args["full_executable"] = args["full_executable"].replace("file://", "")
+        if args["full_executable"][0] != "/":
+            args["full_executable"] = os.path.join(os.getcwd(), args["full_executable"])
     else:
-        sys.stderr.write("Ouch! no executable?\n")
-        args["full_executable"] = "/bin/false"
-    if args["full_executable"][0] != "/":
-        args["full_executable"] = os.path.join(os.getcwd(), args["full_executable"])
+        if not args["dag"]:
+            sys.stderr.write("Warning: No executable given to job launch\n")
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
-    args["outdir"] = (
-        f"{args['outbase']}/{args['group']}/"
-        f"{args['user']}/{args['date']}.{args['uuid']}"
-    )
-    args["submitdir"] = args["outdir"]
+    if not "outdir" in args:
+        args["outdir"] = (
+            f"{args['outbase']}/{args['group']}/"
+            f"{args['user']}/{args['date']}.{args['uuid']}"
+        )
+        args["submitdir"] = args["outdir"]
 
     if not os.path.exists(args["outdir"]):
         os.makedirs(args["outdir"])
@@ -186,6 +189,9 @@ def fix_unit(
     unit conversions using appropriate conversion table
     """
     # print(f"fix_unit: {name}, {args[name]}, {repr(table)},{s_offset},{repr(s_list)},{c_offset}")
+    if isinstance(args[name], float):
+        # already converted...
+        return
     if args[name] and args[name][s_offset].lower() in s_list:
         cf = table[args[name][c_offset].lower()]
         args[name] = float(args[name][:c_offset]) * cf

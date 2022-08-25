@@ -131,8 +131,7 @@ def run_launch(cmd):
 def lookaround_launch(extra):
     """Simple submit of our lookaround script"""
     assert run_launch(
-        "jobsub_submit -e SAM_EXPERIMENT %s --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/job_scripts/lookaround.sh"
-        % extra
+        f"jobsub_submit -e SAM_EXPERIMENT {extra} --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/job_scripts/lookaround.sh"
     )
 
 
@@ -146,6 +145,29 @@ def test_launch_lookaround_dune(dune):
 
 def test_launch_lookaround_dune_gp(dune_gp):
     lookaround_launch("")
+
+
+def dagnabbit_launch(extra, which=""):
+    os.environ["SUBMIT_FLAGS"] = ""
+    os.chdir(os.path.join(os.path.dirname(__file__), "dagnabbit"))
+    assert run_launch(
+        f"""
+        jobsub_submit \
+          --debug=2 \
+          -e SAM_EXPERIMENT {extra} \
+          --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE \
+          --dag dagTest{which} \
+        """
+    )
+    os.chdir(os.path.dirname(__file__))
+
+
+def test_launch_dagnabbit_simple(samdev):
+    dagnabbit_launch("--devserver", "")
+
+
+def test_launch_dagnabbit_dropbox(samdev):
+    dagnabbit_launch("--devserver", "Dropbox")
 
 
 def fife_launch(extra):
