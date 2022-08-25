@@ -70,7 +70,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--dataset_definition",
         help="SAM dataset definition used in a Directed Acyclic Graph (DAG)",
     )
-    parser.add_argument("--debug", help="Turn on debugging")
+    parser.add_argument("--debug", type=int, default=0, help="Turn on debugging")
     parser.add_argument(
         "--disk",
         help="Request worker nodes have at least NUMBER[UNITS] of disk space."

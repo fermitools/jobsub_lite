@@ -67,7 +67,8 @@ def render_files(
     """use jinja to render the templates from srcdir into the dest directory
     using values dict for substitutions
     """
-    print(f"trying to render files from {srcdir}\n")
+    if values["debug"] > 0:
+        print(f"trying to render files from {srcdir}\n")
 
     if dlist is None:
         dlist = [srcdir]
@@ -83,7 +84,8 @@ def render_files(
     values["cwd"] = dest
 
     for f in flist:
-        print(f"rendering: {f}")
+        if values["debug"] > 0:
+            print(f"rendering: {f}")
         bf = os.path.basename(f)
         ff = os.path.join(dest, bf)
         try:

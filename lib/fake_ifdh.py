@@ -78,7 +78,7 @@ def checkToken(tokenfile: str) -> bool:
         raise
 
 
-def getToken(role: str = DEFAULT_ROLE) -> str:
+def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
     """get path to token file"""
     pid = os.getuid()
     tmp = getTmp()
@@ -99,10 +99,18 @@ def getToken(role: str = DEFAULT_ROLE) -> str:
 
     if not checkToken(tokenfile):
         cmd = f"htgettoken -a {VAULT_HOST} -i {issuer}"
+
         if role != DEFAULT_ROLE:
             cmd = f"{cmd} -r {role.lower()}"  # Token-world wants all-lower
-        # send htgettoken output to stderr because invokers read stdout
-        res = os.system(f"{cmd} >&2")
+
+        if debug > 0:
+            # send htgettoken output to stderr because invokers read stdout
+            sys.stderr.write(f"Running: {cmd}")
+            cmd += " >&2"
+        else:
+            cmd += " >/dev/null 2>&1"
+
+        res = os.system(cmd)
         if res != 0:
             raise PermissionError(f"Failed attempting '{cmd}'")
         if checkToken(tokenfile):
@@ -111,7 +119,7 @@ def getToken(role: str = DEFAULT_ROLE) -> str:
     return tokenfile
 
 
-def getProxy(role: str = DEFAULT_ROLE) -> str:
+def getProxy(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
     """get path to proxy certificate file"""
     pid = os.getuid()
     tmp = getTmp()
@@ -128,9 +136,16 @@ def getProxy(role: str = DEFAULT_ROLE) -> str:
         igroup = f"fermilab/{exp}"
     vomsfile = f"{tmp}/x509up_{exp}_{role}_{pid}"
     chk_cmd = f"voms-proxy-info -exists -valid 0:10 -file {vomsfile}"
+
+    if debug > 0:
+        # send output to stderr because invokers read stdout
+        sys.stderr.write(f"Running: {chk_cmd}")
+        chk_cmd += " >&2"
+    else:
+        chk_cmd += " >/dev/null 2>&1"
+
     if 0 != os.system(chk_cmd):
         cmd = f"cigetcert -i 'Fermi National Accelerator Laboratory' -n -o {certfile}"
-        # send output to stderr because invokers read stdout
         completed_cmd = subprocess.run(
             shlex.split(cmd),
             stdout=subprocess.PIPE,
@@ -149,8 +164,15 @@ def getProxy(role: str = DEFAULT_ROLE) -> str:
             f" -voms {issuer}:/{igroup}/Role={role}"
         )
 
-        # send output to stderr because invokers read stdout
-        os.system(f"{cmd} >&2")
+        if debug > 0:
+            # send output to stderr because invokers read stdout
+            sys.stderr.write("Running: {cmd}")
+            cmd = f"{cmd} >&2"
+        else:
+            cmd = f"{cmd} > /dev/null 2>&1"
+
+        os.system(cmd)
+
         if 0 == os.system(chk_cmd):
             return vomsfile
         raise PermissionError(f"Failed attempting '{cmd}'")
