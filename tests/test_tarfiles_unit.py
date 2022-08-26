@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import pytest
 
 #
 # we assume everwhere our current directory is in the package

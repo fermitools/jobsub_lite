@@ -131,7 +131,7 @@ def run_launch(cmd):
 def lookaround_launch(extra):
     """Simple submit of our lookaround script"""
     assert run_launch(
-        f"jobsub_submit -e SAM_EXPERIMENT {extra} --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/job_scripts/lookaround.sh"
+        f"jobsub_submit --debug=1 -e SAM_EXPERIMENT {extra} --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/job_scripts/lookaround.sh"
     )
 
 
@@ -179,6 +179,7 @@ def fife_launch(extra):
     assert run_launch(
         """
         jobsub_submit \
+          --debug=1 \
           -e EXPERIMENT \
           -e IFDH_DEBUG \
           -e IFDH_FORCE \
