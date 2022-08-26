@@ -70,11 +70,13 @@ def main() -> None:
     execargs = []
     schedd = None
     for i in passthru:
-        m = re.match(r"([\d.]+)@([\w.]+)", i)
+        m = re.match(r"([\d.]*)@([\w.]+)", i)
         if m:
             # looks like a jobsub id 12.34@schedd.name
             schedd = m.group(2)
             i = m.group(1)
+            if not i:
+                continue
         execargs.append(i)
 
     if schedd:
