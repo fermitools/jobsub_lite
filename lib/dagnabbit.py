@@ -140,7 +140,7 @@ def parse_dagnabbit(
                 ) as csf:
                     csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
                 of.write(f"JOB {name} {name}.cmd\n")
-                of.write(f'VARS {name} +JOBSUBJOBSECTION={count} nodename="$(JOB)"')
+                of.write(f'VARS {name} +JOBSUBJOBSECTION="{count}" nodename="$(JOB)"')
 
                 if in_serial:
                     if last_serial:

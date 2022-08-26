@@ -68,6 +68,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--dataset-definition",
         "--dataset_definition",
+        "--dataset",
         help="SAM dataset definition used in a Directed Acyclic Graph (DAG)",
     )
     parser.add_argument("--debug", type=int, default=0, help="Turn on debugging")
