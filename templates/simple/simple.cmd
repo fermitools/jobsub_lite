@@ -9,9 +9,7 @@ output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
 
-if defined JOBSUBJOBSECTION
- JOBSUBJOBSECTION=$(JOBSUBJOBSECTION)
-else
+if ! defined JOBSUBJOBSECTION
  JOBSUBJOBSECTION=$(Cluster)
 endif
 
