@@ -171,6 +171,7 @@ class TestGetParserUnit:
 
     # lib/get_parser.py routines...
 
+    @pytest.mark.unit
     def test_get_parser_small(self):
         """
         Try a few common arguments on a get_parser() generated parser
@@ -185,6 +186,7 @@ class TestGetParserUnit:
         assert "SAM_EXPERIMENT" in res.environment
         assert res.group == TestUnit.test_group
 
+    @pytest.mark.unit
     def test_check_all_test_args(self, find_all_arguments, all_test_args):
         # make sure we have a test argument for all the arguments in
         # the source, and that we find all the arguments in the source
@@ -202,6 +204,7 @@ class TestGetParserUnit:
                 arg = arg.lstrip("-")
                 assert arg in allargs
 
+    @pytest.mark.unit
     def test_get_parser_all(self, find_all_arguments, all_test_args):
         """
         Validate an all arguments list

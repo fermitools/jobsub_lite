@@ -40,6 +40,7 @@ class TestCredUnit:
 
     # lib/creds.py routines...
 
+    @pytest.mark.unit
     def test_get_creds_1(self):
         """get credentials, make sure the credentials files returned
         exist"""

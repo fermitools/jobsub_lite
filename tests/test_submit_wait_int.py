@@ -135,14 +135,17 @@ def lookaround_launch(extra):
     )
 
 
+@pytest.mark.integration
 def test_launch_lookaround_samdev(samdev):
     lookaround_launch("--devserver")
 
 
+@pytest.mark.integration
 def test_launch_lookaround_dune(dune):
     lookaround_launch("--devserver")
 
 
+@pytest.mark.integration
 def test_launch_lookaround_dune_gp(dune_gp):
     lookaround_launch("")
 
@@ -162,10 +165,12 @@ def dagnabbit_launch(extra, which=""):
     os.chdir(os.path.dirname(__file__))
 
 
+@pytest.mark.integration
 def test_launch_dagnabbit_simple(samdev):
     dagnabbit_launch("--devserver", "")
 
 
+@pytest.mark.integration
 def test_launch_dagnabbit_dropbox(samdev):
     dagnabbit_launch("--devserver", "Dropbox")
 
@@ -193,7 +198,7 @@ def fife_launch(extra):
           --disk=100MB  \
           --memory=500MB  \
           %(extra)s \
-          --dataset=gen_cfg  \
+          --dataset-definition=gen_cfg  \
           file://///grid/fermiapp/products/common/db/../prd/fife_utils/v3_3_2/NULL/libexec/fife_wrap \
             --find_setups \
             --setup-unquote 'hypotcode%%20v1_1' \
@@ -226,22 +231,27 @@ def fife_launch(extra):
     )
 
 
+@pytest.mark.integration
 def test_samdev_fife_launch(samdev):
     fife_launch("--devserver")
 
 
+@pytest.mark.integration
 def test_dune_fife_launch(dune):
     fife_launch("--devserver")
 
 
+@pytest.mark.integration
 def test_nova_fife_launch(nova):
     fife_launch("--devserver")
 
 
+@pytest.mark.integration
 def test_dune_gp_fife_launch(dune_gp):
     fife_launch("")
 
 
+@pytest.mark.integration
 def test_wait_for_jobs():
     """Not really a test, but we have to wait for jobs to complete..."""
     count = 1
@@ -278,6 +288,7 @@ def test_wait_for_jobs():
     assert True
 
 
+@pytest.mark.integration
 def test_fetch_output():
     for jid in joblist:
         if jid.find("dunesched") > 0:
@@ -291,6 +302,7 @@ def test_fetch_output():
         os.system("jobsub_transfer_data %s" % jid)
 
 
+@pytest.mark.integration
 def test_check_job_output():
     for outdir in outdirs:
         fl = glob.glob("%s/*.log" % outdir)

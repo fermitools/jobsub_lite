@@ -17,6 +17,7 @@ sys.path.append("../lib")
 import fake_ifdh
 
 
+@pytest.mark.unit
 def test_getTmp():
     if os.environ.get("TMPDIR", None):
         del os.environ["TMPDIR"]
@@ -24,23 +25,27 @@ def test_getTmp():
     assert res == "/tmp"
 
 
+@pytest.mark.unit
 def test_getTmp_override():
     os.environ["TMPDIR"] = "/var/tmp"
     res = fake_ifdh.getTmp()
     assert res == "/var/tmp"
 
 
+@pytest.mark.unit
 def test_getExp_GROUP():
     os.environ["GROUP"] = "samdev"
     res = fake_ifdh.getExp()
     assert res == "samdev"
 
 
+@pytest.mark.unit
 def test_getRole():
     res = fake_ifdh.getRole()
     assert res == fake_ifdh.DEFAULT_ROLE
 
 
+@pytest.mark.unit
 def test_getRole_override():
     override_role = "Hamburgler"
     res = fake_ifdh.getRole(override_role)
@@ -59,27 +64,32 @@ def fermilab_token(clear_token):
     return fake_ifdh.getToken("Analysis")
 
 
+@pytest.mark.unit
 def test_checkToken_fail():
     tokenfile = "/dev/null"
     with pytest.raises(ValueError):
         res = fake_ifdh.checkToken(tokenfile)
 
 
+@pytest.mark.unit
 def test_checkToken_success(fermilab_token):
     res = fake_ifdh.checkToken(fermilab_token)
     assert res
 
 
+@pytest.mark.unit
 def test_getToken_good(clear_token, fermilab_token):
     assert os.path.exists(fermilab_token)
 
 
+@pytest.mark.unit
 def test_getToken_fail(clear_token):
     with pytest.raises(PermissionError):
         os.environ["GROUP"] = "bozo"
         fake_ifdh.getToken("Analysis")
 
 
+@pytest.mark.unit
 def test_getProxy_good(clear_token):
 
     os.environ["GROUP"] = "fermilab"
@@ -87,6 +97,7 @@ def test_getProxy_good(clear_token):
     assert os.path.exists(proxy)
 
 
+@pytest.mark.unit
 def test_getProxy_fail(clear_token):
     try:
         os.environ["GROUP"] = "bozo"
@@ -97,6 +108,7 @@ def test_getProxy_fail(clear_token):
         assert False
 
 
+@pytest.mark.unit
 def test_cp():
     dest = __file__ + ".copy"
     fake_ifdh.cp(__file__, dest)

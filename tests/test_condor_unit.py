@@ -115,6 +115,7 @@ class TestCondorUnit:
 
     # lib/condor.py routines...
 
+    @pytest.mark.unit
     def test_get_schedd_1(self):
         """make sure we get our test schedd back with test_vargs"""
         schedd = condor.get_schedd(TestUnit.test_vargs)
@@ -122,18 +123,21 @@ class TestCondorUnit:
         print("schedd name: {0}".format(schedd["Name"]))
         assert schedd["Name"] == TestUnit.test_schedd
 
+    @pytest.mark.unit
     def test_load_submit_file_1(self, get_submit_file):
         """make sure load_submit_file result has bits of the submit file"""
         res = condor.load_submit_file(get_submit_file)
         assert str(res[0]).find("universe = vanilla") >= 0
         assert str(res[0]).find("executable = /bin/true") >= 0
 
+    @pytest.mark.unit
     def test_submit_1(self, get_submit_file, needs_credentials):
         """actually submit a job with condor_submit"""
         res = condor.submit(get_submit_file, TestUnit.test_vargs, TestUnit.test_schedd)
         print("got: ", res)
         assert res
 
+    @pytest.mark.unit
     def test_submit_dag_1(self, get_dag_file, needs_credentials):
         """actually submit a dag with condor_submit_dag"""
         # XXX fix me

@@ -26,6 +26,7 @@ class TestDagnabbitUnit:
     # lib/dagnabbit.py tests
     #
 
+    @pytest.mark.unit
     def test_parse_dagnabbit_dagTest(self):
         """test dagnabbit parser on old jobsub dagTest example"""
         self.do_one_dagnabbit(
