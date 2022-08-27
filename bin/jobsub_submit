@@ -209,8 +209,11 @@ def main():
         do_dataset_defaults(varg)
         d1 = os.path.join(PREFIX, "templates", "dataset_dag")
         d2 = f"{PREFIX}/templates/simple"
+        # so we render the simple area (d2) with -N 1 because
+        # we are making a loop of 1..N in th dataset_dag area
+        # otherwise we get N submissions of N jobs -> N^2 jobs...
         saveN = varg["N"]
-        varg["N"] = 1
+        varg["N"] = "1"
         render_files(d2, varg, submitdir, dlist=[d1, d2])
         varg["N"] = saveN
         render_files(d1, varg, submitdir, dlist=[d1, d2, submitdir])
