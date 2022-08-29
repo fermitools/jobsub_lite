@@ -9,9 +9,9 @@ output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
 
-if ! defined JOBSUBJOBSECTION
- JOBSUBJOBSECTION=$(Process)
-endif
+{%if not (( dag is defined and dag ) or (dataset_dag is defined and dataset_dag)) %}
+JOBSUBJOBSECTION=$(Process)
+{%endif%}
 
 environment        = CLUSTER=$(Cluster);PROCESS=$(Process);JOBSUBJOBSECTION=$(JOBSUBJOBSECTION);CONDOR_TMP={{outdir}};BEARER_TOKEN_FILE=.condor_creds/{{group}}.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
 rank               = Mips / 2 + Memory

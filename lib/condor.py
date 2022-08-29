@@ -153,7 +153,7 @@ def submit(
     #    if True:
 
     qargs = " ".join([f"'{x}'" for x in cmd_args])
-    cmd = f"/usr/bin/condor_submit -unused -pool {COLLECTOR_HOST} {schedd_args} {qargs}"
+    cmd = f"/usr/bin/condor_submit -pool {COLLECTOR_HOST} {schedd_args} {qargs}"
     cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
     cmd = f"_condor_CREDD_HOST={schedd_name} {cmd}"
     packages.orig_env()
