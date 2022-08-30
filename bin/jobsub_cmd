@@ -55,6 +55,7 @@ def main() -> None:
     parser.add_argument(
         "--role", help="VOMS Role for priorities and accounting", default="Analysis"
     )
+    parser.add_argument("-name", help="Set schedd name", default=None)
 
     arglist, passthru = parser.parse_known_args()
 
@@ -69,6 +70,10 @@ def main() -> None:
     #   keep the 234, and pass --name schedd as well
     execargs = []
     schedd = None
+
+    if arglist.name:
+        schedd = arglist.name
+
     for i in passthru:
         m = re.match(r"([\d.]*)@([\w.]+)", i)
         if m:
@@ -82,6 +87,7 @@ def main() -> None:
     if schedd:
         execargs.insert(0, schedd)
         execargs.insert(0, "-name")
+        os.environ["_condor_CREDD_HOST"] = schedd
 
     # also make sure we have suitable credentials...
     role = fake_ifdh.getRole(arglist.role)
