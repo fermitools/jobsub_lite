@@ -87,7 +87,8 @@ def main() -> None:
     if schedd:
         execargs.insert(0, schedd)
         execargs.insert(0, "-name")
-        os.environ["_condor_CREDD_HOST"] = schedd
+        if not os.getenv("_condor_CREDD_HOST", False):
+            os.environ["_condor_CREDD_HOST"] = schedd
 
     # also make sure we have suitable credentials...
     role = fake_ifdh.getRole(arglist.role)
