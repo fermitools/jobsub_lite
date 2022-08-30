@@ -196,7 +196,12 @@ def cp(src: str, dest: str) -> None:
 
 
 if __name__ == "__main__":
-    commands = {"getProxy": getProxy, "getToken": getToken, "cp": cp}
+    commands = {
+        "getProxy": getProxy,
+        "getToken": getToken,
+        "cp": cp,
+        "getRole": getRole,
+    }
     parser = argparse.ArgumentParser(description="ifdh subset replacement")
     parser.add_argument(
         "--experiment", help="experiment name", default=os.environ.get("GROUP", None)
