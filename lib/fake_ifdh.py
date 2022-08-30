@@ -19,14 +19,15 @@
 # limitations under the License.
 """ifdh replacemnents to remove dependency"""
 
-import sys
-
+import json
 import os
+import re
 import shlex
 import subprocess
+import sys
 import time
 import argparse
-from typing import Union, Optional
+from typing import Union, Optional, List
 
 VAULT_HOST = "fermicloud543.fnal.gov"
 DEFAULT_ROLE = "Analysis"
@@ -48,12 +49,24 @@ def getExp() -> Union[str, None]:
     return exp
 
 
-def getRole(role_override: Optional[str] = None) -> str:
+def getRole(role_override: Optional[str] = None, debug: int = 0) -> str:
     """get current role"""
+
     if role_override:
         return role_override
-    if os.environ["USER"][-3:] == "pro":
-        return "Production"
+
+    # if there's a role in the wlcg.groups of the token, pick that
+    if os.environ.get("BEARER_TOKEN_FILE", False):
+        with os.popen("decode_token.sh $BEARER_TOKEN_FILE", "r") as f:
+            token_s = f.read()
+            token = json.loads(token_s)
+            groups: List[str] = token.get("wlcg.groups", [])
+            for g in groups:
+                m = re.match(r"/.*/(.*)", g)
+                if m:
+                    role = m.group(1)
+                    return role.capitalize()
+
     return DEFAULT_ROLE
 
 
@@ -184,7 +197,12 @@ def cp(src: str, dest: str) -> None:
 
 
 if __name__ == "__main__":
-    commands = {"getProxy": getProxy, "getToken": getToken, "cp": cp}
+    commands = {
+        "getProxy": getProxy,
+        "getToken": getToken,
+        "cp": cp,
+        "getRole": getRole,
+    }
     parser = argparse.ArgumentParser(description="ifdh subset replacement")
     parser.add_argument(
         "--experiment", help="experiment name", default=os.environ.get("GROUP", None)
@@ -202,7 +220,7 @@ if __name__ == "__main__":
         if opts.command[0] == "cp":
             commands[opts.command[0]](*opts.cpargs[0])  # type: ignore
         else:
-            result = commands[opts.command[0]](myrole)  # type: ignore
+            result = commands[opts.command[0]](myrole, debug=1)  # type: ignore
             if result is not None:
                 print(result)
     except PermissionError as pe:
