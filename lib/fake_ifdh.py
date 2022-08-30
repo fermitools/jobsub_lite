@@ -65,7 +65,7 @@ def getRole(role_override: Optional[str] = None, debug: int = 0) -> str:
                 m = re.match(r"/.*/(.*)", g)
                 if m:
                     role = m.group(1)
-                    return role
+                    return role.capitalize()
 
     return DEFAULT_ROLE
 
