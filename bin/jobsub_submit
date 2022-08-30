@@ -180,7 +180,7 @@ def main():
 
     varg = vars(args)
     if args.debug:
-        sys.stderr.write(f"varg: {repr(varg)}")
+        sys.stderr.write(f"varg: {repr(varg)}\n")
     schedd_add = get_schedd(varg)
     schedd_name = schedd_add.eval("Machine")
     set_extras_n_fix_units(varg, schedd_name, proxy, token)

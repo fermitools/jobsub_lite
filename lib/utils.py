@@ -82,7 +82,6 @@ def set_extras_n_fix_units(
     args["token"] = token
     args["jobsub_version"] = "lite_v1_0"
     args["kerberos_principal"] = get_principal()
-    args["usage_model"] = "ONSITE"
     args["uid"] = str(os.getuid())
 
     if not "uuid" in args:
@@ -107,6 +106,34 @@ def set_extras_n_fix_units(
             sys.stderr.write("Warning: No executable given to job launch\n")
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
+
+
+    print(f"in utils.py: usage_model BEFORE code is {args['usage_model']}")
+    print(f"in utils.py: resource_provides_quoted BEFORE code is {args['resource_provides_quoted']}")
+
+
+    # if the user defined the usage_model on the command line,
+    # we need to use their definition of usage_model, not ours
+    # also, we need to define the sites as 'Fermigrid' if they want to run locally
+    for r in args["resource_provides_quoted"]:
+        print(f"r is: {r}")
+        #if r.find('usage_model') != -1
+        if 'usage_model' in r:
+            print(f"r.find was true")
+            args["usage_model"] = ""
+        if r == 'usage_model="OPPORTUNISTIC,DEDICATED"':
+            args["site"] = "Fermigrid"
+
+    print(f"in utils.py: usage_model BETWEEN code is {args['usage_model']}")
+
+    # if the user chooses 'onsite' from the runtime params
+    # we need to define the sites as 'Fermigrid'
+    if args["usage_model"] == "OPPORTUNISTIC,DEDICATED":
+        args["site"] = "Fermigrid"
+
+
+    print(f"in utils.py: usage_model AT END OF code is {args['usage_model']}")
+
 
     if not "outdir" in args:
         args["outdir"] = (

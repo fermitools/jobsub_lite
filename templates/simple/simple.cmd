@@ -41,13 +41,16 @@ notify_user = {{email_to}}
 +JobsubJobId="$(CLUSTER).$(PROCESS)@{{schedd}}"
 +Drain = False
 
-{% if site is defined and site and site != 'LOCAL' %}
+{% if site is defined and site != 'LOCAL' %}
 +DESIRED_SITES = "{{site}}"
 {% endif %}
 {%if blacklist is defined and blacklist  %}
 +Blacklist_Sites = "{{blacklist}}"
 {% endif %}
 +GeneratedBy ="{{jobsub_version}} {{schedd}}"
+{%if usage_model is defined and usage_model  %}
++DESIRED_usage_model = "{{usage_model}}"
+{% endif %}
 {{resource_provides_quoted|join("\n+DESIRED_")}}
 {{lines|join("\n")}}
 requirements  = {%if overwrite_requirements is defined and overwrite_requirements %}{{overwrite_requirements}}{%else%}target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))){%endif%}{%if append_condor_requirements is defined and append_condor_requirements %} && {{append_condor_requirements}} {%endif%}
