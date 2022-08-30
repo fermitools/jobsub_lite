@@ -60,7 +60,7 @@ def getRole(role_override: Optional[str] = None, debug: int = 0) -> str:
         with os.popen("decode_token.sh $BEARER_TOKEN_FILE", "r") as f:
             token_s = f.read()
             token = json.loads(token_s)
-            groups: List[str] = token["wlcg.groups"]
+            groups: List[str] = token.get("wlcg.groups", [])
             for g in groups:
                 m = re.match(r"/.*/(.*)", g)
                 if m:
