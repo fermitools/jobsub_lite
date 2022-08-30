@@ -7,6 +7,15 @@
 
 umask 002
 
+#
+# clear out variables that sometimes bleed into containers
+# causing problems.  See for example INC000001136681...
+#
+for env_var in CPATH LIBRARY_PATH
+do
+   eval unset $env_var
+done
+
 {% if role is defined and role and role != 'Analysis' %}
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role}}.use
 {% else %}

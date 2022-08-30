@@ -1,5 +1,6 @@
 import os
 import sys
+import pytest
 
 #
 # we assume everwhere our current directory is in the package
@@ -22,6 +23,7 @@ class TestPackagesUnit:
 
     # lib/packages.py routines
 
+    @pytest.mark.unit
     def test_pkg_find_1(self):
         """make sure we can find the poms_client ups package"""
         sp1 = sys.path.copy()
@@ -32,6 +34,7 @@ class TestPackagesUnit:
         assert os.path.exists(os.environ["POMS_CLIENT_DIR"])
         __import__("poms_client")
 
+    @pytest.mark.unit
     def test_pkg_orig_env_1(self):
         """make sure orig_env puts the environment back"""
         packages.pkg_find("poms_client", "-g poms41")

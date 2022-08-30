@@ -30,6 +30,7 @@ class TestJobsubSubmitUnit:
 
     # jobsub_submit functions
 
+    @pytest.mark.unit
     def test_get_basefiles_1(self):
         """test the get_basefiles routine on our source directory,
         we should be in it"""
@@ -37,6 +38,7 @@ class TestJobsubSubmitUnit:
         fl = jobsub_submit.get_basefiles(dlist)
         assert os.path.basename(__file__) in fl
 
+    @pytest.mark.unit
     def test_render_files_1(self):
         """test render files on the dataset_dag directory"""
         srcdir = os.path.dirname(os.path.dirname(__file__)) + "/templates/dataset_dag"
@@ -47,6 +49,7 @@ class TestJobsubSubmitUnit:
         jobsub_submit.render_files(srcdir, args, dest)
         assert os.path.exists("%s/dagbegin.cmd" % dest)
 
+    @pytest.mark.unit
     def test_render_files_undefined_vars(self, tmp_path):
         """Test rendering files when a template variable is undefined.
         Should raise jinja2.exceptions.UndefinedError
@@ -58,11 +61,13 @@ class TestJobsubSubmitUnit:
         with pytest.raises(exceptions.UndefinedError, match="is undefined"):
             jobsub_submit.render_files(srcdir, args, dest)
 
+    @pytest.mark.unit
     def test_cleanup_1(self):
         # cleanup doesn't actually do anything right now...
         jobsub_submit.cleanup("")
         assert True
 
+    @pytest.mark.unit
     def test_do_dataset_defaults_1(self):
         """make sure do_dataset_defaults sets arguments its supposed to"""
         varg = TestUnit.test_vargs.copy()

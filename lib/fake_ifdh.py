@@ -19,14 +19,15 @@
 # limitations under the License.
 """ifdh replacemnents to remove dependency"""
 
-import sys
-
+import json
 import os
+import re
 import shlex
 import subprocess
+import sys
 import time
 import argparse
-from typing import Union, Optional
+from typing import Union, Optional, List
 
 VAULT_HOST = "fermicloud543.fnal.gov"
 DEFAULT_ROLE = "Analysis"
@@ -39,9 +40,8 @@ def getTmp() -> str:
 
 def getExp() -> Union[str, None]:
     """return current experiment name"""
-    for ev in ["GROUP", "EXPERIMENT", "SAM_EXPERIMENT"]:
-        if os.environ.get(ev, None):
-            return os.environ.get(ev)
+    if os.environ.get("GROUP", None):
+        return os.environ.get("GROUP")
     # otherwise guess primary group...
     exp = None
     with os.popen("id -gn", "r") as f:
@@ -49,12 +49,24 @@ def getExp() -> Union[str, None]:
     return exp
 
 
-def getRole(role_override: Optional[str] = None) -> str:
+def getRole(role_override: Optional[str] = None, debug: int = 0) -> str:
     """get current role"""
+
     if role_override:
         return role_override
-    if os.environ["USER"][-3:] == "pro":
-        return "Production"
+
+    # if there's a role in the wlcg.groups of the token, pick that
+    if os.environ.get("BEARER_TOKEN_FILE", False):
+        with os.popen("decode_token.sh $BEARER_TOKEN_FILE", "r") as f:
+            token_s = f.read()
+            token = json.loads(token_s)
+            groups: List[str] = token.get("wlcg.groups", [])
+            for g in groups:
+                m = re.match(r"/.*/(.*)", g)
+                if m:
+                    role = m.group(1)
+                    return role.capitalize()
+
     return DEFAULT_ROLE
 
 
@@ -78,7 +90,7 @@ def checkToken(tokenfile: str) -> bool:
         raise
 
 
-def getToken(role: str = DEFAULT_ROLE) -> str:
+def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
     """get path to token file"""
     pid = os.getuid()
     tmp = getTmp()
@@ -99,10 +111,18 @@ def getToken(role: str = DEFAULT_ROLE) -> str:
 
     if not checkToken(tokenfile):
         cmd = f"htgettoken -a {VAULT_HOST} -i {issuer}"
+
         if role != DEFAULT_ROLE:
             cmd = f"{cmd} -r {role.lower()}"  # Token-world wants all-lower
-        # send htgettoken output to stderr because invokers read stdout
-        res = os.system(f"{cmd} >&2")
+
+        if debug > 0:
+            # send htgettoken output to stderr because invokers read stdout
+            sys.stderr.write(f"Running: {cmd}")
+            cmd += " >&2"
+        else:
+            cmd += " >/dev/null 2>&1"
+
+        res = os.system(cmd)
         if res != 0:
             raise PermissionError(f"Failed attempting '{cmd}'")
         if checkToken(tokenfile):
@@ -111,7 +131,7 @@ def getToken(role: str = DEFAULT_ROLE) -> str:
     return tokenfile
 
 
-def getProxy(role: str = DEFAULT_ROLE) -> str:
+def getProxy(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
     """get path to proxy certificate file"""
     pid = os.getuid()
     tmp = getTmp()
@@ -128,9 +148,16 @@ def getProxy(role: str = DEFAULT_ROLE) -> str:
         igroup = f"fermilab/{exp}"
     vomsfile = f"{tmp}/x509up_{exp}_{role}_{pid}"
     chk_cmd = f"voms-proxy-info -exists -valid 0:10 -file {vomsfile}"
+
+    if debug > 0:
+        # send output to stderr because invokers read stdout
+        sys.stderr.write(f"Running: {chk_cmd}")
+        chk_cmd += " >&2"
+    else:
+        chk_cmd += " >/dev/null 2>&1"
+
     if 0 != os.system(chk_cmd):
         cmd = f"cigetcert -i 'Fermi National Accelerator Laboratory' -n -o {certfile}"
-        # send output to stderr because invokers read stdout
         completed_cmd = subprocess.run(
             shlex.split(cmd),
             stdout=subprocess.PIPE,
@@ -149,8 +176,15 @@ def getProxy(role: str = DEFAULT_ROLE) -> str:
             f" -voms {issuer}:/{igroup}/Role={role}"
         )
 
-        # send output to stderr because invokers read stdout
-        os.system(f"{cmd} >&2")
+        if debug > 0:
+            # send output to stderr because invokers read stdout
+            sys.stderr.write("Running: {cmd}")
+            cmd = f"{cmd} >&2"
+        else:
+            cmd = f"{cmd} > /dev/null 2>&1"
+
+        os.system(cmd)
+
         if 0 == os.system(chk_cmd):
             return vomsfile
         raise PermissionError(f"Failed attempting '{cmd}'")
@@ -163,7 +197,12 @@ def cp(src: str, dest: str) -> None:
 
 
 if __name__ == "__main__":
-    commands = {"getProxy": getProxy, "getToken": getToken, "cp": cp}
+    commands = {
+        "getProxy": getProxy,
+        "getToken": getToken,
+        "cp": cp,
+        "getRole": getRole,
+    }
     parser = argparse.ArgumentParser(description="ifdh subset replacement")
     parser.add_argument(
         "--experiment", help="experiment name", default=os.environ.get("GROUP", None)
@@ -181,7 +220,7 @@ if __name__ == "__main__":
         if opts.command[0] == "cp":
             commands[opts.command[0]](*opts.cpargs[0])  # type: ignore
         else:
-            result = commands[opts.command[0]](myrole)  # type: ignore
+            result = commands[opts.command[0]](myrole, debug=1)  # type: ignore
             if result is not None:
                 print(result)
     except PermissionError as pe:
