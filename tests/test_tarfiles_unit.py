@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import pytest
 
 #
 # we assume everwhere our current directory is in the package
@@ -27,22 +28,26 @@ class TestTarfilesUnit:
 
     # lib/tarfiles.py routines...
 
+    @pytest.mark.unit
     def test_tar_up_1(self):
         """make sure tar up makes a tarfile"""
         tarfile = tarfiles.tar_up(os.path.dirname(__file__), None)
         assert os.path.exists(tarfile)
         os.unlink(tarfile)
 
+    @pytest.mark.unit
     def test_slurp_file_1(self):
         """make sure tar slurp_file makes a digest"""
         digest, tf = tarfiles.slurp_file(__file__)
         assert len(digest) == 64
 
+    @pytest.mark.unit
     def test_dcache_persistent_path_1(self):
         """make sure persistent path gives /pnfs/ path digest"""
         path = tarfiles.dcache_persistent_path(TestUnit.test_group, __file__)
         assert path[:6] == "/pnfs/"
 
+    @pytest.mark.unit
     def test_tarfile_publisher_1(self, needs_credentials):
         """test the tarfile publisher object"""
         proxy, token = needs_credentials
@@ -70,6 +75,7 @@ class TestTarfilesUnit:
 
         assert location is not None
 
+    @pytest.mark.unit
     def test_do_tarballs_1(self, needs_credentials):
         """test that the do_tarballs method does a dropbox:path
         processing"""
