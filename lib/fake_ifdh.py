@@ -21,6 +21,7 @@
 
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -48,7 +49,7 @@ def getExp() -> Union[str, None]:
     return exp
 
 
-def getRole(role_override: Optional[str] = None) -> str:
+def getRole(role_override: Optional[str] = None, debug: int = 0) -> str:
     """get current role"""
 
     if role_override:
@@ -60,10 +61,10 @@ def getRole(role_override: Optional[str] = None) -> str:
             token_s = f.read()
             token = json.loads(token_s)
             groups: List[str] = token["wlcg.groups"]
-            if len(groups) == 2:
-                pos = groups[1].find("/", 2)
-                if pos > 0:
-                    role = groups[1][pos + 1 :]
+            for g in groups:
+                m = re.match(r"/.*/(.*)", g)
+                if m:
+                    role = m.group(1)
                     return role
 
     return DEFAULT_ROLE
@@ -219,7 +220,7 @@ if __name__ == "__main__":
         if opts.command[0] == "cp":
             commands[opts.command[0]](*opts.cpargs[0])  # type: ignore
         else:
-            result = commands[opts.command[0]](myrole)  # type: ignore
+            result = commands[opts.command[0]](myrole, debug=1)  # type: ignore
             if result is not None:
                 print(result)
     except PermissionError as pe:
