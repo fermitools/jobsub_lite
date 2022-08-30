@@ -19,14 +19,14 @@
 # limitations under the License.
 """ifdh replacemnents to remove dependency"""
 
-import sys
-
+import json
 import os
 import shlex
 import subprocess
+import sys
 import time
 import argparse
-from typing import Union, Optional
+from typing import Union, Optional, List
 
 VAULT_HOST = "fermicloud543.fnal.gov"
 DEFAULT_ROLE = "Analysis"
@@ -50,10 +50,22 @@ def getExp() -> Union[str, None]:
 
 def getRole(role_override: Optional[str] = None) -> str:
     """get current role"""
+
     if role_override:
         return role_override
-    if os.environ["USER"][-3:] == "pro":
-        return "Production"
+
+    # if there's a role in the wlcg.groups of the token, pick that
+    if os.environ.get("BEARER_TOKEN_FILE", False):
+        with os.popen("decode_token.sh $BEARER_TOKEN_FILE", "r") as f:
+            token_s = f.read()
+            token = json.loads(token_s)
+            groups: List[str] = token["wlcg.groups"]
+            if len(groups) == 2:
+                pos = groups[1].find("/", 2)
+                if pos > 0:
+                    role = groups[1][pos + 1 :]
+                    return role
+
     return DEFAULT_ROLE
 
 

@@ -9,11 +9,16 @@
 decode_token() {
     #
     # token is 3 base64 segments separated by dots
-    # we want the middle one.
-    # the ending of the base64 segment is sometimes
-    # chopped, so ignore errors about that
+    # we want the middle one
     #
-    sed -e 's/.*\.\(.*\)\..*/\1==/' "$1" 2>/dev/null | base64 -d  2>/dev/null
+    sed -e 's/.*\.\(.*\)\..*/\1==/' "$1" | base64 -d 2>/dev/null
+}
+
+pretty_print() {
+   # sed regexps:
+   #  - break line and indent after (some) commas,
+   #  - put braces on their own line
+   sed -e 's/:[^:]*[]"0-9],/&\n  /g' -e 's/[{}]/\n&\n  /g'
 }
 
 get_field() {
@@ -25,7 +30,7 @@ get_field() {
     # BUGS
     #    Borked for fields that contain commas.
     #
-    sed -e "s/.*\"$1\"://" -e s'/,.*//'
+    sed -e "s/.*\"$1\"://" -e s'/,"[^"]*":.*//'
 }
 
 usage() {
@@ -42,4 +47,4 @@ x)   usage; exit 1;;
 *)   extractfilt="cat";;
 esac
 
-decode_token $1 | $extractfilt
+decode_token $1 | $extractfilt | pretty_print
