@@ -170,8 +170,8 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-Q",
-        "--mail-never",
         "--mail_never",
+        "--mail-never",
         dest="mail",
         action="store_const",
         const="never",
@@ -180,16 +180,16 @@ def get_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--mail-on-error",
         "--mail_on_error",
+        "--mail-on-error",
         dest="mail",
         action="store_const",
         const="on_error",
         help="never send mail about job results (default)",
     )
     parser.add_argument(
-        "--mail-always",
         "--mail_always",
+        "--mail-always",
         dest="mail",
         action="store_const",
         const="always",
@@ -231,8 +231,8 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-n",
-        "--no-submit",
         "--no_submit",
+        "--no-submit",
         default=False,
         action="store_true",
         help="generate condor_command file but do not submit",
@@ -271,8 +271,8 @@ def get_parser() -> argparse.ArgumentParser:
         "priorities",
     )
     parser.add_argument(
-        "--tar-file-name",
         "--tar_file_name",
+        "--tar-file-name",
         default=[],
         action="append",
         help="    dropbox://PATH/TO/TAR_FILE\n     tardir://PATH/TO/DIRECTORY\n"

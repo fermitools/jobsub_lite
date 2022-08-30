@@ -54,8 +54,11 @@ def find_all_arguments():
             p2 = arg.find("=")
             if p2 >= 0:
                 arg = arg[0:p2]
-            allargs.append(arg)
-            dest[arg] = arg  # destination starts off as flag name
+            # all of our old args with underscores have dashed versions now
+            # so ignore the underscore versions.
+            if arg.find("_") == -1:
+                allargs.append(arg)
+                dest[arg] = arg  # destination starts off as flag name
         if line.find('dest="') > 0 or line.find("dest='") > 0:
             # add_argument may take a dest= parameter, so if we see
             # one make a note about the last argument we saw
@@ -83,14 +86,15 @@ def find_all_arguments():
             listargs.add(arg)
 
     f.close()
+    print("flagargs:", repr(flagargs))
     return allargs, flagargs, listargs, dest
 
 
 @pytest.fixture
 def all_test_args():
     return [
-        "--append_condor_requirements",
-        "xxappend_condor_requirementsxx",
+        "--append-condor-requirements",
+        "xxappend-condor-requirementsxx",
         "--blacklist",
         "xxblacklistxx",
         "--cmtconfig",
@@ -99,10 +103,10 @@ def all_test_args():
         "xxcpuxx",
         "--dag",
         "xxdagxx",
-        "--dataset_definition",
-        "xxdataset_definitionxx",
+        "--dataset-definition",
+        "xxdataset-definitionxx",
         "--debug",
-        "xxdebugxx",
+        "1",
         "--disk",
         "xxdiskxx",
         "-d",
@@ -119,23 +123,23 @@ def all_test_args():
         "--generate-email-summary",
         "--group",
         "xxgroupxx",
-        "--log_file",
-        "xxlog_filexx",
+        "--log-file",
+        "xxlog-filexx",
         "--lines",
         "xxlinesxx",
-        "--mail_never",
-        "--mail_on_error",
-        "--mail_always",
+        "--mail-never",
+        "--mail-on-error",
+        "--mail-always",
         "--maxConcurrent",
         "xxmaxConcurrentxx",
         "--memory",
         "xxmemoryxx",
         "--no-singularity",
-        "--no_submit",
+        "--no-submit",
         "--OS",
         "xxOSxx",
-        "--overwrite_condor_requirements",
-        "xxoverwrite_condor_requirementsxx",
+        "--overwrite-condor-requirements",
+        "xxoverwrite-condor-requirementsxx",
         "--resource-provides",
         "xxresource-providesxx",
         "--role",
@@ -146,8 +150,8 @@ def all_test_args():
         "xxsitexx",
         "--subgroup",
         "xxsubgroupxx",
-        "--tar_file_name",
-        "xxtar_file_namexx",
+        "--tar-file-name",
+        "xxtar-file-namexx",
         "--tarball-exclusion-file",
         "xxtarball-exclusion-filexx",
         "--timeout",
@@ -198,7 +202,12 @@ class TestGetParserUnit:
                 arg = "--" + arg
             else:
                 arg = "-" + arg
+
+            if arg == "--dataset":
+                continue
+
             assert arg in all_test_args
+
         for arg in all_test_args:
             if arg[0] == "-":
                 arg = arg.lstrip("-")
@@ -261,6 +270,10 @@ class TestGetParserUnit:
             elif arg == "d":
                 # -d special case -- makes list of *pairs* of args
                 assert vres["d"] == [["dtag", "dpath"]]
+            elif arg == "debug":
+                assert vres["debug"] == 1
+            elif arg == "dataset":
+                assert vres["dataset_definition"] == "xxdataset-definitionxx"
             elif arg in listargs:
                 # args are in a list, so look for list containing xxflagxx
                 if arg in ["resource-provides", "lines"]:
