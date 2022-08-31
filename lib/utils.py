@@ -110,16 +110,22 @@ def set_extras_n_fix_units(
     # if the user defined the usage_model on the command line,
     # we need to use their definition of usage_model, not ours
     # also, we define the site as 'Fermigrid' if they have not requested OFFSITE
+    add_site = ""
     for r in args["resource_provides_quoted"]:
         if "usage_model" in r:
             args["usage_model"] = ""
             if "OFFSITE" not in r:
-                args["site"] = "Fermigrid"
+                add_site = "Fermigrid"
 
     # if the user chooses 'onsite' from the runtime params
     # we need to define the sites as 'Fermigrid'
     if args["usage_model"] is not "" and "OFFSITE" not in args["usage_model"]:
-        args["site"] = "Fermigrid"
+        add_site = "Fermigrid"
+
+    if args["site"]:
+        args["site"] += ", " + add_site
+    else:
+        args["site"] = add_site
 
     if not "outdir" in args:
         args["outdir"] = (
