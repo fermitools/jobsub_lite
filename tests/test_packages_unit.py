@@ -23,19 +23,33 @@ def setup_ups(monkeypatch):
     """A fixture to set up UPS for our tests, in case it is not already set up in the test environment.
     Adapted from https://stackoverflow.com/a/3505826
     """
-    keys = []
+    env_to_add = {}
+
     command = shlex.split(
         "env -i bash -c 'source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh && env'"
     )
-    source_proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-    for line in source_proc.stdout:
-        (env_key, _, env_value) = line.decode().partition("=")
-        keys.append(env_key)
-        monkeypatch.setenv(env_key, env_value)
-    source_proc.communicate()
-    yield
-    for key in keys:
-        monkeypatch.delenv(key)
+    try:
+        source_proc = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        for line in source_proc.stdout:
+            (env_key, _, env_value) = line.decode().partition("=")
+            env_to_add[env_key] = env_value
+        source_proc.communicate()
+        if source_proc.returncode:
+            raise OSError(
+                "Could not set up UPS in environment.  Any unit test using this fixture might fail."
+            )
+    except Exception as e:
+        # Let the test run, with the possiblity that we might fail.  The tester may have Spack, or the applicable package installed directly via RPM
+        print(e)
+    else:
+        for env_key, env_value in env_to_add.items():
+            monkeypatch.setenv(env_key, env_value)
+    finally:
+        yield
+        for env_key in env_to_add.keys():
+            monkeypatch.delenv(env_key)
 
 
 class TestPackagesUnit:
