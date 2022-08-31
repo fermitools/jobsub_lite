@@ -122,7 +122,7 @@ def set_extras_n_fix_units(
     if args["usage_model"] != "" and "OFFSITE" not in args["usage_model"]:
         add_site = "Fermigrid"
 
-    if args["site"]:
+    if args.get("site", None):
         args["site"] += ", " + add_site
     else:
         args["site"] = add_site
