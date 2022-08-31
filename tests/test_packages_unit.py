@@ -41,7 +41,8 @@ def setup_ups(monkeypatch):
                 "Could not set up UPS in environment.  Any unit test using this fixture might fail."
             )
     except Exception as e:
-        # Let the test run, with the possiblity that we might fail.  The tester may have Spack, or the applicable package installed directly via RPM
+        # Let the test run, with the possiblity that we might fail.
+        # The tester may have Spack, or the applicable package installed directly via RPM
         print(e)
     else:
         for env_key, env_value in env_to_add.items():
