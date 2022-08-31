@@ -64,7 +64,7 @@ def set_extras_n_fix_units(
     #
     # outbase needs to be an area shared with schedd servers.
     #
-    if args["debug"]:
+    if args["debug"]>1:
         sys.stderr.write(f"entering set_extras... args: {repr(args)}\n")
 
     args["outbase"] = os.environ.get(
@@ -88,7 +88,7 @@ def set_extras_n_fix_units(
         args["uuid"] = str(uuid.uuid4())
     if not "date" in args:
         args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
-    if args["debug"]:
+    if args["debug"]>1:
         sys.stderr.write(
             f"checking args[executable]: {repr(args.get('executable', None))}\n"
         )
@@ -109,17 +109,16 @@ def set_extras_n_fix_units(
 
     # if the user defined the usage_model on the command line,
     # we need to use their definition of usage_model, not ours
-    # also, we need to define the sites as 'Fermigrid' if they want to run locally
+    # also, we define the site as 'Fermigrid' if they have not requested OFFSITE
     for r in args["resource_provides_quoted"]:
-        print(f"r is: {r}")
-        if 'usage_model' in r:
+        if "usage_model" in r:
             args["usage_model"] = ""
-        if r == 'usage_model="OPPORTUNISTIC,DEDICATED"':
-            args["site"] = "Fermigrid"
+            if "OFFSITE" not in r:
+                args["site"] = "Fermigrid"
 
     # if the user chooses 'onsite' from the runtime params
     # we need to define the sites as 'Fermigrid'
-    if args["usage_model"] == "OPPORTUNISTIC,DEDICATED":
+    if args["usage_model"] is not "" and "OFFSITE" not in args["usage_model"]:
         args["site"] = "Fermigrid"
 
     if not "outdir" in args:
@@ -133,14 +132,14 @@ def set_extras_n_fix_units(
         os.makedirs(args["outdir"])
 
     # copy executable to submit dir so schedd can see it
-    if args["debug"]:
+    if args["debug"]>1:
         sys.stderr.write(
             f"checking full_executable: {repr(args.get('full_executable', None))}\n"
         )
 
     if args.get("full_executable", False):
         dest = os.path.join(args["submitdir"], os.path.basename(args["executable"]))
-        if args["debug"]:
+        if args["debug"]>1:
             sys.stderr.write(
                 f"copying  {repr(args.get('full_executable', None))} to {repr(dest)}\n"
             )
@@ -185,7 +184,7 @@ def set_extras_n_fix_units(
             e = f"{e}={v}"
         newe.append(e)
     args["environment"] = newe
-    if args["debug"]:
+    if args["debug"]>1:
         sys.stderr.write(f"leaving set_extras... args: {repr(args)}\n")
     args["jobsub_command"] = " ".join(sys.argv)
 

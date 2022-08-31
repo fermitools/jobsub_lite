@@ -325,29 +325,30 @@ def get_parser() -> argparse.ArgumentParser:
         help="Use jobsubdevgpvm01 etc. to submit",
     )
     parser.add_argument(
-        "--onsite",
-        dest="usage_model",
-        action="store_const",
-        const="OPPORTUNISTIC,DEDICATED",
-        default="OPPORTUNISTIC,DEDICATED,OFFSITE",
-        help="run jobs locally only; "
-        "usage_model=OPPORTUNISTIC,DEDICATED",
-    )
-    parser.add_argument(
-        "--offsite",
-        dest="usage_model",
-        action="store_const",
-        const="OPPORTUNISTIC,DEDICATED,OFFSITE",
-        default="OPPORTUNISTIC,DEDICATED,OFFSITE",
-        help="run jobs offsite if slots slots are available; "
-        "usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE",
-    )
-    parser.add_argument(
         "executable",
         type=verify_executable_starts_with_file_colon,
         default=None,
         nargs="?",
         help="executable for job to run",
+    )
+
+    usage_model_group = parser.add_mutually_exclusive_group()
+    usage_model_group.add_argument(
+        "--onsite",
+        dest="usage_model",
+        action="store_const",
+        const="OPPORTUNISTIC,DEDICATED",
+        default="OPPORTUNISTIC,DEDICATED,OFFSITE",
+        help="run jobs locally only; usage_model=OPPORTUNISTIC,DEDICATED",
+    )
+    usage_model_group.add_argument(
+        "--offsite",
+        dest="usage_model",
+        action="store_const",
+        const="OFFSITE",
+        default="OPPORTUNISTIC,DEDICATED,OFFSITE",
+        help="run jobs offsite if slots slots are available; "
+        "usage_model=OFFSITE",
     )
 
     singularity_group = parser.add_mutually_exclusive_group()
