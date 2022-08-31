@@ -119,7 +119,7 @@ def set_extras_n_fix_units(
 
     # if the user chooses 'onsite' from the runtime params
     # we need to define the sites as 'Fermigrid'
-    if args["usage_model"] is not "" and "OFFSITE" not in args["usage_model"]:
+    if args["usage_model"] != "" and "OFFSITE" not in args["usage_model"]:
         add_site = "Fermigrid"
 
     if args["site"]:
