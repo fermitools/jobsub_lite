@@ -11,7 +11,9 @@ decode_token() {
     # token is 3 base64 segments separated by dots
     # we want the middle one
     #
-    sed -e 's/.*\.\(.*\)\..*/\1==/' "$1" | base64 -d 2>/dev/null
+    sed -e 's/.*\.\(.*\)\..*/\1==/' "$1" |
+       tr '_-' '/+' |
+       base64 -d  2> /dev/null
 }
 
 pretty_print() {
