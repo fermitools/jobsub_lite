@@ -347,8 +347,7 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_const",
         const="OFFSITE",
         default="OPPORTUNISTIC,DEDICATED,OFFSITE",
-        help="run jobs offsite if slots slots are available; "
-        "usage_model=OFFSITE",
+        help="run jobs offsite; usage_model=OFFSITE",
     )
 
     singularity_group = parser.add_mutually_exclusive_group()
