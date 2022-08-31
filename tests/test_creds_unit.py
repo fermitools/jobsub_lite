@@ -20,7 +20,7 @@ from test_unit import TestUnit
 @pytest.fixture
 def needs_credentials():
     os.environ["GROUP"] = TestUnit.test_group
-    return creds.get_creds()
+    return creds.get_creds({"role": "Analysis"})
 
 
 @pytest.fixture
