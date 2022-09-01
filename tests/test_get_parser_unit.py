@@ -156,6 +156,8 @@ def all_test_args():
         "--use-pnfs-dropbox",
         "--verbose",
         "--devserver",
+        "--onsite-only",
+        "--offsite",
         "file:///bin/true",
         "xx_executable_arg_0_xx",
         "xx_executable_arg_1_xx",
