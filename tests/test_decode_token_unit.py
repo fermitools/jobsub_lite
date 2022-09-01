@@ -30,6 +30,7 @@ def do_decode_token_sh(filename: str, extract: str = ""):
 @pytest.fixture
 def token():
     """get a token with default options"""
+    os.environ["GROUP"] = "fermilab"
     return fake_ifdh.getToken()
 
 
@@ -62,7 +63,7 @@ def test_decode_token_ext_exp(token):
 def test_decode_token_ext_group():
     """make sure we can extract wlcg.groups and get whole list"""
     lines = do_decode_token_sh("decode_token_tests/dp1", "wlcg.groups")
-    assert lines[0] == '["/dune","/dune/production"]'
+    assert lines[0] == '["/dune","/dune/production"]\n'
 
 
 def test_decode_token_past_bugs(token):
