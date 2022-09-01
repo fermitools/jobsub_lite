@@ -20,7 +20,6 @@
 import argparse
 import sys
 import os
-import os.path
 import subprocess
 import shutil
 
@@ -93,37 +92,45 @@ def main():
     try:
         os.stat(iwd)
     except FileNotFoundError:
-        os.mkdir(iwd, mode=0o750)
+        os.makedirs(iwd, mode=0o750)
 
     # get the output sandbox
     j.transfer_data()
+    files = os.listdir(iwd)
 
-    owd = iwd
-    # if the user wants output in a specific directory, copy files there
     if args.destdir is not None:
+        # If the user wants output in a specific directory, copy files there,
+        # don't build an archive. Old jobsub would get an archive from the
+        # server, upack it into the dest dir, then delete the archive.
         owd = args.destdir
-        shutil.copytree(iwd, owd)  # TODO python3.9+: dirs_exist_ok=True?
-
-    # build tarball
-    files = os.listdir(owd)
-    cmd = []
-    if args.archive_format == "zip":
-        cmd = ["/usr/bin/zip", "-jq", f"{str(j)}.zip"] + [owd + "/" + f for f in files]
-        # -j: junk (don't record) directory names
-        # -q: quiet
-    elif args.archive_format == "tar":
-        cmd = ["/usr/bin/tar", "-C", owd, "-czf", f"{str(j)}.tgz"] + files
-        # -C: move into directory so paths are relative
-        # -c: create
-        # -z: gzip
-        # -f: filename
+        try:
+            os.stat(owd)
+        except FileNotFoundError:
+            os.makedirs(owd, mode=0o750)
+        for f in files:
+            shutil.copy2(os.path.join(iwd, f), owd)  # copy2 tries to preserve metadata
     else:
-        raise Exception(f'unknown archive format "{args.archive_format}"')
-    if args.verbose:
-        print(f'running "{cmd}"')
-    p = subprocess.Popen(cmd)
-    if p.wait() != 0:
-        raise Exception(f"error creating archive")
+        # build archive
+        cmd = []
+        if args.archive_format == "zip":
+            cmd = ["/usr/bin/zip", "-jq", f"{str(j)}.zip"] + [
+                os.path.join(iwd, f) for f in files
+            ]
+            # -j: junk (don't record) directory names
+            # -q: quiet
+        elif args.archive_format == "tar":
+            cmd = ["/usr/bin/tar", "-C", iwd, "-czf", f"{str(j)}.tgz"] + files
+            # -C: move into directory so paths are relative
+            # -c: create
+            # -z: gzip
+            # -f: filename
+        else:
+            raise Exception(f'unknown archive format "{args.archive_format}"')
+        if args.verbose:
+            print(f'running "{cmd}"')
+        p = subprocess.Popen(cmd)
+        if p.wait() != 0:
+            raise Exception(f"error creating archive")
 
 
 if __name__ == "__main__":
