@@ -82,7 +82,6 @@ def set_extras_n_fix_units(
     args["token"] = token
     args["jobsub_version"] = "lite_v1_0"
     args["kerberos_principal"] = get_principal()
-    args["usage_model"] = "ONSITE"
     args["uid"] = str(os.getuid())
 
     if not "uuid" in args:
@@ -107,6 +106,26 @@ def set_extras_n_fix_units(
             sys.stderr.write("Warning: No executable given to job launch\n")
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
+
+    # if the user defined the usage_model on the command line,
+    # we need to use their definition of usage_model, not ours
+    # also, we define the site as 'Fermigrid' if they have not requested OFFSITE
+    add_site = ""
+    for r in args["resource_provides_quoted"]:
+        if "usage_model" in r:
+            args["usage_model"] = ""
+            if "OFFSITE" not in r:
+                add_site = "Fermigrid"
+
+    # if the user chooses 'onsite' from the runtime params
+    # we need to define the sites as 'Fermigrid'
+    if args["usage_model"] != "" and "OFFSITE" not in args["usage_model"]:
+        add_site = "Fermigrid"
+
+    if args.get("site", None):
+        args["site"] += ", " + add_site
+    else:
+        args["site"] = add_site
 
     if not "outdir" in args:
         args["outdir"] = (
