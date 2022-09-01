@@ -271,17 +271,16 @@ class Job:
         if m is None:
             raise JobIdError(f'unable to parse job id "{job_id}"')
         try:
-            self.seq = int(m.group(1))
-            self.proc = int(m.group(2))
+            self.seq = int(m.group(1))  # seq is required
+            if m.group(2) is None:  # proc is optional
+                self.cluster = True
+                self.proc = 0
+            else:
+                self.cluster = False
+                self.proc = int(m.group(2))
+            self.schedd = m.group(3)  # schedd is required
         except TypeError as e:
-            raise JobIdError(
-                f"error converting job seq {m.group(1)} or proc {m.group(2)} to ints"
-            ) from e
-        self.cluster = False
-        if self.proc is None:
-            self.proc = 0
-            self.cluster = True
-        self.schedd = m.group(3)
+            raise JobIdError(f'error when parsing job id "{job_id}"') from e
 
     def __str__(self) -> str:
         if self.cluster:

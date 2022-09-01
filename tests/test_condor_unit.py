@@ -145,3 +145,36 @@ class TestCondorUnit:
             get_dag_file, TestUnit.test_vargs, TestUnit.test_schedd, cmd_args=[]
         )
         assert res
+
+
+class TestJob:
+    def test_job(self):
+        jid = "123.456@foo.example.com"
+        j = condor.Job(jid)
+        assert j.id == jid
+        assert j.seq == 123
+        assert j.proc == 456
+        assert j.schedd == "foo.example.com"
+        assert not j.cluster
+        assert str(j) == jid
+        assert j._constraint() == "ClusterId==123 && ProcId==456"
+
+    def test_cluster(self):
+        jid = "123@foo.example.com"
+        j = condor.Job(jid)
+        assert j.id == jid
+        assert j.seq == 123
+        assert j.proc == 0
+        assert j.schedd == "foo.example.com"
+        assert j.cluster
+        assert str(j) == jid
+        assert j._constraint() == "ClusterId==123"
+
+    def test_bad_jobs(self):
+        for jid in ["foo", "foo@example.com" "foo.bar@example.com"]:
+            try:
+                j = condor.Job(jid)
+            except condor.JobIdError:
+                pass
+            else:
+                raise Exception(f"job id {jid} should have raised JobIdError")
