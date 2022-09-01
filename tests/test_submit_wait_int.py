@@ -5,6 +5,7 @@ import pytest
 import time
 import subprocess
 import tempfile
+import shutil
 
 #
 # we assume everwhere our current directory is in the package
@@ -248,6 +249,17 @@ def test_dune_gp_fife_launch(dune_gp):
     fife_launch("")
 
 
+def group_for_job(jid):
+    if jid.find("dune") > 0:
+        group = "dune"
+        os.environ["_condor_COLLECTOR_HOST"] = "dunegpcoll02.fnal.gov"
+    else:
+        group = "fermilab"
+        if os.environ.get("_condor_COLLECTOR_HOST"):
+            del os.environ["_condor_COLLECTOR_HOST"]
+    return group
+
+
 @pytest.mark.integration
 def test_wait_for_jobs():
     """Not really a test, but we have to wait for jobs to complete..."""
@@ -257,14 +269,7 @@ def test_wait_for_jobs():
         time.sleep(10)
         count = len(joblist)
         for jid in joblist:
-            if jid.find("dunesched") > 0:
-                group = "dune"
-                os.environ["_condor_COLLECTOR_HOST"] = "dunegpcoll02.fnal.gov"
-            else:
-                group = "fermilab"
-                if os.environ.get("_condor_COLLECTOR_HOST"):
-                    del os.environ["_condor_COLLECTOR_HOST"]
-
+            group = group_for_job(jid)
             cmd = "jobsub_q -format '%%s' JobStatus -G %s %s" % (group, jid)
             print("running: ", cmd)
             pf = os.popen(cmd)
@@ -288,14 +293,7 @@ def test_wait_for_jobs():
 @pytest.mark.integration
 def test_fetch_output():
     for jid in joblist:
-        if jid.find("dunesched") > 0:
-            group = "dune"
-            os.environ["_condor_COLLECTOR_HOST"] = "dunegpcoll02.fnal.gov"
-        else:
-            group = "fermilab"
-            if os.environ.get("_condor_COLLECTOR_HOST"):
-                del os.environ["_condor_COLLECTOR_HOST"]
-
+        group = group_for_job(jid)
         owd = tempfile.mkdtemp()
         subprocess.run(
             ["jobsub_fetchlog", "--group", group, "--jobid", jid, "--destdir", owd],
@@ -319,3 +317,4 @@ def test_check_job_output():
                     f_ok = True
             fd.close()
             assert f_ok
+        shutil.rmtree(outdir)
