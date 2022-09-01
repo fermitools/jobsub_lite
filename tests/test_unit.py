@@ -19,7 +19,7 @@ class TestUnit:
         "group": test_group,
         "N": 1,
         "maxConcurrent": None,
-        "resource_provides": "usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE",
+        "resource_provides": ["usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE"],
     }
     test_extra_template_args = {
         "role": "Analysis",
