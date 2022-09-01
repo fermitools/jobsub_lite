@@ -222,7 +222,7 @@ class TestGetParserUnit:
         # mutually exclusive group, except for one
         # e.g. For the mutually exclusive group (--singularity-image,
         # --no-singularity), we pick one and enter it into args_exclude_list
-        args_exclude_list = ["--no-singularity"]
+        args_exclude_list = ["--no-singularity", "--onsite-only"]
 
         def filter_excluded(arg_list):
             _stripped_args_exclude_list = [arg.strip("-") for arg in args_exclude_list]
