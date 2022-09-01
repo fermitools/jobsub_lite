@@ -176,12 +176,6 @@ def submit(
         if m:
             print(f"Use job id {m.group(1)}.0@{schedd_name} to retrieve output")
 
-        if "outdir" in vargs:
-            print(
-                f"Output will be in {vargs['outdir']} after running"
-                " jobsub_transfer_data."
-            )
-
         return True
     except OSError as e:
         print("Execution failed: ", e)
@@ -227,11 +221,6 @@ def submit_dag(
                 sys.stderr.write(
                     f"Error: Child was terminated by signal {-output.returncode}"
                 )
-            else:
-                if "outdir" in vargs:
-                    print(
-                        f"Output will be in {vargs['outdir']} after running jobsub_transfer_data."
-                    )
         except OSError as e:
             print("Execution failed: ", e)
 

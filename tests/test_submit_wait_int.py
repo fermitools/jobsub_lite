@@ -3,6 +3,8 @@ import re
 import glob
 import pytest
 import time
+import subprocess
+import tempfile
 
 #
 # we assume everwhere our current directory is in the package
@@ -101,21 +103,15 @@ def run_launch(cmd):
             print("Found jobid!")
             jobid = m.group(1)
 
-        m = re.match(r"Output will be in (\S+) after running jobsub_transfer_data.", l)
-        if m:
-            print("Found outdir!")
-            outdir = m.group(1)
-
         m = re.match(r"Use job id (\S+) to retrieve output", l)
         if m:
             print("Found jobsubjobid!")
             jobsubjobid = m.group(1)
 
-        if jobid and schedd and outdir and jobsubjobid and not added:
+        if jobid and schedd and jobsubjobid and not added:
             added = True
-            print("Found all four! ", jobid, schedd, outdir, jobsubjobid)
+            print("Found all three! ", jobid, schedd, jobsubjobid)
             joblist.append("%s@%s" % (jobid, schedd))
-            outdirs.append(outdir)
 
     res = pf.close()
 
@@ -300,7 +296,12 @@ def test_fetch_output():
             if os.environ.get("_condor_COLLECTOR_HOST"):
                 del os.environ["_condor_COLLECTOR_HOST"]
 
-        os.system("jobsub_transfer_data %s" % jid)
+        owd = tempfile.mkdtemp()
+        subprocess.run(
+            ["jobsub_fetchlog", "--group", group, "--jobid", jid, "--destdir", owd],
+            check=True,
+        )
+        outdirs.append(owd)
 
 
 @pytest.mark.integration
