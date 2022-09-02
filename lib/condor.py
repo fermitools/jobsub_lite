@@ -176,12 +176,6 @@ def submit(
         if m:
             print(f"Use job id {m.group(1)}.0@{schedd_name} to retrieve output")
 
-        if "outdir" in vargs:
-            print(
-                f"Output will be in {vargs['outdir']} after running"
-                " jobsub_transfer_data."
-            )
-
         return True
     except OSError as e:
         print("Execution failed: ", e)
@@ -227,12 +221,93 @@ def submit_dag(
                 sys.stderr.write(
                     f"Error: Child was terminated by signal {-output.returncode}"
                 )
-            else:
-                if "outdir" in vargs:
-                    print(
-                        f"Output will be in {vargs['outdir']} after running jobsub_transfer_data."
-                    )
         except OSError as e:
             print("Execution failed: ", e)
 
     return submit(subfile, vargs, schedd_name)
+
+
+class JobIdError(Exception):
+    pass
+
+
+class Job:
+    """
+    Job represents a single HTCondor batch job or cluster with an id like
+        <cluster>[.<process>]@<schedd>
+
+    where if <process> is specified it is a single job, or if not then a cluster
+    of jobs. Examples:
+
+
+        123@schedd.example.com
+        123.0@schedd.example.com
+        123.456@schedd.example.com
+
+    """
+
+    id: str
+    seq: int
+    proc: int
+    schedd: str
+    cluster: bool
+
+    _id_regexp = re.compile(r"(\d+)(?:\.(\d+))?@([\w\.]+)")
+
+    def __init__(self, job_id: str):
+        self.id = job_id
+        m = Job._id_regexp.match(job_id)
+        if m is None:
+            raise JobIdError(f'unable to parse job id "{job_id}"')
+        try:
+            self.seq = int(m.group(1))  # seq is required
+            if m.group(2) is None:  # proc is optional
+                self.cluster = True
+                self.proc = 0
+            else:
+                self.cluster = False
+                self.proc = int(m.group(2))
+            self.schedd = m.group(3)  # schedd is required
+        except TypeError as e:
+            raise JobIdError(f'error when parsing job id "{job_id}"') from e
+
+    def __str__(self) -> str:
+        if self.cluster:
+            return f"{self.seq}@{self.schedd}"
+        return f"{self.seq}.{self.proc}@{self.schedd}"
+
+    def _get_schedd(self) -> htcondor.htcondor.Schedd:
+        c = htcondor.Collector(COLLECTOR_HOST)
+        s = c.locate(htcondor.DaemonTypes.Schedd, self.schedd)
+        if s is None:
+            raise Exception(f'unable to find schedd "{self.schedd}" in HTCondor pool')
+        return htcondor.Schedd(s)
+
+    def _constraint(self) -> str:
+        q = f"ClusterId=={self.seq}"
+        if not self.cluster:
+            q += f" && ProcId=={self.proc}"
+        return q
+
+    def get_attribute(self, attr: str) -> Any:
+        """
+        Return the value of a single job attribute from the schedd. If self is a
+        cluster of jobs, the attribute will be returned from the first job found
+        on the schedd (not necessarily process 0).
+
+        """
+        s = self._get_schedd()
+        q = self._constraint()
+        res = s.query(q, [attr], limit=1)
+        if len(res) == 0:
+            raise Exception(f'job matching "{q}" not found on "{self.schedd}"')
+        if attr not in res[0]:
+            raise Exception(f'attribute "{attr}" not found for job "{str(self)}"')
+        return res[0].eval(attr)
+
+    def transfer_data(self) -> None:
+        """
+        Transfer the output sandbox, akin to calling condor_transfer_data.
+        """
+        s = self._get_schedd()
+        s.retrieve(self._constraint())

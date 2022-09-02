@@ -59,11 +59,11 @@ install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 /opt/jobsub_lite/bin/decode_token.sh
 /opt/jobsub_lite/bin/jobsub_cmd
 /opt/jobsub_lite/bin/jobsub_hold
+/opt/jobsub_lite/bin/jobsub_fetchlog
 /opt/jobsub_lite/bin/jobsub_q
 /opt/jobsub_lite/bin/jobsub_release
 /opt/jobsub_lite/bin/jobsub_rm
 /opt/jobsub_lite/bin/jobsub_submit
-/opt/jobsub_lite/bin/jobsub_transfer_data
 /opt/jobsub_lite/bin/jobsub_wait
 /opt/jobsub_lite/lib/condor.py
 /opt/jobsub_lite/lib/creds.py
@@ -98,6 +98,9 @@ install -m 755 spec/jobsub_lite.*h $RPM_BUILD_ROOT/etc/profile.d/
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
+* Thu Sep 01 2022 Kevin Retzke <kretzke@fnal.gov> beta13
+- Removed bin/jobsub_transfer_data, add bin/jobsub_fetchlog in files list
+
 * Thu Jul 21 2022 Shreyas Bhat <sbhat@fnal.gov> beta12
 - Removed bin/fake_ifdh from files list
 

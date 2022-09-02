@@ -44,9 +44,37 @@ class StoreGroupinEnvironment(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def get_parser() -> argparse.ArgumentParser:
-    """build the argument parser and return it"""
+def get_base_parser() -> argparse.ArgumentParser:
+    """build the general jobsub command argument parser and return it"""
     parser = argparse.ArgumentParser()
+    group = parser.add_argument_group("general arguments")
+    group.add_argument(
+        "-G",
+        "--group",
+        help="Group/Experiment/Subgroup for priorities and accounting",
+        action=StoreGroupinEnvironment,
+        default=os.environ.get("GROUP", None),
+    )
+    group.add_argument(
+        "--role", help="VOMS Role for priorities and accounting", default="Analysis"
+    )
+    group.add_argument(
+        "--subgroup",
+        help=" Subgroup for priorities and accounting. See https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/ Jobsub_submit#Groups-Subgroups-Quotas-Priorities for more documentation on using --subgroup to set job quotas and priorities",
+    )
+    group.add_argument(
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="dump internal state of program (useful for debugging)",
+    )
+
+    return parser
+
+
+def get_parser() -> argparse.ArgumentParser:
+    """build the jobsub_submit argument parser and return it"""
+    parser = get_base_parser()
     parser.add_argument(
         "-c",
         "--append-condor-requirements",
@@ -152,13 +180,6 @@ def get_parser() -> argparse.ArgumentParser:
         " jobs in a DAG",
     )
     parser.add_argument(
-        "-G",
-        "--group",
-        help="Group/Experiment/Subgroup for priorities and accounting",
-        action=StoreGroupinEnvironment,
-        default=os.environ.get("GROUP", None),
-    )
-    parser.add_argument(
         "-L", "--log-file", "--log_file", help="Log file to hold log output from job."
     )
     parser.add_argument(
@@ -258,18 +279,7 @@ def get_parser() -> argparse.ArgumentParser:
         ' +DESIRED_CVMFS="OSG" to the job classad attributes and'
         " '&&(CVMFS==\"OSG\")' to the job requirements",
     )
-    parser.add_argument(
-        "--role", help="VOMS Role for priorities and accounting", default="Analysis"
-    )
     parser.add_argument("--site", help="submit jobs to these (comma-separated) sites")
-    parser.add_argument(
-        "--subgroup",
-        help=" Subgroup for priorities and accounting. See"
-        " https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/"
-        "Jobsub_submit#Groups-Subgroups-Quotas-Priorities for more"
-        "documentation on using --subgroup to set job quotas and"
-        "priorities",
-    )
     parser.add_argument(
         "--tar_file_name",
         "--tar-file-name",
@@ -311,12 +321,6 @@ def get_parser() -> argparse.ArgumentParser:
         const="pnfs",
         help="use cvmfs for dropbox (default is pnfs)",
         default=None,
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        default=False,
-        help="dump internal state of program (useful for debugging)",
     )
     parser.add_argument(
         "--devserver",
