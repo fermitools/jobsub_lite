@@ -118,7 +118,7 @@ def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
         if debug > 0:
             sys.stderr.write(f"Running: {cmd}")
 
-        # send htgettoken output to stderr because invokers read stdout
+        # send htgettoken stderr to stdout because invokers read stdout
         cmd += " 2>&1"
 
         res = os.system(cmd)
