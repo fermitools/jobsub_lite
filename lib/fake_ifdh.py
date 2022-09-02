@@ -116,11 +116,10 @@ def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
             cmd = f"{cmd} -r {role.lower()}"  # Token-world wants all-lower
 
         if debug > 0:
-            # send htgettoken output to stderr because invokers read stdout
             sys.stderr.write(f"Running: {cmd}")
-            cmd += " >&2"
-        else:
-            cmd += " >/dev/null 2>&1"
+
+        # send htgettoken output to stderr because invokers read stdout
+        cmd += " 2>&1"
 
         res = os.system(cmd)
         if res != 0:
