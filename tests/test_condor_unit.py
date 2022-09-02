@@ -148,6 +148,7 @@ class TestCondorUnit:
 
 
 class TestJob:
+    @pytest.mark.unit
     def test_job(self):
         jid = "123.456@foo.example.com"
         j = condor.Job(jid)
@@ -159,6 +160,7 @@ class TestJob:
         assert str(j) == jid
         assert j._constraint() == "ClusterId==123 && ProcId==456"
 
+    @pytest.mark.unit
     def test_cluster(self):
         jid = "123@foo.example.com"
         j = condor.Job(jid)
@@ -170,6 +172,7 @@ class TestJob:
         assert str(j) == jid
         assert j._constraint() == "ClusterId==123"
 
+    @pytest.mark.unit
     def test_bad_jobs(self):
         for jid in ["foo", "foo@example.com" "foo.bar@example.com"]:
             try:

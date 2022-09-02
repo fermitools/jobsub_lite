@@ -112,18 +112,18 @@ def main():
     else:
         # build archive
         cmd = []
-        if args.archive_format == "zip":
-            cmd = ["/usr/bin/zip", "-jq", f"{str(j)}.zip"] + [
-                os.path.join(iwd, f) for f in files
-            ]
-            # -j: junk (don't record) directory names
-            # -q: quiet
-        elif args.archive_format == "tar":
+        if args.archive_format == "tar":
             cmd = ["/usr/bin/tar", "-C", iwd, "-czf", f"{str(j)}.tgz"] + files
             # -C: move into directory so paths are relative
             # -c: create
             # -z: gzip
             # -f: filename
+        elif args.archive_format == "zip":
+            cmd = ["/usr/bin/zip", "-jq", f"{str(j)}.zip"] + [
+                os.path.join(iwd, f) for f in files
+            ]
+            # -j: junk (don't record) directory names
+            # -q: quiet
         else:
             raise Exception(f'unknown archive format "{args.archive_format}"')
         if args.verbose:
