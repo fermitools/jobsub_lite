@@ -23,34 +23,40 @@ def setup_ups(monkeypatch):
     """A fixture to set up UPS for our tests, in case it is not already set up in the test environment.
     Adapted from https://stackoverflow.com/a/3505826
     """
+    ups_setup_script_locations = [
+        "/cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh",
+        "/grid/fermiapp/products/common/etc/setups.sh",
+    ]
     env_to_add = {}
 
-    command = shlex.split(
-        "env -i bash -c 'source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh && env'"
-    )
-    try:
-        source_proc = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        for line in source_proc.stdout:
-            (env_key, _, env_value) = line.decode().partition("=")
-            env_to_add[env_key] = env_value
-        source_proc.communicate()
-        if source_proc.returncode:
-            raise OSError(
-                "Could not set up UPS in environment.  Any unit test using this fixture might fail."
+    for setup_script_location in ups_setup_script_locations:
+        command = shlex.split(f"env -i bash -c 'source {setup_script_location} && env'")
+        print(f"Trying to set up UPS from {setup_script_location}")
+        try:
+            source_proc = subprocess.Popen(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
-    except Exception as e:
-        # Let the test run, with the possiblity that we might fail.
-        # The tester may have Spack, or the applicable package installed directly via RPM
-        print(e)
-    else:
-        for env_key, env_value in env_to_add.items():
-            monkeypatch.setenv(env_key, env_value)
-    finally:
-        yield
-        for env_key in env_to_add.keys():
-            monkeypatch.delenv(env_key)
+            for line in source_proc.stdout:
+                (env_key, _, env_value) = line.decode().partition("=")
+                env_to_add[env_key] = env_value
+            source_proc.communicate()
+            if source_proc.returncode:
+                raise OSError(
+                    "Could not set up UPS in environment.  Any unit test using this fixture might fail."
+                )
+        except Exception as e:
+            # We're OK with an exception being raised, since we can just try the next setup script location
+            print(e)
+        else:
+            for env_key, env_value in env_to_add.items():
+                monkeypatch.setenv(env_key, env_value)
+            break
+
+    # No matter whether or not we were able to set the env, let the test run, with the possiblity that we might fail.
+    # The tester may have Spack, or the applicable package installed directly via RPM
+    yield
+    for env_key in env_to_add.keys():
+        monkeypatch.delenv(env_key)
 
 
 class TestPackagesUnit:
