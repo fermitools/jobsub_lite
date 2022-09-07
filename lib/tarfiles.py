@@ -218,9 +218,10 @@ class TarfilePublisherHandler:
         else:
             print(f"Using X509 proxy located at {self.proxy} to authenticate to RCDS")
         self.dropbox_servers = tuple(self.dropbox_server_string.split())
-        self.pubapi_base_url_formatter = (
+        self.pubapi_base_url_formatter_full = (
             f"https://{{dropbox_server}}/pubapi/{{endpoint}}?cid={self.cid_url}"
         )
+        self.pubapi_base_url_formatter = self.pubapi_base_url_formatter_full
 
     # pylint: disable-next=no-self-argument
     def pubapi_operation(func: Callable) -> Callable:  # type: ignore
@@ -244,7 +245,7 @@ class TarfilePublisherHandler:
                 try:
                     _dropbox_server = next(_dropbox_server_selector)
                     self.pubapi_base_url_formatter = (
-                        self.pubapi_base_url_formatter.format_map(
+                        self.pubapi_base_url_formatter_full.format_map(
                             SafeDict(dropbox_server=_dropbox_server)
                         )
                     )
