@@ -23,7 +23,6 @@ import glob
 import os
 import os.path
 import sys
-import time
 from typing import Union, List, Dict, Any
 
 #
@@ -48,7 +47,7 @@ from get_parser import get_parser
 from condor import get_schedd, submit, submit_dag
 from dagnabbit import parse_dagnabbit
 from tarfiles import do_tarballs
-from utils import set_extras_n_fix_units
+from utils import set_extras_n_fix_units, cleanup
 from creds import get_creds
 
 
@@ -102,27 +101,6 @@ in its entirety.
             raise
         if ff.endswith(".sh"):
             os.chmod(ff, 0o755)
-
-
-def cleanup(varg: Dict[str, Any]) -> None:
-    """cleanup submit directory etc."""
-    # we actually leave everything in the sandbox right now..
-    os.chdir(f'{varg["submitdir"]}/..')
-    cleandir(varg["submitdir"])
-    # now clean up old submit directories that weren't
-    # cleaned up by jobsub_submit at the time
-    with os.scandir(".") as it:
-        for entry in it:
-            sb = os.stat(entry.name)
-            if entry.name.startswith("js_") and sb.st_mtime - time.time() > 604800:
-                cleandir(entry.name)
-
-
-def cleandir(d: str):
-    with os.scandir(d) as it:
-        for entry in it:
-            os.unlink(f"{d}/{entry.name}")
-    os.rmdir(d)
 
 
 def do_dataset_defaults(varg: Dict[str, Any]) -> None:

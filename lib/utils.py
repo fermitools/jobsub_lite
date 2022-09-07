@@ -24,7 +24,28 @@ import sys
 import subprocess
 import uuid
 import shutil
+import time
 from typing import Union, Dict, Any
+
+
+def cleandir(d: str) -> None:
+    with os.scandir(d) as it:
+        for entry in it:
+            os.unlink(f"{d}/{entry.name}")
+    os.rmdir(d)
+
+
+def cleanup(varg: Dict[str, Any]) -> None:
+    """cleanup submit directory etc."""
+    os.chdir(f'{varg["submitdir"]}/..')
+    cleandir(varg["submitdir"])
+    # now clean up old submit directories that weren't
+    # cleaned up by jobsub_submit at the time
+    with os.scandir(".") as it:
+        for entry in it:
+            sb = os.stat(entry.name)
+            if entry.name.startswith("js_") and sb.st_mtime - time.time() > 604800:
+                cleandir(entry.name)
 
 
 def fixquote(s: str) -> str:
