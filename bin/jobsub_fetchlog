@@ -133,7 +133,7 @@ def main():
         if p.wait() != 0:
             raise Exception(f"error creating archive")
 
-    cleanup({"submit_dir": iwd})
+    cleanup({"submitdir": iwd})
 
 
 if __name__ == "__main__":
