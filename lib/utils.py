@@ -67,8 +67,9 @@ def set_extras_n_fix_units(
     if args["debug"] > 1:
         sys.stderr.write(f"entering set_extras... args: {repr(args)}\n")
 
-    args["outbase"] = os.environ.get(
-        "JOBSUB_SPOOL", f"{os.environ.get('HOME')}/.jobsub_lite"
+    args["outbase"] = (
+        os.environ.get("XDG_CACHE_HOME", f"{os.environ.get('HOME')}/.cache")
+        + "/jobsub_lite"
     )
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
@@ -128,10 +129,7 @@ def set_extras_n_fix_units(
         args["site"] = add_site
 
     if not "outdir" in args:
-        args["outdir"] = (
-            f"{args['outbase']}/{args['group']}/"
-            f"{args['user']}/{args['date']}.{args['uuid']}"
-        )
+        args["outdir"] = f"{args['outbase']}/js_{args['date']}_{args['uuid']}"
         args["submitdir"] = args["outdir"]
 
     if not os.path.exists(args["outdir"]):

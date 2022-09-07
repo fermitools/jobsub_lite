@@ -23,6 +23,7 @@ import glob
 import os
 import os.path
 import sys
+import time
 from typing import Union, List, Dict, Any
 
 #
@@ -103,10 +104,25 @@ in its entirety.
             os.chmod(ff, 0o755)
 
 
-# pylint: disable-next=unused-argument
-def cleanup(tmp: str) -> None:
-    """cleanup /tmp etc."""
+def cleanup(varg: Dict[str, Any]) -> None:
+    """cleanup submit directory etc."""
     # we actually leave everything in the sandbox right now..
+    os.chdir(f'{varg["submitdir"]}/..')
+    cleandir(varg["submitdir"])
+    # now clean up old submit directories that weren't
+    # cleaned up by jobsub_submit at the time
+    with os.scandir(".") as it:
+        for entry in it:
+            sb = os.stat(entry.name)
+            if entry.name.startswith("js_") and sb.st_mtime - time.time() > 604800:
+                cleandir(entry.name)
+
+
+def cleandir(d: str):
+    with os.scandir(d) as it:
+        for entry in it:
+            os.unlink(f"{d}/{entry.name}")
+    os.rmdir(d)
 
 
 def do_dataset_defaults(varg: Dict[str, Any]) -> None:
@@ -217,7 +233,9 @@ def main():
         render_files(d2, varg, submitdir, dlist=[d1, d2])
         varg["N"] = saveN
         render_files(d1, varg, submitdir, dlist=[d1, d2, submitdir])
-        if not varg.get("no_submit", False):
+        if varg.get("no_submit", False):
+            print(f"Submission files are in: {varg['submitdir']}")
+        else:
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     elif args.maxConcurrent:
@@ -234,6 +252,7 @@ def main():
         if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
             submit(os.path.join(submitdir, "*.cmd"), varg, schedd_name)
+    cleanup(varg)
 
 
 if __name__ == "__main__":

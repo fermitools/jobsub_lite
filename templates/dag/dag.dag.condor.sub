@@ -7,7 +7,8 @@ output		= dag.dag.lib.out
 error		= dag.dag.lib.err
 log		= dag.dag.dagman.log
 remove_kill_sig	= SIGUSR1
-transfer_input_files = {{",".join(transfer_files)}}
+transfer_input_files = {{",".join(transfer_files)}},dag.dag.condor.sub
+transfer_output_files = {{",".join(transfer_files)}},dag.dag.condor.sub,dagman_wrapper.sh
 +OtherJobRemoveRequirements	= "DAGManJobId =?= $(cluster)"
 # Note: default on_exit_remove expression:
 # ( ExitSignal =?= 11 || (ExitCode =!= UNDEFINED && ExitCode >=0 && ExitCode <= 2))
