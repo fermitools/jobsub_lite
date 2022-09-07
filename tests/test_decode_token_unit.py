@@ -66,7 +66,7 @@ def test_decode_token_ext_group():
     assert lines[0] == '["/dune","/dune/production"]\n'
 
 
-def test_decode_token_past_bugs(token):
+def test_decode_token_past_bugs():
     """go through list of tokens  that caused trouble in past and
     make sure they generate good json, etc."""
     list = glob.glob("decode_token_tests/*")
