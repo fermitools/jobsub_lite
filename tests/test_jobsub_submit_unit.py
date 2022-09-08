@@ -62,12 +62,6 @@ class TestJobsubSubmitUnit:
             jobsub_submit.render_files(srcdir, args, dest)
 
     @pytest.mark.unit
-    def test_cleanup_1(self):
-        # cleanup doesn't actually do anything right now...
-        jobsub_submit.cleanup("")
-        assert True
-
-    @pytest.mark.unit
     def test_do_dataset_defaults_1(self):
         """make sure do_dataset_defaults sets arguments its supposed to"""
         varg = TestUnit.test_vargs.copy()
