@@ -21,6 +21,7 @@ transfer_output    = True
 transfer_error     = True
 transfer_executable= True
 transfer_input_files = {{executable|basename}},simple.cmd
+transfer_output_files = simple.cmd,simple.sh
 when_to_transfer_output = ON_EXIT_OR_EVICT
 {%if    cpu is defined and cpu %}request_cpus = {{cpu}}{%endif%}
 {%if memory is defined and memory %}request_memory = {{memory}}{%endif%}

@@ -44,7 +44,7 @@ def cleanup(varg: Dict[str, Any]) -> None:
     with os.scandir(".") as it:
         for entry in it:
             sb = os.stat(entry.name)
-            if entry.name.startswith("js_") and sb.st_mtime - time.time() > 604800:
+            if entry.name.startswith("js_") and time.time() - sb.st_mtime > 604800:
                 cleandir(entry.name)
 
 
