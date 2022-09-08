@@ -211,9 +211,7 @@ def main():
         render_files(d2, varg, submitdir, dlist=[d1, d2])
         varg["N"] = saveN
         render_files(d1, varg, submitdir, dlist=[d1, d2, submitdir])
-        if varg.get("no_submit", False):
-            print(f"Submission files are in: {varg['submitdir']}")
-        else:
+        if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     elif args.maxConcurrent:
@@ -230,7 +228,11 @@ def main():
         if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
             submit(os.path.join(submitdir, "*.cmd"), varg, schedd_name)
-    cleanup(varg)
+
+    if varg.get("no_submit", False):
+        print(f"Submission files are in: {varg['submitdir']}")
+    else:
+        cleanup(varg)
 
 
 if __name__ == "__main__":
