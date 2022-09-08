@@ -24,7 +24,28 @@ import sys
 import subprocess
 import uuid
 import shutil
+import time
 from typing import Union, Dict, Any
+
+
+def cleandir(d: str) -> None:
+    with os.scandir(d) as it:
+        for entry in it:
+            os.unlink(f"{d}/{entry.name}")
+    os.rmdir(d)
+
+
+def cleanup(varg: Dict[str, Any]) -> None:
+    """cleanup submit directory etc."""
+    os.chdir(f'{varg["submitdir"]}/..')
+    cleandir(varg["submitdir"])
+    # now clean up old submit directories that weren't
+    # cleaned up by jobsub_submit at the time
+    with os.scandir(".") as it:
+        for entry in it:
+            sb = os.stat(entry.name)
+            if entry.name.startswith("js_") and time.time() - sb.st_mtime > 604800:
+                cleandir(entry.name)
 
 
 def fixquote(s: str) -> str:
@@ -67,8 +88,9 @@ def set_extras_n_fix_units(
     if args["debug"] > 1:
         sys.stderr.write(f"entering set_extras... args: {repr(args)}\n")
 
-    args["outbase"] = os.environ.get(
-        "JOBSUB_SPOOL", f"{os.environ.get('HOME')}/.jobsub_lite"
+    args["outbase"] = (
+        os.environ.get("XDG_CACHE_HOME", f"{os.environ.get('HOME')}/.cache")
+        + "/jobsub_lite"
     )
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
@@ -128,10 +150,7 @@ def set_extras_n_fix_units(
         args["site"] = add_site
 
     if not "outdir" in args:
-        args["outdir"] = (
-            f"{args['outbase']}/{args['group']}/"
-            f"{args['user']}/{args['date']}.{args['uuid']}"
-        )
+        args["outdir"] = f"{args['outbase']}/js_{args['date']}_{args['uuid']}"
         args["submitdir"] = args["outdir"]
 
     if not os.path.exists(args["outdir"]):

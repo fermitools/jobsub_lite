@@ -7,6 +7,9 @@
 
 umask 002
 
+# add a link of our original name
+ln $0 simple.sh
+
 #
 # clear out variables that sometimes bleed into containers
 # causing problems.  See for example INC000001136681...
@@ -112,7 +115,9 @@ redirect_output_finish(){
 
 normal_exit(){
     redirect_output_finish
-    cleanup_condor_dirs
+
+    # maybe don't cleanup so we can transfer files back...
+    #cleanup_condor_dirs
 }
 
 signal_exit(){

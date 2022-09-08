@@ -47,7 +47,7 @@ from get_parser import get_parser
 from condor import get_schedd, submit, submit_dag
 from dagnabbit import parse_dagnabbit
 from tarfiles import do_tarballs
-from utils import set_extras_n_fix_units
+from utils import set_extras_n_fix_units, cleanup
 from creds import get_creds
 
 
@@ -101,12 +101,6 @@ in its entirety.
             raise
         if ff.endswith(".sh"):
             os.chmod(ff, 0o755)
-
-
-# pylint: disable-next=unused-argument
-def cleanup(tmp: str) -> None:
-    """cleanup /tmp etc."""
-    # we actually leave everything in the sandbox right now..
 
 
 def do_dataset_defaults(varg: Dict[str, Any]) -> None:
@@ -234,6 +228,11 @@ def main():
         if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
             submit(os.path.join(submitdir, "*.cmd"), varg, schedd_name)
+
+    if varg.get("no_submit", False):
+        print(f"Submission files are in: {varg['submitdir']}")
+    else:
+        cleanup(varg)
 
 
 if __name__ == "__main__":

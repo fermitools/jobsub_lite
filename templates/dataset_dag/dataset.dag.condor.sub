@@ -6,8 +6,7 @@ getenv		= True
 output		= dataset.dag.lib.out
 error		= dataset.dag.lib.err
 log		= dataset.dag.dagman.log
-#transfer_output_files = dataset.dag.nodes.log
-transfer_input_files = {{",".join(transfer_files)}}
+transfer_input_files = {{",".join(transfer_files)}},dataset.dag.condor.sub
 #remove_kill_sig	= SIGUSR1
 +OtherJobRemoveRequirements	= "DAGManJobId =?= $(cluster)"
 # Note: default on_exit_remove expression:

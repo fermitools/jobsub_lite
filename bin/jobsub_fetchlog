@@ -41,6 +41,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 import creds
 from get_parser import get_base_parser
 from condor import Job
+from utils import cleanup
 
 
 def main():
@@ -131,6 +132,8 @@ def main():
         p = subprocess.Popen(cmd)
         if p.wait() != 0:
             raise Exception(f"error creating archive")
+
+    cleanup({"submitdir": iwd})
 
 
 if __name__ == "__main__":
