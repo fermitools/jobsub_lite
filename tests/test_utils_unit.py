@@ -1,5 +1,7 @@
 import os
 import sys
+import tempfile
+import time
 import pytest
 
 #
@@ -18,6 +20,33 @@ import utils
 from test_unit import TestUnit
 from test_creds_unit import needs_credentials  # pylint: disable=unused-import
 from test_creds_unit import clear_x509_user_proxy  # pylint: disable=unused-import
+
+
+def fill_in(dir):
+    open(f"{dir}/simple.sh", "w").close()
+    open(f"{dir}/simple.cmd", "w").close()
+
+
+@pytest.fixture
+def test_job_dir():
+    d = tempfile.mkdtemp()
+    d = f"{d}/js_testdir"
+    os.mkdir(d)
+    fill_in(d)
+    return d
+
+
+@pytest.fixture
+def test_old_dir(test_job_dir):
+    d = f"{test_job_dir}/../js_newstuff"
+    os.mkdir(d)
+    fill_in(d)
+    d = f"{test_job_dir}/../js_oldstuff"
+    os.mkdir(d)
+    fill_in(d)
+    eightdaysago = time.time() - 691200
+    os.utime(d, times=(eightdaysago, eightdaysago))
+    return test_job_dir
 
 
 class TestUtilsUnit:
@@ -115,3 +144,22 @@ class TestUtilsUnit:
         should get "" as the return value"""
         client_dn = utils.get_client_dn("bad_path")
         assert client_dn == ""
+
+    @pytest.mark.unit
+    def test_cleanup_simple(self, test_job_dir):
+        assert os.path.exists(f"{test_job_dir}/simple.cmd")
+        utils.cleanup({"submitdir": test_job_dir})
+        assert not os.path.exists(f"{test_job_dir}/simple.cmd")
+        assert not os.path.exists(test_job_dir)
+
+    @pytest.mark.unit
+    def test_cleanup_old(self, test_old_dir):
+        oldd = f"{os.path.dirname(test_old_dir)}/js_oldstuff"
+        newd = f"{os.path.dirname(test_old_dir)}/js_newstuff"
+        assert os.path.exists(f"{test_old_dir}/simple.cmd")
+        assert os.path.exists(f"{oldd}/simple.cmd")
+        assert os.path.exists(f"{newd}/simple.cmd")
+        utils.cleanup({"submitdir": test_old_dir})
+        assert not os.path.exists(f"{test_old_dir}/simple.cmd")
+        assert not os.path.exists(f"{oldd}/simple.cmd")
+        assert os.path.exists(f"{newd}/simple.cmd")
