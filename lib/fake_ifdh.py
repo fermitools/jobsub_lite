@@ -19,6 +19,7 @@
 # limitations under the License.
 """ifdh replacemnents to remove dependency"""
 
+import argparse
 import json
 import os
 import re
@@ -26,10 +27,11 @@ import shlex
 import subprocess
 import sys
 import time
-import argparse
 from typing import Union, Optional, List
 
-VAULT_HOST = "fermicloud543.fnal.gov"
+import htcondor  # type: ignore
+
+VAULT_OPTS = htcondor.param.get("SEC_CREDENTIAL_GETTOKEN_OPTS", "")
 DEFAULT_ROLE = "Analysis"
 
 
@@ -110,7 +112,7 @@ def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
         os.environ["BEARER_TOKEN_FILE"] = tokenfile
 
     if not checkToken(tokenfile):
-        cmd = f"htgettoken -a {VAULT_HOST} -i {issuer}"
+        cmd = f"htgettoken {VAULT_OPTS} -i {issuer}"
 
         if role != DEFAULT_ROLE:
             cmd = f"{cmd} -r {role.lower()}"  # Token-world wants all-lower

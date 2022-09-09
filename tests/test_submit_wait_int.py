@@ -72,10 +72,21 @@ def dune(job_envs):
     os.environ["SAM_STATION"] = "dune"
 
 
+def get_collector():
+    """obfuscated way to find collector for dune pool"""
+    cp = "collector"[:4]
+    hn = os.environ["HOSTNAME"]
+    exp = os.environ["GROUP"]
+    dom = hn[hn.find(".") :]
+    n = dom.find(".", 1) - 3
+    col = f"{exp}gp{cp}0{n}{dom}"
+    return col
+
+
 @pytest.fixture
 def dune_gp(dune):
     """fixture to run launches for dune global pool"""
-    os.environ["_condor_COLLECTOR_HOST"] = "dunegpcoll02.fnal.gov"
+    os.environ["_condor_COLLECTOR_HOST"] = get_collector()
 
 
 joblist = []
@@ -252,7 +263,8 @@ def test_dune_gp_fife_launch(dune_gp):
 def group_for_job(jid):
     if jid.find("dune") > 0:
         group = "dune"
-        os.environ["_condor_COLLECTOR_HOST"] = "dunegpcoll02.fnal.gov"
+        os.environ["GROUP"] = group
+        os.environ["_condor_COLLECTOR_HOST"] = get_collector()
     else:
         group = "fermilab"
         if os.environ.get("_condor_COLLECTOR_HOST"):

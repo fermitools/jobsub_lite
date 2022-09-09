@@ -30,7 +30,7 @@ import packages
 random.seed()
 
 # pylint: disable-next=no-member
-COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", "gpcollector03.fnal.gov")
+COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", None)
 
 
 # pylint: disable-next=no-member
