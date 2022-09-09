@@ -199,9 +199,7 @@ class TarfilePublisherHandler:
         token (str): Location of JWT/Sci-token to authenticate to RCDS
     """
 
-    dropbox_server_string = os.getenv(
-        "JOBSUB_DROPBOX_SERVER_LIST", "rcds01.fnal.gov rcds02.fnal.gov"
-    )
+    dropbox_server_string = os.getenv("JOBSUB_DROPBOX_SERVER_LIST", "")
     check_tarball_present_re = re.compile(
         "^PRESENT:(.+)$"
     )  # RCDS returns this if a tarball represented by cid is present

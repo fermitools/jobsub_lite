@@ -35,7 +35,7 @@ arguments          =
 output             = lookaround.xx.$(Cluster).$(Process).out
 error              = lookaround.xx.$(Cluster).$(Process).err
 log                = lookaround.xx.$(Cluster).$(Process).log
-environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP=;BEARER_TOKEN_FILE=.condor_creds/{group}.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={user};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@jobsubdevgpvm01.fnal.gov;EXPERIMENT={group};SAM_EXPERIMENT=samdev
+environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP=;BEARER_TOKEN_FILE=.condor_creds/{group}.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={user};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@schedd.example.com;EXPERIMENT={group};SAM_EXPERIMENT=samdev
 rank               = Mips / 2 + Memory
 job_lease_duration = 3600
 notification       = Never
@@ -56,9 +56,9 @@ request_disk = 102400.0KB
 notify_user = {user}@fnal.gov
 +AccountingGroup = "group_{group}.{user}"
 +Jobsub_Group="{group}"
-+JobsubJobId="$(CLUSTER).$(PROCESS)@jobsubdevgpvm01.fnal.gov"
++JobsubJobId="$(CLUSTER).$(PROCESS)@schedd.example.com"
 +Drain = False
-+GeneratedBy =" jobsubdevgpvm01.fnal.gov"
++GeneratedBy = "schedd.example.com"
 
 +DESIRED_usage_model="OPPORTUNISTIC,DEDICATED"
 

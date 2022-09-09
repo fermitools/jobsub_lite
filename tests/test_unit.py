@@ -1,3 +1,12 @@
+def getschedd(s):
+    """obfuscated way to get development schedd -- works onsite"""
+    hn = os.environ["HOSTNAME"]
+    dom = hn[hn.find(".") :]
+    js = os.path.basename(os.path.dirname(os.path.dirname(__file__)))[:6]
+    n = dom.find(".", 1) - 4
+    return f"{js}{s}0{n}{dom}"
+
+
 class TestUnit:
     """
     strings/parameters common to unit tests
@@ -5,7 +14,7 @@ class TestUnit:
 
     test_group = "fermilab"
     # test_group = "dune"
-    test_schedd = "jobsubdevgpvm01.fnal.gov"
+    test_schedd = getschedd("devgpvm")
     test_vargs = {
         "debug": False,
         "executable": "file:///bin/true",
