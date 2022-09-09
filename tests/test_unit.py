@@ -1,3 +1,6 @@
+import os.path
+
+
 def getschedd(s):
     """obfuscated way to get development schedd -- works onsite"""
     hn = os.environ["HOSTNAME"]

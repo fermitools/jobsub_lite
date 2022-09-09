@@ -31,7 +31,7 @@ from typing import Union, Optional, List
 
 import htcondor  # type: ignore
 
-VAULT_OPTS = htcondor.config.get("SEC_CREDENTIAL_GETTOKEN_OPTS", "")
+VAULT_OPTS = htcondor.param.get("SEC_CREDENTIAL_GETTOKEN_OPTS", "")
 DEFAULT_ROLE = "Analysis"
 
 
