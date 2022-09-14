@@ -42,8 +42,10 @@ import creds
 from get_parser import get_base_parser
 from condor import Job
 from utils import cleanup
+from tracing import as_span
 
 
+@as_span("jobsub_fetchlog", is_main=True)
 def main():
     """script mainline:
     - parse args
@@ -86,6 +88,10 @@ def main():
 
     # find where the condor_transfer_data will put the output
     j = Job(args.jobid)
+
+    # monkeypatch-decorate the transfer_data call for tracing
+    j.transfer_data = as_span("condor_transfer_data")(j.transfer_data)
+
     iwd = j.get_attribute("SUBMIT_Iwd")
     if args.verbose:
         print(f"job output to {iwd}")
@@ -130,6 +136,8 @@ def main():
         if args.verbose:
             print(f'running "{cmd}"')
         p = subprocess.Popen(cmd)
+        # monkeypatch-decorate p.wait() for tracing
+        p.wait = as_span(cmd[0])(p.wait)
         if p.wait() != 0:
             raise Exception(f"error creating archive")
 

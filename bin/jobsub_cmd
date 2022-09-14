@@ -31,6 +31,7 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
 
 import fake_ifdh
+from tracing import as_span
 
 
 class StoreGroupinEnvironment(argparse.Action):
@@ -43,6 +44,7 @@ class StoreGroupinEnvironment(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
+@as_span(sys.argv[0], is_main=True)
 def main() -> None:
     """main line of code, proces args, etc."""
     parser = argparse.ArgumentParser(description="Condor command wrapper")
@@ -104,10 +106,10 @@ def main() -> None:
 
     cmd = cmd.replace("jobsub_", "condor_")
 
-    execargs.insert(0, cmd)
+    execargs.insert(0, f"/usr/bin/{cmd}")
 
     # now run the command with those arguments
-    os.execvp("/usr/bin/" + cmd, execargs)
+    os.system(" ".join(execargs))
 
 
 if __name__ == "__main__":
