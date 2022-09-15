@@ -45,7 +45,7 @@ class StoreGroupinEnvironment(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-@as_span(sys.argv[0], is_main=True)
+@as_span(os.path.basename(sys.argv[0]), is_main=True)
 def main() -> None:
     """main line of code, proces args, etc."""
     parser = get_parser.get_jobid_parser(add_condor_epilog=True)

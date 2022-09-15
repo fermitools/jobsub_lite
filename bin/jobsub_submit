@@ -149,7 +149,7 @@ def do_dataset_defaults(varg: Dict[str, Any]) -> None:
         varg["environment"].append(f"SAM_GROUP={experiment}")
 
 
-@as_span("jobsub_lite_main", is_main=True)
+@as_span("jobsub_submit", is_main=True)
 def main():
     """script mainline:
     - parse args
