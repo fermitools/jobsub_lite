@@ -46,7 +46,7 @@ class StoreGroupinEnvironment(argparse.Action):
 
 def main() -> None:
     """main line of code, proces args, etc."""
-    parser = get_parser.get_base_parser(with_jobid=True, add_condor_epilog=True)
+    parser = get_parser.get_jobid_parser(add_condor_epilog=True)
     parser.add_argument("-name", help="Set schedd name", default=None)
     parser.add_argument(
         "--jobsub_server", help="backwards compatability; ignored", default=None

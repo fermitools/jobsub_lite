@@ -46,10 +46,9 @@ class StoreGroupinEnvironment(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def get_base_parser(
-    with_jobid: bool = False, add_condor_epilog: bool = False
-) -> argparse.ArgumentParser:
+def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     """build the general jobsub command argument parser and return it"""
+
     if add_condor_epilog:
         apargs = {
             "formatter_class": argparse.RawDescriptionHelpFormatter,
@@ -57,6 +56,7 @@ def get_base_parser(
         }
     else:
         apargs = {}
+
     parser = argparse.ArgumentParser(**apargs)  # type: ignore
     group = parser.add_argument_group("general arguments")
 
@@ -81,10 +81,13 @@ def get_base_parser(
         help="dump internal state of program (useful for debugging)",
     )
 
-    if with_jobid:
-        parser.add_argument("-J", "--jobid", dest="jobid", help="job/submission ID")
-        parser.add_argument("job_id", nargs="?", help="job/submission ID")
+    return parser
 
+
+def get_jobid_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
+    parser = get_base_parser(add_condor_epilog=add_condor_epilog)
+    parser.add_argument("-J", "--jobid", dest="jobid", help="job/submission ID")
+    parser.add_argument("job_id", nargs="?", help="job/submission ID")
     return parser
 
 

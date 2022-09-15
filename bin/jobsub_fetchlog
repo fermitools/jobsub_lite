@@ -39,7 +39,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 # import our local parts
 #
 import creds
-from get_parser import get_base_parser
+from get_parser import get_jobid_parser
 from condor import Job
 from utils import cleanup
 
@@ -52,7 +52,7 @@ def main():
     - condor_transfer_data
     - make tarball
     """
-    parser = get_base_parser(with_jobid=True)
+    parser = get_jobid_parser()
 
     parser.add_argument(
         "--destdir",
