@@ -34,6 +34,7 @@ class nanosecond_warning_filter(logging.Filter):
             return False
         return True
 
+
 logging.getLogger("opentelemetry.util._time").addFilter(nanosecond_warning_filter())
 
 try:
