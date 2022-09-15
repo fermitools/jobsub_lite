@@ -23,34 +23,29 @@ import sys
 import logging
 from typing import Dict, Any, Callable, TypeVar
 
-# at the moment jaeger_client is installed with pip --user...
+# at the moment opentelemetry is installed with pip --user...
 sys.path.append(f"{os.environ['HOME']}/.local/lib/python3.6/site-packages")
 
 # pylint: disable-next=wrong-import-position
-from jaeger_client import Config  # type: ignore
+from opentelemetry import trace  # type: ignore
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter  # type: ignore
+from opentelemetry.sdk.resources import Resource  # type: ignore
+from opentelemetry.sdk.trace import TracerProvider  # type: ignore
+from opentelemetry.sdk.trace.export import BatchSpanProcessor  # type: ignore
 
+resource = Resource(attributes={"service.name": "kretzke-test"})
 
-def init_tracer(service: str) -> Any:
-    """get the initial trace context"""
-    logging.getLogger("").handlers = []
-    logging.basicConfig(format="%(message)s", level=logging.ERROR)
+trace.set_tracer_provider(TracerProvider(resource=resource))
 
-    config = Config(
-        config={
-            "sampler": {
-                "type": "const",
-                "param": 1,
-            },
-            "logging": True,
-        },
-        service_name=service,
-    )
+otlp_exporter = OTLPSpanExporter(
+    endpoint="https://landscape.fnal.gov/jaeger-collector/api/traces"
+)
 
-    # this call also sets opentracing.tracer
-    return config.initialize_tracer()
+span_processor = BatchSpanProcessor(otlp_exporter)
 
+trace.get_tracer_provider().add_span_processor(span_processor)
 
-tracer = init_tracer("jobsub_lite")
+tracer = trace.get_tracer("jobsub_lite")
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -70,10 +65,8 @@ def as_span(name: str, is_main: bool = False) -> Callable[[F], F]:
         def wrapper(*args, **kwargs):  # type: ignore
             """wrapper that does the span around the call to the original function."""
             # pylint: disable-next=unused-variable
-            with tracer.start_active_span(name) as scope:
+            with tracer.start_as_current_span(name) as scope:
                 res = func(*args, **kwargs)
-            if is_main:
-                tracer.close()
             return res
 
         return wrapper  # type: ignore
