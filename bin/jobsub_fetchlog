@@ -39,7 +39,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 # import our local parts
 #
 import creds
-from get_parser import get_base_parser
+from get_parser import get_jobid_parser
 from condor import Job
 from utils import cleanup
 
@@ -52,8 +52,8 @@ def main():
     - condor_transfer_data
     - make tarball
     """
-    parser = get_base_parser()
-    parser.add_argument("-J", "--jobid", help="job/submission ID", required=True)
+    parser = get_jobid_parser()
+
     parser.add_argument(
         "--destdir",
         "--dest-dir",
@@ -68,13 +68,19 @@ def main():
 
     args = parser.parse_args()
 
+    if not args.jobid and not args.job_id:
+        raise SystemExit("jobid is required.")
+
+    if not args.jobid and args.job_id:
+        args.jobid = args.job_id
+
     if args.verbose:
         htcondor.set_subsystem("TOOL")
         htcondor.param["TOOL_DEBUG"] = "D_FULLDEBUG"
         htcondor.enable_debug()
 
     if os.environ.get("GROUP", None) is None:
-        raise AttributeError(
+        raise SystemExit(
             "%s needs -G group or $GROUP in the environment." % sys.argv[0]
         )
 

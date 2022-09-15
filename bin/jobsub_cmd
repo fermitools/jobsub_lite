@@ -31,6 +31,7 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
 
 import fake_ifdh
+import get_parser
 
 
 class StoreGroupinEnvironment(argparse.Action):
@@ -45,24 +46,22 @@ class StoreGroupinEnvironment(argparse.Action):
 
 def main() -> None:
     """main line of code, proces args, etc."""
-    parser = argparse.ArgumentParser(description="Condor command wrapper")
-    parser.add_argument(
-        "-G",
-        "--group",
-        help="Group/Experiment/Subgroup for priorities and accounting",
-        action=StoreGroupinEnvironment,
-    )
-    parser.add_argument(
-        "--role", help="VOMS Role for priorities and accounting", default="Analysis"
-    )
+    parser = get_parser.get_jobid_parser(add_condor_epilog=True)
     parser.add_argument("-name", help="Set schedd name", default=None)
+    parser.add_argument(
+        "--jobsub_server", help="backwards compatability; ignored", default=None
+    )
 
     arglist, passthru = parser.parse_known_args()
 
+    if arglist.jobid:
+        passthru.append(arglist.jobid)
+
+    if arglist.job_id:
+        passthru.append(arglist.job_id)
+
     if os.environ.get("GROUP", None) is None:
-        raise AttributeError(
-            f"{sys.argv[0]} needs -G group or $GROUP in the environment."
-        )
+        raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
     # make list of arguments to pass to condor command:
     # - the passthru arguments from above, except if we have
@@ -82,6 +81,10 @@ def main() -> None:
             i = m.group(1)
             if not i:
                 continue
+        # convert --better-analyze to -better-analyze, etc.
+        if i.startswith("--"):
+            i = i[1:]
+
         execargs.append(i)
 
     if schedd:

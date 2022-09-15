@@ -17,6 +17,8 @@
 # pylint: disable=too-few-public-methods
 import argparse
 import os
+import re
+import sys
 from typing import Union, Any
 
 
@@ -44,10 +46,20 @@ class StoreGroupinEnvironment(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def get_base_parser() -> argparse.ArgumentParser:
+def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     """build the general jobsub command argument parser and return it"""
-    parser = argparse.ArgumentParser()
+
+    if add_condor_epilog:
+        apargs = {
+            "formatter_class": argparse.RawDescriptionHelpFormatter,
+            "epilog": get_condor_epilog(),
+        }
+    else:
+        apargs = {}
+
+    parser = argparse.ArgumentParser(**apargs)  # type: ignore
     group = parser.add_argument_group("general arguments")
+
     group.add_argument(
         "-G",
         "--group",
@@ -69,6 +81,13 @@ def get_base_parser() -> argparse.ArgumentParser:
         help="dump internal state of program (useful for debugging)",
     )
 
+    return parser
+
+
+def get_jobid_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
+    parser = get_base_parser(add_condor_epilog=add_condor_epilog)
+    parser.add_argument("-J", "--jobid", dest="jobid", help="job/submission ID")
+    parser.add_argument("job_id", nargs="?", help="job/submission ID")
     return parser
 
 
@@ -382,3 +401,18 @@ def get_parser() -> argparse.ArgumentParser:
     )
 
     return parser
+
+
+def get_condor_epilog() -> str:
+    condor_cmd = os.path.basename(sys.argv[0]).replace("jobsub_", "condor_")
+    epilog_l = []
+
+    with os.popen(f"/usr/bin/{condor_cmd} -h 2>&1", "r") as fd:
+        epilog_l = fd.readlines()
+
+    epilog_l[0] = re.sub(
+        f"Usage:.*{condor_cmd}", f"also {condor_cmd} arguments:", epilog_l[0]
+    )
+    epilog_l[0] += "(with single '-' or double '--' dashes)\n"
+
+    return "".join(epilog_l)

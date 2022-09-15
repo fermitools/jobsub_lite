@@ -55,9 +55,7 @@ def main():
     os.environ["BEARER_TOKEN_FILE"] = token
 
     if os.environ.get("GROUP", None) is None:
-        raise AttributeError(
-            f"{sys.argv[0]} needs -G group or $GROUP in the environment."
-        )
+        raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
     schedd_add = get_schedd({})
 

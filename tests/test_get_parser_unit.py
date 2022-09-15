@@ -56,7 +56,7 @@ def find_all_arguments():
                 arg = arg[0:p2]
             # all of our old args with underscores have dashed versions now
             # so ignore the underscore versions.
-            if arg.find("_") == -1:
+            if arg.find("_") == -1 and arg:
                 allargs.append(arg)
                 dest[arg] = arg  # destination starts off as flag name
         if line.find('dest="') > 0 or line.find("dest='") > 0:
@@ -123,6 +123,7 @@ def all_test_args():
         "--generate-email-summary",
         "--group",
         "xxgroupxx",
+        "--jobid",
         "--log-file",
         "xxlog-filexx",
         "--lines",
@@ -232,7 +233,7 @@ class TestGetParserUnit:
         # mutually exclusive group, except for one
         # e.g. For the mutually exclusive group (--singularity-image,
         # --no-singularity), we pick one and enter it into args_exclude_list
-        args_exclude_list = ["--no-singularity", "--onsite-only"]
+        args_exclude_list = ["--no-singularity", "--onsite-only", "--jobid"]
 
         def filter_excluded(arg_list):
             _stripped_args_exclude_list = [arg.strip("-") for arg in args_exclude_list]
@@ -267,6 +268,8 @@ class TestGetParserUnit:
             # using dest table and fixing dashes
             uarg = dest[arg].replace("-", "_")
 
+            print("arg '{arg}' uarg '{uarg}'")
+
             if arg in flagargs:
                 # its a flag, just assert it
                 assert vres[uarg]
@@ -298,3 +301,10 @@ class TestGetParserUnit:
         assert "file:///bin/true" == vres["executable"]
         for i in range(4):
             assert "xx_executable_arg_%s_xx" % i in vres["exe_arguments"]
+
+    def test_get_condor_epilog(self):
+        """make sure we get the condor_q help epilog if we are jobsub_q"""
+        sys.argv[0] = "/blah/blah/jobsub_q"
+        epilog = get_parser.get_condor_epilog()
+        assert epilog.find("also condor_q arguments") == 0
+        assert epilog.find("-better-analyze") > 0
