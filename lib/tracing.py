@@ -37,33 +37,52 @@ class nanosecond_warning_filter(logging.Filter):
 
 logging.getLogger("opentelemetry.util._time").addFilter(nanosecond_warning_filter())
 
-# pylint: disable-next=wrong-import-position
-from opentelemetry import trace  # type: ignore
+try:
+    # pylint: disable-next=wrong-import-position
+    from opentelemetry import trace  # type: ignore
 
-# from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter # type: ignore
-# from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter # type: ignore
-from opentelemetry.exporter.jaeger.thrift import JaegerExporter  # type: ignore
-from opentelemetry.sdk.resources import Resource  # type: ignore
-from opentelemetry.sdk.trace import TracerProvider  # type: ignore
-from opentelemetry.sdk.trace.export import BatchSpanProcessor  # type: ignore
+    # from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter # type: ignore
+    # from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter # type: ignore
+    from opentelemetry.exporter.jaeger.thrift import JaegerExporter  # type: ignore
+    from opentelemetry.sdk.resources import Resource  # type: ignore
+    from opentelemetry.sdk.trace import TracerProvider  # type: ignore
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor  # type: ignore
 
-resource = Resource(attributes={"service.name": "kretzke-test"})
+    resource = Resource(attributes={"service.name": "kretzke-test"})
 
-trace.set_tracer_provider(TracerProvider(resource=resource))
+    trace.set_tracer_provider(TracerProvider(resource=resource))
 
-# otlp_exporter = OTLPSpanExporter(
-#    endpoint="https://landscape.fnal.gov/jaeger-collector/api/traces"
-# )
-# span_processor = BatchSpanProcessor(otlp_exporter)
+    # otlp_exporter = OTLPSpanExporter(
+    #    endpoint="https://landscape.fnal.gov/jaeger-collector/api/traces"
+    # )
+    # span_processor = BatchSpanProcessor(otlp_exporter)
 
-jaeger_exporter = JaegerExporter(
-    collector_endpoint="https://landscape.fnal.gov/jaeger-collector/api/traces"
-)
-span_processor = BatchSpanProcessor(jaeger_exporter)
+    jaeger_exporter = JaegerExporter(
+        collector_endpoint="https://landscape.fnal.gov/jaeger-collector/api/traces"
+    )
+    span_processor = BatchSpanProcessor(jaeger_exporter)
 
-trace.get_tracer_provider().add_span_processor(span_processor)
+    trace.get_tracer_provider().add_span_processor(span_processor)
 
-tracer = trace.get_tracer("jobsub_lite")
+    tracer = trace.get_tracer("jobsub_lite")
+
+except:
+    # if we can't import the stuff, here's a little mock so we don't crash
+    print("Note: tracing not available here.")
+
+    class stub_out_scope:
+        def __enter__(self):  # type: ignore
+            pass
+
+        def __exit__(self, *args):  # type: ignore
+            pass
+
+    class stub_out_tracing:
+        def start_as_current_span(self, name: str) -> stub_out_scope:
+            return stub_out_scope()
+
+    tracer = stub_out_tracing()
+
 
 F = TypeVar("F", bound=Callable[..., Any])
 
