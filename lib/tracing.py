@@ -26,9 +26,23 @@ from typing import Dict, Any, Callable, TypeVar
 # at the moment opentelemetry is installed with pip --user...
 sys.path.append(f"{os.environ['HOME']}/.local/lib/python3.6/site-packages")
 
+# opentelemetry makes this obnoxious warning about nanosecond accuracy in python 3.6
+# squelch it before we import the modules
+class nanosecond_warning_filter(logging.Filter):
+    def filter(self, lr: logging.LogRecord) -> bool:
+        if str(lr).find("millisecond precision") > 0:
+            return False
+        return True
+
+
+logging.getLogger("opentelemetry.util._time").addFilter(nanosecond_warning_filter())
+
 # pylint: disable-next=wrong-import-position
 from opentelemetry import trace  # type: ignore
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter  # type: ignore
+
+# from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter # type: ignore
+# from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter # type: ignore
+from opentelemetry.exporter.jaeger.thrift import JaegerExporter  # type: ignore
 from opentelemetry.sdk.resources import Resource  # type: ignore
 from opentelemetry.sdk.trace import TracerProvider  # type: ignore
 from opentelemetry.sdk.trace.export import BatchSpanProcessor  # type: ignore
@@ -37,11 +51,15 @@ resource = Resource(attributes={"service.name": "kretzke-test"})
 
 trace.set_tracer_provider(TracerProvider(resource=resource))
 
-otlp_exporter = OTLPSpanExporter(
-    endpoint="https://landscape.fnal.gov/jaeger-collector/api/traces"
-)
+# otlp_exporter = OTLPSpanExporter(
+#    endpoint="https://landscape.fnal.gov/jaeger-collector/api/traces"
+# )
+# span_processor = BatchSpanProcessor(otlp_exporter)
 
-span_processor = BatchSpanProcessor(otlp_exporter)
+jaeger_exporter = JaegerExporter(
+    collector_endpoint="https://landscape.fnal.gov/jaeger-collector/api/traces"
+)
+span_processor = BatchSpanProcessor(jaeger_exporter)
 
 trace.get_tracer_provider().add_span_processor(span_processor)
 
