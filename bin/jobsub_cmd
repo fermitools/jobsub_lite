@@ -46,8 +46,11 @@ class StoreGroupinEnvironment(argparse.Action):
 
 def main() -> None:
     """main line of code, proces args, etc."""
-    parser = get_parser.get_base_parser(with_jobid=True)
+    parser = get_parser.get_base_parser(with_jobid=True, add_condor_epilog=True)
     parser.add_argument("-name", help="Set schedd name", default=None)
+    parser.add_argument(
+        "--jobsub_server", help="backwards compatability; ignored", default=None
+    )
 
     arglist, passthru = parser.parse_known_args()
 
@@ -78,6 +81,10 @@ def main() -> None:
             i = m.group(1)
             if not i:
                 continue
+        # convert --better-analyze to -better-analyze, etc.
+        if i.startswith("--"):
+            i = i[1:]
+
         execargs.append(i)
 
     if schedd:
