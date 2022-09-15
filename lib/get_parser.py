@@ -259,6 +259,12 @@ def get_parser() -> argparse.ArgumentParser:
         help="generate condor_command file but do not submit",
     )
     parser.add_argument(
+        "--no-env-cleanup",
+        default=False,
+        action="store_true",
+        help="do not clean environment in wrapper script",
+    )
+    parser.add_argument(
         "--OS",
         default=None,
         help="specify OS version of worker node. Example --OS=SL5 Comma"

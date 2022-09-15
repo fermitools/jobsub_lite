@@ -134,6 +134,7 @@ def all_test_args():
         "xxmaxConcurrentxx",
         "--memory",
         "xxmemoryxx",
+        "--no-env-cleanup",
         "--no-singularity",
         "--no-submit",
         "--OS",
