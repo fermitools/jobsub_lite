@@ -102,9 +102,7 @@ def main():
         group = os.environ.get("GROUP", None)
 
     if group is None:
-        raise AttributeError(
-            f"{sys.argv[0]} needs -G group or $GROUP in the environment."
-        )
+        raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
     if args.test is not None:
         schedd_name = args.test

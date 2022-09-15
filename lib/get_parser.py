@@ -44,10 +44,11 @@ class StoreGroupinEnvironment(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def get_base_parser() -> argparse.ArgumentParser:
+def get_base_parser(with_jobid: bool = False) -> argparse.ArgumentParser:
     """build the general jobsub command argument parser and return it"""
     parser = argparse.ArgumentParser()
     group = parser.add_argument_group("general arguments")
+
     group.add_argument(
         "-G",
         "--group",
@@ -68,6 +69,10 @@ def get_base_parser() -> argparse.ArgumentParser:
         default=False,
         help="dump internal state of program (useful for debugging)",
     )
+
+    if with_jobid:
+        parser.add_argument("-J", "--jobid", dest="jobid", help="job/submission ID")
+        parser.add_argument("job_id", nargs="?", help="job/submission ID")
 
     return parser
 
