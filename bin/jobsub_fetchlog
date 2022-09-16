@@ -45,6 +45,16 @@ from utils import cleanup
 from tracing import as_span
 
 
+@as_span("transfer_data")
+def traced_transfer_data(j: Job) -> None:
+    j.transfer_data()
+
+
+@as_span("archive")
+def traced_wait_archive(p: subprocess.Popen) -> None:
+    p.wait()
+
+
 @as_span("jobsub_fetchlog", is_main=True)
 def main():
     """script mainline:
@@ -95,9 +105,6 @@ def main():
     # find where the condor_transfer_data will put the output
     j = Job(args.jobid)
 
-    # monkeypatch-decorate the transfer_data call for tracing
-    j.transfer_data = as_span("condor_transfer_data")(j.transfer_data)
-
     iwd = j.get_attribute("SUBMIT_Iwd")
     if args.verbose:
         print(f"job output to {iwd}")
@@ -108,7 +115,7 @@ def main():
         os.makedirs(iwd, mode=0o750)
 
     # get the output sandbox
-    j.transfer_data()
+    traced_transfer_data(j)
     files = os.listdir(iwd)
 
     if args.destdir is not None:
@@ -142,9 +149,7 @@ def main():
         if args.verbose:
             print(f'running "{cmd}"')
         p = subprocess.Popen(cmd)
-        # monkeypatch-decorate p.wait() for tracing
-        p.wait = as_span(cmd[0])(p.wait)
-        if p.wait() != 0:
+        if traced_wait(p) != 0:
             raise Exception(f"error creating archive")
 
     cleanup({"submitdir": iwd})
