@@ -51,8 +51,8 @@ def traced_transfer_data(j: Job) -> None:
 
 
 @as_span("archive")
-def traced_wait_archive(p: subprocess.Popen) -> None:
-    p.wait()
+def traced_wait_archive(p: subprocess.Popen) -> int:
+    return p.wait()
 
 
 @as_span("jobsub_fetchlog", is_main=True)
