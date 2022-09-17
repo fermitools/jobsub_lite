@@ -23,9 +23,6 @@ import sys
 import logging
 from typing import Dict, Any, Callable, TypeVar
 
-# at the moment opentelemetry is installed with pip --user...
-sys.path.append(f"{os.environ['HOME']}/.local/lib/python3.6/site-packages")
-
 # opentelemetry makes this obnoxious warning about nanosecond accuracy in python 3.6
 # squelch it before we import the modules
 class nanosecond_warning_filter(logging.Filter):
@@ -38,17 +35,16 @@ class nanosecond_warning_filter(logging.Filter):
 logging.getLogger("opentelemetry.util._time").addFilter(nanosecond_warning_filter())
 
 try:
-    # pylint: disable-next=wrong-import-position
-    from opentelemetry import trace  # type: ignore
-
     # from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter # type: ignore
     # from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter # type: ignore
+    # pylint: disable-next=wrong-import-position
     from opentelemetry.exporter.jaeger.thrift import JaegerExporter  # type: ignore
     from opentelemetry.sdk.resources import Resource  # type: ignore
     from opentelemetry.sdk.trace import TracerProvider  # type: ignore
     from opentelemetry.sdk.trace.export import BatchSpanProcessor  # type: ignore
+    from opentelemetry import trace  # type: ignore
 
-    resource = Resource(attributes={"service.name": "kretzke-test"})
+    resource = Resource(attributes={"service.name": "fife"})
 
     trace.set_tracer_provider(TracerProvider(resource=resource))
 
@@ -95,7 +91,7 @@ def as_span(name: str, is_main: bool = False) -> Callable[[F], F]:
         """
         all purpose tracing decorator. Calls function f in an opentelemetry span,
         and if we have the is_main flag set, closes out the tracer at the end.
-        One should of course only use the is_main flag once on the main routine.
+        The is_main was added 'cause gthe g
         """
 
         @wraps(func)
