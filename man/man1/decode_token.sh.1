@@ -3,9 +3,11 @@
 decode_token.sh
 
 .SH USAGE
-RƠ
+decode_token.sh [-e field] tokenfile
 
 .SH DESCRIPTION
-Jobsub_lite script decode_token.sh.
+A part of the jobsub_lite suite, decode_token.sh displays the contents of a SciToken used to authenticate jobs.
 
 .SH OPTIONS
+.HP
+-e field        Extract particular field from the token, i.e. \fB-e sub\fR gets the "sub" (subject) field from the SciToken.
