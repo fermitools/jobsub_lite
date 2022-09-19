@@ -1,0 +1,187 @@
+.TH UF "1" "Sep 2022" "jobsub_q " "jobsub_lite script jobsub_q"
+.SH NAME
+jobsub_q
+
+.SH USAGE
+ jobsub_q [-h] [-G GROUP] [--role ROLE] [--subgroup SUBGROUP]
+                [--verbose] [-J JOBID] [-name NAME]
+                [--jobsub_server JOBSUB_SERVER]
+                [job_id]
+
+.SH DESCRIPTION
+Jobsub_lite script jobsub_q.
+
+.SH OPTIONS
+positional arguments:
+  job_id                job/submission ID
+
+optional arguments:
+.HP
+  -h, --help            show this help message and exit
+.HP
+  -J JOBID, --jobid JOBID
+                        job/submission ID
+.HP
+  -name NAME            Set schedd name
+.HP
+  --jobsub_server JOBSUB_SERVER
+                        backwards compatability; ignored
+
+general arguments:
+.HP
+  -G GROUP, --group GROUP
+                        Group/Experiment/Subgroup for priorities and
+                        accounting
+.HP
+  --role ROLE           VOMS Role for priorities and accounting
+.HP
+  --subgroup SUBGROUP   Subgroup for priorities and accounting. See
+                        https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/
+                        Jobsub_submit#Groups-Subgroups-Quotas-Priorities for
+                        more documentation on using --subgroup to set job
+                        quotas and priorities
+.HP
+  --verbose             dump internal state of program (useful for debugging)
+
+also condor_q arguments: [general-opts] [restriction-list] [output-opts | analyze-opts]
+(with single '-' or double '--' dashes)
+
+    [general-opts] are
+.HP
+	-global			 Query all Schedulers in this pool
+.HP
+	-schedd-constraint	 Query all Schedulers matching this constraint
+.HP
+	-submitter <submitter>	 Get queue of specific submitter
+.HP
+	-name <name>		 Name of Scheduler
+.HP
+	-pool <host>		 Use host as the central manager to query
+.HP
+	-jobads[:<form>] <file>	 Read queue from a file of job ClassAds
+	           where <form> is one of:
+	       auto    default, guess the format from reading the input stream
+	       long    The traditional -long form
+	       xml     XML form, the same as -xml
+	       json    JSON classad form, the same as -json
+	       new     'new' classad form without newlines
+.HP
+	-userlog <file>		 Read queue from a user log file
+
+    [restriction-list] each restriction may be one of
+	<cluster>		 Get information about specific cluster
+	<cluster>.<proc>	 Get information about specific job
+	<owner>			 Information about jobs owned by <owner>
+.HP
+	-factory		 Get information about late materialization job factories
+.HP
+	-autocluster		 Get information about the SCHEDD's autoclusters
+.HP
+	-constraint <expr>	 Get information about jobs that match <expr>
+.HP
+	-unmatchable		 Get information about jobs that do not match any machines
+.HP
+	-allusers		 Consider jobs from all users
+
+    [output-opts] are
+.HP
+	-limit <num>		 Limit the number of results to <num>
+.HP
+	-cputime		 Display CPU_TIME instead of RUN_TIME
+.HP
+	-currentrun		 Display times only for current run
+.HP
+	-debug			 Display debugging info to console
+.HP
+	-dag			 Sort DAG jobs under their DAGMan
+.HP
+	-expert			 Display shorter error messages
+.HP
+	-grid			 Get information about grid jobs (includes globus)
+.HP
+	-goodput		 Display job goodput statistics
+.HP
+	-help [Universe|State]	 Display this screen, JobUniverses, JobStates
+.HP
+	-hold			 Get information about jobs on hold
+.HP
+	-io			 Display information regarding I/O
+.HP
+	-batch			 Display DAGs or batches of similar jobs as a single line
+.HP
+	-nobatch		 Display one line per job, rather than one line per batch
+.HP
+	-idle			 Get information about idle jobs
+.HP
+	-run			 Get information about running jobs
+.HP
+	-totals			 Display only job totals
+.HP
+	-stream-results 	 Produce output as jobs are fetched
+.HP
+	-version		 Print the HTCondor version and exit
+.HP
+	-wide[:<width>]		 Don't truncate data to fit in 80 columns.
+				 Truncates to console width or <width> argument.
+.HP
+	-autoformat[:jlhVr,tng] <attr> [<attr2> [...]]
+.HP
+	-af[:jlhVr,tng] <attr> [attr2 [...]]
+	    Print attr(s) with automatic formatting
+	    the [jlhVr,tng] options modify the formatting
+	        j   Display Job id
+	        l   attribute labels
+	        h   attribute column headings
+	        V   %V formatting (string values are quoted)
+	        r   %r formatting (raw/unparsed values)
+	        ,   comma after each value
+	        t   tab before each value (default is space)
+	        n   newline after each value
+	        g   newline between ClassAds, no space before values
+	    use -af:h to get tabular values with headings
+	    use -af:lrng to get -long equivalent format
+.HP
+	-format <fmt> <attr>	 Print attribute attr using format fmt
+.HP
+	-print-format <file>	 Use <file> to set display attributes and formatting
+				 (experimental, see htcondor-wiki for more information)
+.HP
+	-long[:<form>]		 Display entire ClassAds in <form> format
+				 See -jobads for <form> choices
+.HP
+	-xml			 Display entire ClassAds in XML form
+.HP
+	-json			 Display entire ClassAds in JSON form
+.HP
+	-attributes X,Y,...	 Attributes to show in -xml, -json, and -long
+
+    [analyze-opts] are
+.HP
+	-analyze[:<qual>]	 Perform matchmaking analysis on jobs
+.HP
+	-better-analyze[:<qual>] Perform more detailed match analysis
+	    <qual> is a comma separated list of one or more of
+	    priority	Consider user priority during analysis
+	    summary	Show a one-line summary for each job or machine
+	    reverse	Analyze machines rather than jobs
+.HP
+	-machine <name>		 Machine name or slot name for analysis
+.HP
+	-mconstraint <expr>	 Machine constraint for analysis
+.HP
+	-slotads[:<form>] <file> Read Machine ClassAds for analysis from <file>
+				 <file> can be the output of condor_status -long
+.HP
+	-userprios <file>	 Read user priorities for analysis from <file>
+				 <file> can be the output of condor_userprio -l
+.HP
+	-nouserprios		 Don't consider user priority during analysis (default)
+.HP
+	-reverse-analyze	 Analyze Machine requirements against jobs
+.HP
+	-verbose		 Show progress and machine names in results
+
+    Only information about jobs owned by the current user will be returned.
+This default is overridden when the restriction list has usernames and/or
+job ids, when the -submitter or -allusers arguments are specified, or
+when the current user is a queue superuser

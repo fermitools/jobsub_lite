@@ -1,0 +1,73 @@
+.TH UF "1" "Sep 2022" "condor_transfer_data " "jobsub_lite condor wrapper script condor_transfer_data"
+.SH NAME
+condor_transfer_data
+
+.SH USAGE
+ condor_transfer_data [-h] [-G GROUP] [--role ROLE]
+                            [--subgroup SUBGROUP] [--verbose] [-J JOBID]
+                            [-name NAME] [--jobsub_server JOBSUB_SERVER]
+                            [job_id]
+
+.SH DESCRIPTION
+Jobsub_lite condor wrapper for condor_transfer_data.
+
+.SH OPTIONS
+positional arguments:
+  job_id                job/submission ID
+
+optional arguments:
+.HP
+  -h, --help            show this help message and exit
+.HP
+  -J JOBID, --jobid JOBID
+                        job/submission ID
+.HP
+  -name NAME            Set schedd name
+.HP
+  --jobsub_server JOBSUB_SERVER
+                        backwards compatability; ignored
+
+general arguments:
+.HP
+  -G GROUP, --group GROUP
+                        Group/Experiment/Subgroup for priorities and
+                        accounting
+.HP
+  --role ROLE           VOMS Role for priorities and accounting
+.HP
+  --subgroup SUBGROUP   Subgroup for priorities and accounting. See
+                        https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/
+                        Jobsub_submit#Groups-Subgroups-Quotas-Priorities for
+                        more documentation on using --subgroup to set job
+                        quotas and priorities
+.HP
+  --verbose             dump internal state of program (useful for debugging)
+
+also condor_transfer_data arguments: [options] [constraints]
+(with single '-' or double '--' dashes)
+ where [options] is zero or more of:
+.HP
+  -help               Display this message and exit
+.HP
+  -version            Display version information and exit
+.HP
+  -name schedd_name   Connect to the given schedd
+.HP
+  -pool hostname      Use the given central manager to find daemons
+.HP
+  -addr <ip:port>     Connect directly to the given "sinful string"
+.HP
+  -stm <method>		how to move a sandbox out of Condor
+               		Available methods:
+
+               			stm_use_schedd_only
+               			stm_use_transferd
+
+ and where [constraints] is one or more of:
+  cluster.proc        transfer data for the given job
+  cluster             transfer data for the given cluster of jobs
+  user                transfer data for all jobs owned by user
+.HP
+  -constraint expr    transfer data for all jobs matching the boolean expression
+.HP
+  -all                transfer data for all jobs (cannot be used with other constraints)

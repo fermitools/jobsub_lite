@@ -1,0 +1,47 @@
+.TH UF "1" "Sep 2022" "jobsub_cmd " "jobsub_lite script jobsub_cmd"
+.SH NAME
+jobsub_cmd
+
+.SH USAGE
+ jobsub_cmd [-h] [-G GROUP] [--role ROLE] [--subgroup SUBGROUP]
+                  [--verbose] [-J JOBID] [-name NAME]
+                  [--jobsub_server JOBSUB_SERVER]
+                  [job_id]
+
+.SH DESCRIPTION
+Jobsub_lite script jobsub_cmd.
+
+.SH OPTIONS
+positional arguments:
+  job_id                job/submission ID
+
+optional arguments:
+.HP
+  -h, --help            show this help message and exit
+.HP
+  -J JOBID, --jobid JOBID
+                        job/submission ID
+.HP
+  -name NAME            Set schedd name
+.HP
+  --jobsub_server JOBSUB_SERVER
+                        backwards compatability; ignored
+
+general arguments:
+.HP
+  -G GROUP, --group GROUP
+                        Group/Experiment/Subgroup for priorities and
+                        accounting
+.HP
+  --role ROLE           VOMS Role for priorities and accounting
+.HP
+  --subgroup SUBGROUP   Subgroup for priorities and accounting. See
+                        https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/
+                        Jobsub_submit#Groups-Subgroups-Quotas-Priorities for
+                        more documentation on using --subgroup to set job
+                        quotas and priorities
+.HP
+  --verbose             dump internal state of program (useful for debugging)
+
+/bin/sh: /usr/bin/condor_cmd: No such file or directory
+(with single '-' or double '--' dashes)

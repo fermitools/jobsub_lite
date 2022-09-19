@@ -1,0 +1,89 @@
+.TH UF "1" "Sep 2022" "jobsub_wait " "jobsub_lite script jobsub_wait"
+.SH NAME
+jobsub_wait
+
+.SH USAGE
+ jobsub_wait [-h] [-G GROUP] [--role ROLE] [--subgroup SUBGROUP]
+                   [--verbose] [-J JOBID] [-name NAME]
+                   [--jobsub_server JOBSUB_SERVER]
+                   [job_id]
+
+.SH DESCRIPTION
+Jobsub_lite script jobsub_wait.
+
+.SH OPTIONS
+positional arguments:
+  job_id                job/submission ID
+
+optional arguments:
+.HP
+  -h, --help            show this help message and exit
+.HP
+  -J JOBID, --jobid JOBID
+                        job/submission ID
+.HP
+  -name NAME            Set schedd name
+.HP
+  --jobsub_server JOBSUB_SERVER
+                        backwards compatability; ignored
+
+general arguments:
+.HP
+  -G GROUP, --group GROUP
+                        Group/Experiment/Subgroup for priorities and
+                        accounting
+.HP
+  --role ROLE           VOMS Role for priorities and accounting
+.HP
+  --subgroup SUBGROUP   Subgroup for priorities and accounting. See
+                        https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/
+                        Jobsub_submit#Groups-Subgroups-Quotas-Priorities for
+                        more documentation on using --subgroup to set job
+                        quotas and priorities
+.HP
+  --verbose             dump internal state of program (useful for debugging)
+
+(with single '-' or double '--' dashes)
+Use: /usr/bin/condor_wait [options] <log-file> [job-number]
+Where options are:
+.HP
+    -help             Display options
+.HP
+    -version          Display Condor version
+.HP
+    -debug            Show extra debugging info
+.HP
+    -status           Show job start and terminate info
+.HP
+    -echo[:<fmt>]     Echo log events relevant to [job-number]
+       optional <fmt> is one or more log format options:
+         ISO_DATE     date in Year-Month-Day form
+         UTC          echo time as UTC time
+         XML          echo in XML log format
+         JSON         echo in JSON log format
+.HP
+    -num <number>     Wait for this many jobs to end
+                       (default is all jobs)
+.HP
+    -wait <seconds>   Wait no more than this time
+                       (default is unlimited)
+.HP
+    -allevents        Continue on even if all jobs have ended.
+                      use with -echo to transcribe the whole log
+                      cannot be used with -num
+
+This command watches a log file, and indicates when
+a specific job (or all jobs mentioned in the log)
+have completed or aborted. It returns success if
+all such jobs have completed or aborted, and returns
+failure otherwise.
+
+Examples:
+    /usr/bin/condor_wait logfile
+    /usr/bin/condor_wait logfile 35
+    /usr/bin/condor_wait logfile 1406.35
+    /usr/bin/condor_wait -wait 60 logfile 13.25.3
+    /usr/bin/condor_wait -num 2 logfile
+
+Transcribe an entire log to UTC timestamps:
+    /usr/bin/condor_wait -all -echo:UTC logfile
