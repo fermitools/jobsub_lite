@@ -54,7 +54,7 @@ try:
     # span_processor = BatchSpanProcessor(otlp_exporter)
 
     jaeger_exporter = JaegerExporter(
-        collector_endpoint="https://landscape.fnal.gov/jaeger-collector/api/traces"
+        collector_endpoint=os.environ["OTEL_EXPORTER_JAEGER_ENDPOINT"]
     )
     span_processor = BatchSpanProcessor(jaeger_exporter)
 
