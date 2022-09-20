@@ -1,0 +1,251 @@
+.TH UF "1" "Sep 2022" "jobsub_submit " "jobsub_lite script jobsub_submit"
+.SH NAME
+jobsub_submit
+
+.SH USAGE
+ jobsub_submit [-h] [-G GROUP] [--role ROLE] [--subgroup SUBGROUP]
+                     [--verbose] [-c APPEND_CONDOR_REQUIREMENTS]
+                     [--blacklist BLACKLIST] [-r R] [-i I] [-t T]
+                     [--cmtconfig CMTCONFIG] [--cpu CPU] [--dag DAG]
+                     [--dataset-definition DATASET_DEFINITION]
+                     [--debug DEBUG]
+                     [--disk DISK] [-d tag dir] [--email-to EMAIL_TO]
+                     [-e ENVIRONMENT]
+                     [--expected-lifetime EXPECTED_LIFETIME]
+                     [-f INPUT_FILE] [--generate-email-summary]
+                     [-L LOG_FILE]
+                     [-l LINES] [-Q] [--mail_on_error] [--mail_always]
+                     [--maxConcurrent MAXCONCURRENT] [--memory MEMORY]
+                     [-N N] [-n] [--no-env-cleanup] [--OS OS]
+                     [--overwrite-condor-requirements REQUIREMENTS]
+                     [--resource-provides RESOURCE_PROVIDES]
+                     [--site SITE]
+                     [--tar_file_name TAR_FILE_NAME]
+                     [--tarball-exclusion-file TARBALL_EXCLUSION_FILE]
+                     [--timeout TIMEOUT] [--use-cvmfs-dropbox]
+                     [--use-pnfs-dropbox] [--devserver]
+                     [--onsite-only | --offsite]
+                     [--singularity-image IMAGE | --no-singularity]
+                     [executable] ...
+
+.SH DESCRIPTION
+
+A part of the jobsub_lite suite, jobsub_submit will use command line arguments to generate HTCondor job submission files and a wrapper script, and submits jobs or DAGs of jobs to HTCondor.
+
+.SH OPTIONS
+positional arguments:
+.HP
+executable            executable for job to run
+.HP
+exe_arguments         arguments to executable
+
+optional arguments:
+.HP
+-h, --help            show this help message and exit
+.HP
+-c APPEND_CONDOR_REQUIREMENTS, --append-condor-requirements APPEND_CONDOR_REQUIREMENTS, --append_condor_requirements APPEND_CONDOR_REQUIREMENTS
+append condor requirements
+.HP
+--blacklist BLACKLIST
+enusure that jobs do not land at these sites
+.HP
+-r R                  Experiment release version
+.HP
+-i I                  Experiment release dir
+.HP
+-t T                  Experiment test release dir
+.HP
+--cmtconfig CMTCONFIG
+Set up minervasoft release built with cmt
+configuration. default is $CMTCONFIG
+.HP
+--cpu CPU             request worker nodes have at least NUMBER cpus
+.HP
+--dag DAG             submit and run a dagNabbit input file
+.HP
+--dataset-definition DATASET_DEFINITION, --dataset_definition DATASET_DEFINITION, --dataset DATASET_DEFINITION
+SAM dataset definition used in a Directed Acyclic
+Graph (DAG)
+.HP
+--debug DEBUG         Turn on debugging
+.HP
+--disk DISK           Request worker nodes have at least NUMBER[UNITS] of
+disk space. If UNITS is not specified default is 'KB'
+(a typo in earlier versions said that default was
+'MB', this was wrong). Allowed values for UNITS are
+'KB','MB','GB', and 'TB'
+.HP
+-d tag dir            -d <tag> <dir> Writable directory $CONDOR_DIR_<tag>
+will exist on the execution node. After job
+completion, its contents will be moved to <dir>
+automatically. Specify as many <tag>/<dir> pairs as
+you need.
+.HP
+--email-to EMAIL_TO   email address to send job reports/summaries (default
+is $USER@fnal.gov)
+.HP
+-e ENVIRONMENT, --environment ENVIRONMENT
+.HP
+-e ADDED_ENVIRONMENT exports this variable with its
+local value to worker node environment. For example
+export FOO='BAR'; jobsub -e FOO <more stuff>
+guarantees that the value of $FOO on the worker node
+is 'BAR' . Alternate format which does not require
+setting the env var first is the -e VAR=VAL idiom,
+which sets the value of $VAR to 'VAL' in the worker
+environment. The -e option can be used as many times
+in one jobsub_submit invocation as desired.
+.HP
+--expected-lifetime EXPECTED_LIFETIME
+'short'|'medium'|'long'|NUMBER[UNITS] Expected
+lifetime of the job. Used to match against resources
+advertising that they have REMAINING_LIFETIME seconds
+left. The shorter your EXPECTED_LIFTIME is, the more
+resources (aka slots, cpus) your job can potentially
+match against and the quicker it should start. If your
+job runs longer than EXPECTED_LIFETIME it *may* be
+killed by the batch system. If your specified
+EXPECTED_LIFETIME is too long your job may take a long
+time to match against a resource a sufficiently long
+REMAINING_LIFETIME. Valid inputs for this parameter
+are: 'short', 'medium', 'long' IF [UNITS] is omitted,
+value is NUMBER seconds. Allowed values for UNITS are
+'s', 'm', 'h', 'd' representing seconds, minutes,
+etc.The values for 'short','medium',and 'long' are
+configurable by Grid Operations, they currently are
+'3h' , '8h' , and '85200s' but this may change in the
+future.
+.HP
+-f INPUT_FILE         INPUT_FILE at runtime, INPUT_FILE will be copied to
+directory $CONDOR_DIR_INPUT on the execution node.
+Example : -f /grid/data/minerva/my/input/file.xxx will
+be copied to $CONDOR_DIR_INPUT/file.xxx Specify as
+many -f INPUT_FILE_1 -f INPUT_FILE_2 args as you need.
+To copy file at submission time instead of run time,
+use -f dropbox://INPUT_FILE to copy the file.
+.HP
+--generate-email-summary
+generate and mail a summary report of
+completed/failed/removed jobs in a DAG
+.HP
+-L LOG_FILE, --log-file LOG_FILE, --log_file LOG_FILE
+Log file to hold log output from job.
+.HP
+-l LINES, --lines LINES
+Lines to append to the job file.
+.HP
+-Q, --mail_never, --mail-never
+never send mail about job results (default)
+.HP
+--mail_on_error, --mail-on-error
+never send mail about job results (default)
+.HP
+--mail_always, --mail-always
+never send mail about job results (default)
+.HP
+--maxConcurrent MAXCONCURRENT
+max number of jobs running concurrently at given time.
+Use in conjunction with -N option to protect a shared
+resource. Example: jobsub -N 1000 -maxConcurrent 20
+will only run 20 jobs at a time until all 1000 have
+completed. This is implemented by running the jobs in
+a DAG. Normally when jobs are run with the -N option,
+they all have the same $CLUSTER number and differing,
+sequential $PROCESS numbers, and many submission
+scripts take advantage of this. When jobs are run with
+this option in a DAG each job has a different $CLUSTER
+number and a $PROCESS number of 0, which may break
+scripts that rely on the normal -N numbering scheme
+for $CLUSTER and $PROCESS. Groups of jobs run with
+this option will have the same $JOBSUBPARENTJOBID,
+each individual job will have a unique and sequential
+$JOBSUBJOBSECTION. Scripts may need modification to
+take this into account
+.HP
+--memory MEMORY       Request worker nodes have at least NUMBER[UNITS] of
+memory. If UNITS is not specified default is 'MB'.
+Allowed values for UNITS are 'KB','MB','GB', and 'TB'
+.HP
+-N N                  submit N copies of this job. Each job will have access
+to the environment variable $PROCESS that provides the
+job number (0 to NUM-1), equivalent to the number
+following the decimal point in the job ID (the '2' in
+134567.2).
+.HP
+-n, --no_submit, --no-submit
+generate condor_command file but do not submit
+.HP
+--no-env-cleanup      do not clean environment in wrapper script
+.HP
+--OS OS               specify OS version of worker node. Example --OS=SL5
+Comma separated list '--OS=SL4,SL5,SL6' works as well.
+Default is any available OS
+.HP
+--overwrite-condor-requirements OVERWRITE_CONDOR_REQUIREMENTS, --overwrite_condor_requirements OVERWRITE_CONDOR_REQUIREMENTS
+overwrite default condor requirements with supplied
+requirements
+.HP
+--resource-provides RESOURCE_PROVIDES
+request specific resources by changing condor jdf
+file. For example: --resource-provides=CVMFS=OSG will
+add +DESIRED_CVMFS="OSG" to the job classad attributes
+and '&&(CVMFS=="OSG")' to the job requirements
+.HP
+--site SITE           submit jobs to these (comma-separated) sites
+.HP
+--tar_file_name TAR_FILE_NAME, --tar-file-name TAR_FILE_NAME
+dropbox://PATH/TO/TAR_FILE tardir://PATH/TO/DIRECTORY
+specify TAR_FILE or DIRECTORY to be transferred to
+worker node. TAR_FILE will be copied to an area
+specified in the jobsub server configuration,
+transferred to the job and unpacked there. TAR_FILE
+will be accessible to the user job on the worker node
+via the environment variable $INPUT_TAR_FILE. The
+unpacked contents will be in the same directory as
+$INPUT_TAR_FILE. Successive --tar_file_name options
+will be in $INPUT_TAR_FILE_1, $INPUT_TAR_FILE_2, etc.
+.HP
+--tarball-exclusion-file TARBALL_EXCLUSION_FILE
+File with patterns to exclude from tarffile creation
+.HP
+--timeout TIMEOUT     kill user job if still running after NUMBER[UNITS] of
+time. UNITS may be `s' for seconds (the default), `m'
+for minutes, `h' for hours or `d' h for days.
+.HP
+--use-cvmfs-dropbox   use cvmfs for dropbox (default is pnfs)
+.HP
+--use-pnfs-dropbox    use cvmfs for dropbox (default is pnfs)
+.HP
+--devserver           Use jobsubdevgpvm01 etc. to submit
+.HP
+--onsite-only         run jobs locally only;
+usage_model=OPPORTUNISTIC,DEDICATED
+.HP
+--offsite             run jobs offsite; usage_model=OFFSITE
+.HP
+--singularity-image SINGULARITY_IMAGE
+Singularity image to run jobs in. Default is
+/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-
+wn-sl7:latest
+.HP
+--no-singularity      Don't request a singularity container. If the site
+your job lands on runs all jobs in singularity
+containers, your job will also run in one. If the site
+does not run all jobs in singularity containers, your
+job will run outside a singularity container.
+
+general arguments:
+.HP
+-G GROUP, --group GROUP
+Group/Experiment/Subgroup for priorities and
+accounting
+.HP
+--role ROLE           VOMS Role for priorities and accounting
+.HP
+--subgroup SUBGROUP   Subgroup for priorities and accounting. See
+https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/
+Jobsub_submit#Groups-Subgroups-Quotas-Priorities for
+more documentation on using --subgroup to set job
+quotas and priorities
+.HP
+--verbose             dump internal state of program (useful for debugging)

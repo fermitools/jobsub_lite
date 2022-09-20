@@ -1,0 +1,46 @@
+.TH UF "1" "Sep 2022" "jobsub_fetchlog " "jobsub_lite script jobsub_fetchlog"
+.SH NAME
+jobsub_fetchlog
+
+.SH USAGE
+ jobsub_fetchlog [-h] [-G GROUP] [--role ROLE] [--subgroup SUBGROUP]
+                       [--verbose] [-J JOBID] [--destdir DESTDIR]
+                       [--archive-format ARCHIVE_FORMAT]
+                       [job_id]
+
+.SH DESCRIPTION
+A part of the jobsub_lite tools, jobsub_fetchlog collects the output of jobs submitted with \fBjobsub_submit\fR and puts them either in an archive (tarfile or zipfile), or in a specified directory.
+
+.SH OPTIONS
+positional arguments:
+  job_id                job/submission ID
+
+optional arguments:
+.HP
+  -h, --help            show this help message and exit
+.HP
+  -J JOBID, --jobid JOBID
+                        job/submission ID
+.HP
+  --destdir DESTDIR, --dest-dir DESTDIR, --unzipdir DESTDIR
+                        Directory to automatically unarchive logs into
+.HP
+  --archive-format ARCHIVE_FORMAT
+                        format for downloaded archive: "tar" (default,
+                        compressed with gzip) or "zip"
+
+general arguments:
+.HP
+  -G GROUP, --group GROUP
+                        Group/Experiment/Subgroup for priorities and
+                        accounting
+.HP
+  --role ROLE           VOMS Role for priorities and accounting
+.HP
+  --subgroup SUBGROUP   Subgroup for priorities and accounting. See
+                        https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/
+                        Jobsub_submit#Groups-Subgroups-Quotas-Priorities for
+                        more documentation on using --subgroup to set job
+                        quotas and priorities
+.HP
+  --verbose             dump internal state of program (useful for debugging)

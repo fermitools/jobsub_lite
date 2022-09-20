@@ -1,0 +1,72 @@
+.TH UF "1" "Sep 2022" "jobsub_release " "jobsub_lite script jobsub_release"
+.SH NAME
+jobsub_release
+
+.SH USAGE
+ jobsub_release [-h] [-G GROUP] [--role ROLE] [--subgroup SUBGROUP]
+                      [--verbose] [-J JOBID] [-name NAME]
+                      [--jobsub_server JOBSUB_SERVER]
+                      [job_id]
+
+.SH DESCRIPTION
+A part of the jobsub_lite suite, jobsub_release lets jobs run again that had been held by jobsub_holdor condor_hold.
+
+.SH OPTIONS
+positional arguments:
+  job_id                job/submission ID
+
+optional arguments:
+.HP
+  -h, --help            show this help message and exit
+.HP
+  -J JOBID, --jobid JOBID
+                        job/submission ID
+.HP
+  -name NAME            Set schedd name
+.HP
+  --jobsub_server JOBSUB_SERVER
+                        backwards compatability; ignored
+
+general arguments:
+.HP
+  -G GROUP, --group GROUP
+                        Group/Experiment/Subgroup for priorities and
+                        accounting
+.HP
+  --role ROLE           VOMS Role for priorities and accounting
+.HP
+  --subgroup SUBGROUP   Subgroup for priorities and accounting. See
+                        https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/
+                        Jobsub_submit#Groups-Subgroups-Quotas-Priorities for
+                        more documentation on using --subgroup to set job
+                        quotas and priorities
+.HP
+  --verbose             dump internal state of program (useful for debugging)
+
+also condor_release arguments: [options] [constraints]
+(with single '-' or double '--' dashes)
+ where [options] is zero or more of:
+.HP
+  -help               Display this message and exit
+.HP
+  -version            Display version information and exit
+.HP
+  -long               Display full result classad
+.HP
+  -totals             Display success/failure totals
+.HP
+  -name schedd_name   Connect to the given schedd
+.HP
+  -pool hostname      Use the given central manager to find daemons
+.HP
+  -addr <ip:port>     Connect directly to the given "sinful string"
+.HP
+  -reason reason      Use the given ReleaseReason
+ and where [constraints] is one of:
+  cluster.proc        Release the given job
+  cluster             Release the given cluster of jobs
+  user                Release all jobs owned by user
+.HP
+  -constraint expr    Release all jobs matching the boolean expression
+.HP
+  -all                Release all jobs (cannot be used with other constraints)

@@ -1,0 +1,32 @@
+.TH UF "1" "Sep 2022" "condor_submit " "jobsub_lite condor wrapper script condor_submit"
+.SH NAME
+condor_submit
+
+.SH USAGE
+ condor_submit [-h] [-G GROUP] [-t TEST] [-spool] [-v]
+                     [--credentials CREDENTIALS]
+
+.SH DESCRIPTION
+Jobsub_lite condor wrapper for condor_submit.
+
+.SH OPTIONS
+Queue jobs for execution under HTCondor without the jobsub wrapper.
+
+optional arguments:
+.HP
+  -h, --help            show this help message and exit
+.HP
+  -G GROUP, --group GROUP
+                        Group/Experiment/Subgroup for priorities and
+                        accounting
+.HP
+  -t TEST, --test TEST  For testing only: specify condor_schedd
+.HP
+  -spool                Spool all required input files, job event log, and
+                        proxy over the connection to the condor_schedd. This
+                        is done by default.
+.HP
+  -v, --verbose         Verbose output
+.HP
+  --credentials CREDENTIALS
+                        credential information
