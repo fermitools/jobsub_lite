@@ -37,8 +37,11 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 
 import fake_ifdh
 import get_parser
+<<<<<<< HEAD
 import condor
 from version import print_version, print_support_email
+=======
+>>>>>>> putting back patching
 from tracing import as_span
 
 
@@ -240,7 +243,6 @@ def main() -> None:
 
     cmd = cmd.replace("jobsub_", "condor_")
 
-<<<<<<< HEAD
     if not schedd_list:
         # if no specific schedds given, get list of all...
         schedd_list = set(condor.get_schedd_names(vars(arglist)))
@@ -262,13 +264,10 @@ def main() -> None:
     if default_formatting:
         os.close(1)
         totalsf.close()
-=======
     execargs.insert(0, f"/usr/bin/{cmd}")
 
     # now run the command with those arguments
     os.system(" ".join(execargs))
->>>>>>> putting back patching
-
 
 if __name__ == "__main__":
     try:
