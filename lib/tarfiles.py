@@ -33,6 +33,7 @@ from requests.auth import AuthBase  # type: ignore
 
 import fake_ifdh
 from creds import get_creds
+from tracing import as_span
 
 try:
     _NUM_RETRIES_ENV = os.getenv("JOBSUB_UPLOAD_NUM_RETRIES", "20")
@@ -161,6 +162,7 @@ def dcache_persistent_path(exp: str, filename: str) -> str:
     return res
 
 
+@as_span("do_tarballs")
 def do_tarballs(args: argparse.Namespace) -> None:
     """handle tarfile argument;  we could have:
        a directory with tardir: or tardir:// prefix to tar up and upload
@@ -495,6 +497,7 @@ class TarfilePublisherHandler:
         return requests.get(url, cert=(self.proxy, self.proxy))
 
     @cid_operation
+    @as_span("publish")
     @pubapi_operation
     def publish(self, tarfile: str) -> requests.Response:
         """Make PubAPI publish call to upload this tarfile

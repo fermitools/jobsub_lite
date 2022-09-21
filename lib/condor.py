@@ -30,6 +30,7 @@ import classad  # type: ignore
 
 import packages
 import fake_ifdh
+from tracing import as_span
 
 random.seed()
 
@@ -103,6 +104,7 @@ def submit_vt(
 
 
 # pylint: disable-next=no-member
+@as_span("get_schedd_list")
 def get_schedd_list(
     vargs: Dict[str, Any], refresh_schedd_ads: bool = False
 ) -> List[classad.ClassAd]:
@@ -248,6 +250,7 @@ def load_submit_file(filename: str) -> Tuple[Any, Optional[int]]:
 
 
 # pylint: disable-next=dangerous-default-value
+@as_span("submit")
 def submit(
     f: str, vargs: Dict[str, Any], schedd_name: str, cmd_args: List[str] = []
 ) -> Union[Any, bool]:

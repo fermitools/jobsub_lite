@@ -43,6 +43,7 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #
 sys.path.append(os.path.join(PREFIX, "lib"))
 from packages import pkg_find
+from tracing import as_span
 
 pkg_find("jinja")
 import jinja2 as jinja
@@ -203,6 +204,7 @@ def get_env_list(name: str) -> List[str]:
     return [x for x in os.environ.get(name, "").split(",") if x]
 
 
+@as_span("jobsub_submit", is_main=True)
 def main():
     """script mainline:
     - parse args

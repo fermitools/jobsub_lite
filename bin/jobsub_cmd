@@ -39,6 +39,7 @@ import fake_ifdh
 import get_parser
 import condor
 from version import print_version, print_support_email
+from tracing import as_span
 
 
 class StoreGroupinEnvironment(argparse.Action):
@@ -50,10 +51,9 @@ class StoreGroupinEnvironment(argparse.Action):
         os.environ["GROUP"] = values
         setattr(namespace, self.dest, values)
 
-
 verbose = 0
 
-
+@as_span(os.path.basename(sys.argv[0]), is_main=True)
 def main() -> None:
     """main line of code, proces args, etc."""
     global verbose
@@ -240,6 +240,7 @@ def main() -> None:
 
     cmd = cmd.replace("jobsub_", "condor_")
 
+<<<<<<< HEAD
     if not schedd_list:
         # if no specific schedds given, get list of all...
         schedd_list = set(condor.get_schedd_names(vars(arglist)))
@@ -261,6 +262,12 @@ def main() -> None:
     if default_formatting:
         os.close(1)
         totalsf.close()
+=======
+    execargs.insert(0, f"/usr/bin/{cmd}")
+
+    # now run the command with those arguments
+    os.system(" ".join(execargs))
+>>>>>>> putting back patching
 
 
 if __name__ == "__main__":
