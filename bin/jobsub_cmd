@@ -32,7 +32,6 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 
 import fake_ifdh
 import get_parser
-from tracing import as_span
 
 
 class StoreGroupinEnvironment(argparse.Action):
@@ -45,7 +44,6 @@ class StoreGroupinEnvironment(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-@as_span(os.path.basename(sys.argv[0]), is_main=True)
 def main() -> None:
     """main line of code, proces args, etc."""
     parser = get_parser.get_jobid_parser(add_condor_epilog=True)
@@ -109,10 +107,10 @@ def main() -> None:
 
     cmd = cmd.replace("jobsub_", "condor_")
 
-    execargs.insert(0, f"/usr/bin/{cmd}")
+    execargs.insert(0, cmd)
 
     # now run the command with those arguments
-    os.system(" ".join(execargs))
+    os.execvp("/usr/bin/" + cmd, execargs)
 
 
 if __name__ == "__main__":
