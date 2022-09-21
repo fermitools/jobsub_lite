@@ -15,7 +15,6 @@
 # limitations under the License.
 """
    Make an as_span decorator to help us log traces with a jaeger trace service
-
 """
 
 from functools import wraps
@@ -73,6 +72,8 @@ except:
         def __init__(self):  # type: ignore
             pass
 
+
+    class stub_out_scope:
         def __enter__(self):  # type: ignore
             pass
 
@@ -89,6 +90,12 @@ except:
             return
 
     tracer = Tracer()
+
+    class stub_out_tracing:
+        def start_as_current_span(self, name: str) -> stub_out_scope:
+            return stub_out_scope()
+
+    # tracer = stub_out_tracing()
 
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -126,7 +133,6 @@ def as_span(
             """wrapper that does the span around the call to the original function."""
             # pylint: disable-next=unused-variable
             with tracer.start_as_current_span(name) as scope:
-
                 if scope:
                     if is_main:
                         scope.set_attribute("argv", sys.argv)
