@@ -26,6 +26,7 @@ import htcondor  # type: ignore
 import classad  # type: ignore
 
 import packages
+from tracing import as_span
 
 random.seed()
 
@@ -34,6 +35,7 @@ COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", None)
 
 
 # pylint: disable-next=no-member
+@as_span("get_schedd")
 def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
     """get jobsub* schedd names from collector, pick one."""
     # pylint: disable-next=no-member
@@ -128,6 +130,7 @@ def load_submit_file(filename: str) -> Tuple[Any, Optional[int]]:
 
 
 # pylint: disable-next=dangerous-default-value
+@as_span("submit")
 def submit(
     f: str, vargs: Dict[str, Any], schedd_name: str, cmd_args: List[str] = []
 ) -> Union[Any, bool]:
