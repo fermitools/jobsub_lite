@@ -15,6 +15,7 @@
 # limitations under the License.
 """
    Make an as_span decorator to help us log traces with a jaeger trace service
+
 """
 
 from functools import wraps
