@@ -36,7 +36,6 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #
 sys.path.append(os.path.join(PREFIX, "lib"))
 from packages import pkg_find
-from tracing import as_span
 
 pkg_find("jinja")
 import jinja2 as jinja
@@ -149,7 +148,6 @@ def do_dataset_defaults(varg: Dict[str, Any]) -> None:
         varg["environment"].append(f"SAM_GROUP={experiment}")
 
 
-@as_span("jobsub_submit", is_main=True)
 def main():
     """script mainline:
     - parse args
