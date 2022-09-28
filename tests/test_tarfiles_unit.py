@@ -91,8 +91,10 @@ class TestTarfilesUnit:
             ]
             parser = get_parser.get_parser()
             args = parser.parse_args(argv)
+            before_len = len(args.tar_file_name)
             tarfiles.do_tarballs(args)
             assert args.tar_file_name[0][:6] == "/{0}/".format(dropbox_type)[:6]
+            assert before_len == len(args.tar_file_name)
 
     def x_test_do_tarballs_2(self):
         # should have another one here to test dropbox:xxx
