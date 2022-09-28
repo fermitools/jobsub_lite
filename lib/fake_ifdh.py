@@ -144,7 +144,7 @@ def getProxy(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
     else:
         issuer = "fermilab"
         igroup = f"fermilab/{exp}"
-    vomsfile = f"{tmp}/x509up_{exp}_{role}_{pid}"
+    vomsfile = os.environ.get("X509_USER_PROXY", f"{tmp}/x509up_{exp}_{role}_{pid}")
     chk_cmd = f"voms-proxy-info -exists -valid 0:10 -file {vomsfile}"
 
     if debug > 0:

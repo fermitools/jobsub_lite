@@ -91,10 +91,25 @@ def test_getToken_fail(clear_token):
 
 @pytest.mark.unit
 def test_getProxy_good(clear_token):
-
     os.environ["GROUP"] = "fermilab"
     proxy = fake_ifdh.getProxy("Analysis")
     assert os.path.exists(proxy)
+
+
+@pytest.mark.unit
+def test_getProxy_override(clear_token, tmp_path):
+    fake_path = tmp_path / "test_proxy"
+    old_x509_user_proxy = os.environ.get("X509_USER_PROXY")
+    os.environ["X509_USER_PROXY"] = str(fake_path)
+    os.environ["GROUP"] = "fermilab"
+    proxy = fake_ifdh.getProxy("Analysis")
+    try:
+        assert proxy == str(fake_path)
+    except AssertionError:
+        raise
+    finally:
+        if old_x509_user_proxy is not None:
+            os.environ["X509_USER_PROXY"] = old_x509_user_proxy
 
 
 @pytest.mark.unit
