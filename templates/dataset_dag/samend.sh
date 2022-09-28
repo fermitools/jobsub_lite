@@ -53,7 +53,10 @@ echo `date` BEGIN executing /fife/local/scratch/uploads/fermilab/mengel/2020-01-
 export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp
 mkdir -p $JSB_TMP
 setup_ifdh_env
-PRJ_NAME=$1
+if [ "$SAM_PROJECT" = "" ]; then
+SAM_PROJECT=$1
+fi
+PRJ_NAME=$SAM_PROJECT
 
 
 if [ "${KRB5CCNAME}" != "" ]; then
