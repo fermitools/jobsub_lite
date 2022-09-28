@@ -133,9 +133,9 @@ def do_tarballs(args: argparse.Namespace) -> None:
             # move it to dropbox area, pretend they gave us plain path
             path = tarfile_in_dropbox(args, tfn[8:])
             if path:
-                res.append(path)
+                tfn = path
             else:
-                res.append(tfn.replace("dropbox:", ""))
+                tfn = tfn.replace("dropbox:", "")
 
         res.append(tfn)
     args.tar_file_name = res
