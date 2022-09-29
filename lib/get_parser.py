@@ -111,7 +111,12 @@ def get_parser() -> argparse.ArgumentParser:
         help=" Set up minervasoft release built with cmt configuration. default is $CMTCONFIG",
     )
     parser.add_argument("--cpu", help="request worker nodes have at least NUMBER cpus")
-    parser.add_argument("--dag", help="submit and run a dagNabbit input file")
+    parser.add_argument(
+        "--dag",
+        help="submit and run a dagNabbit input file",
+        action="store_true",
+        default=False,
+    )
     parser.add_argument(
         "--dataset-definition",
         "--dataset_definition",

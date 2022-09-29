@@ -128,10 +128,13 @@ def run_launch(cmd):
     res = pf.close()
 
     if not added:
-        raise ValueError("Did not get expected output from %s" % cmd)
+        raise ValueError(
+            "Did not get expected output from %s\njobid %s schedd %s jobsubjobid %s "
+            % (cmd, jobid, schedd, jobsubjobid)
+        )
 
     if not jobsubjobid == "%s.0@%s" % (jobid, schedd):
-        raise ValueError("Did not get consistent output from %s" % cmd)
+        raise ValueError("Did not get consistent output from %s " % cmd)
 
     return res == None
 
@@ -167,7 +170,7 @@ def dagnabbit_launch(extra, which=""):
           --debug=2 \
           -e SAM_EXPERIMENT {extra} \
           --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE \
-          --dag dagTest{which} \
+          --dag file://dagTest{which} \
         """
     )
     os.chdir(os.path.dirname(__file__))

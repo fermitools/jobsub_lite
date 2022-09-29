@@ -45,7 +45,8 @@ def parse_dagnabbit(
     proxy, token = creds.get_creds(values)
     count = 0
     linenum = 0
-    with open(values["dag"], "r", encoding="UTF-8") as df, open(
+    dagfile = values["executable"].replace("file://", "")
+    with open(dagfile, "r", encoding="UTF-8") as df, open(
         os.path.join(dest, "dag.dag"), "w", encoding="UTF-8"
     ) as of:
         of.write(f"DOT dag.dot UPDATE\n")

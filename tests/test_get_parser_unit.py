@@ -102,7 +102,6 @@ def all_test_args():
         "--cpu",
         "xxcpuxx",
         "--dag",
-        "xxdagxx",
         "--dataset-definition",
         "xxdataset-definitionxx",
         "--debug",
