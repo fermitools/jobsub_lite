@@ -162,7 +162,7 @@ def dcache_persistent_path(exp: str, filename: str) -> str:
     return res
 
 
-@as_span("do_tarballs")
+@as_span("do_tarballs", arg_attrs=["*"])
 def do_tarballs(args: argparse.Namespace) -> None:
     """handle tarfile argument;  we could have:
        a directory with tardir: or tardir:// prefix to tar up and upload
@@ -497,7 +497,7 @@ class TarfilePublisherHandler:
         return requests.get(url, cert=(self.proxy, self.proxy))
 
     @cid_operation
-    @as_span("publish")
+    @as_span("publish", arg_attrs=["*"])
     @pubapi_operation
     def publish(self, tarfile: str) -> requests.Response:
         """Make PubAPI publish call to upload this tarfile

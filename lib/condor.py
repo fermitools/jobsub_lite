@@ -250,7 +250,7 @@ def load_submit_file(filename: str) -> Tuple[Any, Optional[int]]:
 
 
 # pylint: disable-next=dangerous-default-value
-@as_span("submit")
+@as_span("submit", arg_attrs=["*"])
 def submit(
     f: str, vargs: Dict[str, Any], schedd_name: str, cmd_args: List[str] = []
 ) -> Union[Any, bool]:
