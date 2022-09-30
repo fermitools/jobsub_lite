@@ -72,8 +72,6 @@ except:
         def __init__(self):  # type: ignore
             pass
 
-
-    class stub_out_scope:
         def __enter__(self):  # type: ignore
             pass
 
@@ -90,12 +88,6 @@ except:
             return
 
     tracer = Tracer()
-
-    class stub_out_tracing:
-        def start_as_current_span(self, name: str) -> stub_out_scope:
-            return stub_out_scope()
-
-    # tracer = stub_out_tracing()
 
 
 F = TypeVar("F", bound=Callable[..., Any])
