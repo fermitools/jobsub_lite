@@ -310,4 +310,10 @@ class Job:
         Transfer the output sandbox, akin to calling condor_transfer_data.
         """
         s = self._get_schedd()
+        # always retrieve whole cluster even if we were specified with
+        # a particular process id, for backwards compatability with old
+        # jobsub_fetchlog
+        ssc = self.cluster
+        self.cluster = True
         s.retrieve(self._constraint())
+        self.cluster = ssc
