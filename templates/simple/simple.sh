@@ -215,11 +215,24 @@ ${JSB_TMP}/ifdh.sh cp -D {{fname}} ${CONDOR_DIR_INPUT}
   {%if tfname[:6] == "/cvmfs" and tfname[-7:] != ".tar.gz" %}
     # RCDS unpacked tarfile
     {%if loop.first%}
-      INPUT_TAR_FILE={{tfname}}
-      export INPUT_TAR_FILE
+      INPUT_TAR_DIR_LOCAL={{tfname}}
+      export INPUT_TAR_DIR_LOCAL
+
+      # wait for tarfile to show up
+      num_tries=0
+      max_tries=30
+      slp=30
+      while [ $num_tries -lt $max_tries ]; do
+           num_tries=$(($num_tries + 1))
+           if  test -d "$INPUT_TAR_DIR_LOCAL" ; then
+               break
+           else
+               sleep $slp
+           fi
+      done
     {%else%}
-      INPUT_TAR_FILE_{{loop.index0}}={{tfname}}
-      export INPUT_TAR_FILE_{{loop.index0}}
+      INPUT_TAR_DIR_LOCAL{{loop.index0}}={{tfname}}
+      export INPUT_TAR_DIR_LOCAL{{loop.index0}}
     {%endif%}
   {%else%}
     # tarfile to transfer and unpack
