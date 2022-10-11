@@ -35,4 +35,9 @@ def get_creds(args: Dict[str, Any] = {}) -> Tuple[str, str]:
     os.environ["X509_USER_PROXY"] = p
     os.environ["BEARER_TOKEN_FILE"] = t
 
+    if role.lower() == "production":
+        with os.popen(f"decode_token.sh -e sub {t}", "r") as f:
+            sub = f.read().strip().strip('"')
+            os.environ["USER"] = sub
+
     return p, t
