@@ -9,4 +9,7 @@ export BEARER_TOKEN_FILE=$_CONDOR_CREDS/{{group}}_{{role}}.use
 export BEARER_TOKEN_FILE=$_CONDOR_CREDS/{{group}}.use
 {% endif %}
 
+# touch our transfer files so condor will copy them back
+(sleep 1; touch {%for f in transfer_files%}{{f}} {%endfor%}) &
+
 exec /usr/bin/condor_dagman "$@"
