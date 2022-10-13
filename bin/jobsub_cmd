@@ -73,9 +73,10 @@ def main() -> None:
         schedd = arglist.name
 
     default_formatting = True
+    default_constraint = True
 
     for i in passthru:
-        m = re.match(r"([\d.]*)@([\w.]+)", str(i))
+        m = re.match(r"([\d.]*)@([\w.]+)", i)
         if m:
             # looks like a jobsub id 12.34@schedd.name
             schedd = m.group(2)
@@ -98,6 +99,16 @@ def main() -> None:
         ]:
             default_formatting = False
 
+        if (
+            i
+            in [
+                "-constraint",
+                "-factory" "-autocluster" "-constraint" "-unmatchable" "-allusers",
+            ]
+            or i[0] in "0123456789"
+        ):
+            default_constraint = False
+
         execargs.append(i)
 
     if schedd:
@@ -116,14 +127,21 @@ def main() -> None:
 
     # combine jobsub_q as well
     if cmd == "jobsub_q":
+
         execargs.insert(0, "-global")
+
+        if default_constraint:
+            execargs.extend(
+                [
+                    "-constraint",
+                    f'''Jobsub_Group=="{os.environ['GROUP']}"''',
+                ]
+            )
 
         if default_formatting:
             # default to old jobsub format
             execargs.extend(
                 [
-                    "-constraint",
-                    f'''Jobsub_Group=="{os.environ['GROUP']}"''',
                     "-format",
                     "%12s@",
                     'split(GlobalJobId,"#")[1]',
