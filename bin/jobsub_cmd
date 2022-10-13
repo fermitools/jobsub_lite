@@ -148,11 +148,8 @@ def main() -> None:
             execargs.extend(
                 [
                     "-format",
-                    "%12s@",
-                    'split(GlobalJobId,"#")[1]',
-                    "-format",
-                    "%-25.25s\t",
-                    'split(GlobalJobId,"#")[0]',
+                    "%-40s",
+                    'strcat(split(GlobalJobId,"#")[1],"@",split(GlobalJobId,"#")[0])',
                     "-format",
                     "%-10s\t",
                     "Owner",
@@ -181,7 +178,7 @@ def main() -> None:
             )
 
             print(
-                "JOBSUBJOBID                     \tOWNER     \tSUBMITTED     RUNTIME"
+                "JOBSUBJOBID                             OWNER       \tSUBMITTED     RUNTIME"
                 "   ST PRIO   SIZE  COMMAND"
             )
 
