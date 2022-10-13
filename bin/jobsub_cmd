@@ -73,13 +73,10 @@ def main() -> None:
         schedd = arglist.name
 
     default_formatting = True
-<<<<<<< HEAD
     default_constraint = True
-=======
->>>>>>> match old jobsub output format
 
     for i in passthru:
-        m = re.match(r"([\d.]*)@([\w.]+)", str(i))
+        m = re.match(r"([\d.]*)@([\w.]+)", i)
         if m:
             # looks like a jobsub id 12.34@schedd.name
             schedd = m.group(2)
