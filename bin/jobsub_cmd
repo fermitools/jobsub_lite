@@ -152,7 +152,7 @@ def main() -> None:
                     'strcat(split(GlobalJobId,"#")[1],"@",split(GlobalJobId,"#")[0])',
                     "-format",
                     "%-10s\t",
-                    "Owner",
+                    """(DAGNodeName=!=''?strcat(" |-",DAGNodeName):Owner)""",
                     "-format",
                     "%-11s ",
                     'formatTime(QDate,"%m/%d %H:%M")',
@@ -169,11 +169,17 @@ def main() -> None:
                     "%6.1f ",
                     "ImageSize/1024.0",
                     "-format",
-                    " %s ",
+                    "%s",
                     "Cmd",
                     "-format",
-                    " %20.20s\n",
+                    " %-.20s",
+                    "Args",
+                    "-format",
+                    " %-.20s",
                     "Arguments",
+                    "-format",
+                    "\n",
+                    "Owner",
                 ]
             )
 
