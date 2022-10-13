@@ -54,11 +54,10 @@ def main() -> None:
 
     arglist, passthru = parser.parse_known_args()
 
+    # if they gave us --jobid put it in
+
     if arglist.jobid:
         passthru.append(arglist.jobid)
-
-    if arglist.job_id:
-        passthru.append(arglist.job_id)
 
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
@@ -73,8 +72,10 @@ def main() -> None:
     if arglist.name:
         schedd = arglist.name
 
+    default_formatting = True
+
     for i in passthru:
-        m = re.match(r"([\d.]*)@([\w.]+)", i)
+        m = re.match(r"([\d.]*)@([\w.]+)", str(i))
         if m:
             # looks like a jobsub id 12.34@schedd.name
             schedd = m.group(2)
@@ -84,6 +85,18 @@ def main() -> None:
         # convert --better-analyze to -better-analyze, etc.
         if i.startswith("--"):
             i = i[1:]
+
+        if i in [
+            "-format",
+            "-xml",
+            "--json",
+            "-autoformat",
+            "-io",
+            "-batch",
+            "-nobatch",
+            "-dag",
+        ]:
+            default_formatting = False
 
         execargs.append(i)
 
@@ -104,6 +117,50 @@ def main() -> None:
     # combine jobsub_q as well
     if cmd == "jobsub_q":
         execargs.insert(0, "-global")
+
+        if default_formatting:
+            # default to old jobsub format
+            execargs.extend(
+                [
+                    "-constraint",
+                    f'''Jobsub_Group=="{os.environ['GROUP']}"''',
+                    "-format",
+                    "%12s@",
+                    'split(GlobalJobId,"#")[1]',
+                    "-format",
+                    "%-25.25s\t",
+                    'split(GlobalJobId,"#")[0]',
+                    "-format",
+                    "%-10s\t",
+                    "Owner",
+                    "-format",
+                    "%-11s ",
+                    'formatTime(QDate,"%m/%d %H:%M")',
+                    "-format",
+                    "%T ",
+                    "RemoteWallClockTime",
+                    "-format",
+                    " %s ",
+                    'substr("UIRXCHE",JobStatus,1)',
+                    "-format",
+                    " %3d ",
+                    "JobPrio",
+                    "-format",
+                    "%6.1f ",
+                    "ImageSize/1024.0",
+                    "-format",
+                    " %s ",
+                    "Cmd",
+                    "-format",
+                    " %20.20s\n",
+                    "Arguments",
+                ]
+            )
+
+            print(
+                "JOBSUBJOBID                     \tOWNER     \tSUBMITTED     RUNTIME"
+                "   ST PRIO   SIZE  COMMAND"
+            )
 
     cmd = cmd.replace("jobsub_", "condor_")
 
