@@ -96,6 +96,7 @@ def main() -> None:
             "-batch",
             "-nobatch",
             "-dag",
+            "-long",
         ]:
             default_formatting = False
 
@@ -103,7 +104,11 @@ def main() -> None:
             i
             in [
                 "-constraint",
-                "-factory" "-autocluster" "-constraint" "-unmatchable" "-allusers",
+                "-factory",
+                "-autocluster",
+                "-constraint",
+                "-unmatchable",
+                "-allusers",
             ]
             or i[0] in "0123456789"
         ):
