@@ -169,11 +169,17 @@ def main() -> None:
                     "%6.1f ",
                     "ImageSize/1024.0",
                     "-format",
-                    " %s ",
+                    "%s",
                     "Cmd",
                     "-format",
-                    " %20.20s\n",
+                    " %-.20s",
+                    "Args",
+                    "-format",
+                    " %-.20s",
                     "Arguments",
+                    "-format",
+                    "\n",
+                    "Owner",
                 ]
             )
 
