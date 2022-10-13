@@ -87,7 +87,6 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
 def get_jobid_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     parser = get_base_parser(add_condor_epilog=add_condor_epilog)
     parser.add_argument("-J", "--jobid", dest="jobid", help="job/submission ID")
-    parser.add_argument("job_id", nargs="?", help="job/submission ID")
     return parser
 
 
