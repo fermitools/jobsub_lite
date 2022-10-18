@@ -27,42 +27,6 @@ class JobCredentialInfo(NamedTuple):
     dn: str
 
 
-def trim_dn(dn: str) -> str:
-    """Split dn by looking for a CN=#### string at the end of the DN.  If we find that, trim it off and return
-    the remaining part.
-    e.g. "/DC=org/DC=issuer/C=US/O=Organization/OU=People/CN=User Name/CN=UID:user/CN=123456"
-    should become "/DC=org/DC=issuer/C=US/O=Organization/OU=People/CN=User Name/CN=UID:user"
-    """
-    matches = DN_SPLIT_REGEXP.match(dn)
-    if matches is not None:
-        return matches.group(1)
-    return dn
-
-
-def get_role_from_fqan(fqan: str) -> str:
-    """Parse FQAN to extract role"""
-    matches = ROLE_FROM_FQAN_REGEXP.match(fqan)
-    if matches is not None:
-        return matches.group(1)
-    return fqan
-
-
-def check_proxy_timeleft(job_credential_info: JobCredentialInfo) -> int:
-    """Check how many seconds a proxy has left until expiration"""
-    result = subprocess.run(
-        [
-            "voms-proxy-info",
-            "-file",
-            str(job_credential_info.x509userproxy.resolve()),
-            "-timeleft",
-        ],
-        stdout=subprocess.PIPE,
-        encoding="UTF-8",
-    )
-    timeleft_string = result.stdout.strip()
-    return int(timeleft_string)
-
-
 def get_job_classads(*classad_attributes: str) -> List[htcondor.ClassAd]:
     """Query condor schedd to get a list of classads for all idle, running, and held jobs"""
     DEFAULT_ATTRIBUTES = [
@@ -118,6 +82,42 @@ def classad_to_JobCredentialInfo(
             f"Expected {expected_x509userproxy_path}, got {jc.x509userproxy}"
         )
     return jc
+
+
+def trim_dn(dn: str) -> str:
+    """Split dn by looking for a CN=#### string at the end of the DN.  If we find that, trim it off and return
+    the remaining part.
+    e.g. "/DC=org/DC=issuer/C=US/O=Organization/OU=People/CN=User Name/CN=UID:user/CN=123456"
+    should become "/DC=org/DC=issuer/C=US/O=Organization/OU=People/CN=User Name/CN=UID:user"
+    """
+    matches = DN_SPLIT_REGEXP.match(dn)
+    if matches is not None:
+        return matches.group(1)
+    return dn
+
+
+def get_role_from_fqan(fqan: str) -> str:
+    """Parse FQAN to extract role"""
+    matches = ROLE_FROM_FQAN_REGEXP.match(fqan)
+    if matches is not None:
+        return matches.group(1)
+    return fqan
+
+
+def check_proxy_timeleft(job_credential_info: JobCredentialInfo) -> int:
+    """Check how many seconds a proxy has left until expiration"""
+    result = subprocess.run(
+        [
+            "voms-proxy-info",
+            "-file",
+            str(job_credential_info.x509userproxy.resolve()),
+            "-timeleft",
+        ],
+        stdout=subprocess.PIPE,
+        encoding="UTF-8",
+    )
+    timeleft_string = result.stdout.strip()
+    return int(timeleft_string)
 
 
 def needs_refresh(
