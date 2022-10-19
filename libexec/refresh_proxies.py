@@ -1,28 +1,52 @@
 import argparse
+import os
 import pathlib
 import re
 import shutil
 import stat
 import subprocess
+import tempfile
 import time
 from typing import List, NamedTuple, Optional
 
 import htcondor  # type: ignore
 
+EXPIRATION_CUTOFF_SECONDS = 3600
+AGE_CUTOFF_SECONDS = 10800
 CREDS_DIR = pathlib.Path("/var/lib/jobsub_lite/creds/proxies")
+MYPROXY_SERVER = "myproxy-int.fnal.gov"
+OWN_VOMS_INSTANCES = ["dune", "des"]  # VOs with their own VOMS instance
+
+REQUIRED_EXECUTABLES = {
+    "voms-proxy-info": "",
+    "voms-proxy-init": "",
+    "myproxy-logon": "",
+}
 DN_SPLIT_REGEXP = re.compile("(.+)/CN=\d+")
 ROLE_FROM_FQAN_REGEXP = re.compile(".*\/Role\=(\w+)\/Capability\=NULL")
 NOW = time.time()
-EXPIRATION_CUTOFF_SECONDS = 3600
-AGE_CUTOFF_SECONDS = 10800
 
 
 # Utilities
+
+
+def check_for_required_executables() -> None:
+    for exe in REQUIRED_EXECUTABLES:
+        exe_path = shutil.which(exe)
+        if exe_path:
+            REQUIRED_EXECUTABLES[exe] = exe_path
+        else:
+            raise OSError(
+                f"Required executable {exe} was not found in $PATH.  Exiting."
+            )
+
+
 class JobCredentialInfo(NamedTuple):
     """Class that holds the information needed to refresh a user's X509 proxy"""
 
     owner: str
     group: str
+    role: str
     x509userproxy: pathlib.Path
     dn: str
 
@@ -55,22 +79,23 @@ def classad_to_JobCredentialInfo(
 ) -> Optional[JobCredentialInfo]:
     """Convert an htcondor.ClassAd to a JobCredentialInfo object"""
     try:
-        jc = JobCredentialInfo(
-            classad["Owner"],
-            classad["Jobsub_Group"],
-            pathlib.Path(classad["x509useproxy"]).resolve(),
-            trim_dn(classad["JobsubClientDN"]),
-        )
-    except KeyError as e:
-        print(f"Missing key to create JobCredentialInfo object: {e}")
-        return None
-
-    try:
         role = get_role_from_fqan(classad["x509UserProxyFirstFQAN"])
     except KeyError:
         print(
             "Could not get role from FQAN because x509UserProxyFirstFQAN is not defined in the classad"
         )
+        return None
+
+    try:
+        jc = JobCredentialInfo(
+            classad["Owner"],
+            classad["Jobsub_Group"],
+            role,
+            pathlib.Path(classad["x509useproxy"]).resolve(),
+            trim_dn(classad["JobsubClientDN"]),
+        )
+    except KeyError as e:
+        print(f"Missing key to create JobCredentialInfo object: {e}")
         return None
 
     expected_x509userproxy_path = CREDS_DIR / jc.group / f"x509cc_{jc.owner}_{role}"
@@ -108,7 +133,7 @@ def check_proxy_timeleft(job_credential_info: JobCredentialInfo) -> int:
     """Check how many seconds a proxy has left until expiration"""
     result = subprocess.run(
         [
-            "voms-proxy-info",
+            REQUIRED_EXECUTABLES["voms-proxy-info"],
             "-file",
             str(job_credential_info.x509userproxy.resolve()),
             "-timeleft",
@@ -118,6 +143,31 @@ def check_proxy_timeleft(job_credential_info: JobCredentialInfo) -> int:
     )
     timeleft_string = result.stdout.strip()
     return int(timeleft_string)
+
+
+def get_fqan_from_voms_proxy(path: pathlib.Path) -> str:
+    """Extract the FQAN from a VOMS proxy"""
+    result = subprocess.run(
+        [
+            REQUIRED_EXECUTABLES["voms-proxy-info"],
+            "-file",
+            str(path.resolve()),
+            "-fqan",
+        ],
+        stdout=subprocess.PIPE,
+        encoding="UTF-8",
+    )
+    attributes = result.stdout.split("\n")
+    return attributes[0]
+
+
+def get_voms_attribute(group: str, role: str) -> str:
+    """Given the group and role, return the appropriate voms attribute"""
+    if group in OWN_VOMS_INSTANCES:
+        voms_root = f"{group}:/{group}"
+    else:
+        voms_root = f"fermilab:/fermilab/{group}"
+    return f"{voms_root}/Role={role}"
 
 
 def needs_refresh(
@@ -141,7 +191,77 @@ def needs_refresh(
 
 
 def refresh_proxy(job_credential_info: JobCredentialInfo) -> None:
-    pass
+    # First, pull down the proxy from myproxy server
+    myproxy_env = os.environ.copy()
+    # TODO
+    myproxy_env["X509_USER_CERT"] = "TODOCHANGETHIS"
+    myproxy_env["X509_USER_KEY"] = "TODOCHANGETHIS"
+    with tempfile.NamedTemporaryFile() as myproxy_tempfile:
+        myproxy_result = subprocess.run(
+            [
+                REQUIRED_EXECUTABLES["myproxy-logon"],
+                "-l",
+                job_credential_info.dn,
+                "-s",
+                MYPROXY_SERVER,
+                "-t",
+                "24",
+                "-o",
+                myproxy_tempfile.name,
+            ],
+            env=myproxy_env,
+        )
+        myproxy_result.check_returncode()
+        print(
+            f"Successfully retrieved proxy from myproxy, {job_credential_info.x509userproxy}"
+        )
+
+        # voms-proxy-init to add voms extensions
+        voms_attribute = get_voms_attribute(
+            job_credential_info.group, job_credential_info.role
+        )
+        with tempfile.NamedTemporaryFile() as voms_proxy_tempfile:
+            voms_proxy_init_result = subprocess.run(
+                [
+                    REQUIRED_EXECUTABLES["voms-proxy-init"],
+                    "-noregen",
+                    "-rfc",
+                    "-ignorewarn",
+                    "-valid",
+                    "168:0",
+                    "-bits",
+                    "1024",
+                    "-voms",
+                    voms_attribute,
+                    "-out",
+                    voms_proxy_tempfile.name,
+                    "-cert",
+                    myproxy_tempfile.name,
+                    "-key",
+                    myproxy_tempfile.name,
+                ]
+            )
+            voms_proxy_init_result.check_returncode()
+            proxy_fqan = get_fqan_from_voms_proxy(
+                pathlib.Path(voms_proxy_tempfile.name)
+            )
+            check_role = get_role_from_fqan(proxy_fqan)
+            try:
+                assert job_credential_info.role == check_role
+            except AssertionError:
+                print(
+                    f"Verification of refreshed proxy failed:  Roles do not match.  Expected {job_credential_info.role}, got {check_role}"
+                )
+                raise
+
+            shutil.copy(voms_proxy_tempfile, job_credential_info.x509userproxy)
+
+    # chmod proxy files to 600, chown to job owner, fnalgrid group
+    job_credential_info.x509userproxy.chmod(stat.S_IRUSR | stat.S_IWUSR)
+    shutil.chown(
+        job_credential_info.x509userproxy, job_credential_info.owner, "fnalgrid"
+    )
+    print(f"Refreshed proxy at f{job_credential_info.x509userproxy}")
 
 
 def main() -> None:
@@ -162,6 +282,8 @@ def main() -> None:
     Submit job that runs for 12 hours.  Have it run voms-proxy-info on credential file to make sure it's refreshed, ls -l on the file to make sure it's actually new
 
     """
+    check_for_required_executables()
+
     # Collect args
     parser = argparse.ArgumentParser(
         description="Refresh all proxies in use by running, idle, and held jobs"
@@ -190,11 +312,12 @@ def main() -> None:
     # Check to see which proxies need to be renewed, and renew them
     for jc in job_credential_infos:
         if needs_refresh(jc, args.expiration_cutoff, args.age_cutoff):
-            refresh_proxy(jc)  # TODO
-            # chmod proxy files to 600, chown to job owner, fnalgrid group
-            jc.x509userproxy.chmod(stat.S_IRUSR | stat.S_IWUSR)
-            shutil.chown(jc.x509userproxy, jc.owner, "fnalgrid")
-            print(f"Refreshed proxy at f{jc.x509userproxy}")
+            try:
+                refresh_proxy(jc)  # TODO
+            except Exception as e:
+                print(
+                    f"Proxy refresh failed for {jc.x509userproxy}.  Continuing to the next proxy"
+                )
         else:
             print(
                 f"Reviewed proxy at f{jc.x509userproxy}.  Does not need to be renewed"
