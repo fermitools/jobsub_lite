@@ -88,27 +88,26 @@ def main() -> None:
             i = i[1:]
 
         if i in [
-            "-format",
-            "-xml",
-            "--json",
             "-autoformat",
-            "-io",
             "-batch",
-            "-nobatch",
             "-dag",
+            "-format",
+            "-io",
+            "-json",
             "-long",
+            "-nobatch",
+            "-xml",
         ]:
             default_formatting = False
 
         if (
             i
             in [
-                "-constraint",
-                "-factory",
+                "-allusers",
                 "-autocluster",
                 "-constraint",
+                "-factory",
                 "-unmatchable",
-                "-allusers",
             ]
             or i[0] in "0123456789"
         ):
