@@ -61,7 +61,8 @@ class TestDagnabbitUnit:
         d1 = os.path.join("..", "..", "templates", "simple")
         # file has relative paths in it, so chdir there
         os.chdir("dagnabbit")
-        varg["dag"] = dagfile
+        varg["dag"] = 1
+        varg["executable"] = f"file://{dagfile}"
         dagnabbit.parse_dagnabbit(d1, varg, dest, TestUnit.test_schedd)
         os.chdir(os.path.dirname(__file__))
         for f in flist:
