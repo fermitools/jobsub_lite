@@ -27,12 +27,8 @@ import shlex
 import subprocess
 import sys
 import time
-<<<<<<< HEAD
 from typing import Union, Optional, List, Dict, Any
-=======
-from typing import Union, Optional, List
 from tracing import as_span, add_event
->>>>>>> now tracing with details
 
 import htcondor  # type: ignore
 
@@ -114,8 +110,8 @@ def checkToken(tokenfile: str) -> bool:
         raise
 
 
-@as_span("getRole")
-def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
+@as_span("getToken")
+def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
     """get path to token file"""
     pid = os.getuid()
     tmp = getTmp()
