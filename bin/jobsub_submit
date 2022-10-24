@@ -62,6 +62,7 @@ def get_basefiles(dlist: List[str]) -> List[str]:
     return res
 
 
+@as_span(name="render_files", arg_attrs="*")
 def render_files(
     srcdir: str, values: Dict[str, Any], dest: str, dlist: Union[None, List[str]] = None
 ):

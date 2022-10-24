@@ -18,8 +18,10 @@ import os
 from typing import Any, Dict, Tuple
 
 import fake_ifdh
+from tracing import as_span
 
 # pylint: disable-next=dangerous-default-value
+@as_span("get_creds")
 def get_creds(args: Dict[str, Any] = {}) -> Tuple[str, str]:
     """get credentials -- Note this does not currently push to
     myproxy, nor does it yet deal with tokens, but those should
