@@ -63,6 +63,9 @@ try:
 
     tracer = trace.get_tracer("jobsub_lite")
 
+    def get_current_span():  # type: ignore
+        return trace.get_current_span()
+
 except:
     # if we can't import the stuff, here's a little mock so we don't crash
     print("Note: tracing not available here.")
@@ -79,13 +82,16 @@ except:
             pass
 
     class Tracer:
-        def start_as_current_span(self, name: str) -> Context:
+        def start_as_current_span(self, name: str):  # type: ignore
             return Context()
 
         def add_event(
             self, name: str, attributes: Optional[Dict[str, str]] = None
         ) -> None:
             return
+
+    def get_current_span():  # type: ignore
+        return Tracer()
 
     tracer = Tracer()
 
@@ -94,7 +100,8 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def add_event(name: str, attributes: Optional[Dict[str, str]] = None) -> None:
-    tracer.add_event(name, attributes)
+    span = get_current_span()  # type: ignore
+    span.add_event(name, attributes)
 
 
 def start_as_current_span(name: str) -> Context:
