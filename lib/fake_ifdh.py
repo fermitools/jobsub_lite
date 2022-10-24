@@ -97,7 +97,7 @@ def checkToken(tokenfile: str) -> bool:
         raise
 
 
-@as_span("getRole")
+@as_span("getToken")
 def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
     """get path to token file"""
     pid = os.getuid()
