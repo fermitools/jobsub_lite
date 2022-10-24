@@ -82,7 +82,7 @@ except:
             pass
 
     class Tracer:
-        def start_as_current_span(self, name: str):  # type: ignore
+        def start_as_current_span(self, name: str) -> Context:
             return Context()
 
         def add_event(
