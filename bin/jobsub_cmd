@@ -140,8 +140,9 @@ def main() -> None:
         if default_constraint:
             execargs.extend(
                 [
+                    "-allusers",
                     "-constraint",
-                    f'''Jobsub_Group=="{os.environ['GROUP']}"''',
+                    f'''Jobsub_Group=?="{os.environ['GROUP']}"''',
                 ]
             )
 
