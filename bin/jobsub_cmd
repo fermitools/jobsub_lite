@@ -54,11 +54,10 @@ def main() -> None:
 
     arglist, passthru = parser.parse_known_args()
 
+    # if they gave us --jobid put it in
+
     if arglist.jobid:
         passthru.append(arglist.jobid)
-
-    if arglist.job_id:
-        passthru.append(arglist.job_id)
 
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
@@ -73,6 +72,9 @@ def main() -> None:
     if arglist.name:
         schedd = arglist.name
 
+    default_formatting = True
+    default_constraint = True
+
     for i in passthru:
         m = re.match(r"([\d.]*)@([\w.]+)", i)
         if m:
@@ -84,6 +86,32 @@ def main() -> None:
         # convert --better-analyze to -better-analyze, etc.
         if i.startswith("--"):
             i = i[1:]
+
+        if i in [
+            "-autoformat",
+            "-batch",
+            "-dag",
+            "-format",
+            "-io",
+            "-json",
+            "-long",
+            "-nobatch",
+            "-xml",
+        ]:
+            default_formatting = False
+
+        if (
+            i
+            in [
+                "-allusers",
+                "-autocluster",
+                "-constraint",
+                "-factory",
+                "-unmatchable",
+            ]
+            or i[0] in "0123456789"
+        ):
+            default_constraint = False
 
         execargs.append(i)
 
@@ -103,7 +131,64 @@ def main() -> None:
 
     # combine jobsub_q as well
     if cmd == "jobsub_q":
+
+        # add -global -schedd-constraint IsJobsubLite==True
+        execargs.insert(0, "IsJobsubLite==True")
+        execargs.insert(0, "-schedd-constraint")
         execargs.insert(0, "-global")
+
+        if default_constraint:
+            execargs.extend(
+                [
+                    "-constraint",
+                    f'''Jobsub_Group=="{os.environ['GROUP']}"''',
+                ]
+            )
+
+        if default_formatting:
+            # default to old jobsub format
+            execargs.extend(
+                [
+                    "-format",
+                    "%-40s",
+                    'strcat(split(GlobalJobId,"#")[1],"@",split(GlobalJobId,"#")[0])',
+                    "-format",
+                    "%-10s\t",
+                    """(DAGNodeName=!=''?strcat(" |-",DAGNodeName):Owner)""",
+                    "-format",
+                    "%-11s ",
+                    'formatTime(QDate,"%m/%d %H:%M")',
+                    "-format",
+                    "%T ",
+                    "RemoteWallClockTime",
+                    "-format",
+                    " %s ",
+                    'substr("UIRXCHE",JobStatus,1)',
+                    "-format",
+                    " %3d ",
+                    "JobPrio",
+                    "-format",
+                    "%6.1f ",
+                    "ImageSize/1024.0",
+                    "-format",
+                    "%s",
+                    "Cmd",
+                    "-format",
+                    " %-.20s",
+                    "Args",
+                    "-format",
+                    " %-.20s",
+                    "Arguments",
+                    "-format",
+                    "\n",
+                    "Owner",
+                ]
+            )
+
+            print(
+                "JOBSUBJOBID                             OWNER       \tSUBMITTED     RUNTIME"
+                "   ST PRIO   SIZE  COMMAND"
+            )
 
     cmd = cmd.replace("jobsub_", "condor_")
 

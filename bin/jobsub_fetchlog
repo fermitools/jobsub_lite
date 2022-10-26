@@ -66,6 +66,7 @@ def main():
         help='format for downloaded archive: "tar" (default, compressed with gzip) or "zip"',
         default="tar",
     )
+    parser.add_argument("job_id", nargs="?", help="job/submission ID")
 
     args = parser.parse_args()
 
