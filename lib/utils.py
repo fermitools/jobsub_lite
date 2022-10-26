@@ -235,7 +235,18 @@ def fix_unit(
         args[name] = float(args[name][:c_offset]) * cf
         # print(f"converted to {args[name]}")
     elif args[name]:
-        args[name] = float(args[name])
+        try:
+            args[name] = float(args[name])
+        except ValueError:
+            cmd = os.path.basename(sys.argv[0])
+            if len(s_list) == 1:
+                suff = s_list
+            else:
+                suff = ""
+            ulist = [f"{a}{suff}" for a in table]
+            raise SystemExit(
+                f"{cmd}: error: unable to convert units on argument '{args[name]}', expected units from {repr(ulist)}"
+            )
 
 
 def get_principal() -> str:
