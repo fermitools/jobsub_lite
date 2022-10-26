@@ -53,6 +53,7 @@ def main():
     - make tarball
     """
     parser = get_jobid_parser()
+    transfer_complete = False
 
     parser.add_argument(
         "--destdir",
@@ -102,7 +103,11 @@ def main():
         os.makedirs(iwd, mode=0o750)
 
     # get the output sandbox
-    j.transfer_data()
+    try:
+        j.transfer_data()
+        transfer_complete = True
+    except htcondor.HTCondorIOError as e1:
+        print(f"Error in transfer_data(): {str(e1)}")
     files = os.listdir(iwd)
 
     if args.destdir is not None:
@@ -140,6 +145,9 @@ def main():
             raise Exception(f"error creating archive")
 
     cleanup({"submitdir": iwd})
+
+    if not transfer_complete:
+        print("Transfer may be incomplete.")
 
 
 if __name__ == "__main__":
