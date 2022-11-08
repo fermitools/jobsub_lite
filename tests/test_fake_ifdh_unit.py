@@ -113,14 +113,23 @@ def test_getProxy_override(clear_token, tmp_path):
 
 
 @pytest.mark.unit
-def test_getProxy_fail(clear_token):
+def test_getProxy_fail(clear_token, tmp_path):
+    fake_path = tmp_path / "test_proxy"
+    if os.path.exists(fake_path):
+        os.unlink(fake_path)
+    old_x509_user_proxy = os.environ.get("X509_USER_PROXY")
+    os.environ["X509_USER_PROXY"] = str(fake_path)
+    os.environ["GROUP"] = "bozo"
     try:
-        os.environ["GROUP"] = "bozo"
         proxy = fake_ifdh.getProxy("Analysis")
+        print(f"got proxy: {proxy}")
     except PermissionError:
         assert True
     else:
         assert False
+    finally:
+        if old_x509_user_proxy is not None:
+            os.environ["X509_USER_PROXY"] = old_x509_user_proxy
 
 
 @pytest.mark.unit
