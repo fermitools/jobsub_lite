@@ -173,7 +173,7 @@ def main() -> None:
                     "ImageSize/1024.0",
                     "-format",
                     "%s",
-                    "Cmd",
+                    "JobsubCmd=!=''?JobsubCmd:Cmd",
                     "-format",
                     " %-.20s",
                     "Args",

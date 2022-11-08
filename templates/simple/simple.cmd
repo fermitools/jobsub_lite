@@ -36,8 +36,8 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 +JOB_EXPECTED_MAX_LIFETIME = {{expected_lifetime}}
 notify_user = {{email_to}}
 
-# set command to user executable for condor_q, etc.
-+Cmd = {{executable|basename}}
+# set command to user executable for jobsub_q
++JobsubCmd = {{executable|basename}}
 
 {% if subgroup is defined and subgroup %}
 +AccountingGroup = "group_{{group}}.{{subgroup}}.{{user}}"
