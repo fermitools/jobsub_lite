@@ -54,8 +54,10 @@ def main() -> None:
 
     arglist, passthru = parser.parse_known_args()
 
+    # Re-insert --debug/--verbose if it was given
+    if arglist.verbose:
+        passthru.append("-debug")
     # if they gave us --jobid put it in
-
     if arglist.jobid:
         passthru.append(arglist.jobid)
 

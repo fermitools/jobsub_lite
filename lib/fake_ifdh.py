@@ -51,7 +51,7 @@ def getExp() -> Union[str, None]:
     return exp
 
 
-def getRole(role_override: Optional[str] = None, debug: int = 0) -> str:
+def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     """get current role"""
 
     if role_override:
@@ -92,7 +92,7 @@ def checkToken(tokenfile: str) -> bool:
         raise
 
 
-def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
+def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
     """get path to token file"""
     pid = os.getuid()
     tmp = getTmp()
@@ -117,7 +117,7 @@ def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
         if role != DEFAULT_ROLE:
             cmd = f"{cmd} -r {role.lower()}"  # Token-world wants all-lower
 
-        if debug > 0:
+        if verbose > 0:
             sys.stderr.write(f"Running: {cmd}")
 
         res = os.system(cmd)
@@ -129,7 +129,7 @@ def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
     return tokenfile
 
 
-def getProxy(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
+def getProxy(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
     """get path to proxy certificate file"""
     pid = os.getuid()
     tmp = getTmp()
@@ -147,7 +147,7 @@ def getProxy(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
     vomsfile = os.environ.get("X509_USER_PROXY", f"{tmp}/x509up_{exp}_{role}_{pid}")
     chk_cmd = f"voms-proxy-info -exists -valid 0:10 -file {vomsfile}"
 
-    if debug > 0:
+    if verbose > 0:
         # send output to stderr because invokers read stdout
         sys.stderr.write(f"Running: {chk_cmd}")
         chk_cmd += " >&2"
@@ -174,7 +174,7 @@ def getProxy(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
             f" -voms {issuer}:/{igroup}/Role={role}"
         )
 
-        if debug > 0:
+        if verbose > 0:
             # send output to stderr because invokers read stdout
             sys.stderr.write("Running: {cmd}")
             cmd = f"{cmd} >&2"
@@ -218,7 +218,7 @@ if __name__ == "__main__":
         if opts.command[0] == "cp":
             commands[opts.command[0]](*opts.cpargs[0])  # type: ignore
         else:
-            result = commands[opts.command[0]](myrole, debug=1)  # type: ignore
+            result = commands[opts.command[0]](myrole, verbose=1)  # type: ignore
             if result is not None:
                 print(result)
     except PermissionError as pe:

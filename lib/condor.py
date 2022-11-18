@@ -139,14 +139,14 @@ def submit(
         print(f"NOT submitting file:\n{f}\n")
         return False
     if f:
-        if vargs["debug"] > 0:
+        if vargs["verbose"] > 0:
             print(f"submitting: {f}")
         schedd_args = schedd_args + f" {f}"
         fl = glob.glob(f)
         if fl:
             f = fl[0]
 
-    if vargs["debug"] > 1:
+    if vargs["verbose"] > 1:
         print(f"cmd_args: {cmd_args}")
 
     # commenting this out for now since the 'else' is not implemented
@@ -157,7 +157,7 @@ def submit(
     cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
     cmd = f"_condor_CREDD_HOST={schedd_name} {cmd}"
     packages.orig_env()
-    if vargs["debug"] > 0:
+    if vargs["verbose"] > 0:
         print(f"Running: {cmd}")
 
     try:
@@ -212,7 +212,7 @@ def submit_dag(
         )
 
         cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
-        if vargs["debug"] > 0:
+        if vargs["verbose"] > 0:
             print(f"Running: {cmd}")
 
         try:

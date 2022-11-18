@@ -105,7 +105,6 @@ def all_test_args():
         "--dataset-definition",
         "xxdataset-definitionxx",
         "--debug",
-        "1",
         "--disk",
         "xxdiskxx",
         "-d",
@@ -160,6 +159,7 @@ def all_test_args():
         "--use-cvmfs-dropbox",
         "--use-pnfs-dropbox",
         "--verbose",
+        "1",
         "--devserver",
         "--onsite-only",
         "--offsite",
@@ -275,8 +275,8 @@ class TestGetParserUnit:
             elif arg == "d":
                 # -d special case -- makes list of *pairs* of args
                 assert vres["d"] == [["dtag", "dpath"]]
-            elif arg == "debug":
-                assert vres["debug"] == 1
+            elif arg == "debug" or arg == "verbose":
+                assert vres["verbose"] == 1
             elif arg == "dataset":
                 assert vres["dataset_definition"] == "xxdataset-definitionxx"
             elif arg in listargs:

@@ -9,7 +9,7 @@ jobsub_submit  \
                  --blacklist FZU \
                  --blacklist Cornell \
                  --cpu 123 \
-                 --debug 4 \
+                 --verbose 4 \
                  --disk 100M  \
                  -d D \
                  --email-to mengel@fnal.gov \
