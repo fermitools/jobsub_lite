@@ -84,7 +84,7 @@ def render_files(
     values["cwd"] = dest
 
     for f in flist:
-        if values["debug"]:
+        if values["verbose"] > 0:
             print(f"rendering: {f}")
         bf = os.path.basename(f)
         ff = os.path.join(dest, bf)
