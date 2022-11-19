@@ -67,7 +67,7 @@ def render_files(
     """use jinja to render the templates from srcdir into the dest directory
     using values dict for substitutions
     """
-    if values["debug"]:
+    if values["verbose"] > 0:
         print(f"trying to render files from {srcdir}\n")
 
     if dlist is None:
