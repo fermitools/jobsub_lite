@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import pytest
 
@@ -47,7 +48,34 @@ class TestDagnabbitUnit:
             ],
         )
 
-    def do_one_dagnabbit(self, dagfile, flist):
+    @pytest.mark.unit
+    def test_parse_dagnabbit_dagTest(self):
+        """test dagnabbit parser on old jobsub dagTest example"""
+        self.do_one_dagnabbit(
+            "dagTest6",
+            [
+                "dag.dag",
+                "stage_1.sh",
+                "stage_2.sh",
+                "stage_3.sh",
+                "stage_4.sh",
+                "stage_5.sh",
+                "stage_6.sh",
+                "stage_1.cmd",
+                "stage_2.cmd",
+                "stage_3.cmd",
+                "stage_4.cmd",
+                "stage_6.cmd",
+            ],
+            {
+                "dag.dag": "PARENT stage_1 CHILD stage_2 stage_3",
+                "dag.dag": "PARENT stage_2 stage_5 CHILD stage_6",
+                "stage_1.sh": "ln .0 stage_1.sh",
+                "stage_6.sh": "ln .0 stage_6.sh",
+            },
+        )
+
+    def do_one_dagnabbit(self, dagfile, flist, check4={}):
         """test dagnabbit parser on given dagfile make sure it generates
         expected list of files"""
         varg = TestUnit.test_vargs.copy()
@@ -65,6 +93,13 @@ class TestDagnabbitUnit:
         varg["executable"] = f"file://{dagfile}"
         dagnabbit.parse_dagnabbit(d1, varg, dest, TestUnit.test_schedd)
         os.chdir(os.path.dirname(__file__))
+
         for f in flist:
-            assert os.path.exists("%s/%s" % (dest, f))
+            assert os.path.exists(f"{dest}/{f}")
+
+        for f, regexp in check4.items():
+            with open(f"{dest}/{f}", "r") as fd:
+                data = fd.read()
+                assert re.search(regexp, data)
+
         os.system("rm -rf %s" % dest)
