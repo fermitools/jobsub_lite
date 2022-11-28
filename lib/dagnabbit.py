@@ -100,6 +100,7 @@ def parse_dagnabbit(
                         )
 
                     pstack.append([parallel_l_in, parallel_l_out, [last_serial]])
+                    last_serial = ""
                     parallel_l_in = []
                     parallel_l_out = []
                     in_parallel = False
