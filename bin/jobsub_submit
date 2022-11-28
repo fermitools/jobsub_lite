@@ -67,7 +67,7 @@ def render_files(
     """use jinja to render the templates from srcdir into the dest directory
     using values dict for substitutions
     """
-    if values["debug"] > 0:
+    if values["verbose"] > 0:
         print(f"trying to render files from {srcdir}\n")
 
     if dlist is None:
@@ -84,7 +84,7 @@ def render_files(
     values["cwd"] = dest
 
     for f in flist:
-        if values["debug"] > 0:
+        if values["verbose"] > 0:
             print(f"rendering: {f}")
         bf = os.path.basename(f)
         ff = os.path.join(dest, bf)
@@ -163,6 +163,10 @@ def main():
 
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
+
+    # While we're running in hybrid proxy/token mode, force us to get a new proxy every time we submit
+    # Eventually, this arg and its support in the underlying libraries should be removed
+    args.force_proxy = True
 
     proxy, token = get_creds(vars(args))
 

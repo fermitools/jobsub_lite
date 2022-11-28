@@ -51,10 +51,14 @@ requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= Mac
 +SingularityImage="{{singularity_image}}"
 {% endif %}
 
+# Credentials
 {% if role is defined and role and  role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role}}
 {% else %}
 use_oauth_services = {{group}}
+{% endif %}
+{% if role is defined %}
++x509userproxy = "{{proxy}}"
 {% endif %}
 
 queue 1

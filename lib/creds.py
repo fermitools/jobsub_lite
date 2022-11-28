@@ -27,8 +27,8 @@ def get_creds(args: Dict[str, Any] = {}) -> Tuple[str, str]:
     """
 
     role = fake_ifdh.getRole(args.get("role", None))
-    p = fake_ifdh.getProxy(role, args.get("debug", 0))
-    t = fake_ifdh.getToken(role, args.get("debug", 0))
+    p = fake_ifdh.getProxy(role, args.get("verbose", 0), args.get("force_proxy", False))
+    t = fake_ifdh.getToken(role, args.get("verbose", 0))
 
     p = p.strip()
     t = t.strip()

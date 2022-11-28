@@ -37,10 +37,14 @@ environment	= _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address;
 +Jobsub_Group="{{group}}"
 +JobsubJobId="$(CLUSTER).$(PROCESS)@{{schedd}}"
 
+# Credentials
 {% if role is defined and role and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role}}
 {% else %}
 use_oauth_services = {{group}}
+{% endif %}
+{% if role is defined %}
++x509userproxy = "{{proxy}}"
 {% endif %}
 
 queue

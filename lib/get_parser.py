@@ -46,6 +46,20 @@ class StoreGroupinEnvironment(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
+class ConvertDebugToVerbose(argparse.Action):
+    """Action to convert the --debug flag to --verbose 1"""
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: Any,
+        option_string: Union[None, str] = None,
+    ) -> None:
+        setattr(namespace, self.dest, True)
+        setattr(namespace, "verbose", 1)
+
+
 def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     """build the general jobsub command argument parser and return it"""
 
@@ -76,11 +90,16 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     )
     group.add_argument(
         "--verbose",
-        action="store_true",
-        default=False,
+        type=int,
+        default=0,
+        help="Turn on more information on internal state of program. --verbose 1 is the same as --debug",
+    )
+    group.add_argument(
+        "--debug",
+        action=ConvertDebugToVerbose,
+        nargs=0,
         help="dump internal state of program (useful for debugging)",
     )
-
     return parser
 
 
@@ -122,7 +141,6 @@ def get_parser() -> argparse.ArgumentParser:
         "--dataset",
         help="SAM dataset definition used in a Directed Acyclic Graph (DAG)",
     )
-    parser.add_argument("--debug", type=int, default=0, help="Turn on debugging")
     parser.add_argument(
         "--disk",
         help="Request worker nodes have at least NUMBER[UNITS] of disk space."

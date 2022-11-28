@@ -74,10 +74,15 @@ requirements  = {%if overwrite_requirements is defined and overwrite_requirement
 #
 #
 #
+
+# Credentials
 {% if role is defined and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role}}
 {% else %}
 use_oauth_services = {{group}}
+{% endif %}
+{% if role is defined %}
++x509userproxy = "{{proxy}}"
 {% endif %}
 
 queue {{N}}

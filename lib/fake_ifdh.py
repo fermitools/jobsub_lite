@@ -27,7 +27,7 @@ import shlex
 import subprocess
 import sys
 import time
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Dict, Any
 
 import htcondor  # type: ignore
 
@@ -51,7 +51,7 @@ def getExp() -> Union[str, None]:
     return exp
 
 
-def getRole(role_override: Optional[str] = None, debug: int = 0) -> str:
+def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     """get current role"""
 
     if role_override:
@@ -92,7 +92,7 @@ def checkToken(tokenfile: str) -> bool:
         raise
 
 
-def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
+def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
     """get path to token file"""
     pid = os.getuid()
     tmp = getTmp()
@@ -117,7 +117,7 @@ def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
         if role != DEFAULT_ROLE:
             cmd = f"{cmd} -r {role.lower()}"  # Token-world wants all-lower
 
-        if debug > 0:
+        if verbose > 0:
             sys.stderr.write(f"Running: {cmd}")
 
         res = os.system(cmd)
@@ -129,12 +129,30 @@ def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
     return tokenfile
 
 
-def getProxy(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
-    """get path to proxy certificate file"""
+def getProxy(
+    role: str = DEFAULT_ROLE, verbose: int = 0, force_proxy: bool = False
+) -> str:
+    """get path to proxy certificate file and regenerate proxy if needed.
+    Setting force_proxy=True will force regeneration of the proxy"""
+
+    def generate_proxy_command_verbose_args(cmd_str: str) -> Dict[str, Any]:
+        # Helper function to handle verbose and regular mode
+        if verbose > 0:
+            # Caller that sets up command will write stdout to stderr
+            # Equivalent of >&2
+            sys.stderr.write(f"Running: {cmd_str}")
+            return {"stdout": sys.stderr}
+        else:
+            # Caller that sets up command will write stdout to /dev/null, stderr to stdout
+            # Equivalent of >/dev/null 2>&1
+            return {
+                "stdout": subprocess.DEVNULL,
+                "stderr": subprocess.STDOUT,
+            }
+
     pid = os.getuid()
     tmp = getTmp()
     exp = getExp()
-    certfile = f"{tmp}/x509up_u{pid}"
     if exp == "samdev":
         issuer = "fermilab"
         igroup = "fermilab"
@@ -145,47 +163,55 @@ def getProxy(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
         issuer = "fermilab"
         igroup = f"fermilab/{exp}"
     vomsfile = os.environ.get("X509_USER_PROXY", f"{tmp}/x509up_{exp}_{role}_{pid}")
-    chk_cmd = f"voms-proxy-info -exists -valid 0:10 -file {vomsfile}"
 
-    if debug > 0:
-        # send output to stderr because invokers read stdout
-        sys.stderr.write(f"Running: {chk_cmd}")
-        chk_cmd += " >&2"
-    else:
-        chk_cmd += " >/dev/null 2>&1"
+    # If this is a read-only proxy, like managed proxies or POMS-uploaded proxy, don't touch it!
+    if os.path.exists(vomsfile) and (not os.access(vomsfile, os.W_OK)):
+        return vomsfile
 
-    if 0 != os.system(chk_cmd):
-        cmd = f"cigetcert -i 'Fermi National Accelerator Laboratory' -n -o {certfile}"
-        completed_cmd = subprocess.run(
-            shlex.split(cmd),
+    certfile = os.environ.get("X509_USER_PROXY", f"{tmp}/x509up_u{pid}")
+
+    invalid_proxy = False
+    if not force_proxy:
+        chk_cmd_str = f"voms-proxy-info -exists -valid 0:10 -file {vomsfile}"
+        extra_check_args = generate_proxy_command_verbose_args(chk_cmd_str)
+        try:
+            subprocess.run(shlex.split(chk_cmd_str), check=True, **extra_check_args)
+        except subprocess.CalledProcessError:
+            invalid_proxy = True
+
+    if force_proxy or invalid_proxy:
+        cigetcert_cmd_str = f"cigetcert -i 'Fermi National Accelerator Laboratory' -n --proxyhours 168 --minhours 167 -o {certfile}"
+        cigetcert_cmd = subprocess.run(
+            shlex.split(cigetcert_cmd_str),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             encoding="UTF-8",
+            env=os.environ,
         )
-        if completed_cmd.returncode != 0:
-            if "Kerberos initialization failed" in completed_cmd.stdout:
+        if cigetcert_cmd.returncode != 0:
+            if "Kerberos initialization failed" in cigetcert_cmd.stdout:
                 raise Exception(
                     "Cigetcert failed to get proxy due to kerberos issue.  Please ensure "
                     "you have valid kerberos credentials."
                 )
-        cmd = (
-            f"voms-proxy-init -dont-verify-ac -valid 120:00 -rfc -noregen"
+        voms_proxy_init_cmd_str = (
+            f"voms-proxy-init -dont-verify-ac -valid 167:00 -rfc -noregen"
             f" -debug -cert {certfile} -key {certfile} -out {vomsfile}"
             f" -voms {issuer}:/{igroup}/Role={role}"
         )
-
-        if debug > 0:
-            # send output to stderr because invokers read stdout
-            sys.stderr.write("Running: {cmd}")
-            cmd = f"{cmd} >&2"
+        extra_check_args = generate_proxy_command_verbose_args(voms_proxy_init_cmd_str)
+        try:
+            subprocess.run(
+                shlex.split(voms_proxy_init_cmd_str),
+                check=True,
+                env=os.environ,
+                **extra_check_args,
+            )
+        except subprocess.CalledProcessError:
+            raise PermissionError(f"Failed attempting '{voms_proxy_init_cmd_str}'")
         else:
-            cmd = f"{cmd} > /dev/null 2>&1"
-
-        os.system(cmd)
-
-        if 0 == os.system(chk_cmd):
             return vomsfile
-        raise PermissionError(f"Failed attempting '{cmd}'")
+
     return vomsfile
 
 
@@ -218,7 +244,7 @@ if __name__ == "__main__":
         if opts.command[0] == "cp":
             commands[opts.command[0]](*opts.cpargs[0])  # type: ignore
         else:
-            result = commands[opts.command[0]](myrole, debug=1)  # type: ignore
+            result = commands[opts.command[0]](myrole, verbose=1)  # type: ignore
             if result is not None:
                 print(result)
     except PermissionError as pe:

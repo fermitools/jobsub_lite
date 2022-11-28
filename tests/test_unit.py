@@ -20,6 +20,7 @@ class TestUnit:
     test_schedd = getschedd("devgpvm")
     test_vargs = {
         "debug": False,
+        "verbose": 0,
         "executable": "file:///bin/true",
         "exe_arguments": [],
         "memory": "64gb",
