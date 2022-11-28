@@ -47,7 +47,7 @@ except ValueError:
 
 def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     """build path/to/directory.tar from path/to/directory"""
-    tarfile = f"{directory}.tar.gz"
+    tarfile = os.path.basename(f"{directory}.tar.gz")
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
     excludes = f"--exclude-from {excludes}"
