@@ -134,7 +134,7 @@ def parse_dagnabbit(
                     sys.stderr.write(f"parsing: {line.strip().split()}\n")
                     sys.stderr.flush()
                     raise
-                print(f"vars(res): {repr(vars(res))}")
+                # print(f"vars(res): {repr(vars(res))}")
                 # handle -f drobpox: etc. in dag stages
                 do_tarballs(res)
                 thesevalues = values.copy()

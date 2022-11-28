@@ -193,6 +193,7 @@ def main():
     #    shutil.copyfile(token, token_dest)
     #    varg["token"] = token_dest
 
+    args["is_dag"] = True
     if args.dag:
         d1 = os.path.join(PREFIX, "templates", "simple")
         d2 = os.path.join(PREFIX, "templates", "dag")
@@ -225,6 +226,7 @@ def main():
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     else:
+        args["is_dag"] = False
         d = f"{PREFIX}/templates/simple"
         render_files(d, varg, submitdir)
         if not varg.get("no_submit", False):
