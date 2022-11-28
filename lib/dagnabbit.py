@@ -157,6 +157,7 @@ def parse_dagnabbit(
                 thesevalues.update(update_with)
                 set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
                 thesevalues["script_name"] = f"{name}.sh"
+                thesevalues["cmd_name"] = f"{name}.cmd"
                 with open(
                     os.path.join(dest, f"{name}.cmd"), "w", encoding="UTF-8"
                 ) as cf:
