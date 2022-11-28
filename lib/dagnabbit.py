@@ -32,7 +32,7 @@ def parse_dagnabbit(
     values: Dict[str, Any],
     dest: str,
     schedd_name: str,
-    debug_comments: bool = True,
+    debug_comments: bool = False,
 ) -> None:
     """
     parse a dagnabbit dag file generating a .dag file and .cmd files
@@ -45,6 +45,7 @@ def parse_dagnabbit(
     proxy, token = creds.get_creds(values)
     count = 0
     linenum = 0
+    pstack: List[List[List[str]]] = []
     dagfile = values["executable"].replace("file://", "")
     with open(dagfile, "r", encoding="UTF-8") as df, open(
         os.path.join(dest, "dag.dag"), "w", encoding="UTF-8"
@@ -52,8 +53,10 @@ def parse_dagnabbit(
         of.write(f"DOT dag.dot UPDATE\n")
         in_parallel = False
         in_serial = False
-        last_serial = None
-        parallel_l: List[str] = []
+        last_serial = ""
+        last_serial_in = ""
+        parallel_l_in: List[str] = []
+        parallel_l_out: List[str] = []
         for line in df:
             line = line.strip()
             line = os.path.expandvars(line)
@@ -62,38 +65,60 @@ def parse_dagnabbit(
                 of.write(f"# line: {line}\n")
                 of.write(
                     f"# in_parallel: {in_parallel} in_serial: {in_serial}"
-                    f" last_serial: {last_serial} parallel_l: {parallel_l}\n"
+                    f" last_serial: {last_serial} parallel_l_in: {parallel_l_in}parallel_l_out: {parallel_l_out}\n"
                 )
 
             if line.find("<parallel>") >= 0:
+                if in_parallel:
+                    sys.stderr.write(
+                        f"Error: file {values['dag']} line {linenum}: <parallel>"
+                        f" inside <parallel> not currently supported\n"
+                    )
+                    sys.exit(1)
                 if debug_comments:
                     of.write("# saw <parallel>\n")
                 in_parallel = True
-                parallel_l = []
+                in_serial = False
+                parallel_l_in = []
+                parallel_l_out = []
             elif line.find("</parallel>") >= 0:
                 if debug_comments:
                     of.write("# saw </parallel>\n")
                 in_parallel = False
-                parallels = " ".join(parallel_l)
-                of.write(f"PARENT {last_serial} CHILD {parallels}\n")
-                last_serial = parallels
+                of.write(f"PARENT {last_serial} CHILD {' '.join(parallel_l_in)}\n")
+                last_serial = " ".join(parallel_l_out)
+                in_serial = True
             elif line.find("<serial>") >= 0:
+                last_serial_in = ""
                 if debug_comments:
                     of.write("# saw <serial>\n")
                 in_serial = True
                 if in_parallel:
-                    # to make this work we need a stack to remember we were
-                    # in a parallel, and our parallel_l would need a start
-                    # and end for each chain...
-                    sys.stderr.write(
-                        f"Error: file {values['dag']} line {linenum}: <serial>"
-                        f" inside <parallel> not currently supported\n"
-                    )
-                    sys.exit(1)
+                    if debug_comments:
+                        of.write(
+                            f"# pushing {repr([parallel_l_in, parallel_l_out, [last_serial]])}\n"
+                        )
+
+                    pstack.append([parallel_l_in, parallel_l_out, [last_serial]])
+                    parallel_l_in = []
+                    parallel_l_out = []
+                    in_parallel = False
             elif line.find("</serial>") >= 0:
                 if debug_comments:
                     of.write("# saw </serial>\n")
                 in_serial = False
+                if pstack:
+                    # we just ended a serial within a parallel...
+                    # our end is the tag for that chain, so add it to
+                    # the list of parallel branches
+                    parallel_l_in, parallel_l_out, last_serial_l = pstack.pop()
+                    in_parallel = True
+                    parallel_l_in.append(last_serial_in)
+                    parallel_l_out.append(last_serial)
+                    # now put last serial back to the one that led into
+                    # the chain...
+                    last_serial = last_serial_l[0]
+                    in_parallel = True
             elif line.find("jobsub") >= 0:
                 if not in_serial and not in_parallel:
                     sys.stderr.write(
@@ -141,14 +166,21 @@ def parse_dagnabbit(
                 ) as csf:
                     csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
                 of.write(f"JOB {name} {name}.cmd\n")
-                of.write(f'VARS {name} JOBSUBJOBSECTION="{count}" nodename="$(JOB)"')
+                of.write(f'VARS {name} JOBSUBJOBSECTION="{count}" nodename="$(JOB)"\n')
 
                 if in_serial:
+                    if not last_serial_in:
+                        last_serial_in = name
+
                     if last_serial:
                         of.write(f"PARENT {last_serial} CHILD {name}\n")
+
                     last_serial = name
+
                 if in_parallel:
-                    parallel_l.append(name)
+                    parallel_l_in.append(name)
+                    parallel_l_out.append(name)
+
             elif not line:
                 # blank lines are fine
                 pass

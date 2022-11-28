@@ -196,7 +196,7 @@ def main():
     if args.dag:
         d1 = os.path.join(PREFIX, "templates", "simple")
         d2 = os.path.join(PREFIX, "templates", "dag")
-        parse_dagnabbit(d1, varg, submitdir, schedd_name)
+        parse_dagnabbit(d1, varg, submitdir, schedd_name, varg["verbose"] > 1)
         render_files(d2, varg, submitdir, dlist=[d2, submitdir])
         if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
