@@ -92,6 +92,7 @@ def main() -> None:
         if i in [
             "-autoformat",
             "-batch",
+            "-better-analyze",
             "-dag",
             "-format",
             "-io",
@@ -107,6 +108,7 @@ def main() -> None:
             in [
                 "-allusers",
                 "-autocluster",
+                "-better-analyze",
                 "-constraint",
                 "-factory",
                 "-unmatchable",
