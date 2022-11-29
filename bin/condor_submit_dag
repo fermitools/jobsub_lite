@@ -40,15 +40,20 @@ def main():
     """script mainline:
     - parse args
     - get credentials
-    - handle tarfile options
-    - set added values from environment, etc.
-    - convert/render template files to submission files
     - launch
     """
     f = sys.argv[-1]
-    cmd_args = sys.argv[1:-1]
+    sys.argv = sys.argv[1:-1]
 
-    proxy, token = get_creds(cmd_args)
+    parser = get_parser.get_jobid_parser(add_condor_epilog=True)
+
+    arglist, cmd_args = parser.parse_known_args()
+
+    # Re-insert --debug/--verbose if it was given
+    if arglist.verbose:
+        cmd_args.append("-debug")
+
+    proxy, token = get_creds(arglist)
 
     # put in environment for condor libs to use
     os.environ["X509_USER_PROXY"] = proxy

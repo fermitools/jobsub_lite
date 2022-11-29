@@ -20,8 +20,8 @@ notification       = Never
 transfer_output    = True
 transfer_error     = True
 transfer_executable= True
-transfer_input_files = {{executable|basename}},simple.cmd
-transfer_output_files = simple.cmd,simple.sh,{{executable|basename}}
+transfer_input_files = {{executable|basename}},{{cmd_name|default('simple.cmd')}}
+transfer_output_files = {{cmd_name|default('simple.cmd')}},{{script_name|default('simple.sh')}},{{executable|basename}}
 when_to_transfer_output = ON_EXIT_OR_EVICT
 {%if    cpu is defined and cpu %}request_cpus = {{cpu}}{%endif%}
 {%if memory is defined and memory %}request_memory = {{memory}}{%endif%}
@@ -82,7 +82,11 @@ use_oauth_services = {{group}}_{{role}}
 use_oauth_services = {{group}}
 {% endif %}
 {% if role is defined %}
+{% if is_dag|default(False) %}
++x509userproxy = "{{proxy|basename}}"
+{% else %}
 +x509userproxy = "{{proxy}}"
+{% endif %}
 {% endif %}
 
 queue {{N}}

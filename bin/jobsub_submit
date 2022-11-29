@@ -194,14 +194,16 @@ def main():
     #    varg["token"] = token_dest
 
     if args.dag:
+        varg["is_dag"] = True
         d1 = os.path.join(PREFIX, "templates", "simple")
         d2 = os.path.join(PREFIX, "templates", "dag")
-        parse_dagnabbit(d1, varg, submitdir, schedd_name)
+        parse_dagnabbit(d1, varg, submitdir, schedd_name, varg["verbose"] > 1)
         render_files(d2, varg, submitdir, dlist=[d2, submitdir])
         if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     elif args.dataset_definition:
+        varg["is_dag"] = True
         do_dataset_defaults(varg)
         d1 = os.path.join(PREFIX, "templates", "dataset_dag")
         d2 = f"{PREFIX}/templates/simple"
@@ -217,6 +219,7 @@ def main():
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     elif args.maxConcurrent:
+        varg["is_dag"] = True
         d1 = os.path.join(PREFIX, "templates", "maxconcurrent_dag")
         d2 = os.path.join(PREFIX, "templates", "simple")
         render_files(d2, varg, submitdir, dlist=[d1, d2])
@@ -225,6 +228,7 @@ def main():
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     else:
+        varg["is_dag"] = False
         d = f"{PREFIX}/templates/simple"
         render_files(d, varg, submitdir)
         if not varg.get("no_submit", False):
