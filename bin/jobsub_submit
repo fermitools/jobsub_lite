@@ -193,8 +193,8 @@ def main():
     #    shutil.copyfile(token, token_dest)
     #    varg["token"] = token_dest
 
-    varg["is_dag"] = True
     if args.dag:
+        varg["is_dag"] = True
         d1 = os.path.join(PREFIX, "templates", "simple")
         d2 = os.path.join(PREFIX, "templates", "dag")
         parse_dagnabbit(d1, varg, submitdir, schedd_name, varg["verbose"] > 1)
@@ -203,6 +203,7 @@ def main():
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     elif args.dataset_definition:
+        varg["is_dag"] = True
         do_dataset_defaults(varg)
         d1 = os.path.join(PREFIX, "templates", "dataset_dag")
         d2 = f"{PREFIX}/templates/simple"
@@ -218,6 +219,7 @@ def main():
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "*.dag"), varg, schedd_name)
     elif args.maxConcurrent:
+        varg["is_dag"] = True
         d1 = os.path.join(PREFIX, "templates", "maxconcurrent_dag")
         d2 = os.path.join(PREFIX, "templates", "simple")
         render_files(d2, varg, submitdir, dlist=[d1, d2])

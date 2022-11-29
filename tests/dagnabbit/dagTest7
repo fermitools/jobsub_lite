@@ -1,0 +1,18 @@
+<serial>
+jobsub -n --mail_on_error $SUBMIT_FLAGS  ${JOBSUB_EXPORTS} file://./jobA.sh
+<parallel>
+<serial>
+jobsub -n --mail_on_error $SUBMIT_FLAGS  ${JOBSUB_EXPORTS} file://./jobB.sh
+jobsub -n --mail_on_error $SUBMIT_FLAGS  ${JOBSUB_EXPORTS} file://./jobC.sh
+</serial>
+<serial>
+jobsub -n --mail_on_error $SUBMIT_FLAGS  ${JOBSUB_EXPORTS} file://./jobD.sh
+jobsub -n --mail_on_error $SUBMIT_FLAGS  ${JOBSUB_EXPORTS} file://./jobE.sh
+</serial>
+<serial>
+jobsub -n --mail_on_error $SUBMIT_FLAGS  ${JOBSUB_EXPORTS} file://./jobF.sh
+jobsub -n --mail_on_error $SUBMIT_FLAGS  ${JOBSUB_EXPORTS} file://./jobG.sh
+</serial>
+</parallel>
+jobsub -n --mail_on_error $SUBMIT_FLAGS  ${JOBSUB_EXPORTS} file://./jobH.sh
+</serial>

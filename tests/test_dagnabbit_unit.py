@@ -49,7 +49,7 @@ class TestDagnabbitUnit:
         )
 
     @pytest.mark.unit
-    def test_parse_dagnabbit_dagTest(self):
+    def test_parse_dagnabbit_dagTest6(self):
         """test dagnabbit parser on old jobsub dagTest example"""
         self.do_one_dagnabbit(
             "dagTest6",
@@ -75,6 +75,33 @@ class TestDagnabbitUnit:
             },
         )
 
+    @pytest.mark.unit
+    def test_parse_dagnabbit_dagTest7(self):
+        """test dagnabbit parser on old jobsub dagTest example"""
+        self.do_one_dagnabbit(
+            "dagTest7",
+            [
+                "dag.dag",
+                "stage_1.sh",
+                "stage_2.sh",
+                "stage_3.sh",
+                "stage_4.sh",
+                "stage_5.sh",
+                "stage_6.sh",
+                "stage_1.cmd",
+                "stage_2.cmd",
+                "stage_3.cmd",
+                "stage_4.cmd",
+                "stage_6.cmd",
+            ],
+            {
+                "dag.dag": "PARENT stage_1 CHILD stage_2 stage_4 stage_6",
+                "dag.dag": "PARENT stage_3 stage_5 stage_7 CHILD stage_8",
+                "stage_1.sh": "ln .0 stage_1.sh",
+                "stage_6.sh": "ln .0 stage_6.sh",
+            },
+        )
+
     def do_one_dagnabbit(self, dagfile, flist, check4={}):
         """test dagnabbit parser on given dagfile make sure it generates
         expected list of files"""
@@ -85,6 +112,7 @@ class TestDagnabbitUnit:
         os.environ[
             "SUBMIT_FLAGS"
         ] = "--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC"
+        os.environ["JOBSUB_EXPORTS"] = "--mail-on-error"
         os.environ["GROUP"] = TestUnit.test_group
         d1 = os.path.join("..", "..", "templates", "simple")
         # file has relative paths in it, so chdir there
