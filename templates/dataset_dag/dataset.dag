@@ -4,6 +4,7 @@ JOB SAM_START dagbegin.cmd
 {%for i in range(N) %}
 JOB WORKER_{{i}} simple.cmd
 VARS WORKER_{{i}} JOBSUBJOBSECTION="{{i}}" nodename="$(JOB)"
+SCRIPT POST WORKER_{{i}} returnOK.sh
 
 PARENT SAM_START CHILD WORKER_{{i}}
 PARENT WORKER_{{i}} CHILD SAM_END
