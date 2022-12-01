@@ -157,7 +157,7 @@ def test_launch_lookaround_dune(dune):
 
 
 @pytest.mark.integration
-def test_launch_lookaround_dune_gp(dune_gp):
+def xx_test_launch_lookaround_dune_gp(dune_gp):
     lookaround_launch("")
 
 
@@ -184,6 +184,14 @@ def test_launch_dagnabbit_simple(samdev):
 @pytest.mark.integration
 def test_launch_dagnabbit_dropbox(samdev):
     dagnabbit_launch("--devserver", "Dropbox")
+
+
+@pytest.mark.integration
+def test_launch_dagnabbit_complex(samdev):
+    os.environ["JOBSUB_EXPORTS"] = ""
+    os.environ["SUBMIT_FLAGS"] = ""
+
+    dagnabbit_launch("--devserver", "7")
 
 
 def fife_launch(extra):
@@ -259,7 +267,7 @@ def test_nova_fife_launch(nova):
 
 
 @pytest.mark.integration
-def test_dune_gp_fife_launch(dune_gp):
+def xx_test_dune_gp_fife_launch(dune_gp):
     fife_launch("")
 
 
