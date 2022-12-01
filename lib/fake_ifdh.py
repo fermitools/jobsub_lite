@@ -140,7 +140,7 @@ def getProxy(
         if verbose > 0:
             # Caller that sets up command will write stdout to stderr
             # Equivalent of >&2
-            sys.stderr.write(f"Running: {cmd_str}")
+            sys.stderr.write(f"Running: {cmd_str}\n")
             return {"stdout": sys.stderr}
         else:
             # Caller that sets up command will write stdout to /dev/null, stderr to stdout
@@ -196,7 +196,7 @@ def getProxy(
                 )
         voms_proxy_init_cmd_str = (
             f"voms-proxy-init -dont-verify-ac -valid 167:00 -rfc -noregen"
-            f" -debug -cert {certfile} -key {certfile} -out {vomsfile}"
+            f" -debug -cert {certfile} -key {certfile} -out {vomsfile} -vomslife 167:0"
             f" -voms {issuer}:/{igroup}/Role={role}"
         )
         extra_check_args = generate_proxy_command_verbose_args(voms_proxy_init_cmd_str)
