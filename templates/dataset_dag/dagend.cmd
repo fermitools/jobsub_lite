@@ -58,7 +58,7 @@ use_oauth_services = {{group}}_{{role}}
 use_oauth_services = {{group}}
 {% endif %}
 {% if role is defined %}
-+x509userproxy = "{{proxy}}"
++x509userproxy = "{{proxy|basename}}"
 {% endif %}
 
 queue 1
