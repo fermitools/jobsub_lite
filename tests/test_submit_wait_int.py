@@ -188,6 +188,9 @@ def test_launch_dagnabbit_dropbox(samdev):
 
 @pytest.mark.integration
 def test_launch_dagnabbit_complex(samdev):
+    os.environ["JOBSUB_EXPORTS"] = ""
+    os.environ["SUBMIT_FLAGS"] = ""
+
     dagnabbit_launch("--devserver", "7")
 
 
