@@ -113,7 +113,7 @@ def main() -> None:
                 "-factory",
                 "-unmatchable",
             ]
-            or i[0] in "0123456789"
+            or i[:1].isalnum()
         ):
             default_constraint = False
 

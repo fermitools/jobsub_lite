@@ -437,4 +437,10 @@ def get_condor_epilog() -> str:
     )
     epilog_l[0] += "(with single '-' or double '--' dashes)\n"
 
+    if condor_cmd == "condor_q":
+        for i in range(len(epilog_l)):
+            epilog_l[i] = epilog_l[i].replace(
+                "jobs owned by the current user",
+                "jobs owned by the current jobsub group",
+            )
     return "".join(epilog_l)
