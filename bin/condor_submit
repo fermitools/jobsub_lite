@@ -37,6 +37,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 #
 from condor import get_schedd, submit
 from creds import get_creds
+import get_parser
 
 # pylint: disable-next=no-member
 COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", None)
@@ -61,21 +62,7 @@ def main():
     - launch
     """
 
-    condor_parser = argparse.ArgumentParser(
-        description="Queue jobs for execution under HTCondor without the jobsub wrapper."
-    )
-
-    condor_parser.add_argument(
-        "-G",
-        "--group",
-        required=False,
-        help="Group/Experiment/Subgroup for priorities and accounting",
-        action=StoreGroupinEnvironment,
-    )
-
-    condor_parser.add_argument(
-        "-t", "--test", required=False, help="For testing only: specify condor_schedd"
-    )
+    condor_parser = get_parser.get_jobid_parser(add_condor_epilog=True)
 
     condor_parser.add_argument(
         "-spool",
@@ -85,13 +72,6 @@ def main():
         " default.",
         action="store_true",
     )
-
-    condor_parser.add_argument(
-        "-v", "--verbose", required=False, help="Verbose output", action="store_true"
-    )
-
-    # currently not used, but wanted to put the placeholder in
-    condor_parser.add_argument("--credentials", help="credential information")
 
     #   PARSE ARGS TO GET SUBMISSION ARGUMENTS
     args, cmd_args = condor_parser.parse_known_args()
@@ -104,11 +84,8 @@ def main():
     if group is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
-    if args.test is not None:
-        schedd_name = args.test
-    else:
-        schedd_add = get_schedd({"group": group})
-        schedd_name = schedd_add.eval("Machine")
+    schedd_add = get_schedd({"group": group})
+    schedd_name = schedd_add.eval("Machine")
 
     if args.verbose:
         print(f"schedd_name is : {schedd_name}")
@@ -133,19 +110,16 @@ def main():
         )
         return
 
-    #   GET CREDENTIALS
-    #   these args may/may not come from the input args. for now let's keep it empty
-    cred_args = {}
-    if args.credentials is not None:
-        cred_args = args.credentials
-
-    proxy, token = get_creds(cred_args)
+    proxy, token = get_creds(vars(args))
     if args.verbose:
         print(f"proxy is : {proxy}")
         print(f"token is : {token}")
 
     #   SUBMIT
-    submit("", {}, schedd_name, cmd_args)
+
+    cmd_args.append("-spool")
+
+    submit("", vars(args), schedd_name, cmd_args)
 
 
 if __name__ == "__main__":
