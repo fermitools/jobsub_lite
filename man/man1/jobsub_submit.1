@@ -196,9 +196,8 @@ and '&&(CVMFS=="OSG")' to the job requirements
 --tar_file_name TAR_FILE_NAME, --tar-file-name TAR_FILE_NAME
 dropbox://PATH/TO/TAR_FILE tardir://PATH/TO/DIRECTORY
 specify TAR_FILE or DIRECTORY to be transferred to
-worker node. TAR_FILE will be copied to an area
-specified in the jobsub server configuration,
-transferred to the job and unpacked there. TAR_FILE
+worker node. TAR_FILE will be copied via RCDS/cvmfs
+(or /pnfs) to the job and unpacked there. TAR_FILE
 will be accessible to the user job on the worker node
 via the environment variable $INPUT_TAR_FILE. The
 unpacked contents will be in the same directory as
@@ -212,9 +211,9 @@ File with patterns to exclude from tarffile creation
 time. UNITS may be `s' for seconds (the default), `m'
 for minutes, `h' for hours or `d' h for days.
 .HP
---use-cvmfs-dropbox   use cvmfs for dropbox (default is pnfs)
+--use-cvmfs-dropbox   use cvmfs for dropbox (default is cvmfs)
 .HP
---use-pnfs-dropbox    use cvmfs for dropbox (default is pnfs)
+--use-pnfs-dropbox    use pnfs resilient for dropbox (default is cvmfs)
 .HP
 --devserver           Use jobsubdevgpvm01 etc. to submit
 .HP
