@@ -74,6 +74,10 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(**apargs)  # type: ignore
     group = parser.add_argument_group("general arguments")
 
+    # default to JOBSUB_GROUP rather than GROUP if set
+    if os.environ.get("JOBSUB_GROUP", ""):
+        os.environ["GROUP"] = os.environ["JOBSUB_GROUP"]
+
     group.add_argument(
         "-G",
         "--group",
