@@ -34,7 +34,7 @@ COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", None)
 
 
 # pylint: disable-next=no-member
-def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
+def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
     """get jobsub* schedd names from collector, pick one."""
     # pylint: disable-next=no-member
     coll = htcondor.Collector(COLLECTOR_HOST)
@@ -45,8 +45,8 @@ def get_schedd(vargs: Dict[str, str]) -> classad.ClassAd:
     # need to directQuery for the full classads to check for
     # SupportedVOList...
 
-    if vargs.get("verbose"):
-        print("classads: ", schedd_classads)
+    if vargs.get("verbose", 0) > 1:
+        print(f"schedd classads: {schedd_classads} ")
 
     # pick schedds who do or do not have "dev" in their name, depending if
     # we have "devserver" set...
