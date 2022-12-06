@@ -338,8 +338,8 @@ def get_parser() -> argparse.ArgumentParser:
         action="append",
         help="    dropbox://PATH/TO/TAR_FILE\n     tardir://PATH/TO/DIRECTORY\n"
         "specify TAR_FILE or DIRECTORY to be transferred to worker node."
-        " TAR_FILE will be copied to an area specified in the jobsub"
-        " server configuration, transferred to the job and unpacked there."
+        " TAR_FILE will be copied with RCDS/cvmfs (or /pnfs),"
+        " transferred to the job and unpacked there."
         " TAR_FILE will be accessible to the user job on the worker node"
         " via the environment variable $INPUT_TAR_FILE. The unpacked"
         " contents will be in the same directory as $INPUT_TAR_FILE."
@@ -362,7 +362,7 @@ def get_parser() -> argparse.ArgumentParser:
         dest="use_dropbox",
         action="store_const",
         const="cvmfs",
-        help="use cvmfs for dropbox (default is pnfs)",
+        help="use cvmfs for dropbox (default is cvmfs)",
         default=None,
     )
     parser.add_argument(
@@ -370,7 +370,7 @@ def get_parser() -> argparse.ArgumentParser:
         dest="use_dropbox",
         action="store_const",
         const="pnfs",
-        help="use cvmfs for dropbox (default is pnfs)",
+        help="use pnfs resilient for dropbox (default is cvmfs)",
         default=None,
     )
     parser.add_argument(
