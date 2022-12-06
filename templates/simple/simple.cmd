@@ -87,6 +87,7 @@ use_oauth_services = {{group}}
 {% else %}
 +x509userproxy = "{{proxy}}"
 {% endif %}
+delegate_job_GSI_credentials_lifetime = 0
 {% endif %}
 
 queue {{N}}
