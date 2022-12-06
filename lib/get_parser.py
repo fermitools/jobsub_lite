@@ -441,4 +441,12 @@ def get_condor_epilog() -> str:
     )
     epilog_l[0] += "(with single '-' or double '--' dashes)\n"
 
+    if condor_cmd == "condor_q":
+        # condor_q's help says that it defaults to jobs for the current user,
+        # but jobsub_q's default is jobs for the current group, so we adjust it here
+        for i in range(len(epilog_l)):
+            epilog_l[i] = epilog_l[i].replace(
+                "jobs owned by the current user",
+                "jobs owned by the current jobsub group",
+            )
     return "".join(epilog_l)
