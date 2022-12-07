@@ -142,9 +142,6 @@ def submit(
         if vargs["verbose"] > 0:
             print(f"submitting: {f}")
         schedd_args = schedd_args + f" {f}"
-        fl = glob.glob(f)
-        if fl:
-            f = fl[0]
 
     if vargs["verbose"] > 1:
         print(f"cmd_args: {cmd_args}")
