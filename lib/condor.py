@@ -142,9 +142,6 @@ def submit(
         if vargs["verbose"] > 0:
             print(f"submitting: {f}")
         schedd_args = schedd_args + f" {f}"
-        fl = glob.glob(f)
-        if fl:
-            f = fl[0]
 
     if vargs["verbose"] > 1:
         print(f"cmd_args: {cmd_args}")
@@ -200,9 +197,6 @@ def submit_dag(
     but in future we should template-ize the dagman submission file, and
     just call condor_submit() on it.
     """
-    fl = glob.glob(f)
-    if fl:
-        f = fl[0]
     subfile = f"{f}.condor.sub"
     if not os.path.exists(subfile):
         qargs = " ".join([f"'{x}'" for x in cmd_args])
