@@ -67,7 +67,7 @@ def render_files(
     """use jinja to render the templates from srcdir into the dest directory
     using values dict for substitutions
     """
-    if values["verbose"] > 0:
+    if values.get("verbose", 0) > 0:
         print(f"trying to render files from {srcdir}\n")
 
     if dlist is None:
@@ -87,9 +87,9 @@ def render_files(
         if values["verbose"] > 0:
             print(f"rendering: {f}")
         bf = os.path.basename(f)
-        ff = os.path.join(dest, bf)
+        rendered_file = os.path.join(dest, bf)
         try:
-            with open(ff, "w", encoding="UTF-8") as of:
+            with open(rendered_file, "w", encoding="UTF-8") as of:
                 of.write(jinja_env.get_template(bf).render(**values))
         except jinja.exceptions.UndefinedError as e:
             err = f"""Cannot render template file {f} due to undefined template variables.
@@ -99,8 +99,11 @@ in its entirety.
 """
             print(err)
             raise
-        if ff.endswith(".sh"):
-            os.chmod(ff, 0o755)
+        if rendered_file.endswith(".sh"):
+            os.chmod(rendered_file, 0o755)
+        else:
+            if values.get("verbose", 0) > 0:
+                print(f"Created file {rendered_file}")
 
 
 def do_dataset_defaults(varg: Dict[str, Any]) -> None:
