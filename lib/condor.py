@@ -197,9 +197,6 @@ def submit_dag(
     but in future we should template-ize the dagman submission file, and
     just call condor_submit() on it.
     """
-    fl = glob.glob(f)
-    if fl:
-        f = fl[0]
     subfile = f"{f}.condor.sub"
     if not os.path.exists(subfile):
         qargs = " ".join([f"'{x}'" for x in cmd_args])
