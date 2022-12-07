@@ -135,6 +135,7 @@ def all_test_args():
         "xxmemoryxx",
         "--no-env-cleanup",
         "--no-singularity",
+        "--no-apptainer",
         "--no-submit",
         "--OS",
         "xxOSxx",
@@ -146,6 +147,7 @@ def all_test_args():
         "xxrolexx",
         "--singularity-image",
         "xxsingularity-imagexx",
+        "--apptainer-image",
         "--site",
         "xxsitexx",
         "--subgroup",
@@ -232,7 +234,13 @@ class TestGetParserUnit:
         # mutually exclusive group, except for one
         # e.g. For the mutually exclusive group (--singularity-image,
         # --no-singularity), we pick one and enter it into args_exclude_list
-        args_exclude_list = ["--no-singularity", "--onsite-only", "--jobid"]
+        args_exclude_list = [
+            "--no-singularity",
+            "--apptainer-image",
+            "--no-apptainer",
+            "--onsite-only",
+            "--jobid",
+        ]
 
         def filter_excluded(arg_list):
             _stripped_args_exclude_list = [arg.strip("-") for arg in args_exclude_list]
