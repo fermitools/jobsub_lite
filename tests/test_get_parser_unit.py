@@ -19,7 +19,23 @@ from test_unit import TestUnit
 
 
 @pytest.fixture
-def find_all_arguments():
+def paired_arguments():
+    """
+    Tuple of all paired arguments aside from those that are dash-underscore-differentiated.
+    This is for those like "--singularity-image" and "apptainer-image", which point to the same
+    argument.  We are mapping the alternate option back to the primary option - the option that
+    will drive the destination variable name.
+    """
+    return {
+        "apptainer-image": "singularity-image",
+        "no-apptainer": "no-singularity",
+        "onsite-only": "onsite",
+        "offsite-only": "offsite",
+    }
+
+
+@pytest.fixture
+def find_all_arguments(paired_arguments):
     # try to extract all the --foo arguments from the source
     # and track which ones are flags
     # we assume
@@ -59,6 +75,10 @@ def find_all_arguments():
             if arg.find("_") == -1 and arg:
                 allargs.append(arg)
                 dest[arg] = arg  # destination starts off as flag name
+            if arg in paired_arguments.keys():
+                # Handle paired arguments - switch to the primary option key of the argument
+                allargs.append(arg)
+                arg = paired_arguments[arg]
         if line.find('dest="') > 0 or line.find("dest='") > 0:
             # add_argument may take a dest= parameter, so if we see
             # one make a note about the last argument we saw
@@ -163,8 +183,10 @@ def all_test_args():
         "--verbose",
         "1",
         "--devserver",
+        "--onsite",
         "--onsite-only",
         "--offsite",
+        "--offsite-only",
         "file:///bin/true",
         "xx_executable_arg_0_xx",
         "xx_executable_arg_1_xx",
@@ -238,7 +260,9 @@ class TestGetParserUnit:
             "--no-singularity",
             "--apptainer-image",
             "--no-apptainer",
+            "--onsite",
             "--onsite-only",
+            "--offsite-only",
             "--jobid",
         ]
 
@@ -275,7 +299,7 @@ class TestGetParserUnit:
             # using dest table and fixing dashes
             uarg = dest[arg].replace("-", "_")
 
-            print("arg '{arg}' uarg '{uarg}'")
+            print(f"arg '{arg}' uarg '{uarg}'")
 
             if arg in flagargs:
                 # its a flag, just assert it
