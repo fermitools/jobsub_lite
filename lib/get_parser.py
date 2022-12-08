@@ -389,6 +389,7 @@ def get_parser() -> argparse.ArgumentParser:
 
     usage_model_group = parser.add_mutually_exclusive_group()
     usage_model_group.add_argument(
+        "--onsite",
         "--onsite-only",
         dest="usage_model",
         action="store_const",
@@ -398,6 +399,7 @@ def get_parser() -> argparse.ArgumentParser:
     )
     usage_model_group.add_argument(
         "--offsite",
+        "--offsite-only",
         dest="usage_model",
         action="store_const",
         const="OFFSITE",
