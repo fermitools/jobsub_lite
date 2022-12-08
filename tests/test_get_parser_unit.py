@@ -279,8 +279,6 @@ class TestGetParserUnit:
         listargs = filter_excluded(listargs)
         all_test_args = filter_excluded(all_test_args)
 
-        print(f"Flagargs:  {flagargs}")
-
         print("trying command flags: ", all_test_args)
 
         parser = get_parser.get_parser()
