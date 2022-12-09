@@ -52,14 +52,26 @@ def main() -> None:
         "--jobsub_server", help="backwards compatability; ignored", default=None
     )
 
+    # and find the wrapped command name
+    cmd = os.path.basename(sys.argv[0])
+
+    # combine jobsub_q as well
+    if cmd == "jobsub_q":
+        parser.add_argument("--user", help="username to query", default=None)
+
     arglist, passthru = parser.parse_known_args()
+
+    if cmd != "jobsub_q":
+        arglist.user = None
 
     # Re-insert --debug/--verbose if it was given
     if arglist.verbose:
         passthru.append("-debug")
-    # if they gave us --jobid put it in
+    # if they gave us --jobid or --user put in the value plain, condor figures it out
     if arglist.jobid:
         passthru.append(arglist.jobid)
+    if arglist.user:
+        passthru.append(arglist.user)
 
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
