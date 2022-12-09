@@ -51,7 +51,7 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
     # pick schedds who do or do not have "dev" in their name, depending if
     # we have "devserver" set...
 
-    if "devserver" in vargs and vargs["devserver"]:
+    if vargs.get("devserver", ""):
         schedd_classads = [
             ca for ca in schedd_classads if ca.eval("Machine").find("dev") != -1
         ]
@@ -135,15 +135,15 @@ def submit(
 
     schedd_args = f"-remote {schedd_name}"
 
-    if "no_submit" in vargs and vargs["no_submit"]:
+    if vargs.get("no_submit", False):
         print(f"NOT submitting file:\n{f}\n")
         return False
     if f:
-        if vargs["verbose"] > 0:
+        if vargs.get("verbose", 0) > 0:
             print(f"submitting: {f}")
         schedd_args = schedd_args + f" {f}"
 
-    if vargs["verbose"] > 1:
+    if vargs.get("verbose", 0) > 1:
         print(f"cmd_args: {cmd_args}")
 
     # commenting this out for now since the 'else' is not implemented
@@ -154,7 +154,7 @@ def submit(
     cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
     cmd = f"_condor_CREDD_HOST={schedd_name} {cmd}"
     packages.orig_env()
-    if vargs["verbose"] > 0:
+    if vargs.get("verbose", 0) > 0:
         print(f"Running: {cmd}")
 
     try:
@@ -206,7 +206,7 @@ def submit_dag(
         )
 
         cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
-        if vargs["verbose"] > 0:
+        if vargs.get("verbose", 0) > 0:
             print(f"Running: {cmd}")
 
         try:
