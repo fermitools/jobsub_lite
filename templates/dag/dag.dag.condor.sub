@@ -26,6 +26,7 @@ environment	=  _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address
 +JobsubClientVersion="{{jobsub_version}}"
 +JobsubClientKerberosPrincipal="{{kerberos_principal}}"
 x509userproxy = {{proxy}}
+delegate_job_GSI_credentials_lifetime = 0
 {{lines|join("\n")}}
 
 {% if subgroup is defined and subgroup %}
@@ -42,7 +43,5 @@ use_oauth_services = {{group}}_{{role}}
 {% else %}
 use_oauth_services = {{group}}
 {% endif %}
-
-x509userproxy = {{proxy}}
 
 queue

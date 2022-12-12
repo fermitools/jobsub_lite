@@ -58,6 +58,7 @@ use_oauth_services = {{group}}
 {% endif %}
 {% if role is defined %}
 +x509userproxy = "{{proxy|basename}}"
+delegate_job_GSI_credentials_lifetime = 0
 {% endif %}
 
 queue 1
