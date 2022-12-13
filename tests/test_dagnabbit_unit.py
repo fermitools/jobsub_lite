@@ -118,7 +118,10 @@ class TestDagnabbitUnit:
         ] = "--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC"
         os.environ["JOBSUB_EXPORTS"] = "--mail-on-error"
         os.environ["GROUP"] = TestUnit.test_group
-        d1 = os.path.join("..", "..", "templates", "simple")
+        if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+            d1 = "/opt/jobsub_lite/templates/simple"
+        else:
+            d1 = os.path.join("..", "..", "templates", "simple")
         # file has relative paths in it, so chdir there
         os.chdir("dagnabbit")
         varg["dag"] = 1

@@ -27,7 +27,10 @@ def do_decode_token_sh(filename: str, extract: str = ""):
         estr = f" -e {extract} "
     else:
         estr = ""
-    cmd = f"../bin/decode_token.sh {estr}{filename}"
+    if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+        cmd = f"/opt/jobsub_lite/bin/decode_token.sh {estr}{filename}"
+    else:
+        cmd = f"../bin/decode_token.sh {estr}{filename}"
     lines = []
     with os.popen(cmd, "r") as f:
         lines = f.readlines()

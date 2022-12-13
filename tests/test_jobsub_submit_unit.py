@@ -23,7 +23,10 @@ import utils
 
 from test_unit import TestUnit
 
-os.unlink("jobsub_submit.py")
+try:
+    os.unlink("jobsub_submit.py")
+except:
+    pass
 if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
     if not os.path.exists("jobsub_submit.py"):
         os.symlink("/opt/jobsub_lite/bin/jobsub_submit", "jobsub_submit.py")
@@ -51,7 +54,12 @@ class TestJobsubSubmitUnit:
     @pytest.mark.unit
     def test_render_files_1(self):
         """test render files on the dataset_dag directory"""
-        srcdir = os.path.dirname(os.path.dirname(__file__)) + "/templates/dataset_dag"
+        if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+            srcdir = "/opt/jobsub_lite/templates/dataset_dag"
+        else:
+            srcdir = (
+                os.path.dirname(os.path.dirname(__file__)) + "/templates/dataset_dag"
+            )
         dest = "/tmp/out{0}".format(os.getpid())
         os.mkdir(dest)
         args = {**TestUnit.test_vargs, **TestUnit.test_extra_template_args}
@@ -66,7 +74,10 @@ class TestJobsubSubmitUnit:
         Should raise jinja2.exceptions.UndefinedError
         """
         test_vargs = {}
-        srcdir = os.path.dirname(os.path.dirname(__file__)) + "/templates/simple"
+        if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+            srcdir = "/opt/jobsub_lite/templates/simple"
+        else:
+            srcdir = os.path.dirname(os.path.dirname(__file__)) + "/templates/simple"
         dest = tmp_path
         args = {**TestUnit.test_vargs, **TestUnit.test_extra_template_args}
         with pytest.raises(exceptions.UndefinedError, match="is undefined"):
