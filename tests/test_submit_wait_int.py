@@ -12,9 +12,17 @@ import shutil
 # test area, so go ahead and cd there
 #
 os.chdir(os.path.dirname(__file__))
-os.environ["PATH"] = (
-    os.path.dirname(os.path.dirname(__file__)) + "/bin:" + os.environ["PATH"]
-)
+
+#
+# add to path what we eed to test
+# unless we're testing installed, then use /opt/jobsub_lite/...
+#
+if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+    os.environ["PATH"] = "/opt/jobsub_lite/bin:" + os.environ["PATH"]
+else:
+    os.environ["PATH"] = (
+        os.path.dirname(os.path.dirname(__file__)) + "/bin:" + os.environ["PATH"]
+    )
 
 
 @pytest.fixture

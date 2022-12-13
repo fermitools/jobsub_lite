@@ -12,8 +12,12 @@ os.chdir(os.path.dirname(__file__))
 
 #
 # import modules we need to test, since we chdir()ed, can use relative path
+# unless we're testing installed, then use /opt/jobsub_lite/...
 #
-sys.path.append("../lib")
+if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+    sys.path.append("/opt/jobsub_lite/lib")
+else:
+    sys.path.append("../lib")
 import dagnabbit
 
 from test_unit import TestUnit

@@ -12,14 +12,24 @@ os.chdir(os.path.dirname(__file__))
 
 #
 # import modules we need to test, since we chdir()ed, can use relative path
+# unless we're testing installed, then use /opt/jobsub_lite/...
 #
-sys.path.append("../lib")
+if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+    sys.path.append("/opt/jobsub_lite/lib")
+else:
+    sys.path.append("../lib")
+
 import utils
 
 from test_unit import TestUnit
 
-if not os.path.exists("jobsub_submit.py"):
-    os.symlink("../bin/jobsub_submit", "jobsub_submit.py")
+os.unlink("jobsub_submit.py")
+if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+    if not os.path.exists("jobsub_submit.py"):
+        os.symlink("/opt/jobsub_lite/bin/jobsub_submit", "jobsub_submit.py")
+else:
+    if not os.path.exists("jobsub_submit.py"):
+        os.symlink("../bin/jobsub_submit", "jobsub_submit.py")
 import jobsub_submit
 
 
