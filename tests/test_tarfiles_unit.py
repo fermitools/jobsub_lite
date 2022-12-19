@@ -42,6 +42,28 @@ class TestTarfilesUnit:
         assert len(digest) == 64
 
     @pytest.mark.unit
+    def test_repeated_tar_same_hash(self):
+        """make sure if we tar up the same data twice we get the same
+        hash for the tarball (i.e. no GZIP -n silliness)"""
+        t1 = tarfiles.tar_up(
+            os.path.dirname(__file__), "/dev/null", os.path.basename(__file__)
+        )
+        h1, b1 = tarfiles.slurp_file(t1)
+        print(f"h1: {h1}")
+        os.system(f"md5sum {t1}")
+        os.unlink(t1)
+        # wait to get a different timestamp
+        time.sleep(2)
+        t2 = tarfiles.tar_up(
+            os.path.dirname(__file__), "/dev/null", os.path.basename(__file__)
+        )
+        h2, b2 = tarfiles.slurp_file(t2)
+        print(f"h2: {h2}")
+        os.system(f"md5sum {t2}")
+        os.unlink(t2)
+        assert h1 == h2
+
+    @pytest.mark.unit
     def test_dcache_persistent_path_1(self):
         """make sure persistent path gives /pnfs/ path digest"""
         path = tarfiles.dcache_persistent_path(TestUnit.test_group, __file__)

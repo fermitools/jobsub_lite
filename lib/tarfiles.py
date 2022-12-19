@@ -51,7 +51,7 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
     excludes = f"--exclude-from {excludes}"
-    os.system(f"tar czvf {tarfile} {excludes} --directory {directory} {file}")
+    os.system(f"GZIP=-n tar czvf {tarfile} {excludes} --directory {directory} {file}")
     return tarfile
 
 
