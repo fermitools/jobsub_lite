@@ -46,11 +46,11 @@ except ValueError:
 
 
 def tar_up(directory: str, excludes: str, file: str = ".") -> str:
-    """build path/to/directory.tar from path/to/directory"""
+    """build directory.tar from path/to/directory"""
     tarfile = os.path.basename(f"{directory}.tar.gz")
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
-    excludes = f"--exclude-from {excludes}"
+    excludes = f"--exclude-from {excludes} --exclude {tarfile}"
     os.system(f"GZIP=-n tar czvf {tarfile} {excludes} --directory {directory} {file}")
     return tarfile
 
@@ -79,15 +79,15 @@ def dcache_persistent_path(exp: str, filename: str) -> str:
     res = f"/pnfs/{exp}/resilient/jobsub_stage/{sha256_hash}/{bf}"
     # for testing, we don't have a resilient area for "fermilab", so...
     if exp == "fermilab":
-        res = res.replace("fermilab/resilient", "fermilab/volatile")
+        res = res.replace("fermilab/resilient", "fermilab/volatile", 1)
     sys.stdout.flush()
     return res
 
 
 def do_tarballs(args: argparse.Namespace) -> None:
     """handle tarfile argument;  we could have:
-       a directory with tardir: prefix to tar up and upload
-       a tarfile with dropbox: prefix to upload
+       a directory with tardir: or tardir:// prefix to tar up and upload
+       a tarfile with dropbox: or drobpox:// prefix to upload
        a plain path to just use
     we convert the argument to the next type as we go...
     """
@@ -96,8 +96,11 @@ def do_tarballs(args: argparse.Namespace) -> None:
     res: List[str] = []
     path: Optional[str] = None
     for fn in args.input_file:
+        if fn.startswith("drobpox://"):
+            fn = fn.replace("//", "", 1)
+
         if fn.startswith("dropbox:"):
-            pfn = fn.replace("dropbox:", "")
+            pfn = fn.replace("dropbox:", "", 1)
             if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
                 tarfile = tar_up(
                     os.path.dirname(pfn), "/dev/null", os.path.basename(pfn)
@@ -123,6 +126,9 @@ def do_tarballs(args: argparse.Namespace) -> None:
 
     res = []
     for tfn in args.tar_file_name:
+        if tfn.startswith("tardir://"):
+            tfn = tfn.replace("//", "", 1)
+
         if tfn.startswith("tardir:"):
             # tar it up, pretend they gave us dropbox:
             tarfile = tar_up(tfn[7:], args.tarball_exclusion_file)
@@ -131,11 +137,13 @@ def do_tarballs(args: argparse.Namespace) -> None:
 
         if tfn.startswith("dropbox:"):
             # move it to dropbox area, pretend they gave us plain path
+            if tfn.startswith("dropbox://"):
+                tfn = tfn.replace("//", "", 1)
             path = tarfile_in_dropbox(args, tfn[8:])
             if path:
                 tfn = path
             else:
-                tfn = tfn.replace("dropbox:", "")
+                tfn = tfn.replace("dropbox:", "", 1)
 
         res.append(tfn)
     args.tar_file_name = res
@@ -180,8 +188,8 @@ def tarfile_in_dropbox(args: argparse.Namespace, tfn: str) -> Optional[str]:
             publisher.update_cid()
 
     elif args.use_dropbox == "pnfs":
-        location = dcache_persistent_path(args.group, tfn[8:])
-        fake_ifdh.cp(tfn[8:], location)
+        location = dcache_persistent_path(args.group, tfn)
+        fake_ifdh.cp(tfn, location)
     else:
         raise (
             NotImplementedError(f"unknown tar distribution method: {args.use_dropbox}")

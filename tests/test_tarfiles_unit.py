@@ -113,15 +113,64 @@ class TestTarfilesUnit:
             ]
             parser = get_parser.get_parser()
             args = parser.parse_args(argv)
+            print(f"b: args.tar_file_name: {args.tar_file_name}")
             before_len = len(args.tar_file_name)
             tarfiles.do_tarballs(args)
+            print(f"a: args.tar_file_name: {args.tar_file_name}")
             assert args.tar_file_name[0][:6] == "/{0}/".format(dropbox_type)[:6]
             assert before_len == len(args.tar_file_name)
 
-    def x_test_do_tarballs_2(self):
+    @pytest.mark.unit
+    def test_do_tarballs_2(self, needs_credentials):
+        """test that the do_tarballs method does a dropbox:path
+        processing"""
+        tdir = os.path.dirname(__file__)
+        for dropbox_type in ["cvmfs", "pnfs"]:
+            print(f"dropbox type: {dropbox_type}\n===============")
+            argv = [
+                "--tar_file_name",
+                "tardir://{0}".format(tdir),
+                "--use-{0}-dropbox".format(dropbox_type),
+                "--group",
+                TestUnit.test_group,
+                "file:///bin/true",
+            ]
+            parser = get_parser.get_parser()
+            args = parser.parse_args(argv)
+            print(f"b: args.tar_file_name: {args.tar_file_name}")
+            before_len = len(args.tar_file_name)
+            tarfiles.do_tarballs(args)
+            print(f"a: args.tar_file_name: {args.tar_file_name}")
+            assert args.tar_file_name[0][:6] == "/{0}/".format(dropbox_type)[:6]
+            assert before_len == len(args.tar_file_name)
+
+    @pytest.mark.unit
+    def test_do_tarballs_3(self, needs_credentials):
+        """test that the do_tarballs method does a dropbox:path
+        processing"""
+        for dropbox_type in ["cvmfs", "pnfs"]:
+            print(f"dropbox type: {dropbox_type}\n===============")
+            argv = [
+                "-f",
+                "dropbox://{0}".format(__file__),
+                "--use-{0}-dropbox".format(dropbox_type),
+                "--group",
+                TestUnit.test_group,
+                "file:///bin/true",
+            ]
+            parser = get_parser.get_parser()
+            args = parser.parse_args(argv)
+            print(f"b: args.input_file: {args.tar_file_name}")
+            before_len = len(args.tar_file_name)
+            tarfiles.do_tarballs(args)
+            print(f"a: args.input_file: {args.tar_file_name}")
+            assert args.input_file[0][:6] == "/{0}/".format(dropbox_type)[:6]
+            assert before_len == len(args.tar_file_name)
+
+    def x_test_do_tarballs_4(self):
         # should have another one here to test dropbox:xxx
         pass
 
-    def x_test_do_tarballs_3(self):
+    def x_test_do_tarballs_5(self):
         # should have another one here to test existing /cvmfs path
         pass

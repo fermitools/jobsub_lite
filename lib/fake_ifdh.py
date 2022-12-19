@@ -215,8 +215,17 @@ def getProxy(
     return vomsfile
 
 
+def fix_pnfs(path: str) -> str:
+    m = re.match(r"/pnfs/(.*)", path)
+    if m:
+        path = f"https://fndca1.fnal.gov:2880/{m.group(1)}"
+    return path
+
+
 def cp(src: str, dest: str) -> None:
     """copy a (remote) file with gfal-copy"""
+    src = fix_pnfs(src)
+    dest = fix_pnfs(dest)
     os.system(f"gfal-copy {src} {dest}")
 
 
