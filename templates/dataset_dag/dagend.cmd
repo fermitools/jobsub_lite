@@ -54,8 +54,10 @@ requirements  = target.machine =!= MachineAttrMachine1 && target.machine =!= Mac
 # Credentials
 {% if role is defined and role and  role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role}}
+{{group}}_{{role}}_oauth_permissions = "{{job_scope}}"
 {% else %}
 use_oauth_services = {{group}}
+{{group}}_oauth_permissions = "{{job_scope}}"
 {% endif %}
 {% if role is defined %}
 +x509userproxy = "{{proxy|basename}}"

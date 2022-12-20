@@ -78,8 +78,10 @@ requirements  = {%if overwrite_requirements is defined and overwrite_requirement
 # Credentials
 {% if role is defined and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role}}
+{{group}}_{{role}}_oauth_permissions = "{{job_scope}}"
 {% else %}
 use_oauth_services = {{group}}
+{{group}}_oauth_permissions = "{{job_scope}}"
 {% endif %}
 {% if role is defined %}
 {% if is_dag|default(False) %}

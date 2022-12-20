@@ -3,13 +3,28 @@ import os.path
 from typing import List, Set
 
 
+def get_job_scopes(
+    tokenfile: str, need_modify: List[str], need_scopes: List[str]
+) -> List[str]:
+    clean_tokens = set(["storage.modify"])
+    orig_scope = get_token_scope(tokenfile)
+    job_scope = scope_without(clean_tokens, orig_scope)
+    for dpath in need_modify:
+        job_scope = add_subpath_scope("storage.modify", dpath, job_scope, orig_scope)
+
+    for sc in need_scopes:
+        # do not know how to check if these are allowed...
+        job_scope.append(sc)
+
+    return job_scope
+
+
 def get_token_scope(tokenfilename: str) -> List[str]:
     """get the list of scopes from our token file"""
 
     with os.popen(f"decode_token.sh -e scope {tokenfilename}", "r") as sf:
         data = sf.read()
-        print(f"got '{data}'")
-        scopelist = data.strip('"\n').split(" ")
+        scopelist = data.strip().strip('"').split(" ")
 
     return scopelist
 
@@ -35,7 +50,7 @@ def scope_without(sctypeset: Set[str], orig_scopelist: List[str]) -> List[str]:
     return res
 
 
-def add_directory_scope(
+def add_subpath_scope(
     add_sctype: str, add_path: str, scopelist: List[str], orig_scopelist: List[str]
 ) -> List[str]:
     """check if given scope type and path can be added given orig_scopelist,
