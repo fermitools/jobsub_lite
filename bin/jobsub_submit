@@ -20,6 +20,7 @@
 """ submit command for jobsub layer over condor """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 import glob
+import hashlib
 import os
 import os.path
 import sys
@@ -49,7 +50,7 @@ from dagnabbit import parse_dagnabbit
 from tarfiles import do_tarballs
 from utils import set_extras_n_fix_units, cleanup
 from creds import get_creds
-from token_mods import get_job_scopes
+from token_mods import get_job_scopes, use_token_copy
 
 
 def get_basefiles(dlist: List[str]) -> List[str]:
@@ -172,23 +173,37 @@ def main():
     # Eventually, this arg and its support in the underlying libraries should be removed
     args.force_proxy = True
 
-    proxy, token = get_creds(vars(args))
+    varg = vars(args)
+
+    proxy, token = get_creds(varg)
 
     if args.verbose:
         print(f"proxy is : {proxy}")
         print(f"token is : {token}")
 
-    do_tarballs(args)
-
-    varg = vars(args)
     if args.debug:
         sys.stderr.write(f"varg: {repr(varg)}\n")
 
+    do_tarballs(args)
+
+    schedd_add = get_schedd(varg)
+    schedd_name = schedd_add.eval("Machine")
+
+    #
+    # work on a copy of our bearer token because
+    # condor_vault_storer is going to overwrite it with the weakened one
+    # then get our weakened job scopes, ans set the "oauth handle"
+    # we're going to use to a hash of our job scopes, so we have a
+    # different one for different scopes
+    #
+    token = use_token_copy(token)
     varg["job_scope"] = " ".join(
         get_job_scopes(token, args.need_modify, args.need_scope)
     )
-    schedd_add = get_schedd(varg)
-    schedd_name = schedd_add.eval("Machine")
+    m = hashlib.sha256()
+    m.update(varg["job_scope"].encode())
+    varg["oauth_handle"] = m.hexdigest()[:10]
+
     set_extras_n_fix_units(varg, schedd_name, proxy, token)
     submitdir = varg["outdir"]
 

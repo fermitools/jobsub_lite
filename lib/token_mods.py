@@ -1,5 +1,6 @@
 import os
 import os.path
+import shutil
 from typing import List, Set
 
 
@@ -16,7 +17,18 @@ def get_job_scopes(
         # do not know how to check if these are allowed...
         job_scope.append(sc)
 
+    job_scope.sort(key=len)
+    # order matters to condor(?)
+
     return job_scope
+
+
+def use_token_copy(tokenfile: str) -> str:
+    pid = os.getpid()
+    copyto = f"{tokenfile}.{pid}"
+    shutil.copy(tokenfile, copyto)
+    os.environ["BEARER_TOKEN_FILE"] = copyto
+    return copyto
 
 
 def get_token_scope(tokenfilename: str) -> List[str]:
