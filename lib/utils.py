@@ -129,25 +129,28 @@ def set_extras_n_fix_units(
 
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
+    # Setting usage_model and site keys correctly in args dict
+
     # if the user defined the usage_model on the command line,
     # we need to use their definition of usage_model, not ours
     # also, we define the site as 'Fermigrid' if they have not requested OFFSITE
-    add_site = ""
     for r in args["resource_provides_quoted"]:
         if "usage_model" in r:
             args["usage_model"] = ""
-            if "OFFSITE" not in r:
-                add_site = "Fermigrid"
+            # If a user has not specifically requested offsite, and has not specified a site, set site to Fermigrid
+            if "OFFSITE" not in r and (args.get("site", None) is None):
+                args["site"] = "Fermigrid"
 
-    # if the user chooses 'onsite' from the runtime params
-    # we need to define the sites as 'Fermigrid'
-    if args["usage_model"] != "" and "OFFSITE" not in args["usage_model"]:
-        add_site = "Fermigrid"
+    # If the user chooses 'onsite' from the runtime params, and if a user has not specifically requested offsite,
+    # and has not specified a site, set site to Fermigrid
+    if (
+        args["usage_model"] != ""
+        and "OFFSITE" not in args["usage_model"]
+        and (args.get("site", None) is None)
+    ):
+        args["site"] = "Fermigrid"
 
-    if args.get("site", None):
-        args["site"] += ", " + add_site
-    else:
-        args["site"] = add_site
+    # END site/usage_model adjustment
 
     if not "outdir" in args:
         args["outdir"] = f"{args['outbase']}/js_{args['date']}_{args['uuid']}"
