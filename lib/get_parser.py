@@ -330,7 +330,9 @@ def get_parser() -> argparse.ArgumentParser:
         ' +DESIRED_CVMFS="OSG" to the job classad attributes and'
         " '&&(CVMFS==\"OSG\")' to the job requirements",
     )
-    parser.add_argument("--site", help="submit jobs to these (comma-separated) sites")
+    parser.add_argument(
+        "--site", default="", help="submit jobs to these (comma-separated) sites"
+    )
     parser.add_argument(
         "--tar_file_name",
         "--tar-file-name",
