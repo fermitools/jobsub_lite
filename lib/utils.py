@@ -363,8 +363,8 @@ def resolve_site_and_usage_model(
         for request in resource_provides:
             if usage_model_regex.match(request):
                 msg = (
-                    "As --site or --onsite/--offsite were provided, we will "
-                    "ignore the usage_model designation in --resource-provides "
+                    "Warning:  As --site or --onsite/--offsite were provided, we will "
+                    "ignore this usage_model designation in --resource-provides: "
                     f"{request}."
                 )
                 print(msg)
