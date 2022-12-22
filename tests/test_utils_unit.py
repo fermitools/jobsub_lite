@@ -188,7 +188,9 @@ class TestUtilsUnit:
                 "DEDICATED,OPPORTUNISTIC",
                 [],
                 (
-                    utils.SiteAndUsageModel("Fermigrid", "DEDICATED,OPPORTUNISTIC"),
+                    utils.SiteAndUsageModel(
+                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
+                    ),
                     [],
                 ),
             ),
@@ -198,7 +200,9 @@ class TestUtilsUnit:
                 "",
                 [],
                 (
-                    utils.SiteAndUsageModel("Fermigrid", "DEDICATED,OPPORTUNISTIC"),
+                    utils.SiteAndUsageModel(
+                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
+                    ),
                     [],
                 ),
             ),
@@ -238,7 +242,9 @@ class TestUtilsUnit:
                 "",
                 ["usage_model=DEDICATED,OFFSITE"],
                 (
-                    utils.SiteAndUsageModel("Fermigrid", "DEDICATED,OPPORTUNISTIC"),
+                    utils.SiteAndUsageModel(
+                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
+                    ),
                     [],
                 ),
             ),
