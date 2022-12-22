@@ -230,17 +230,17 @@ class TestUtilsUnit:
             (
                 "",
                 "",
-                ["usage_model=DEDICATED,OFFSITE"],
+                ['usage_model="DEDICATED,OFFSITE"'],
                 (
                     utils.SiteAndUsageModel("", ""),
-                    ["usage_model=DEDICATED,OFFSITE"],
+                    ['usage_model="DEDICATED,OFFSITE"'],
                 ),
             ),
             # --resource-provides=usage_model=DEDICATED,OFFSITE --site Fermigrid
             (
                 utils.ONSITE_SITE_NAME,
                 "",
-                ["usage_model=DEDICATED,OFFSITE"],
+                ['usage_model="DEDICATED,OFFSITE"'],
                 (
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
@@ -252,7 +252,7 @@ class TestUtilsUnit:
             (
                 "Random_Site",
                 "",
-                ["usage_model=DEDICATED,OFFSITE"],
+                ['usage_model="DEDICATED,OFFSITE"'],
                 (
                     utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
                     [],
@@ -262,7 +262,7 @@ class TestUtilsUnit:
             (
                 f"{utils.ONSITE_SITE_NAME},Random_Site",
                 "",
-                ["usage_model=DEDICATED,OFFSITE"],
+                ['usage_model="DEDICATED,OFFSITE"'],
                 (
                     utils.SiteAndUsageModel(
                         f"{utils.ONSITE_SITE_NAME},Random_Site",
@@ -288,32 +288,32 @@ class TestUtilsUnit:
             (
                 f"{utils.ONSITE_SITE_NAME},Random_Site",
                 "",
-                ["usage_model=DEDICATED,OFFSITE", "IWANT=this_resource"],
+                ['usage_model="DEDICATED,OFFSITE"', 'IWANT="this_resource"'],
                 (
                     utils.SiteAndUsageModel(
                         f"{utils.ONSITE_SITE_NAME},Random_Site",
                         "DEDICATED,OPPORTUNISTIC,OFFSITE",
                     ),
-                    ["IWANT=this_resource"],
+                    ['IWANT="this_resource"'],
                 ),
             ),
             # --onsite --resource_provides=usage_model=DEDICATED,OFFSITE --resource-provides=IWANT=this_resource
             (
                 "",
                 "DEDICATED,OPPORTUNISTIC",
-                ["usage_model=DEDICATED,OFFSITE", "IWANT=this_resource"],
+                ['usage_model="DEDICATED,OFFSITE"', 'IWANT="this_resource"'],
                 (
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
                     ),
-                    ["IWANT=this_resource"],
+                    ['IWANT="this_resource"'],
                 ),
             ),
             # --onsite --resource_provides=usage_model=DEDICATED,OFFSITE
             (
                 "",
                 "DEDICATED,OPPORTUNISTIC",
-                ["usage_model=DEDICATED,OFFSITE"],
+                ['usage_model="DEDICATED,OFFSITE"'],
                 (
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
@@ -325,7 +325,7 @@ class TestUtilsUnit:
             (
                 "Random_Site",
                 "",
-                ["usage_model=DEDICATED,OPPORTUNISTIC"],
+                ['usage_model="DEDICATED,OPPORTUNISTIC"'],
                 (
                     utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
                     [],
@@ -335,7 +335,7 @@ class TestUtilsUnit:
             (
                 "Random_Site",
                 "",
-                ["usage_model=DEDICATED"],
+                ['usage_model="DEDICATED"'],
                 (
                     utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
                     [],
@@ -345,7 +345,7 @@ class TestUtilsUnit:
             (
                 utils.ONSITE_SITE_NAME,
                 "",
-                ["usage_model=OFFSITE"],
+                ['usage_model="OFFSITE"'],
                 (
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
@@ -357,7 +357,7 @@ class TestUtilsUnit:
             (
                 "Random_Site_1,Random_Site_2",
                 "",
-                ["usage_model=DEDICATED,OFFSITE"],
+                ['usage_model="DEDICATED,OFFSITE"'],
                 (
                     utils.SiteAndUsageModel("Random_Site_1,Random_Site_2", "OFFSITE"),
                     [],
@@ -367,7 +367,7 @@ class TestUtilsUnit:
             (
                 "",
                 "DEDICATED,OPPORTUNISTIC",
-                ["usage_model=DEDICATED,OFFSITE"],
+                ['usage_model="DEDICATED,OFFSITE"'],
                 (
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
@@ -379,7 +379,7 @@ class TestUtilsUnit:
             (
                 "",
                 "OFFSITE",
-                ["usage_model=DEDICATED"],
+                ['usage_model="DEDICATED"'],
                 (
                     utils.SiteAndUsageModel("", "OFFSITE"),
                     [],

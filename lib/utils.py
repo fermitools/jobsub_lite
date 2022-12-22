@@ -431,7 +431,12 @@ def resolve_site_and_usage_model(
         usage_model_matches = usage_model_regex.match(request)
         if usage_model_matches:
             # Found usage_model in --resource-provides.  Don't set usage_model. Template will read it from --resource-provides
-            derived_usage_models = usage_model_matches.group(1).split(",")
+            # Note that when resource_provides_quoted is created, something like:
+            #     --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC
+            # is stored in resource_provides_quoted as:
+            #     ['usage_model="DEDICATED,OPPORTUNISTIC"']
+            # We need to remove those extra quotes around the "DEDICATED,OPPORTUNISTIC" to properly parse the usage models
+            derived_usage_models = usage_model_matches.group(1).strip('"').split(",")
             if ("OFFSITE" not in derived_usage_models) and given_sites == "":
                 # If they've only asked for onsite, add Fermigrid in the sites list.  Not entirely necessary,
                 # but it makes explicit what the user has asked for
