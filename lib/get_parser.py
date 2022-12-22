@@ -331,9 +331,6 @@ def get_parser() -> argparse.ArgumentParser:
         " '&&(CVMFS==\"OSG\")' to the job requirements",
     )
     parser.add_argument(
-        "--site", default="", help="submit jobs to these (comma-separated) sites"
-    )
-    parser.add_argument(
         "--tar_file_name",
         "--tar-file-name",
         default=[],
@@ -390,6 +387,12 @@ def get_parser() -> argparse.ArgumentParser:
     )
 
     usage_model_group = parser.add_mutually_exclusive_group()
+    usage_model_group.add_argument(
+        "--site",
+        type=str,
+        default="",
+        help="submit jobs to these (comma-separated) sites",
+    )
     usage_model_group.add_argument(
         "--onsite",
         "--onsite-only",
