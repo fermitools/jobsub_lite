@@ -25,7 +25,10 @@ import subprocess
 import uuid
 import shutil
 import time
-from typing import Union, Dict, Any
+from typing import Union, Dict, Any, NamedTuple, Tuple, List
+
+ONSITE_SITE_NAME = "Fermigrid"
+DEFAULT_USAGE_MODELS = ["DEDICATED", "OPPORTUNISTIC", "OFFSITE"]
 
 
 def cleandir(d: str) -> None:
@@ -130,27 +133,14 @@ def set_extras_n_fix_units(
     args["resource_provides_quoted"] = [fixquote(x) for x in args["resource_provides"]]
 
     # Setting usage_model and site keys correctly in args dict
-
-    # if the user defined the usage_model on the command line,
-    # we need to use their definition of usage_model, not ours
-    # also, we define the site as 'Fermigrid' if they have not requested OFFSITE
-    for r in args["resource_provides_quoted"]:
-        if "usage_model" in r:
-            args["usage_model"] = ""
-            # If a user has not specifically requested offsite, and has not specified a site, set site to Fermigrid
-            if "OFFSITE" not in r and (args.get("site", None) is None):
-                args["site"] = "Fermigrid"
-
-    # If the user chooses 'onsite' from the runtime params, and if a user has not specifically requested offsite,
-    # and has not specified a site, set site to Fermigrid
-    if (
-        args["usage_model"] != ""
-        and "OFFSITE" not in args["usage_model"]
-        and (args.get("site", None) is None)
-    ):
-        args["site"] = "Fermigrid"
-
-    # END site/usage_model adjustment
+    (site_and_usage_model, new_resource_provides) = resolve_site_and_usage_model(
+        args.get("site", ""),
+        args.get("usage_model", ""),
+        args["resource_provides_quoted"],
+    )
+    args["site"] = site_and_usage_model.sites
+    args["usage_model"] = site_and_usage_model.usage_models
+    args["resource_provides_quoted"] = new_resource_provides
 
     if not "outdir" in args:
         args["outdir"] = f"{args['outbase']}/js_{args['date']}_{args['uuid']}"
@@ -320,3 +310,157 @@ def get_client_dn(proxy: Union[None, str] = None) -> Union[str, Any]:
                 return out_match.group(1)
 
     return ""
+
+
+class SiteAndUsageModel(NamedTuple):
+    # A simple namedtuple subclass that is meant to encapsulate the sites and usage_model pairing
+    sites: str = ""
+    usage_models: str = ""
+
+
+def resolve_site_and_usage_model(
+    given_sites: str = "",
+    given_usage_model: str = "",
+    resource_provides_quoted: List[str] = [""],
+) -> Tuple[SiteAndUsageModel, List[str]]:
+    # resolve_site_and_usage_model parses through the given sites, usage model,
+    # and resource_provides arguments to determine the final site designation
+    # for the job.  It also checks the usage model against the site to ensure
+    # that we aren't requesting onsite and offsite at the same time, for example
+    #
+    # Order of operations:
+    #
+    # 1) If --site is provided, set usage_model accordingly
+    # 2) If --onsite/--offsite is different than the default, then set usage_model and possibly site accordingly
+    # 3) Check to see if resource_provides has usage_model
+    # 4) If (1) or (2), make sure we remove the usage_model bit from resource-provides.
+    #
+    # Return values:  (SiteAndUsageModel, list[str])
+    # The list is simply the modified or unmodified resource_provides_quoted
+    # list, depending on whether or not we want to strip out the usage_model bit
+
+    def _check_valid_site_usage_model_pair(
+        sites: List[str], usage_models: List[str]
+    ) -> None:
+        # Sanity-check the site-usage_model combination
+        # Check 1:  If usage_models are only onsite, make sure sites is ONSITE_SITE_NAME, or sites is empty
+        if "OFFSITE" not in usage_models and sites not in ([ONSITE_SITE_NAME], [""]):
+            raise SiteAndUsageModelConflictError(
+                ",".join(sites), ",".join(usage_models)
+            )
+
+        # Check 2:  If usage_models are only offsite, make sure sites does not include ONSITE_SITE_NAME
+        if usage_models == ["OFFSITE"] and ONSITE_SITE_NAME in sites:
+            raise SiteAndUsageModelConflictError(
+                ",".join(sites), ",".join(usage_models)
+            )
+        return None
+
+    def _strip_usage_model_from_resource_provides(
+        resource_provides: List[str],
+    ) -> List[str]:
+        return_resource_provides = []
+        for request in resource_provides:
+            if usage_model_regex.match(request):
+                msg = (
+                    "As --site or --onsite/--offsite were provided, we will "
+                    "ignore the usage_model designation in --resource-provides "
+                    f"{request}."
+                )
+                print(msg)
+            else:
+                return_resource_provides.append(request)
+        return return_resource_provides
+
+    def _sanitize_sites_and_usage_models(
+        sites: str, usage_models: str
+    ) -> Tuple[str, str]:
+        return (
+            sites.strip(", "),
+            usage_models.strip(", "),
+        )
+
+    usage_model_regex = re.compile("usage\_model\=(.+)")
+    derived_sites: str = ""
+    derived_sites_list = given_sites.split(",")
+    # Case 1: --site provided on the command line.  Set usage model accordingly
+    if given_sites != "":
+        derived_usage_model_string = ""
+        if len(derived_sites_list) == 1 and derived_sites_list[0] == ONSITE_SITE_NAME:
+            # Just asking for ONSITE_SITE_NAME
+            derived_usage_model_string = "DEDICATED,OPPORTUNISTIC"
+        else:
+            if ONSITE_SITE_NAME in derived_sites_list:
+                # Asking for ONSITE_SITE_NAME and other sites
+                derived_usage_model_string = "DEDICATED,OPPORTUNISTIC,OFFSITE"
+            else:
+                # Asking for sites other than ONSITE_SITE_NAME
+                derived_usage_model_string = "OFFSITE"
+        derived_usage_models = derived_usage_model_string.split(",")
+        _check_valid_site_usage_model_pair(derived_sites_list, derived_usage_models)
+        return (
+            SiteAndUsageModel(
+                *_sanitize_sites_and_usage_models(
+                    given_sites, derived_usage_model_string
+                )
+            ),
+            _strip_usage_model_from_resource_provides(resource_provides_quoted),
+        )
+
+    # Case 2: If --onsite/--offsite is different than the default, then set it accordingly
+    derived_usage_models = given_usage_model.split(",")
+    if (given_usage_model != "") and (
+        sorted(derived_usage_models) != sorted(DEFAULT_USAGE_MODELS)
+    ):
+        if "OFFSITE" not in derived_usage_models and given_sites == "":
+            # If they've only asked for onsite, add Fermigrid in the sites list.  Not entirely necessary,
+            # but it makes explicit what the user has asked for
+            derived_sites = ONSITE_SITE_NAME
+            derived_sites_list = derived_sites.split(",")
+        _check_valid_site_usage_model_pair(derived_sites_list, derived_usage_models)
+        return (
+            SiteAndUsageModel(
+                *_sanitize_sites_and_usage_models(derived_sites, given_usage_model)
+            ),
+            _strip_usage_model_from_resource_provides(resource_provides_quoted),
+        )
+
+    # Case 3: At this point, the user hasn't specified --site or a non-default --usage_model, so we check
+    # --resource-provides for the usage_model
+    for request in resource_provides_quoted:
+        usage_model_matches = usage_model_regex.match(request)
+        if usage_model_matches:
+            # Found usage_model in --resource-provides.  Don't set usage_model. Template will read it from --resource-provides
+            derived_usage_models = usage_model_matches.group(1).split(",")
+            if ("OFFSITE" not in derived_usage_models) and given_sites == "":
+                # If they've only asked for onsite, add Fermigrid in the sites list.  Not entirely necessary,
+                # but it makes explicit what the user has asked for
+                derived_sites = ONSITE_SITE_NAME
+                derived_sites_list = derived_sites.split(",")
+            _check_valid_site_usage_model_pair(derived_sites_list, derived_usage_models)
+            return (
+                SiteAndUsageModel(*_sanitize_sites_and_usage_models(derived_sites, "")),
+                resource_provides_quoted,
+            )
+
+    # Default case:  Nothing was provided.  Don't return any preferred sites, but just the default usage model.
+    return (
+        SiteAndUsageModel("", ",".join(DEFAULT_USAGE_MODELS)),
+        _strip_usage_model_from_resource_provides(resource_provides_quoted),
+    )
+
+
+class SiteAndUsageModelConflictError(Exception):
+    # Exception to raise if a site/usage model are in conflict
+    def __init__(self, site: str, usage_model: str):
+        self.site = site
+        self.usage_model = usage_model
+        self.message = (
+            f"Site {self.site} and usage_model {self.usage_model} are in "
+            "conflict.  Please ensure that you are not attempting to submit "
+            f"jobs that request to run at {ONSITE_SITE_NAME} while also "
+            "requesting to run only OFFSITE, or that you are not requesting to "
+            "run with OPPORTUNISTIC or DEDICATED usage_models while specifying "
+            f"a site list that does not include {ONSITE_SITE_NAME}."
+        )
+        super().__init__(self.message)
