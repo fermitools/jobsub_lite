@@ -21,6 +21,8 @@ import re
 import sys
 from typing import Union, Any
 
+from utils import DEFAULT_USAGE_MODELS
+
 
 def verify_executable_starts_with_file_colon(s: str) -> str:
     """routine to give argparse to verify the executable parameter,
@@ -399,7 +401,7 @@ def get_parser() -> argparse.ArgumentParser:
         dest="usage_model",
         action="store_const",
         const="OPPORTUNISTIC,DEDICATED",
-        default="OPPORTUNISTIC,DEDICATED,OFFSITE",
+        default=",".join(DEFAULT_USAGE_MODELS),
         help="run jobs locally only; usage_model=OPPORTUNISTIC,DEDICATED",
     )
     usage_model_group.add_argument(
@@ -408,7 +410,7 @@ def get_parser() -> argparse.ArgumentParser:
         dest="usage_model",
         action="store_const",
         const="OFFSITE",
-        default="OPPORTUNISTIC,DEDICATED,OFFSITE",
+        default=",".join(DEFAULT_USAGE_MODELS),
         help="run jobs offsite; usage_model=OFFSITE",
     )
 
