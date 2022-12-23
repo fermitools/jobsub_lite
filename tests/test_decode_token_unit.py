@@ -5,11 +5,19 @@ import pytest
 import sys
 import time
 
-sys.path.append("../lib")
-import fake_ifdh
 
 # make sure we are cd-ed in the test directorectory
 os.chdir(os.path.dirname(__file__))
+
+#
+# import modules we need to test, since we chdir()ed, can use relative path
+# unless we're testing installed, then use /opt/jobsub_lite/...
+#
+if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+    sys.path.append("/opt/jobsub_lite/lib")
+else:
+    sys.path.append("../lib")
+import fake_ifdh
 
 
 def do_decode_token_sh(filename: str, extract: str = ""):
@@ -19,7 +27,10 @@ def do_decode_token_sh(filename: str, extract: str = ""):
         estr = f" -e {extract} "
     else:
         estr = ""
-    cmd = f"../bin/decode_token.sh {estr}{filename}"
+    if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+        cmd = f"/opt/jobsub_lite/bin/decode_token.sh {estr}{filename}"
+    else:
+        cmd = f"../bin/decode_token.sh {estr}{filename}"
     lines = []
     with os.popen(cmd, "r") as f:
         lines = f.readlines()

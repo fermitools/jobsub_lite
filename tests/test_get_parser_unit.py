@@ -11,8 +11,13 @@ os.chdir(os.path.dirname(__file__))
 
 #
 # import modules we need to test, since we chdir()ed, can use relative path
+# unless we're testing installed, then use /opt/jobsub_lite/...
 #
-sys.path.append("../lib")
+if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+    sys.path.append("/opt/jobsub_lite/lib")
+else:
+    sys.path.append("../lib")
+
 import get_parser
 
 from test_unit import TestUnit
@@ -44,7 +49,10 @@ def find_all_arguments(paired_arguments):
     # * we don't have more than one add_argument call per line
     # so we look for various parts of the add_argument calls
     # separately on each line
-    f = open("../lib/get_parser.py", "r")
+    if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+        f = open("/opt/jobsub_lite/lib/get_parser.py", "r")
+    else:
+        f = open("../lib/get_parser.py", "r")
     flagargs = set()
     listargs = set()
     allargs = []
