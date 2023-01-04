@@ -168,3 +168,240 @@ class TestUtilsUnit:
         assert not os.path.exists(f"{test_old_dir}/simple.cmd")
         assert not os.path.exists(f"{oldd}/simple.cmd")
         assert os.path.exists(f"{newd}/simple.cmd")
+
+    @pytest.mark.unit
+    def test_resolve_site_and_usage_model(self):
+        _should_work = [
+            # no flags
+            (
+                "",
+                "DEDICATED,OPPORTUNISTIC,OFFSITE",
+                [],
+                (
+                    utils.SiteAndUsageModel("", "DEDICATED,OPPORTUNISTIC,OFFSITE"),
+                    [],
+                ),
+            ),
+            # --onsite
+            (
+                "",
+                "DEDICATED,OPPORTUNISTIC",
+                [],
+                (
+                    utils.SiteAndUsageModel(
+                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
+                    ),
+                    [],
+                ),
+            ),
+            # --site Fermigrid
+            (
+                utils.ONSITE_SITE_NAME,
+                "",
+                [],
+                (
+                    utils.SiteAndUsageModel(
+                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
+                    ),
+                    [],
+                ),
+            ),
+            # --site Random_Site
+            (
+                "Random_Site",
+                "",
+                [],
+                (
+                    utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
+                    [],
+                ),
+            ),
+            # --offsite
+            (
+                "",
+                "OFFSITE",
+                [],
+                (
+                    utils.SiteAndUsageModel("", "OFFSITE"),
+                    [],
+                ),
+            ),
+            # --resource-provides=usage_model=DEDICATED,OFFSITE
+            (
+                "",
+                "",
+                ['usage_model="DEDICATED,OFFSITE"'],
+                (
+                    utils.SiteAndUsageModel("", ""),
+                    ['usage_model="DEDICATED,OFFSITE"'],
+                ),
+            ),
+            # --resource-provides=usage_model=DEDICATED,OFFSITE --site Fermigrid
+            (
+                utils.ONSITE_SITE_NAME,
+                "",
+                ['usage_model="DEDICATED,OFFSITE"'],
+                (
+                    utils.SiteAndUsageModel(
+                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
+                    ),
+                    [],
+                ),
+            ),
+            # --resource-provides=usage_model=DEDICATED,OFFSITE --site Random_Site
+            (
+                "Random_Site",
+                "",
+                ['usage_model="DEDICATED,OFFSITE"'],
+                (
+                    utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
+                    [],
+                ),
+            ),
+            # --site=Fermigrid,Random_Site --resource-provides=usage_model=DEDICATED,OFFSITE
+            (
+                f"{utils.ONSITE_SITE_NAME},Random_Site",
+                "",
+                ['usage_model="DEDICATED,OFFSITE"'],
+                (
+                    utils.SiteAndUsageModel(
+                        f"{utils.ONSITE_SITE_NAME},Random_Site",
+                        "DEDICATED,OPPORTUNISTIC,OFFSITE",
+                    ),
+                    [],
+                ),
+            ),
+            # --site=Fermigrid,Random_Site
+            (
+                f"{utils.ONSITE_SITE_NAME},Random_Site",
+                "",
+                [],
+                (
+                    utils.SiteAndUsageModel(
+                        f"{utils.ONSITE_SITE_NAME},Random_Site",
+                        "DEDICATED,OPPORTUNISTIC,OFFSITE",
+                    ),
+                    [],
+                ),
+            ),
+            # --site=Fermigrid,Random_Site --resource_provides=usage_model=DEDICATED,OFFSITE --resource-provides=IWANT=this_resource
+            (
+                f"{utils.ONSITE_SITE_NAME},Random_Site",
+                "",
+                ['usage_model="DEDICATED,OFFSITE"', 'IWANT="this_resource"'],
+                (
+                    utils.SiteAndUsageModel(
+                        f"{utils.ONSITE_SITE_NAME},Random_Site",
+                        "DEDICATED,OPPORTUNISTIC,OFFSITE",
+                    ),
+                    ['IWANT="this_resource"'],
+                ),
+            ),
+            # --onsite --resource_provides=usage_model=DEDICATED,OFFSITE --resource-provides=IWANT=this_resource
+            (
+                "",
+                "DEDICATED,OPPORTUNISTIC",
+                ['usage_model="DEDICATED,OFFSITE"', 'IWANT="this_resource"'],
+                (
+                    utils.SiteAndUsageModel(
+                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
+                    ),
+                    ['IWANT="this_resource"'],
+                ),
+            ),
+            # --onsite --resource_provides=usage_model=DEDICATED,OFFSITE
+            (
+                "",
+                "DEDICATED,OPPORTUNISTIC",
+                ['usage_model="DEDICATED,OFFSITE"'],
+                (
+                    utils.SiteAndUsageModel(
+                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
+                    ),
+                    [],
+                ),
+            ),
+            # --resource_provides=usage_model=DEDICATED,OPPORTUNISTIC --site Random_Site
+            (
+                "Random_Site",
+                "",
+                ['usage_model="DEDICATED,OPPORTUNISTIC"'],
+                (
+                    utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
+                    [],
+                ),
+            ),
+            # --resource-provides=usage_model=DEDICATED --site Random_Site
+            (
+                "Random_Site",
+                "",
+                ['usage_model="DEDICATED"'],
+                (
+                    utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
+                    [],
+                ),
+            ),
+            # --resource-provides=usage_model=OFFSITE --site Fermigrid
+            (
+                utils.ONSITE_SITE_NAME,
+                "",
+                ['usage_model="OFFSITE"'],
+                (
+                    utils.SiteAndUsageModel(
+                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
+                    ),
+                    [],
+                ),
+            ),
+            # --site=Random_Site_1,Random_Site_2 --resource-provides=usage_model=DEDICATED,OFFSITE
+            (
+                "Random_Site_1,Random_Site_2",
+                "",
+                ['usage_model="DEDICATED,OFFSITE"'],
+                (
+                    utils.SiteAndUsageModel("Random_Site_1,Random_Site_2", "OFFSITE"),
+                    [],
+                ),
+            ),
+            # --onsite --resource-provides=usage_model=DEDICATED,OFFSITE
+            (
+                "",
+                "DEDICATED,OPPORTUNISTIC",
+                ['usage_model="DEDICATED,OFFSITE"'],
+                (
+                    utils.SiteAndUsageModel(
+                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
+                    ),
+                    [],
+                ),
+            ),
+            # --offsite --resource-provides=usage_model=DEDICATED
+            (
+                "",
+                "OFFSITE",
+                ['usage_model="DEDICATED"'],
+                (
+                    utils.SiteAndUsageModel("", "OFFSITE"),
+                    [],
+                ),
+            ),
+        ]
+
+        for (sites, usage_model, resource_provides_quoted, expected) in _should_work:
+            assert (
+                utils.resolve_site_and_usage_model(
+                    sites, usage_model, resource_provides_quoted
+                )
+                == expected
+            )
+
+        # I honestly can't think of any combos that don't work/won't get corrected before we get to validation,
+        # but I'm leaving this here unless I missed something
+        _should_not_work = []
+        for (sites, usage_model, resource_provides_quoted) in _should_not_work:
+            with pytest.raises(
+                utils.SiteAndUsageModelConflictError, match="are in conflict"
+            ):
+                utils.resolve_site_and_usage_model(
+                    sites, usage_model, resource_provides_quoted
+                )

@@ -271,6 +271,7 @@ class TestGetParserUnit:
             "--onsite",
             "--onsite-only",
             "--offsite-only",
+            "--offsite",
             "--jobid",
         ]
 

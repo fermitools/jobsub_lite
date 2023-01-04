@@ -61,7 +61,8 @@ notify_user = {{email_to}}
 {% endif %}
 {{resource_provides_quoted|join("\n+DESIRED_")}}
 {{lines|join("\n")}}
-requirements  = {%if overwrite_requirements is defined and overwrite_requirements %}{{overwrite_requirements}}{%else%}target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2  && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))){%endif%}{%if append_condor_requirements is defined and append_condor_requirements %} && {{append_condor_requirements}} {%endif%}
+requirements  = {%if overwrite_requirements is defined and overwrite_requirements %}{{overwrite_requirements}}{%else%}target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2 && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))){%if site is defined and site != '' %} && ((isUndefined(target.GLIDEIN_Site) == FALSE) && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites))){%endif%}{%endif%}{%if append_condor_requirements is defined and append_condor_requirements %} && {{append_condor_requirements}}{%endif%}
+
 
 {% if no_singularity is false %}
 +SingularityImage="{{singularity_image}}"
