@@ -3,11 +3,29 @@ import os.path
 import shutil
 from typing import List, Set
 
+"""
+    Routines to deal with token scopes (permissions) which
+    are stored in the "scope": entry of the Scitoken, and
+    are generally a space-separated list of group.property:path
+    style entries, with the group and path optional
+"""
+
 
 def get_job_scopes(
     tokenfile: str, need_modify: List[str], need_scopes: List[str]
 ) -> List[str]:
+    """
+    get the scope for this job submission
+    * start with the original broad token scope
+    * filter out tokens we don't want by default (currently storage.modify)
+    * add any weaker-or-equal storage.modify items requested in need_modify
+    * add any scopes listed in need_scopes
+    and return that revised list
+    """
+    # clean_tokens: scope entries we scrub by default, currently just storage.modify
+    #   if we were doing a config file this should probably be a config item...
     clean_tokens = set(["storage.modify"])
+
     orig_scope = get_token_scope(tokenfile)
     job_scope = scope_without(clean_tokens, orig_scope)
     for dpath in need_modify:
@@ -18,12 +36,14 @@ def get_job_scopes(
         job_scope.append(sc)
 
     job_scope.sort(key=len)
-    # order matters to condor(?)
+    # order matters to condor(?) this seems to work
 
     return job_scope
 
 
 def use_token_copy(tokenfile: str) -> str:
+    """copy our submit scitoken file and point BEARER_TOKEN_FILE there, so when
+    condor stomps on it we don't lose our original permissions for next time"""
     pid = os.getpid()
     copyto = f"{tokenfile}.{pid}"
     shutil.copy(tokenfile, copyto)
@@ -44,7 +64,7 @@ def get_token_scope(tokenfilename: str) -> List[str]:
 def scope_without(sctypeset: Set[str], orig_scopelist: List[str]) -> List[str]:
     """
     get the scope minus any components in sctypelist
-    so scope_withot( set(["a","b"]), ["a:/x"'"b:/y","c:/z","d:/w"])
+    so scope_without( set(["a","b"]), ["a:/x"'"b:/y","c:/z","d:/w"])
     gives ["c:/z","d:/w"]...
     For now we use it to strip out storage.modify items, but we could
     need to do others, later.

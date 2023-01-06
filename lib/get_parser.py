@@ -235,7 +235,7 @@ def get_parser() -> argparse.ArgumentParser:
         help="Lines to append to the job file.",
     )
     parser.add_argument(
-        "--need-modify",
+        "--need-storage-modify",
         action="append",
         default=[],
         help="directories needing storage.modify scope in job tokens",

@@ -198,7 +198,7 @@ def main():
     #
     token = use_token_copy(token)
     varg["job_scope"] = " ".join(
-        get_job_scopes(token, args.need_modify, args.need_scope)
+        get_job_scopes(token, args.need_storage_modify, args.need_scope)
     )
     m = hashlib.sha256()
     m.update(varg["job_scope"].encode())
