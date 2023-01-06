@@ -237,6 +237,18 @@ def get_parser() -> argparse.ArgumentParser:
         help="Lines to append to the job file.",
     )
     parser.add_argument(
+        "--need-storage-modify",
+        action="append",
+        default=[],
+        help="directories needing storage.modify scope in job tokens",
+    )
+    parser.add_argument(
+        "--need-scope",
+        action="append",
+        default=[],
+        help="scopes needed in job tokens",
+    )
+    parser.add_argument(
         "-Q",
         "--mail_never",
         "--mail-never",
