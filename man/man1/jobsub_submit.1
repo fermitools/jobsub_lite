@@ -14,7 +14,10 @@ jobsub_submit
                      [--expected-lifetime EXPECTED_LIFETIME]
                      [-f INPUT_FILE] [--generate-email-summary]
                      [-L LOG_FILE]
-                     [-l LINES] [-Q] [--mail_on_error] [--mail_always]
+                     [-l LINES]
+                     [--need-storage-modify NEED_STORAGE_MODIFY]
+                     [--need-scope NEED_SCOPE]
+                     [-Q] [--mail_on_error] [--mail_always]
                      [--maxConcurrent MAXCONCURRENT] [--memory MEMORY]
                      [-N N] [-n] [--no-env-cleanup] [--OS OS]
                      [--overwrite-condor-requirements REQUIREMENTS]
@@ -24,14 +27,14 @@ jobsub_submit
                      [--tarball-exclusion-file TARBALL_EXCLUSION_FILE]
                      [--timeout TIMEOUT] [--use-cvmfs-dropbox]
                      [--use-pnfs-dropbox] [--devserver]
-                     [--onsite-only | --offsite]
+                     [--site SITE | --onsite | --offsite]
                      [--singularity-image IMAGE | --no-singularity]
                      [executable] ...
 
 .SH DESCRIPTION
 
 A part of the jobsub_lite suite, jobsub_submit will use command line arguments to generate HTCondor job submission files and a wrapper script, and submits jobs or DAGs of jobs to HTCondor.
-
+It will submit a job with SciToken authentication, and by default request a weakened scope in the tokens delivered to jobs (currently turning off storage.modify permissions), further modifications to the requested scope can be made with the --need-storage-modify and --need-scope flags.
 .SH OPTIONS
 positional arguments:
 .HP
@@ -133,6 +136,12 @@ Log file to hold log output from job.
 .HP
 -l LINES, --lines LINES
 Lines to append to the job file.
+.HP
+--need-storage-modify NEED_STORAGE_MODIFY
+directories needing storage.modify scope in job tokens
+.HP
+--need-scope NEED_SCOPE
+scopes needed in job tokens
 .HP
 -Q, --mail_never, --mail-never
 never send mail about job results (default)
