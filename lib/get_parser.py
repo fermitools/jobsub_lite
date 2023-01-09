@@ -249,12 +249,6 @@ def get_parser() -> argparse.ArgumentParser:
         help="scopes needed in job tokens",
     )
     parser.add_argument(
-        "--project-name",
-        "--project_name",
-        default="",
-        help="Project name for --dataset-definition DAGs to share",
-    )
-    parser.add_argument(
         "-Q",
         "--mail_never",
         "--mail-never",

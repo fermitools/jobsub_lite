@@ -173,8 +173,6 @@ def all_test_args():
         "xxOSxx",
         "--overwrite-condor-requirements",
         "xxoverwrite-condor-requirementsxx",
-        "--project-name",
-        "xxproject-namexx",
         "--resource-provides",
         "xxresource-providesxx",
         "--role",
