@@ -119,6 +119,10 @@ def do_dataset_defaults(varg: Dict[str, Any]) -> None:
     have_user = False
     have_group = False
     experiment = varg["group"]
+
+    if varg["project_name"]:
+        varg["environment"].append(f"SAM_PROJECT={varg['project_name']}")
+
     for e in varg["environment"]:
         pos = e.find("=")
         if e[:pos] == "SAM_PROJECT":
