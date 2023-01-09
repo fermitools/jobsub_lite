@@ -150,7 +150,7 @@ def run_launch(cmd):
 def lookaround_launch(extra):
     """Simple submit of our lookaround script"""
     assert run_launch(
-        f"jobsub_submit --verbose=1 -e SAM_EXPERIMENT {extra} --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE file://`pwd`/job_scripts/lookaround.sh"
+        f"jobsub_submit --verbose=1 -e SAM_EXPERIMENT {extra} --onsite file://`pwd`/job_scripts/lookaround.sh"
     )
 
 
@@ -177,7 +177,7 @@ def dagnabbit_launch(extra, which=""):
         jobsub_submit \
           --verbose=2 \
           -e SAM_EXPERIMENT {extra} \
-          --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE \
+          --onsite \
           --dag file://dagTest{which} \
         """
     )
@@ -219,7 +219,7 @@ def fife_launch(extra):
           -e IFDH_CP_MAXRETRIES \
           -e VERSION \
           -N 5  \
-          --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE  \
+          --onsite \
           --generate-email-summary \
           --expected-lifetime=2h  \
           --timeout=2h \

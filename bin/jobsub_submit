@@ -190,11 +190,20 @@ def main():
     schedd_name = schedd_add.eval("Machine")
 
     #
-    # work on a copy of our bearer token because
-    # condor_vault_storer is going to overwrite it with the weakened one
-    # then get our weakened job scopes, ans set the "oauth handle"
-    # we're going to use to a hash of our job scopes, so we have a
-    # different one for different scopes
+    # We work on a copy of our bearer token because
+    # condor_vault_storer is going to overwrite it with a token with the weakened scope
+    # then get our weakened job scopes, then
+    # set the "oauth handle" we're going to use to a hash of our job scopes, so we have a
+    # different handle for different scopes.  This makes condor
+    # a) store the token as, say "mu2e_830a3a3188.use" and
+    # b) refresh it there and
+    # c) pass it to the jobs that way.
+    # That way if they submit another job with, say,  an additional
+    # storage.create:/mu2e/my/output/dir  they will store that token in a file with a
+    # different hash, and *that* will get sent to *those* jobs.
+    # If they submit another job with these *same* permissions, they will *share* the
+    # token filename the conor_vault_credmon will only refresh it once for both (or all
+    # three, etc.) submissions, and push that token to all the jobs with that same handle.
     #
     token = use_token_copy(token)
     varg["job_scope"] = " ".join(
