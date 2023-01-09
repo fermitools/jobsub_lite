@@ -150,8 +150,6 @@ def all_test_args():
         "--group",
         "xxgroupxx",
         "--jobid",
-        "--jobsub-server",
-        "xxjobsub-serverxx",
         "--log-file",
         "xxlog-filexx",
         "--lines",

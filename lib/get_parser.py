@@ -227,12 +227,6 @@ def get_parser() -> argparse.ArgumentParser:
         " jobs in a DAG",
     )
     parser.add_argument(
-        "--jobsub-server",
-        "--jobsub_server",
-        default="",
-        help="Backwards compatability flag. Ignored",
-    )
-    parser.add_argument(
         "-L", "--log-file", "--log_file", help="Log file to hold log output from job."
     )
     parser.add_argument(
