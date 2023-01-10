@@ -141,6 +141,8 @@ def submit(
     if f:
         if vargs.get("verbose", 0) > 0:
             print(f"submitting: {f}")
+        if vargs.get("verbose", 0) > 1:
+            schedd_args = schedd_args + " -debug"
         schedd_args = schedd_args + f" {f}"
 
     if vargs.get("verbose", 0) > 1:
