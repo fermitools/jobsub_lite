@@ -1,6 +1,7 @@
 import os
 import os.path
 import shutil
+import sys
 from typing import List, Set
 
 """
@@ -89,6 +90,17 @@ def add_subpath_scope(
     and if it can, return the new scopelist appending it to scopelist"""
 
     add_path = os.path.normpath(add_path)  # don't be fooled by /a/b/../../c/d
+
+    if add_path.startswith("/pnfs/") or add_path.startswith("/eos/"):
+        # common user mistake, giving mounted path /pnfs/experiment/...
+        # instead of /experiment/...
+        new_path = add_path[add_path.find("/", 1) :]
+        msg = "warning: detected wrong --need-storage-modify path:\n"
+        msg = f"{msg} converting from {add_path}\n            to {new_path}\n"
+
+        sys.stderr.write(msg)
+        add_path = new_path
+
     for s in orig_scopelist:
         if s.find(":") > 0:
             s_sctype, s_path = s.split(":", 1)
