@@ -111,7 +111,7 @@ def set_extras_n_fix_units(
 
     for i in range(len(args["line"])):
         # do 1 layer of \x -> x to be compatible with jobsub_client
-        args["line"][i] = re.sub(r"\\(.)", "\\1", args["line"][i])
+        args["lines"][i] = re.sub(r"\\(.)", "\\1", args["lines"][i])
 
     if not "uuid" in args:
         args["uuid"] = str(uuid.uuid4())
