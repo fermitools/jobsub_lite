@@ -109,6 +109,10 @@ def set_extras_n_fix_units(
     args["kerberos_principal"] = get_principal()
     args["uid"] = str(os.getuid())
 
+    for i in range(len(args["lines"])):
+        # do 1 layer of \x -> x to be compatible with jobsub_client
+        args["lines"][i] = re.sub(r"\\(.)", "\\1", args["lines"][i])
+
     if not "uuid" in args:
         args["uuid"] = str(uuid.uuid4())
     if not "date" in args:
