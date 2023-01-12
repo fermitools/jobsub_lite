@@ -1,0 +1,91 @@
+#!/usr/bin/python3 -I
+
+#
+# jobsub_cmd -- generic wrapper for condor commands
+# COPYRIGHT 2022 FERMI NATIONAL ACCELERATOR LABORATORY
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+#
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""
+    jobsub generic wrapper for condor commands -- parse args like
+    -G group,  find schedd, call generic condor cmd
+"""
+# pylint: disable=wrong-import-position,wrong-import-order,import-error
+
+import argparse
+import os
+import sys
+import re
+import time
+
+PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(PREFIX, "lib"))
+
+import fake_ifdh
+import get_parser
+
+
+def main() -> None:
+    """main line of code, proces args, etc."""
+    parser = get_parser.get_jobid_parser(add_condor_epilog=True)
+    parser.add_argument("-name", help="Set schedd name", default="")
+    parser.add_argument("--user", help="Set username to look at", default="")
+    parser.add_argument(
+        "--qdate-ge",
+        help="job submission date (qdate) greater than or equal to <submission date> Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss",
+        default="",
+    )
+    parser.add_argument(
+        "--qdate-le",
+        help="job submission date (qdate) less than or equal to <submission date> Format for <submission date> is 'YYYY-MM-DD' or 'YYYY-MM-DD hh:mm:ss",
+        default="",
+    )
+
+    arglist, passthru = parser.parse_known_args()
+
+    passthru.append("-backwards")
+
+    if arglist.name:
+        passthru.append("-name")
+        passthru.append(arglist.name)
+
+    # Re-insert --debug/--verbose if it was given
+    if arglist.verbose:
+        passthru.append("-debug")
+    # if they gave us --jobid or --user put in the value plain, condor figures it out
+    if arglist.jobid:
+        passthru.append(arglist.jobid)
+
+    if arglist.user:
+        passthru.append(arglist.user)
+
+    if arglist.qdate_ge:
+        passthru.append("-constraint")
+        since = int(time.mktime(time.strptime(arglist.qdate_ge, "%Y-%m-%d")))
+        passthru.append(f"'QDate > {since}'")
+
+    if arglist.qdate_le:
+        passthru.append("-constraint")
+        since = int(time.mktime(time.strptime(arglist.qdate_le, "%Y-%m-%d")))
+        passthru.append(f"'QDate < {since}'")
+
+    if os.environ.get("GROUP", None) is None:
+        raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
+
+    cmd = f"condor_history {' '.join(passthru)}"
+    print(f"running: {cmd}")
+    os.system(cmd)
+
+
+if __name__ == "__main__":
+    main()
