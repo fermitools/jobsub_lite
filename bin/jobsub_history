@@ -84,8 +84,13 @@ def main() -> None:
 
     default_formatting = True
 
-    for arg in passthru:
-        if arg in [
+    out = []
+    for i in passthru:
+
+        if i.startswith("--"):
+            i = i[1:]
+
+        if i in [
             "-autoformat",
             "-batch",
             "-better-analyze",
@@ -98,6 +103,10 @@ def main() -> None:
             "-xml",
         ]:
             default_formatting = False
+
+        out.append(i)
+
+    passthru = out
 
     if default_formatting:
         passthru.extend(
