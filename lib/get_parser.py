@@ -107,7 +107,7 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
         help="dump internal state of program (useful for debugging)",
     )
     group.add_argument(
-        "--version",        
+        "--version",
         action="store_true",
         help="version of jobsub_lite being used",
         default=False,

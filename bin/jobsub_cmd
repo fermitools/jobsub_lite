@@ -34,6 +34,7 @@ import fake_ifdh
 import get_parser
 import version
 
+
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
 
@@ -64,7 +65,7 @@ def main() -> None:
     if arglist.version:
         print(f"jobsub_lite version {version.__version__}")
         exit()
-        
+
     if arglist.support_email:
         print(f"Email {version.__email__} for help.")
         exit()
