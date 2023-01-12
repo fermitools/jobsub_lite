@@ -85,7 +85,15 @@ def main() -> None:
     default_formatting = True
 
     out = []
+    schedd = ""
     for i in passthru:
+        m = re.match(r"([\d.]*)@([\w.]+)", i)
+        if m:
+            # looks like a jobsub id 12.34@schedd.name
+            schedd = m.group(2)
+            i = m.group(1)
+            if not i:
+                continue
 
         if i.startswith("--"):
             i = i[1:]
@@ -106,6 +114,9 @@ def main() -> None:
 
         out.append(i)
 
+    if schedd:
+        passthru.append("-name")
+        passthru.append(schedd)
     passthru = out
 
     if default_formatting:
