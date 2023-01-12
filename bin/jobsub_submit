@@ -51,6 +51,7 @@ from tarfiles import do_tarballs
 from utils import set_extras_n_fix_units, cleanup
 from creds import get_creds
 from token_mods import get_job_scopes, use_token_copy
+import version
 
 
 def get_basefiles(dlist: List[str]) -> List[str]:
@@ -169,6 +170,14 @@ def main():
     # pylint: disable=too-many-statements
     parser = get_parser()
     args = parser.parse_args()
+
+    if args.version:
+        print(f"jobsub_lite version {version.__version__}")
+        exit()
+
+    if args.support_email:
+        print(f"Email {version.__email__} for help.")
+        exit()
 
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
