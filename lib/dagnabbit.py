@@ -167,7 +167,7 @@ def parse_dagnabbit(
                     os.path.join(dest, f"{name}.sh"), "w", encoding="UTF-8"
                 ) as csf:
                     csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
-                of.write(f"JOB {name} {name}.cmd\n")
+                of.write(f"\nJOB {name} {name}.cmd\n")
                 of.write(f'VARS {name} JOBSUBJOBSECTION="{count}" nodename="$(JOB)"\n')
 
                 if in_serial:
@@ -182,6 +182,50 @@ def parse_dagnabbit(
                 if in_parallel:
                     parallel_l_in.append(name)
                     parallel_l_out.append(name)
+
+            elif line.startswith("prescript "):
+                if debug_comments:
+                    of.write("# saw prescript\n")
+                name = f"stage_{count}"
+                parser = get_parser()
+                try:
+                    res = parser.parse_args(line.strip().split()[1:])
+                except:
+                    sys.stderr.write(f"Error at file {values['dag']} line {linenum}\n")
+                    sys.stderr.write(f"parsing: {line.strip().split()}\n")
+                    sys.stderr.flush()
+                    raise
+                prescript = line.split()[1].replace("file://", "")
+                prescript_base = os.path.basename(prescript)
+                prescript_args = " ".join(line.split()[2:])
+                of.write(f"SCRIPT PRE {name} {prescript_base} {prescript_args}\n")
+                thesevalues['prescript'] = prescript
+                if "postscript" in thesevalues:
+                    del thesevalues["postscript"]
+                thesevalues.update(update_with)
+                set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
+
+            elif line.startswith("postscript "):
+                if debug_comments:
+                    of.write("# saw postscript\n")
+                name = f"stage_{count}"
+                parser = get_parser()
+                try:
+                    res = parser.parse_args(line.strip().split()[1:])
+                except:
+                    sys.stderr.write(f"Error at file {values['dag']} line {linenum}\n")
+                    sys.stderr.write(f"parsing: {line.strip().split()}\n")
+                    sys.stderr.flush()
+                    raise
+                postscript = line.split()[1].replace("file://", "")
+                postscript_base = os.path.basename(postscript)
+                postscript_args = " ".join(line.split()[2:])
+                of.write(f"SCRIPT POST {name} {postscript_base} {postscript_args}\n")
+                thesevalues['postscript'] = postscript
+                if "prescript" in thesevalues:
+                    del thesevalues["prescript"]
+                thesevalues.update(update_with)
+                set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
 
             elif not line:
                 # blank lines are fine
