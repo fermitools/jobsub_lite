@@ -39,6 +39,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 # import our local parts
 #
 import creds
+import version
 from get_parser import get_jobid_parser
 from condor import Job
 from utils import cleanup
@@ -69,6 +70,14 @@ def main():
     parser.add_argument("job_id", nargs="?", help="job/submission ID")
 
     args = parser.parse_args()
+
+    if args.version:
+        print(f"jobsub_lite version {version.__version__}")
+        exit()
+	
+    if args.support_email:
+        print(f"Email {version.__email__} for help.")
+        exit()
 
     if not args.jobid and not args.job_id:
         raise SystemExit("jobid is required.")
