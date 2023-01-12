@@ -38,7 +38,6 @@ import get_parser
 def main() -> None:
     """main line of code, proces args, etc."""
     parser = get_parser.get_jobid_parser(add_condor_epilog=True)
-    parser.add_argument("-name", help="Set schedd name", default="")
     parser.add_argument("--user", help="Set username to look at", default="")
     parser.add_argument(
         "--qdate-ge",
@@ -54,10 +53,6 @@ def main() -> None:
     arglist, passthru = parser.parse_known_args()
 
     passthru.append("-backwards")
-
-    if arglist.name:
-        passthru.append("-name")
-        passthru.append(arglist.name)
 
     # Re-insert --debug/--verbose if it was given
     if arglist.verbose:
@@ -117,6 +112,7 @@ def main() -> None:
     if schedd:
         passthru.append("-name")
         passthru.append(schedd)
+
     passthru = out
 
     if default_formatting:
