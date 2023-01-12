@@ -72,18 +72,67 @@ def main() -> None:
     if arglist.qdate_ge:
         passthru.append("-constraint")
         since = int(time.mktime(time.strptime(arglist.qdate_ge, "%Y-%m-%d")))
-        passthru.append(f"'QDate > {since}'")
+        passthru.append(f"QDate > {since}")
 
     if arglist.qdate_le:
         passthru.append("-constraint")
         since = int(time.mktime(time.strptime(arglist.qdate_le, "%Y-%m-%d")))
-        passthru.append(f"'QDate < {since}'")
+        passthru.append(f"QDate < {since}")
 
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
-    cmd = f"condor_history {' '.join(passthru)}"
-    print(f"running: {cmd}")
+    default_formatting = True
+
+    for arg in passthru:
+        if arg in [
+            "-autoformat",
+            "-batch",
+            "-better-analyze",
+            "-dag",
+            "-format",
+            "-io",
+            "-json",
+            "-long",
+            "-nobatch",
+            "-xml",
+        ]:
+            default_formatting = False
+
+    if default_formatting:
+        passthru.extend(
+            [
+                "-format",
+                "%-30s",
+                'strcat(split(GlobalJobId,"#")[1],"@",split(GlobalJobId,"#")[0])',
+                "-format",
+                "%-10s\t",
+                "Owner",
+                "-format",
+                "%-11s ",
+                'formatTime(QDate,"%m/%d %H:%M")',
+                "-format",
+                "%-11s ",
+                'formatTime(CompletionDate,"%m/%d %H:%M")',
+                "-format",
+                " %s ",
+                'substr("UIRXCHE",JobStatus,1)',
+                "-format",
+                "%s",
+                "JobsubCmd",
+                "-format",
+                " %-.20s",
+                "Args",
+                "-format",
+                "\n",
+                "Owner",
+            ]
+        )
+        print(
+            "JOBSUBJOBID                             OWNER                SUBMITTED           FINISHED            ST       CMD"
+        )
+
+    cmd = f"""condor_history {' '.join(f"'{x}'" for x in passthru)}"""
     os.system(cmd)
 
 
