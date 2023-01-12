@@ -48,7 +48,7 @@ from get_parser import get_parser
 from condor import get_schedd, submit, submit_dag
 from dagnabbit import parse_dagnabbit
 from tarfiles import do_tarballs
-from utils import set_extras_n_fix_units, cleanup
+from utils import set_extras_n_fix_units, cleanup, backslash_escape_layer
 from creds import get_creds
 from token_mods import get_job_scopes, use_token_copy
 import version
@@ -169,6 +169,9 @@ def main():
     """
     # pylint: disable=too-many-statements
     parser = get_parser()
+    # old jobsub_client commands got run through a shell that replaced \x with x
+    # so we do that here for backwards compatability
+    backslash_escape_layer(sys.argv)
     args = parser.parse_args()
 
     if args.version:
