@@ -177,7 +177,7 @@ def set_extras_n_fix_units(
             sys.stderr.write(
                 f"copying  {repr(args.get('prescript', None))} to {repr(dest)}\n"
             )
-        # do not copy prescript if it is already at his destination
+        # do not copy prescript if it is already at its destination
         # its path has been updated to be the final destination in a previous step
         if args["prescript"] != dest:
             shutil.copyfile(args["prescript"], dest, follow_symlinks=True)
@@ -190,7 +190,7 @@ def set_extras_n_fix_units(
             sys.stderr.write(
                 f"copying  {repr(args.get('postscript', None))} to {repr(dest)}\n"
             )
-        # do not copy postscript if it is already at his destination
+        # do not copy postscript if it is already at its destination
         # its path has been updated to be the final destination in a previous step
         if args["postscript"] != dest:
             shutil.copyfile(args["postscript"], dest, follow_symlinks=True)
