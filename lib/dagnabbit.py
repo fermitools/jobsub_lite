@@ -24,7 +24,7 @@ import jinja2 as jinja  # type: ignore
 import creds
 from get_parser import get_parser
 from tarfiles import do_tarballs
-from utils import set_extras_n_fix_units
+from utils import set_extras_n_fix_units, backslash_escape_layer
 
 
 def parse_dagnabbit(
@@ -87,7 +87,8 @@ def parse_dagnabbit(
                 if debug_comments:
                     of.write("# saw </parallel>\n")
                 in_parallel = False
-                of.write(f"PARENT {last_serial} CHILD {' '.join(parallel_l_in)}\n")
+                if last_serial:
+                    of.write(f"PARENT {last_serial} CHILD {' '.join(parallel_l_in)}\n")
                 last_serial = " ".join(parallel_l_out)
                 in_serial = True
             elif line.find("<serial>") >= 0:
@@ -134,7 +135,9 @@ def parse_dagnabbit(
                 name = f"stage_{count}"
                 parser = get_parser()
                 try:
-                    res = parser.parse_args(line.strip().split()[1:])
+                    line_argv = line.strip().split()[1:]
+                    backslash_escape_layer(line_argv)
+                    res = parser.parse_args(line_argv)
                 except:
                     sys.stderr.write(f"Error at file {values['dag']} line {linenum}\n")
                     sys.stderr.write(f"parsing: {line.strip().split()}\n")
