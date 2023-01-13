@@ -176,7 +176,7 @@ def set_extras_n_fix_units(
     #
     time_aliases: Dict[str, str] = {
         "short": "3h",
-        "med": "8h",
+        "medium": "8h",
         "long": "85200s",
     }
     for k in ("expected_lifetime", "timeout"):
