@@ -211,7 +211,7 @@ def parse_dagnabbit(
                 prescript_base = os.path.basename(prescript)
                 prescript_args = " ".join(line.split()[2:])
                 of.write(f"SCRIPT PRE {name} {prescript_base} {prescript_args}\n")
-                thesevalues['prescript'] = prescript
+                thesevalues["prescript"] = prescript
                 if "postscript" in thesevalues:
                     del thesevalues["postscript"]
                 thesevalues.update(update_with)
@@ -240,7 +240,7 @@ def parse_dagnabbit(
                 postscript_base = os.path.basename(postscript)
                 postscript_args = " ".join(line.split()[2:])
                 of.write(f"SCRIPT POST {name} {postscript_base} {postscript_args}\n")
-                thesevalues['postscript'] = postscript
+                thesevalues["postscript"] = postscript
                 if "prescript" in thesevalues:
                     del thesevalues["prescript"]
                 thesevalues.update(update_with)
