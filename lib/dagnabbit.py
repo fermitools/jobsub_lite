@@ -53,6 +53,8 @@ def parse_dagnabbit(
         of.write(f"DOT dag.dot UPDATE\n")
         in_parallel = False
         in_serial = False
+        in_prescript = False
+        in_postscript = False
         last_serial = ""
         last_serial_in = ""
         parallel_l_in: List[str] = []
@@ -125,6 +127,9 @@ def parse_dagnabbit(
                     sys.stderr.write(
                         f"Syntax Error: job not in <serial> or <parallel block> at line {linenum}\n"
                     )
+                # we want at most 1 prescript and 1 postscript after jobsub line
+                in_prescript = False
+                in_postscript = False
                 count = count + 1
                 name = f"stage_{count}"
                 parser = get_parser()
@@ -186,12 +191,19 @@ def parse_dagnabbit(
             elif line.startswith("prescript "):
                 if debug_comments:
                     of.write("# saw prescript\n")
+                if in_prescript:
+                    sys.stderr.write(
+                        f"Error: file {dagfile} line {linenum}\n"
+                        f" only 1 prescript line per jobsub line is allowed\n"
+                    )
+                    sys.exit(1)
+                in_prescript = True
                 name = f"stage_{count}"
                 parser = get_parser()
                 try:
                     res = parser.parse_args(line.strip().split()[1:])
                 except:
-                    sys.stderr.write(f"Error at file {values['dag']} line {linenum}\n")
+                    sys.stderr.write(f"Error at file {dagfile} line {linenum}\n")
                     sys.stderr.write(f"parsing: {line.strip().split()}\n")
                     sys.stderr.flush()
                     raise
@@ -208,12 +220,19 @@ def parse_dagnabbit(
             elif line.startswith("postscript "):
                 if debug_comments:
                     of.write("# saw postscript\n")
+                if in_postscript:
+                    sys.stderr.write(
+                        f"Error: file {dagfile} line {linenum}\n"
+                        f" only 1 postscript line per jobsub line is allowed\n"
+                    )
+                    sys.exit(1)
+                in_postscript = True
                 name = f"stage_{count}"
                 parser = get_parser()
                 try:
                     res = parser.parse_args(line.strip().split()[1:])
                 except:
-                    sys.stderr.write(f"Error at file {values['dag']} line {linenum}\n")
+                    sys.stderr.write(f"Error at file {dagfile} line {linenum}\n")
                     sys.stderr.write(f"parsing: {line.strip().split()}\n")
                     sys.stderr.flush()
                     raise
