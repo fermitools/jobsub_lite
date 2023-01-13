@@ -35,6 +35,7 @@ class TestUnit:
         "resource_provides": ["usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE"],
         "job_scope": "storage.create:/foo storage:modify:/foo compute.create compute.modify compute.read",
         "oauth_handle": "0a1b2c3d4e5f",
+        "project_name": "",
     }
     test_extra_template_args = {
         "role": "Analysis",

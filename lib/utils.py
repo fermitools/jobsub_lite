@@ -70,6 +70,13 @@ def grep_n(regex: str, n: int, file: str) -> str:
     return ""
 
 
+def backslash_escape_layer(argv: List[str]) -> None:
+    r"""do 1 layer of \x -> x to be compatible with jobsub_client"""
+
+    for i in range(len(argv)):
+        argv[i] = re.sub(r"\\(.)", "\\1", argv[i])
+
+
 def set_extras_n_fix_units(
     args: Dict[str, Any],
     schedd_name: str,
@@ -108,10 +115,6 @@ def set_extras_n_fix_units(
     args["jobsub_version"] = "lite_v1_0"
     args["kerberos_principal"] = get_principal()
     args["uid"] = str(os.getuid())
-
-    for i in range(len(args["lines"])):
-        # do 1 layer of \x -> x to be compatible with jobsub_client
-        args["lines"][i] = re.sub(r"\\(.)", "\\1", args["lines"][i])
 
     if not "uuid" in args:
         args["uuid"] = str(uuid.uuid4())

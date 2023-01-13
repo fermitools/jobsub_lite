@@ -32,6 +32,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 
 import fake_ifdh
 import get_parser
+import version
 
 
 class StoreGroupinEnvironment(argparse.Action):
@@ -60,6 +61,14 @@ def main() -> None:
         parser.add_argument("--user", help="username to query", default=None)
 
     arglist, passthru = parser.parse_known_args()
+
+    if arglist.version:
+        print(f"jobsub_lite version {version.__version__}")
+        exit()
+
+    if arglist.support_email:
+        print(f"Email {version.__email__} for help.")
+        exit()
 
     if cmd != "jobsub_q":
         arglist.user = None

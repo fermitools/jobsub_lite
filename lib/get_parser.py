@@ -106,6 +106,18 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
         nargs=0,
         help="dump internal state of program (useful for debugging)",
     )
+    group.add_argument(
+        "--version",
+        action="store_true",
+        help="version of jobsub_lite being used",
+        default=False,
+    )
+    group.add_argument(
+        "--support-email",
+        action="store_true",
+        help="jobsub_lite support email",
+        default=False,
+    )
     return parser
 
 

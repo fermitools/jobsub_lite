@@ -48,9 +48,10 @@ from get_parser import get_parser
 from condor import get_schedd, submit, submit_dag
 from dagnabbit import parse_dagnabbit
 from tarfiles import do_tarballs
-from utils import set_extras_n_fix_units, cleanup
+from utils import set_extras_n_fix_units, cleanup, backslash_escape_layer
 from creds import get_creds
 from token_mods import get_job_scopes, use_token_copy
+import version
 
 
 def get_basefiles(dlist: List[str]) -> List[str]:
@@ -168,7 +169,25 @@ def main():
     """
     # pylint: disable=too-many-statements
     parser = get_parser()
+
+    # Argument-checking code
+    # old jobsub_client commands got run through a shell that replaced \x with x
+    # so we do that here for backwards compatability
+    backslash_escape_layer(sys.argv)
     args = parser.parse_args()
+
+    if args.version:
+        print(f"jobsub_lite version {version.__version__}")
+        exit()
+
+    if args.support_email:
+        print(f"Email {version.__email__} for help.")
+        exit()
+
+    # We want to push users to use jobsub_submit --dag, but there are still some legacy
+    # users who use the old jobsub_submit_dag executable.  This patches that use case
+    if os.path.basename(sys.argv[0]) == "jobsub_submit_dag":
+        args.dag = True
 
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
