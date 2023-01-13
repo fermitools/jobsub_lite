@@ -71,9 +71,13 @@ def grep_n(regex: str, n: int, file: str) -> str:
 
 
 def backslash_escape_layer(argv: List[str]) -> None:
-    r"""do 1 layer of \x -> x to be compatible with jobsub_client"""
+    r"""do 1 layer of \x -> x
+    as well as eating a layer of single quotes
+    to be compatible with jobsub_client
+    """
 
     for i in range(len(argv)):
+        argv[i] = re.sub(r"'(?!\\)(.*[^\\])'", "\\1", argv[i])
         argv[i] = re.sub(r"\\(.)", "\\1", argv[i])
 
 
