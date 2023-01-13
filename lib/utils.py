@@ -172,6 +172,17 @@ def set_extras_n_fix_units(
         args["full_executable"] = dest
 
     #
+    # allow short, medium, and long for duration values (--expected_lifetime, --timeout)
+    #
+    time_aliases: Dict[str, str] = {
+        "short": "3h",
+        "med": "8h",
+        "long": "85200s",
+    }
+    for k in ("expected_lifetime", "timeout"):
+        if args[k] in time_aliases:
+            args[k] = time_aliases[args[k]]
+    #
     # conversion factors for memory suffixes
     #
     dsktable: Dict[str, float] = {
