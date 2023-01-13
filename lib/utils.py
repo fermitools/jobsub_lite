@@ -77,7 +77,7 @@ def backslash_escape_layer(argv: List[str]) -> None:
     """
 
     for i in range(len(argv)):
-        argv[i] = re.sub(r"'(?!\\)(.*[^\\])'", "\\1", argv[i])
+        argv[i] = re.sub(r"(?!\\)'(.*[^\\])'", "\\1", argv[i])
         argv[i] = re.sub(r"\\(.)", "\\1", argv[i])
 
 
