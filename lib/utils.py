@@ -171,6 +171,32 @@ def set_extras_n_fix_units(
         shutil.copyfile(args["full_executable"], dest, follow_symlinks=True)
         args["full_executable"] = dest
 
+    if args.get("prescript", False):
+        dest = os.path.join(args["submitdir"], os.path.basename(args["prescript"]))
+        if args["verbose"] > 1:
+            sys.stderr.write(
+                f"copying  {repr(args.get('prescript', None))} to {repr(dest)}\n"
+            )
+        # do not copy prescript if it is already at its destination
+        # its path has been updated to be the final destination in a previous step
+        if args["prescript"] != dest:
+            shutil.copyfile(args["prescript"], dest, follow_symlinks=True)
+            args["prescript"] = dest
+            os.chmod(dest, 0o755)
+
+    if args.get("postscript", False):
+        dest = os.path.join(args["submitdir"], os.path.basename(args["postscript"]))
+        if args["verbose"] > 1:
+            sys.stderr.write(
+                f"copying  {repr(args.get('postscript', None))} to {repr(dest)}\n"
+            )
+        # do not copy postscript if it is already at its destination
+        # its path has been updated to be the final destination in a previous step
+        if args["postscript"] != dest:
+            shutil.copyfile(args["postscript"], dest, follow_symlinks=True)
+            args["postscript"] = dest
+            os.chmod(dest, 0o755)
+
     #
     # allow short, medium, and long for duration values (--expected_lifetime, --timeout)
     #
