@@ -1,0 +1,41 @@
+<serial>
+jobsub_submit --mail_on_error $SUBMIT_FLAGS file://./jobA.sh
+prescript file://./initjobA.sh $JOB init
+postscript file://./ckjobA.sh $RETURN $JOB post $JOBID
+
+jobsub_submit --mail_on_error $SUBMIT_FLAGS file://./jobB.sh
+prescript file://./initjobA.sh $JOB init
+postscript file://./ckjobA.sh $RETURN $JOB post $JOBID
+</serial>
+
+<parallel>
+    <serial>
+    jobsub_submit --mail_on_error $SUBMIT_FLAGS file://./jobC.sh
+    prescript file://./initjobB.sh $JOB init
+    postscript file://./ckjobB.sh $RETURN $JOB post $JOBID
+
+    jobsub_submit --mail_on_error $SUBMIT_FLAGS file://./jobD.sh
+    prescript file://./initjobB.sh $JOB init
+    postscript file://./ckjobB.sh $RETURN $JOB post $JOBID
+    </serial>
+
+    <serial>
+    jobsub_submit --mail_on_error $SUBMIT_FLAGS file://./jobC.sh
+    prescript file://./initjobA.sh $JOB init
+    postscript file://./ckjobA.sh $RETURN $JOB post $JOBID
+
+    jobsub_submit --mail_on_error $SUBMIT_FLAGS file://./jobD.sh
+    prescript file://./initjobA.sh $JOB init
+    postscript file://./ckjobA.sh $RETURN $JOB post $JOBID
+    </serial>
+</parallel>
+
+<serial>
+jobsub_submit --mail_on_error $SUBMIT_FLAGS file://./jobE.sh
+prescript file://./initjobB.sh $JOB init
+postscript file://./ckjobB.sh $RETURN $JOB post $JOBID
+
+jobsub_submit --mail_on_error $SUBMIT_FLAGS file://./jobE.sh
+prescript file://./initjobA.sh $JOB init
+postscript file://./ckjobA.sh $RETURN $JOB post $JOBID
+</serial>
