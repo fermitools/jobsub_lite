@@ -219,6 +219,9 @@ ${JSB_TMP}/ifdh.sh cp -D {{fname}} ${CONDOR_DIR_INPUT}
     {%if loop.first%}
       INPUT_TAR_DIR_LOCAL={{tfname}}
       export INPUT_TAR_DIR_LOCAL
+      INPUT_TAR_FILE={{tfname}}
+      export INPUT_TAR_FILE
+      ln -s {{tfname}} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
 
       # wait for tarfile to show up
       num_tries=0
@@ -235,6 +238,9 @@ ${JSB_TMP}/ifdh.sh cp -D {{fname}} ${CONDOR_DIR_INPUT}
     {%else%}
       INPUT_TAR_DIR_LOCAL{{loop.index0}}={{tfname}}
       export INPUT_TAR_DIR_LOCAL{{loop.index0}}
+      INPUT_TAR_FILE_{{loop.index0}}={{tfname}}
+      export INPUT_TAR_FILE_{{loop.index0}}
+      ln -s {{tfname}} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
     {%endif%}
   {%else%}
     # tarfile to transfer and unpack
@@ -243,11 +249,17 @@ ${JSB_TMP}/ifdh.sh cp -D {{fname}} ${CONDOR_DIR_INPUT}
     ${JSB_TMP}/ifdh.sh cp {{tfname}} {{tflocal}}
     tar --directory .unwind_{{loop.index0}} -xzvf {{tflocal}}
     {%if loop.first%}
+      INPUT_TAR_DIR_LOCAL=`pwd`/.unwind_{{loop.index0}}
+      export INPUT_TAR_DIR_LOCAL
       INPUT_TAR_FILE=`pwd`/.unwind_{{loop.index0}}
       export INPUT_TAR_FILE
+      ln -s $INPUT_TAR_FILE ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
     {%else%}
+      INPUT_TAR_DIR_LOCAL{{loop.index0}}=`pwd`/.unwind_{{loop.index0}}
+      export INPUT_TAR_DIR_LOCAL{{loop.index0}}
       INPUT_TAR_FILE_{{loop.index0}}=`pwd`/.unwind_{{loop.index0}}
       export INPUT_TAR_FILE_{{loop.index0}}
+      ln -s $INPUT_TAR_FILE_{{loop.index0}} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
     {%endif%}
   {%endif%}
 {%endfor%}
