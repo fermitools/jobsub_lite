@@ -82,7 +82,8 @@ def dcache_persistent_path(exp: str, filename: str) -> str:
     res = f"/pnfs/{exp}/resilient/jobsub_stage/{sha256_hash}/{bf}"
     # for testing, we don't have a resilient area for "fermilab", so...
     if exp == "fermilab":
-        res = res.replace("fermilab/resilient", "fermilab/volatile", 1)
+        user = os.environ["USER"]
+        res = res.replace("fermilab/resilient", f"fermilab/users/{user}", 1)
     sys.stdout.flush()
     return res
 
