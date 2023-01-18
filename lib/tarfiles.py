@@ -22,6 +22,7 @@ import os.path
 import random
 import re
 import sys
+import tarfile as tarfile_mod
 import time
 import traceback as tb
 from typing import Union, Dict, Tuple, Callable, List, Any, Iterator, Optional
@@ -47,6 +48,8 @@ except ValueError:
 
 def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     """build directory.tar from path/to/directory"""
+    if not directory:
+        directory = "."
     tarfile = os.path.basename(f"{directory}.tar.gz")
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
@@ -79,7 +82,8 @@ def dcache_persistent_path(exp: str, filename: str) -> str:
     res = f"/pnfs/{exp}/resilient/jobsub_stage/{sha256_hash}/{bf}"
     # for testing, we don't have a resilient area for "fermilab", so...
     if exp == "fermilab":
-        res = res.replace("fermilab/resilient", "fermilab/volatile", 1)
+        user = os.environ["USER"]
+        res = res.replace("fermilab/resilient", f"fermilab/users/{user}", 1)
     sys.stdout.flush()
     return res
 
@@ -96,11 +100,21 @@ def do_tarballs(args: argparse.Namespace) -> None:
     res: List[str] = []
     path: Optional[str] = None
     for fn in args.input_file:
-        if fn.startswith("drobpox://"):
-            fn = fn.replace("//", "", 1)
 
         if fn.startswith("dropbox:"):
+
+            if fn.startswith("dropbox://"):
+                fn = fn.replace("//", "", 1)
+
             pfn = fn.replace("dropbox:", "", 1)
+
+            # backwards incompatability warning
+            if tarfile_mod.is_tarfile(pfn):
+                sys.stderr.write(
+                    "Notice: with jobsub_lite, -f dropbox:... "
+                    "does not unpack tarfiles, use --tar_file_name instead\n"
+                )
+
             if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
                 tarfile = tar_up(
                     os.path.dirname(pfn), "/dev/null", os.path.basename(pfn)
@@ -125,7 +139,12 @@ def do_tarballs(args: argparse.Namespace) -> None:
     args.input_file = res
 
     res = []
+    orig_basenames = []
     for tfn in args.tar_file_name:
+        orig_basenames.append(
+            os.path.basename(tfn).replace(".tar", "").replace(".tgz", "")
+        )
+
         if tfn.startswith("tardir://"):
             tfn = tfn.replace("//", "", 1)
 
@@ -147,6 +166,7 @@ def do_tarballs(args: argparse.Namespace) -> None:
 
         res.append(tfn)
     args.tar_file_name = res
+    args.tar_file_orig_basenames = orig_basenames
 
     # clean up tarfiles we made...
     for tarfile in clean_up:
