@@ -21,6 +21,7 @@
 
 import argparse
 import json
+import glob
 import os
 import re
 import shlex
@@ -56,6 +57,19 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
 
     if role_override:
         return role_override
+
+    # if we have a default role pushed with a vault token, or $HOME/.jobsub_default... use that
+    uid = os.getuid()
+    group = os.environ["GROUP"]
+
+    for prefix in ["/tmp/", f"{os.environ['HOME']}/."]:
+
+        fname = f"{prefix}jobsub_default_role_{group}_{uid}"
+
+        if os.path.exists(fname) and os.stat(fname).st_uid == uid:
+            with open(fname, "r") as f:
+                role = f.read().strip()
+            return role
 
     # if there's a role in the wlcg.groups of the token, pick that
     if os.environ.get("BEARER_TOKEN_FILE", False):
