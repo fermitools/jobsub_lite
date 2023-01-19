@@ -371,12 +371,22 @@ def get_parser() -> argparse.ArgumentParser:
         "specify TAR_FILE or DIRECTORY to be transferred to worker node."
         " TAR_FILE will be copied with RCDS/cvmfs (or /pnfs),"
         " transferred to the job and unpacked there."
+        " The unpacked contents of TAR_FILE will be available inside the"
+        " directory $INPUT_TAR_DIR_LOCAL.  If using the PNFS dropbox (not default),"
         " TAR_FILE will be accessible to the user job on the worker node"
-        " via the environment variable $INPUT_TAR_FILE. The unpacked"
+        " via the environment variable $INPUT_TAR_FILE.  The unpacked"
         " contents will be in the same directory as $INPUT_TAR_FILE."
+        " For consistency, when using the default (RCDS/cvmfs) dropbox,"
+        " $INPUT_TAR_FILE will be set in such a way that the parent directory"
+        " of $INPUT_TAR_FILE will contain the unpacked contents of TAR_FILE."
         " Successive --tar_file_name options will be in"
-        " $INPUT_TAR_FILE_1, $INPUT_TAR_FILE_2, etc.",
+        " $INPUT_TAR_DIR_LOCAL_1, $INPUT_TAR_DIR_LOCAL_2, etc. and"
+        " $INPUT_TAR_FILE_1, $INPUT_TAR_FILE_2, etc."
+        ""
+        " We note here that with this flag, it is recommended to use the"
+        " $INPUT_TAR_DIR_LOCAL environment variable, rather than $INPUT_TAR_FILE",
     )
+
     parser.add_argument(
         "--tarball-exclusion-file",
         default=None,

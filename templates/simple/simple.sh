@@ -238,8 +238,8 @@ ${JSB_TMP}/ifdh.sh cp -D {{fname}} ${CONDOR_DIR_INPUT}
            fi
       done
     {%else%}
-      INPUT_TAR_DIR_LOCAL{{loop.index0}}={{tfname}}
-      export INPUT_TAR_DIR_LOCAL{{loop.index0}}
+      INPUT_TAR_DIR_LOCAL_{{loop.index0}}={{tfname}}
+      export INPUT_TAR_DIR_LOCAL_{{loop.index0}}
       # Note: this filename doesn't exist, but if you take dirname
       #       of it you find the contents
       INPUT_TAR_FILE_{{loop.index0}}={{tfname}}/{{tar_file_orig_basenames[loop.index0]}}.tar
@@ -259,8 +259,8 @@ ${JSB_TMP}/ifdh.sh cp -D {{fname}} ${CONDOR_DIR_INPUT}
       export INPUT_TAR_FILE
       ln -s $INPUT_TAR_FILE ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
     {%else%}
-      INPUT_TAR_DIR_LOCAL{{loop.index0}}=`pwd`/.unwind_{{loop.index0}}
-      export INPUT_TAR_DIR_LOCAL{{loop.index0}}
+      INPUT_TAR_DIR_LOCAL_{{loop.index0}}=`pwd`/.unwind_{{loop.index0}}
+      export INPUT_TAR_DIR_LOCAL_{{loop.index0}}
       INPUT_TAR_FILE_{{loop.index0}}={{tflocal}}
       export INPUT_TAR_FILE_{{loop.index0}}
       ln -s $INPUT_TAR_FILE_{{loop.index0}} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
