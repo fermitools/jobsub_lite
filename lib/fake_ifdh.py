@@ -21,7 +21,6 @@
 
 import argparse
 import json
-import glob
 import os
 import re
 import shlex
