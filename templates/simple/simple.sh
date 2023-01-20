@@ -22,8 +22,8 @@ done
 {% endif %}
 
 {% if role is defined and role and role != 'Analysis' %}
-#export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role}}_{{oauth_handle}}.use
-export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role}}.use
+#export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}_{{oauth_handle}}.use
+export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}.use
 {% else %}
 #export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{oauth_handle}}.use
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}.use
