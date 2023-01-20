@@ -52,7 +52,7 @@ requirements = target.machine =!= MachineAttrMachine1 && target.machine =!= Mach
 {% endif %}
 
 # Credentials
-{% if role is defined and role and  role != 'Analysis' %}
+{% if role is defined and role and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role | lower}}
 #{{group}}_{{role | lower}}_oauth_permissions = "{{job_scope}}"
 {% else %}
