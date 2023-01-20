@@ -167,7 +167,13 @@ def submit(
 
         if output.returncode < 0:
             sys.stderr.write(
-                f"Error: Child was terminated by signal {-output.returncode}"
+                f"Error: Child was terminated by signal {-output.returncode}\n"
+            )
+            return None
+
+        if output.returncode > 0:
+            sys.stderr.write(
+                f"Error: condor_submit exited with failed status code {output.returncode}\n"
             )
             return None
 
