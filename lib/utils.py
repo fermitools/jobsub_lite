@@ -201,6 +201,11 @@ def set_extras_n_fix_units(
             args["postscript"] = dest
             os.chmod(dest, 0o755)
 
+    # Sanitize --lines input.  There's the unfortunate possibility of "--lines '""'" being passed
+    # in, so guard against those kinds of things
+    if args.get("lines"):
+        args["lines"] = [line for line in args["lines"] if line not in ('""', "''")]
+
     #
     # allow short, medium, and long for duration values (--expected_lifetime, --timeout)
     #
