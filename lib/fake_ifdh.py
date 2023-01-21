@@ -61,7 +61,7 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     uid = os.getuid()
     group = os.environ["GROUP"]
 
-    for prefix in ["/tmp/", f"{os.environ['HOME']}/."]:
+    for prefix in ["/tmp/", f"{os.environ['HOME']}/.config/"]:
 
         fname = f"{prefix}jobsub_default_role_{group}_{uid}"
 
