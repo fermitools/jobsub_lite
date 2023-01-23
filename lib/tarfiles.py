@@ -202,7 +202,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, tfn: str) -> Optional[str]:
             for i in range(NUM_RETRIES):
                 location = publisher.cid_exists()
                 if location is not None:
-                    print(f"Found uploaded file on RCDS.")
+                    print("Found uploaded file on RCDS.")
                     break
                 if i < (NUM_RETRIES - 1):
                     print(
