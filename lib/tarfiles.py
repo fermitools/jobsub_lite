@@ -122,7 +122,7 @@ def do_tarballs(args: argparse.Namespace) -> None:
                 clean_up.append(tarfile)
                 path = tarfile_in_dropbox(args, tarfile)
                 if path:
-                    res.append(os.path.join(path, os.path.basename(fn)))
+                    res.append(os.path.join(path, os.path.basename(pfn)))
                 else:
                     res.append(pfn)
 
