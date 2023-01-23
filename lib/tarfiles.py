@@ -197,10 +197,12 @@ def tarfile_in_dropbox(args: argparse.Namespace, tfn: str) -> Optional[str]:
         location = publisher.cid_exists()
         if location is None:
             publisher.publish(tf)
+            print("Checking to see if uploaded file is published on RCDS.")
             # pylint: disable-next=unused-variable
             for i in range(NUM_RETRIES):
                 location = publisher.cid_exists()
                 if location is not None:
+                    print(f"Found uploaded file on RCDS.")
                     break
                 if i < (NUM_RETRIES - 1):
                     print(
