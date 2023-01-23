@@ -199,10 +199,19 @@ def tarfile_in_dropbox(args: argparse.Namespace, tfn: str) -> Optional[str]:
             publisher.publish(tf)
             # pylint: disable-next=unused-variable
             for i in range(NUM_RETRIES):
-                time.sleep(RETRY_INTERVAL_SEC)
                 location = publisher.cid_exists()
                 if location is not None:
                     break
+                if i < (NUM_RETRIES - 1):
+                    print(
+                        f"Could not locate uploaded file on RCDS.  Will retry in {RETRY_INTERVAL_SEC} seconds."
+                    )
+                    time.sleep(RETRY_INTERVAL_SEC)
+            else:
+                print(
+                    f"Max retries {NUM_RETRIES} to find RCDS tarball at {cid} exceeded.  Exiting now."
+                )
+                exit(1)
         else:
             # tag it so it stays around
             publisher.update_cid()
@@ -277,6 +286,7 @@ class TarfilePublisherHandler:
                     )
                     # pylint: disable-next=not-callable
                     response = func(self, *args, **kwargs)
+                    response.raise_for_status()
                 except:  # pylint: disable=bare-except
                     tb.print_exc()
                     if next(retry_count) == NUM_RETRIES:
