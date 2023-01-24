@@ -366,9 +366,6 @@ class TarfilePublisherHandler:
 
         return requests.get(url, cert=(self.proxy, self.proxy))
 
-    def __make_request_token_headers(self) -> Dict[str, str]:
-        """Create headers for token auth to dropbox server"""
-
     def __select_dropbox_server(self) -> Iterator[str]:
         """Yield a dropbox server for client to upload tarball to"""
         dropbox_servers_working_list: List[str] = []
