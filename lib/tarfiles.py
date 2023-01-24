@@ -27,8 +27,9 @@ import time
 import traceback as tb
 from typing import Union, Dict, Tuple, Callable, List, Any, Iterator, Optional
 from urllib.parse import quote as _quote
-
+import http.client
 import requests  # type: ignore
+from requests.auth import AuthBase  # type: ignore
 
 import fake_ifdh
 from creds import get_creds
@@ -44,6 +45,21 @@ except ValueError:
         "JOBSUB_UPLOAD_RETRY_INTERVAL_SEC must be either unset or integers"
     )
     raise
+
+
+class TokenAuth(AuthBase):  # type: ignore
+    # auth class for token authentication
+    # see https://requests.readthedocs.io/en/latest/user/advanced/
+    # under Custom Authentication / PizzaAuth
+    def __init__(self, token: str) -> None:
+        self.token = token
+        with open(self.token, "r", encoding="UTF-8") as f:
+            self.token_string = f.read()
+        self.token_string = self.token_string.strip()  # Drop \n at end of token_string
+
+    def __call__(self, r: requests.Request) -> requests.Request:
+        r.headers["Authorization"] = f"Bearer {self.token_string}"
+        return r
 
 
 def tar_up(directory: str, excludes: str, file: str = ".") -> str:
@@ -180,6 +196,11 @@ def tarfile_in_dropbox(args: argparse.Namespace, tfn: str) -> Optional[str]:
     """
     upload a tarfile to the dropbox, return its path there
     """
+
+    if args.verbose > 3:
+        # if we're *really* debugging, dump the http connections...
+        http.client.HTTPConnection.debuglevel = 5
+
     location: Optional[str] = ""
     if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
         digest, tf = slurp_file(tfn)
@@ -248,7 +269,6 @@ class TarfilePublisherHandler:
         self.proxy = proxy
         self.token = token
         if token is not None:
-            self.request_headers = self.__make_request_token_headers()
             print(f"Using bearer token located at {self.token} to authenticate to RCDS")
         else:
             print(f"Using X509 proxy located at {self.proxy} to authenticate to RCDS")
@@ -313,7 +333,7 @@ class TarfilePublisherHandler:
         """
         url = self.pubapi_base_url_formatter.format(endpoint="update")
         if self.token:
-            return requests.get(url, headers=self.request_headers)
+            return requests.get(url, auth=TokenAuth(self.token))
         return requests.get(url, cert=(self.proxy, self.proxy))
 
     @pubapi_operation
@@ -329,7 +349,7 @@ class TarfilePublisherHandler:
         """
         url = self.pubapi_base_url_formatter.format(endpoint="publish")
         if self.token:
-            return requests.post(url, headers=self.request_headers, data=tarfile)
+            return requests.post(url, auth=TokenAuth(self.token), data=tarfile)
         return requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
 
     @pubapi_operation
@@ -342,16 +362,12 @@ class TarfilePublisherHandler:
         """
         url = self.pubapi_base_url_formatter.format(endpoint="exists")
         if self.token:
-            return requests.get(url, headers=self.request_headers)
+            return requests.get(url, auth=TokenAuth(self.token))
+
         return requests.get(url, cert=(self.proxy, self.proxy))
 
     def __make_request_token_headers(self) -> Dict[str, str]:
         """Create headers for token auth to dropbox server"""
-        with open(self.token, "r", encoding="UTF-8") as f:  # type: ignore
-            token_string = f.read()
-        token_string = token_string.strip()  # Drop \n at end of token_string
-        header = {"Authorization": f"Bearer {token_string}"}
-        return header
 
     def __select_dropbox_server(self) -> Iterator[str]:
         """Yield a dropbox server for client to upload tarball to"""
