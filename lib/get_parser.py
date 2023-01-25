@@ -229,7 +229,9 @@ def get_parser() -> argparse.ArgumentParser:
         " $CONDOR_DIR_INPUT/file.xxx Specify as many"
         " -f INPUT_FILE_1 -f INPUT_FILE_2 args as you need. To copy file at"
         " submission time instead of run time, use -f dropbox://INPUT_FILE"
-        " to copy the file.",
+        " to copy the file.  If -f is used without the dropbox:// URI, for"
+        " example -f /path/to/myfile, then the file (/path/to/myfile in this"
+        " example) MUST be grid-accessible via ifdh.",
     )
     parser.add_argument(
         "--generate-email-summary",
