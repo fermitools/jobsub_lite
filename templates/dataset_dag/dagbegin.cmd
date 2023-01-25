@@ -22,7 +22,6 @@ transfer_output_files = .empty_file
 request_memory = 100mb
 +JobsubClientDN="{{clientdn}}"
 +JobsubClientIpAddress="{{ipaddr}}"
-+Owner="{{user}}"
 +JobsubServerVersion="{{jobsub_version}}"
 +JobsubClientVersion="{{jobsub_version}}"
 +JobsubClientKerberosPrincipal="{{kerberos_principal}}"
