@@ -95,11 +95,18 @@ def dcache_persistent_path(exp: str, filename: str) -> str:
 
     with os.popen(f"sha256sum {filename}", "r") as f:
         sha256_hash = f.read().strip().split(" ")[0]
+
+    # gm2 has upper cased the experiment name in DCache for some reason...
+    if exp == "gm2":
+        exp = "GM2"
+
     res = f"/pnfs/{exp}/resilient/jobsub_stage/{sha256_hash}/{bf}"
+
     # for testing, we don't have a resilient area for "fermilab", so...
     if exp == "fermilab":
         user = os.environ["USER"]
         res = res.replace("fermilab/resilient", f"fermilab/users/{user}", 1)
+
     sys.stdout.flush()
     return res
 
