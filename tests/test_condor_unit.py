@@ -52,7 +52,6 @@ request_memory = 2048.0
 request_disk = 102400.0KB
 +JobsubClientDN=""
 +JobsubClientIpAddress="131.225.67.71"
-+Owner="{user}"
 +JobsubServerVersion="lite_v1_0"
 +JobsubClientVersion="lite_v1_0"
 +JobsubClientKerberosPrincipal=""

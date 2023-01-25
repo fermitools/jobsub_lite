@@ -29,7 +29,6 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 {%if     OS is defined and OS %}+DesiredOS={{OS}}{%endif%}
 +JobsubClientDN="{{clientdn}}"
 +JobsubClientIpAddress="{{ipaddr}}"
-+Owner="{{user}}"
 +JobsubServerVersion="{{jobsub_version}}"
 +JobsubClientVersion="{{jobsub_version}}"
 +JobsubClientKerberosPrincipal="{{kerberos_principal}}"
