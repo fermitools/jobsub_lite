@@ -228,6 +228,11 @@ def getProxy(
     return vomsfile
 
 
+gfal_clean_env = (
+    "unset PYTHONHOME PYTHONPATH LD_LIBRARY_PATH GFAL_PLUGIN_DIR GFAL_CONFIG_DIR"
+)
+
+
 def fix_pnfs(path: str) -> str:
     m = re.match(r"/pnfs/(.*)", path)
     if m:
@@ -238,15 +243,15 @@ def fix_pnfs(path: str) -> str:
 def mkdir_p(dest: str) -> None:
     """make possibly multiple directories"""
     dest = fix_pnfs(dest)
-    if 0 != os.system(f"gfal-mkdir -p {dest}"):
+    if 0 != os.system(f"{gfal_clean_env}; gfal-mkdir -p {dest}"):
         raise PermissionError(f"Error: Unable to make directory {dest}")
 
 
 def ls(dest: str) -> List[str]:
     """make possibly multiple directories"""
     dest = fix_pnfs(dest)
-    with os.popen(f"gfal-ls {dest} 2>/dev/null") as f:
-        files = f.readlines()
+    with os.popen(f"{gfal_clean_env}; gfal-ls {dest} 2>/dev/null") as f:
+        files = [x.strip() for x in f.readlines()]
     return files
 
 
@@ -254,7 +259,7 @@ def cp(src: str, dest: str) -> None:
     """copy a (remote) file with gfal-copy"""
     src = fix_pnfs(src)
     dest = fix_pnfs(dest)
-    if 0 != os.system(f"gfal-copy {src} {dest}"):
+    if 0 != os.system(f"{gfal_clean_env}; gfal-copy {src} {dest}"):
         raise PermissionError(f"Error: Unable to copy {src} to {dest}")
 
 
@@ -281,8 +286,8 @@ if __name__ == "__main__":
     myrole = getRole(opts.role)
 
     try:
-        if opts.command[0] == "cp":
-            commands[opts.command[0]](*opts.cpargs[0])  # type: ignore
+        if opts.command[0] in ("cp", "ls", "mkdir_p"):
+            print(commands[opts.command[0]](*opts.cpargs[0]))  # type: ignore
         else:
             result = commands[opts.command[0]](myrole, verbose=1)  # type: ignore
             if result is not None:
