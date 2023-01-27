@@ -231,8 +231,14 @@ def getProxy(
 def fix_pnfs(path: str) -> str:
     m = re.match(r"/pnfs/(.*)", path)
     if m:
-        path = f"https://fndca1.fnal.gov:2880/{m.group(1)}"
+        path = f"https://fndcadoor.fnal.gov:2880/{m.group(1)}"
     return path
+
+
+def mkdir_p(dest: str) -> None:
+    """make possibly multiple directories"""
+    dest = fix_pnfs(dest)
+    os.system(f"gfal-mkdir -p {dest}")
 
 
 def cp(src: str, dest: str) -> None:
