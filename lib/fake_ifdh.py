@@ -238,14 +238,24 @@ def fix_pnfs(path: str) -> str:
 def mkdir_p(dest: str) -> None:
     """make possibly multiple directories"""
     dest = fix_pnfs(dest)
-    os.system(f"gfal-mkdir -p {dest}")
+    if 0 != os.system(f"gfal-mkdir -p {dest}"):
+        raise PermissionError(f"Error: Unable to make directory {dest}")
+
+
+def ls(dest: str) -> List[str]:
+    """make possibly multiple directories"""
+    dest = fix_pnfs(dest)
+    with os.popen(f"gfal-ls {dest} 2>/dev/null") as f:
+        files = f.readlines()
+    return files
 
 
 def cp(src: str, dest: str) -> None:
     """copy a (remote) file with gfal-copy"""
     src = fix_pnfs(src)
     dest = fix_pnfs(dest)
-    os.system(f"gfal-copy {src} {dest}")
+    if 0 != os.system(f"gfal-copy {src} {dest}"):
+        raise PermissionError(f"Error: Unable to copy {src} to {dest}")
 
 
 if __name__ == "__main__":
@@ -253,6 +263,8 @@ if __name__ == "__main__":
         "getProxy": getProxy,
         "getToken": getToken,
         "cp": cp,
+        "ls": ls,
+        "mkdir_p": mkdir_p,
         "getRole": getRole,
     }
     parser = argparse.ArgumentParser(description="ifdh subset replacement")

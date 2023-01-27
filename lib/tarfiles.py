@@ -151,8 +151,12 @@ def do_tarballs(args: argparse.Namespace) -> None:
 
             elif args.use_dropbox == "pnfs":
                 location = dcache_persistent_path(args.group, pfn)
-                fake_ifdh.mkdir_p(os.path.dirname(location))
-                fake_ifdh.cp(pfn, location)
+                existing = fake_ifdh.ls(location)
+                if existing:
+                    print(f"file {pfn} already copied to resilient area")
+                else:
+                    fake_ifdh.mkdir_p(os.path.dirname(location))
+                    fake_ifdh.cp(pfn, location)
                 res.append(location)
             else:
 
