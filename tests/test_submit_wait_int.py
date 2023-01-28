@@ -198,6 +198,38 @@ def test_dash_f_plain(dune_test_file):
     )
 
 
+@pytest.mark.integration
+def test_dash_f_dropbox_cvmfs(dune):
+    lookaround_launch(
+        f"-f dropbox://{__file__} --use-cvmfs-dropbox",
+        f"\\$CONDOR_DIR_INPUT/{os.path.basename(__file__)}",
+    )
+
+
+@pytest.mark.integration
+def test_tar_dir_cvmfs(dune):
+    lookaround_launch(
+        f"--tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit --use-cvmfs-dropbox",
+        f"\\$INPUT_TAR_DIR_LOCAL/ckjobA.sh",
+    )
+
+
+@pytest.mark.integration
+def test_tar_dir_pnfs(dune):
+    lookaround_launch(
+        f"--tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit --use-pnfs-dropbox",
+        f"\\$INPUT_TAR_DIR_LOCAL/ckjobA.sh",
+    )
+
+
+@pytest.mark.integration
+def test_dash_f_dropbox_pnfs(dune):
+    lookaround_launch(
+        f"-f dropbox://{__file__} --use-pnfs-dropbox",
+        f"\\$CONDOR_DIR_INPUT/{os.path.basename(__file__)}",
+    )
+
+
 def dagnabbit_launch(extra, which=""):
     os.environ["SUBMIT_FLAGS"] = ""
     os.chdir(os.path.join(os.path.dirname(__file__), "dagnabbit"))
