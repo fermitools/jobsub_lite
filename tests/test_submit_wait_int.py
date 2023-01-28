@@ -1,7 +1,9 @@
 import os
 import re
 import glob
+import inspect
 import pytest
+import sys
 import time
 import subprocess
 import tempfile
@@ -19,10 +21,14 @@ os.chdir(os.path.dirname(__file__))
 #
 if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
     os.environ["PATH"] = "/opt/jobsub_lite/bin:" + os.environ["PATH"]
+    sys.path.append("/opt/jobsub_lite/lib")
 else:
     os.environ["PATH"] = (
         os.path.dirname(os.path.dirname(__file__)) + "/bin:" + os.environ["PATH"]
     )
+    sys.path.append("../lib")
+
+import fake_ifdh
 
 
 @pytest.fixture
@@ -80,6 +86,19 @@ def dune(job_envs):
     os.environ["SAM_STATION"] = "dune"
 
 
+@pytest.fixture
+def dune_test_file(dune):
+    datafile = f"/pnfs/dune/scratch/users/{os.environ['USER']}/test_file.txt"
+    print("trying to generate {datafile}")
+    exists = fake_ifdh.ls(datafile)
+    if exists:
+        print("found {datafile}")
+    else:
+        fake_ifdh.cp(__file__, datafile)
+        print("copying to {datafile}")
+    return datafile
+
+
 def get_collector():
     """obfuscated way to find collector for dune pool"""
     cp = "collector"[:4]
@@ -98,7 +117,8 @@ def dune_gp(dune):
 
 
 joblist = []
-outdirs = []
+jid2test = {}
+outdirs = {}
 
 
 def run_launch(cmd):
@@ -125,14 +145,15 @@ def run_launch(cmd):
 
         m = re.match(r"Use job id (\S+) to retrieve output", l)
         if m:
-            print("Found jobsubjobid!")
             jobsubjobid = m.group(1)
+            print(f"Found jobsubjobid {jobsubjobid}!")
 
         if jobid and schedd and jobsubjobid and not added:
             added = True
             print("Found all three! ", jobid, schedd, jobsubjobid)
             joblist.append("%s@%s" % (jobid, schedd))
-
+            # note which test led to this jobid
+            jid2test["%s@%s" % (jobid, schedd)] = inspect.stack()[2][3]
     res = pf.close()
 
     if not added:
@@ -147,10 +168,10 @@ def run_launch(cmd):
     return res == None
 
 
-def lookaround_launch(extra):
+def lookaround_launch(extra, verify_files=""):
     """Simple submit of our lookaround script"""
     assert run_launch(
-        f"jobsub_submit --verbose=1 -e SAM_EXPERIMENT {extra} --onsite file://`pwd`/job_scripts/lookaround.sh"
+        f"jobsub_submit --verbose=1 -e SAM_EXPERIMENT {extra} --onsite file://`pwd`/job_scripts/lookaround.sh {verify_files}"
     )
 
 
@@ -167,6 +188,14 @@ def test_launch_lookaround_dune(dune):
 @pytest.mark.integration
 def xx_test_launch_lookaround_dune_gp(dune_gp):
     lookaround_launch("")
+
+
+@pytest.mark.integration
+def test_dash_f_plain(dune_test_file):
+    lookaround_launch(
+        f"-f {dune_test_file}",
+        f"\\$CONDOR_DIR_INPUT/{os.path.basename(dune_test_file)}",
+    )
 
 
 def dagnabbit_launch(extra, which=""):
@@ -326,19 +355,19 @@ def test_fetch_output():
     for jid in joblist:
         group = group_for_job(jid)
         owd = tempfile.mkdtemp()
+        outdirs[jid] = owd
         subprocess.run(
             ["jobsub_fetchlog", "--group", group, "--jobid", jid, "--destdir", owd],
             check=True,
         )
-        outdirs.append(owd)
 
 
 @pytest.mark.integration
 def test_check_job_output():
-    for outdir in outdirs:
+    for jid, outdir in outdirs.items():
         fl = glob.glob("%s/*.log" % outdir)
         for f in fl:
-            print("Checking logfile: ", f)
+            print(f"Checking {jid2test[jid]} {jid} logfile {f}...")
             fd = open(f, "r")
             f_ok = False
             for l in fd.readlines():
@@ -346,6 +375,7 @@ def test_check_job_output():
                     # XXX this should also check for the exit code 0 part, but
                     # until the SAM instances all take tokens etc, it doesn't
                     f_ok = True
+                    print("-- ok")
             fd.close()
             assert f_ok
         shutil.rmtree(outdir)
