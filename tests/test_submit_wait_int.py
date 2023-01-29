@@ -35,10 +35,7 @@ import fake_ifdh
 def job_envs():
     os.environ["IFDH_DEBUG"] = "1"
     os.environ["IFDH_FORCE"] = "https"
-    os.environ["IFDH_VERSION"] = "v2_6_6,ifdhc_config v2_6_6"
-    os.environ[
-        "IFDHC_CONFIG_DIR"
-    ] = "/grid/fermiapp/products/common/db/../prd/ifdhc_config/v2_6_6/NULL"
+    os.environ["IFDH_VERSION"] = "v2_6_10,ifdhc_config v2_6_15"
     os.environ["IFDH_TOKEN_ENABLE"] = "1"
     os.environ["IFDH_PROXY_ENABLE"] = "0"
     os.environ["IFDH_CP_MAXRETRIES"] = "2"
@@ -274,7 +271,6 @@ def fife_launch(extra):
           -e IFDH_VERSION \
           -e IFDH_TOKEN_ENABLE \
           -e IFDH_PROXY_ENABLE \
-          -e IFDHC_CONFIG_DIR \
           -e SAM_EXPERIMENT \
           -e SAM_STATION \
           -e IFDH_CP_MAXRETRIES \
@@ -291,9 +287,9 @@ def fife_launch(extra):
           file://///grid/fermiapp/products/common/db/../prd/fife_utils/v3_3_2/NULL/libexec/fife_wrap \
             --find_setups \
             --setup-unquote 'hypotcode%%20v1_1' \
-            --setup-unquote 'ifdhc%%20v2_6_6,ifdhc_config%%20v2_6_6' \
+            --setup-unquote 'ifdhc%%20v2_6_10,ifdhc_config%%20v2_6_15' \
             --prescript-unquote 'ups%%20active' \
-            --self_destruct_timer '700' \
+            --self_destruct_timer '1400' \
             --debug \
             --getconfig \
             --limit '1' \
@@ -403,9 +399,7 @@ def test_check_job_output():
             fd = open(f, "r")
             f_ok = False
             for l in fd.readlines():
-                if l.find("(1) Normal termination") > 0:
-                    # XXX this should also check for the exit code 0 part, but
-                    # until the SAM instances all take tokens etc, it doesn't
+                if l.find("(1) Normal termination (return value 0)") > 0:
                     f_ok = True
                     print("-- ok")
             fd.close()
