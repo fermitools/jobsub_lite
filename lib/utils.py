@@ -433,7 +433,7 @@ def resolve_site_and_usage_model(
             usage_models.strip(", "),
         )
 
-    usage_model_regex = re.compile("usage_model\=(.+)")
+    usage_model_regex = re.compile("usage_model=(.+)")
     derived_sites: str = ""
     derived_sites_list = given_sites.split(",")
     # Case 1: --site provided on the command line.  Set usage model accordingly
