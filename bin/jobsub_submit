@@ -148,6 +148,15 @@ def do_dataset_defaults(varg: Dict[str, Any]) -> None:
                 f'{varg["dataset_definition"]}_{os.environ.get("USER", "")}_{varg["uuid"]}',
             )
         )
+        # set both SAM_PROJECT and SAM_PROJECT_NAME as old jobsub did, apparently some
+        # experiment scripts use the latter...
+        varg["environment"].append(
+            "SAM_PROJECT_NAME="
+            + os.environ.get(
+                "SAM_PROJECT",
+                f'{varg["dataset_definition"]}_{os.environ.get("USER", "")}_{varg["uuid"]}',
+            )
+        )
     if not have_dataset:
         varg["environment"].append(f"SAM_DATASET={varg['dataset_definition']}")
     if not have_station:
