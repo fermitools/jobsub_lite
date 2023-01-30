@@ -39,9 +39,21 @@ httokendecode
 echo "============"
 echo "Token: direct"
 echo "============"
-cat $_CONDOR_CREDS/*.use
-decode_token.sh $_CONDOR_CREDS/*.use
+echo .condor_creds/*.use
+cat  .condor_creds/*.use
+decode_token.sh .condor_creds/*.use
 echo "============"
 echo "ifdh ls"
 echo "============"
 ifdh ls --force=https /pnfs/fermilab/users/mengel
+echo "============"
+for f in $*
+do
+   if [ -r $f ]
+   then
+       echo "Verified $f exists"
+   else
+       echo "File $f not found, failing job.."
+       exit 1
+   fi
+done

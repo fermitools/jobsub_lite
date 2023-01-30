@@ -1,7 +1,9 @@
 import os
 import re
 import glob
+import inspect
 import pytest
+import sys
 import time
 import subprocess
 import tempfile
@@ -19,20 +21,21 @@ os.chdir(os.path.dirname(__file__))
 #
 if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
     os.environ["PATH"] = "/opt/jobsub_lite/bin:" + os.environ["PATH"]
+    sys.path.append("/opt/jobsub_lite/lib")
 else:
     os.environ["PATH"] = (
         os.path.dirname(os.path.dirname(__file__)) + "/bin:" + os.environ["PATH"]
     )
+    sys.path.append("../lib")
+
+import fake_ifdh
 
 
 @pytest.fixture
 def job_envs():
     os.environ["IFDH_DEBUG"] = "1"
     os.environ["IFDH_FORCE"] = "https"
-    os.environ["IFDH_VERSION"] = "v2_6_6,ifdhc_config v2_6_6"
-    os.environ[
-        "IFDHC_CONFIG_DIR"
-    ] = "/grid/fermiapp/products/common/db/../prd/ifdhc_config/v2_6_6/NULL"
+    os.environ["IFDH_VERSION"] = "v2_6_10,ifdhc_config v2_6_15"
     os.environ["IFDH_TOKEN_ENABLE"] = "1"
     os.environ["IFDH_PROXY_ENABLE"] = "0"
     os.environ["IFDH_CP_MAXRETRIES"] = "2"
@@ -80,6 +83,19 @@ def dune(job_envs):
     os.environ["SAM_STATION"] = "dune"
 
 
+@pytest.fixture
+def dune_test_file(dune):
+    datafile = f"/pnfs/dune/scratch/users/{os.environ['USER']}/test_file.txt"
+    print("trying to generate {datafile}")
+    exists = fake_ifdh.ls(datafile)
+    if exists:
+        print("found {datafile}")
+    else:
+        fake_ifdh.cp(__file__, datafile)
+        print("copying to {datafile}")
+    return datafile
+
+
 def get_collector():
     """obfuscated way to find collector for dune pool"""
     cp = "collector"[:4]
@@ -98,7 +114,8 @@ def dune_gp(dune):
 
 
 joblist = []
-outdirs = []
+jid2test = {}
+outdirs = {}
 
 
 def run_launch(cmd):
@@ -125,14 +142,15 @@ def run_launch(cmd):
 
         m = re.match(r"Use job id (\S+) to retrieve output", l)
         if m:
-            print("Found jobsubjobid!")
             jobsubjobid = m.group(1)
+            print(f"Found jobsubjobid {jobsubjobid}!")
 
         if jobid and schedd and jobsubjobid and not added:
             added = True
             print("Found all three! ", jobid, schedd, jobsubjobid)
             joblist.append("%s@%s" % (jobid, schedd))
-
+            # note which test led to this jobid
+            jid2test["%s@%s" % (jobid, schedd)] = inspect.stack()[2][3]
     res = pf.close()
 
     if not added:
@@ -147,10 +165,10 @@ def run_launch(cmd):
     return res == None
 
 
-def lookaround_launch(extra):
+def lookaround_launch(extra, verify_files=""):
     """Simple submit of our lookaround script"""
     assert run_launch(
-        f"jobsub_submit --verbose=1 -e SAM_EXPERIMENT {extra} --onsite file://`pwd`/job_scripts/lookaround.sh"
+        f"jobsub_submit --verbose=1 -e SAM_EXPERIMENT {extra} --onsite file://`pwd`/job_scripts/lookaround.sh {verify_files}"
     )
 
 
@@ -167,6 +185,46 @@ def test_launch_lookaround_dune(dune):
 @pytest.mark.integration
 def xx_test_launch_lookaround_dune_gp(dune_gp):
     lookaround_launch("")
+
+
+@pytest.mark.integration
+def test_dash_f_plain(dune_test_file):
+    lookaround_launch(
+        f"-f {dune_test_file}",
+        f"\\$CONDOR_DIR_INPUT/{os.path.basename(dune_test_file)}",
+    )
+
+
+@pytest.mark.integration
+def test_dash_f_dropbox_cvmfs(dune):
+    lookaround_launch(
+        f"-f dropbox://{__file__} --use-cvmfs-dropbox",
+        f"\\$CONDOR_DIR_INPUT/{os.path.basename(__file__)}",
+    )
+
+
+@pytest.mark.integration
+def test_tar_dir_cvmfs(dune):
+    lookaround_launch(
+        f"--tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit --use-cvmfs-dropbox",
+        f"\\$INPUT_TAR_DIR_LOCAL/ckjobA.sh",
+    )
+
+
+@pytest.mark.integration
+def test_tar_dir_pnfs(dune):
+    lookaround_launch(
+        f"--tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit --use-pnfs-dropbox",
+        f"\\$INPUT_TAR_DIR_LOCAL/ckjobA.sh",
+    )
+
+
+@pytest.mark.integration
+def test_dash_f_dropbox_pnfs(dune):
+    lookaround_launch(
+        f"-f dropbox://{__file__} --use-pnfs-dropbox",
+        f"\\$CONDOR_DIR_INPUT/{os.path.basename(__file__)}",
+    )
 
 
 def dagnabbit_launch(extra, which=""):
@@ -213,7 +271,6 @@ def fife_launch(extra):
           -e IFDH_VERSION \
           -e IFDH_TOKEN_ENABLE \
           -e IFDH_PROXY_ENABLE \
-          -e IFDHC_CONFIG_DIR \
           -e SAM_EXPERIMENT \
           -e SAM_STATION \
           -e IFDH_CP_MAXRETRIES \
@@ -230,9 +287,9 @@ def fife_launch(extra):
           file://///grid/fermiapp/products/common/db/../prd/fife_utils/v3_3_2/NULL/libexec/fife_wrap \
             --find_setups \
             --setup-unquote 'hypotcode%%20v1_1' \
-            --setup-unquote 'ifdhc%%20v2_6_6,ifdhc_config%%20v2_6_6' \
+            --setup-unquote 'ifdhc%%20v2_6_10,ifdhc_config%%20v2_6_15' \
             --prescript-unquote 'ups%%20active' \
-            --self_destruct_timer '700' \
+            --self_destruct_timer '1400' \
             --debug \
             --getconfig \
             --limit '1' \
@@ -326,26 +383,25 @@ def test_fetch_output():
     for jid in joblist:
         group = group_for_job(jid)
         owd = tempfile.mkdtemp()
+        outdirs[jid] = owd
         subprocess.run(
             ["jobsub_fetchlog", "--group", group, "--jobid", jid, "--destdir", owd],
             check=True,
         )
-        outdirs.append(owd)
 
 
 @pytest.mark.integration
 def test_check_job_output():
-    for outdir in outdirs:
+    for jid, outdir in outdirs.items():
         fl = glob.glob("%s/*.log" % outdir)
         for f in fl:
-            print("Checking logfile: ", f)
+            print(f"Checking {jid2test[jid]} {jid} logfile {f}...")
             fd = open(f, "r")
             f_ok = False
             for l in fd.readlines():
-                if l.find("(1) Normal termination") > 0:
-                    # XXX this should also check for the exit code 0 part, but
-                    # until the SAM instances all take tokens etc, it doesn't
+                if l.find("(1) Normal termination (return value 0)") > 0:
                     f_ok = True
+                    print("-- ok")
             fd.close()
             assert f_ok
         shutil.rmtree(outdir)
