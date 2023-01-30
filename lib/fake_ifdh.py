@@ -234,6 +234,12 @@ gfal_clean_env = (
 
 
 def fix_pnfs(path: str) -> str:
+    # use nfs4 mount if present
+    mountpoint_end = path.find("/", 7)
+    if os.path.isdir(path[:mountpoint_end]):
+        return path
+
+    # otherwise make an https/webdav path for it
     m = re.match(r"/pnfs/(.*)", path)
     if m:
         path = f"https://fndcadoor.fnal.gov:2880/{m.group(1)}"
