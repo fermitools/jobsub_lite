@@ -157,6 +157,9 @@ def do_tarballs(args: argparse.Namespace) -> None:
                 else:
                     fake_ifdh.mkdir_p(os.path.dirname(location))
                     fake_ifdh.cp(pfn, location)
+                    existing = fake_ifdh.ls(location)
+                    if not existing:
+                        raise PermissionError(f"Error: Unable to create {location}")
                 res.append(location)
             else:
 
@@ -259,6 +262,9 @@ def tarfile_in_dropbox(args: argparse.Namespace, tfn: str) -> Optional[str]:
         else:
             fake_ifdh.mkdir_p(os.path.dirname(location))
             fake_ifdh.cp(tfn, location)
+            existing = fake_ifdh.ls(location)
+            if not existing:
+                raise PermissionError(f"Error: Unable to create {location}")
     else:
         raise (
             NotImplementedError(f"unknown tar distribution method: {args.use_dropbox}")
