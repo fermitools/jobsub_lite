@@ -156,8 +156,10 @@ def set_extras_n_fix_units(
     args["resource_provides_quoted"] = new_resource_provides
 
     if not "outurl" in args:
-        base = os.environ["JOBSUB_OUTPUT_URL"]
-        args["outurl"] = "/".join((base, args["date"], args["uuid"]))
+        args["outurl"] = ""
+        if "JOBSUB_OUTPUT_URL" in os.environ:
+            base = os.environ["JOBSUB_OUTPUT_URL"]
+            args["outurl"] = "/".join((base, args["date"], args["uuid"]))
 
     if not "outdir" in args:
         args["outdir"] = f"{args['outbase']}/js_{args['datetime']}_{args['uuid']}"
