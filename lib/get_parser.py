@@ -298,6 +298,7 @@ def get_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--maxConcurrent",
+        "--max-concurrent",
         help="max number of jobs running concurrently at given time.  Use in"
         " conjunction with -N option to protect a shared resource. Example:"
         " jobsub -N 1000 -maxConcurrent 20 will only run 20 jobs at a time"
@@ -312,6 +313,7 @@ def get_parser() -> argparse.ArgumentParser:
         " $JOBSUBPARENTJOBID, each individual job will have a unique and"
         " sequential $JOBSUBJOBSECTION. Scripts may need modification to take"
         " this into account",
+        default="0",
     )
     parser.add_argument(
         "--memory",
