@@ -286,8 +286,12 @@ def main():
         varg["is_dag"] = True
         d1 = os.path.join(PREFIX, "templates", "maxconcurrent_dag")
         d2 = os.path.join(PREFIX, "templates", "simple")
+        # see above bit about -N 1
+        saveN = varg["N"]
+        varg["N"] = "1"
         render_files(d2, varg, submitdir, dlist=[d1, d2])
-        render_files(d1, varg, submitdir, dlist=[d1, d2, varg["dest"]])
+        varg["N"] = saveN
+        render_files(d1, varg, submitdir, dlist=[d1, d2, submitdir])
         if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "maxconcurrent.dag"), varg, schedd_name)

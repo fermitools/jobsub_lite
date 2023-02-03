@@ -188,6 +188,16 @@ def xx_test_launch_lookaround_dune_gp(dune_gp):
 
 
 @pytest.mark.integration
+def test_maxconcurrent(samdev):
+    lookaround_launch("--maxConcurrent 2 -N 6 ")
+
+
+@pytest.mark.integration
+def test_maxconcurrent_dataset(samdev):
+    fife_launch("--maxConcurrent 2")
+
+
+@pytest.mark.integration
 def test_dash_f_plain(dune_test_file):
     lookaround_launch(
         f"-f {dune_test_file}",
