@@ -6,6 +6,47 @@ export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}.use
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}.use
 {% endif %}
 
+redirect_output_start(){
+    exec 7>&1
+    exec >${JSB_TMP}/JOBSUB_LOG_FILE
+    exec 8>&2
+    exec 2>${JSB_TMP}/JOBSUB_ERR_FILE
+}
+
+redirect_output_finish(){
+    exec 1>&7 7>&-
+    exec 2>&8 8>&-
+    cat ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2
+    cat ${JSB_TMP}/JOBSUB_LOG_FILE
+    {%if outurl%}
+    {% set filebase %}samend.$CLUSTER.$PROCESS{% endset %}
+    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp condor_exec.exe {{outurl}}/samend.sh
+    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp dagend.cmd {{outurl}}/dagend.cmd
+    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_ERR_FILE {{outurl}}/{{filebase}}.err
+    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_LOG_FILE {{outurl}}/{{filebase}}.out
+    {%endif%}
+}
+
+normal_exit(){
+    redirect_output_finish
+}
+
+signal_exit(){
+    echo "$@ "
+    echo "$@ " 1>&2
+    exit 255
+}
+
+trap normal_exit EXIT
+trap "signal_exit received signal TERM"  TERM
+trap "signal_exit received signal KILL" KILL
+trap "signal_exit received signal ABRT" ABRT
+trap "signal_exit received signal QUIT" QUIT
+trap "signal_exit received signal ALRM" ALRM
+trap "signal_exit received signal INT" INT
+trap "signal_exit received signal BUS" BUS
+trap "signal_exit received signal PIPE" PIPE
+
 setup_ifdh_env(){
 #
 # create ifdh.sh which runs
@@ -48,11 +89,13 @@ chmod +x ${JSB_TMP}/ifdh.sh
 }
 
 
-echo `date` BEGIN executing /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.samend.sh
->&2 echo `date` BEGIN executing /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.samend.sh
 export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp
 mkdir -p $JSB_TMP
+redirect_output_start
 setup_ifdh_env
+echo `date` BEGIN executing /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.samend.sh
+>&2 echo `date` BEGIN executing /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.samend.sh
+
 if [ "$SAM_PROJECT" = "" ]; then
 SAM_PROJECT=$1
 fi

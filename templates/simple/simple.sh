@@ -115,8 +115,8 @@ redirect_output_finish(){
     jobsub_truncate ${JSB_TMP}/JOBSUB_LOG_FILE
     {%if outurl%}
     {% set filebase %}{{executable|basename}}{{datetime}}{{uuid}}cluster.$CLUSTER.$PROCESS{% endset %}
-    ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_ERR_FILE.truncated {{outurl}}/{{filebase}}.err
-    ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_LOG_FILE.truncated {{outurl}}/{{filebase}}.out
+    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_ERR_FILE.truncated {{outurl}}/{{filebase}}.err
+    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_LOG_FILE.truncated {{outurl}}/{{filebase}}.out
     {%endif%}
 }
 
