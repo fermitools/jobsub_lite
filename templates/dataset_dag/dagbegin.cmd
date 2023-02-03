@@ -4,7 +4,7 @@ universe           = vanilla
 executable         = sambegin.sh
 arguments          =
 
-{% set filebase %}sambegin.$(Cluster)$(Process){% endset %}
+{% set filebase %}sambegin.$(Cluster).$(Process){% endset %}
 output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
