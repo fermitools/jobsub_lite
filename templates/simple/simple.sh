@@ -365,9 +365,9 @@ ${JSB_TMP}/ifdh.sh log "mengel:$JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT  
 {%if outurl%}
 # copy script and jdf out to dcache sandbox
 if [ "$PROCESS" -eq 0 ]; then
-${JSB_TMP}/ifdh.sh cp $JOBSUB_EXE_SCRIPT {{outurl}}/{{executable|basename}}
+IFDH_CP_MAXRETRIES=0 ${JSB_TMP}/ifdh.sh cp $JOBSUB_EXE_SCRIPT {{outurl}}/{{executable|basename}}
 {% set cmdfile %}{{cmd_name|default('simple.cmd')}}{% endset %}
-${JSB_TMP}/ifdh.sh cp {{cmdfile}} {{outurl}}/{{cmdfile}}
+IFDH_CP_MAXRETRIES=0 ${JSB_TMP}/ifdh.sh cp {{cmdfile}} {{outurl}}/{{cmdfile}}
 fi
 {%endif%}
 
