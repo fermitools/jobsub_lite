@@ -139,9 +139,19 @@ def do_tarballs(args: argparse.Namespace) -> None:
                 )
 
             if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
+                # make sure they'll be able to read it, etc.
+                savemode = os.stat(pfn).st_mode
+                try:
+                    os.chmod(pfn, 0o755)
+                except OSError:
+                    pass
                 tarfile = tar_up(
                     os.path.dirname(pfn), "/dev/null", os.path.basename(pfn)
                 )
+                try:
+                    os.chmod(pfn, savemode)
+                except OSError:
+                    pass
                 clean_up.append(tarfile)
                 path = tarfile_in_dropbox(args, tarfile)
                 if path:
