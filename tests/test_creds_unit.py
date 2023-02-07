@@ -54,3 +54,12 @@ class TestCredUnit:
         assert os.path.exists(os.environ["BEARER_TOKEN_FILE"])
         assert os.path.exists(proxy)
         assert os.path.exists(token)
+
+    @pytest.mark.unit
+    def test_get_creds_default_role(self):
+        """get credentials, make sure the credentials files returned
+        exist"""
+        args = {}
+        os.environ["GROUP"] = TestUnit.test_group
+        _, _ = creds.get_creds(args)
+        assert args["role"] == "Analysis"
