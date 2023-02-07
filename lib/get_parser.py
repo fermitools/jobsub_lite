@@ -88,7 +88,8 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
         default=os.environ.get("GROUP", None),
     )
     group.add_argument(
-        "--role", help="VOMS Role for priorities and accounting", default="Analysis"
+        "--role",
+        help="VOMS Role for priorities and accounting",
     )
     group.add_argument(
         "--subgroup",
