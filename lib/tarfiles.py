@@ -62,6 +62,20 @@ class TokenAuth(AuthBase):  # type: ignore
         return r
 
 
+def tarchmod(tfn: str) -> str:
+    """copy a tarfile to a compressed tarfile changing modes of contents to 755"""
+    os.environ["GZIP"] = "-n"
+    ofn = f"{tfn}.o.gz"
+    with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(ofn, "w|gz") as fout:
+        ti = fin.next()
+        while ti:
+            st = fin.extractfile(ti)
+            ti.mode = 0o755
+            fout.addfile(ti, st)
+            ti = fin.next()
+    return ofn
+
+
 def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     """build directory.tar from path/to/directory"""
     if not directory:
@@ -207,7 +221,7 @@ def do_tarballs(args: argparse.Namespace) -> None:
             print(f"Notice: unable to remove generated tarfile {tarfile}")
 
 
-def tarfile_in_dropbox(args: argparse.Namespace, tfn: str) -> Optional[str]:
+def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
     """
     upload a tarfile to the dropbox, return its path there
     """
@@ -215,6 +229,9 @@ def tarfile_in_dropbox(args: argparse.Namespace, tfn: str) -> Optional[str]:
     if args.verbose > 3:
         # if we're *really* debugging, dump the http connections...
         http.client.HTTPConnection.debuglevel = 5
+
+    # redo tarfile to have contents with world read perms before publishing
+    tfn = tarchmod(origtfn)
 
     location: Optional[str] = ""
     if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
@@ -269,6 +286,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, tfn: str) -> Optional[str]:
         raise (
             NotImplementedError(f"unknown tar distribution method: {args.use_dropbox}")
         )
+    os.unlink(tfn)
     return location
 
 
