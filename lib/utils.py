@@ -27,7 +27,7 @@ import shutil
 import time
 from typing import Union, Dict, Any, NamedTuple, Tuple, List
 
-ONSITE_SITE_NAME = "Fermigrid"
+ONSITE_SITE_NAME = "FermiGrid"
 DEFAULT_USAGE_MODELS = ["DEDICATED", "OPPORTUNISTIC", "OFFSITE"]
 
 
@@ -395,15 +395,19 @@ def resolve_site_and_usage_model(
     def _check_valid_site_usage_model_pair(
         sites: List[str], usage_models: List[str]
     ) -> None:
+        lower_sites = [s.lower() for s in sites]
         # Sanity-check the site-usage_model combination
         # Check 1:  If usage_models are only onsite, make sure sites is ONSITE_SITE_NAME, or sites is empty
-        if "OFFSITE" not in usage_models and sites not in ([ONSITE_SITE_NAME], [""]):
+        if "OFFSITE" not in usage_models and lower_sites not in (
+            [ONSITE_SITE_NAME.lower()],
+            [""],
+        ):
             raise SiteAndUsageModelConflictError(
                 ",".join(sites), ",".join(usage_models)
             )
 
         # Check 2:  If usage_models are only offsite, make sure sites does not include ONSITE_SITE_NAME
-        if usage_models == ["OFFSITE"] and ONSITE_SITE_NAME in sites:
+        if usage_models == ["OFFSITE"] and ONSITE_SITE_NAME.lower() in lower_sites:
             raise SiteAndUsageModelConflictError(
                 ",".join(sites), ",".join(usage_models)
             )
@@ -434,16 +438,29 @@ def resolve_site_and_usage_model(
         )
 
     usage_model_regex = re.compile("usage_model=(.+)")
+
+    # Correct case of onsite site if it's given
+    split_given = given_sites.split(",")
+    corrected_given_split = [
+        ONSITE_SITE_NAME if s.lower() == ONSITE_SITE_NAME.lower() else s
+        for s in split_given
+    ]  # If the wrong case was given for the onsite site, correct it.
+    given_sites_corrected = ",".join(corrected_given_split)
+
     derived_sites: str = ""
-    derived_sites_list = given_sites.split(",")
+    derived_sites_list = given_sites_corrected.split(",")
     # Case 1: --site provided on the command line.  Set usage model accordingly
-    if given_sites != "":
+    if given_sites_corrected != "":
         derived_usage_model_string = ""
-        if len(derived_sites_list) == 1 and derived_sites_list[0] == ONSITE_SITE_NAME:
+        if (
+            len(derived_sites_list) == 1
+            and derived_sites_list[0].lower() == ONSITE_SITE_NAME.lower()
+        ):
             # Just asking for ONSITE_SITE_NAME
             derived_usage_model_string = "DEDICATED,OPPORTUNISTIC"
         else:
-            if ONSITE_SITE_NAME in derived_sites_list:
+            derived_sites_list_lower = [d.lower() for d in derived_sites_list]
+            if ONSITE_SITE_NAME.lower() in derived_sites_list_lower:
                 # Asking for ONSITE_SITE_NAME and other sites
                 derived_usage_model_string = "DEDICATED,OPPORTUNISTIC,OFFSITE"
             else:
@@ -454,7 +471,7 @@ def resolve_site_and_usage_model(
         return (
             SiteAndUsageModel(
                 *_sanitize_sites_and_usage_models(
-                    given_sites, derived_usage_model_string
+                    given_sites_corrected, derived_usage_model_string
                 )
             ),
             _strip_usage_model_from_resource_provides(resource_provides_quoted),
@@ -465,8 +482,8 @@ def resolve_site_and_usage_model(
     if (given_usage_model != "") and (
         sorted(derived_usage_models) != sorted(DEFAULT_USAGE_MODELS)
     ):
-        if "OFFSITE" not in derived_usage_models and given_sites == "":
-            # If they've only asked for onsite, add Fermigrid in the sites list.  Not entirely necessary,
+        if "OFFSITE" not in derived_usage_models and given_sites_corrected == "":
+            # If they've only asked for onsite, add FermiGrid in the sites list.  Not entirely necessary,
             # but it makes explicit what the user has asked for
             derived_sites = ONSITE_SITE_NAME
             derived_sites_list = derived_sites.split(",")

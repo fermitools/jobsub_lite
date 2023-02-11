@@ -385,6 +385,16 @@ class TestUtilsUnit:
                     [],
                 ),
             ),
+            # --site FERMIGRID --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE (wrong case for fermigrid)
+            (
+                "FERMIGRID",
+                "",
+                ['usage_model="DEDICATED,OPPORTUNISTIC,OFFSITE"'],
+                (
+                    utils.SiteAndUsageModel("FermiGrid", "DEDICATED,OPPORTUNISTIC"),
+                    [],
+                ),
+            ),
         ]
 
         for (sites, usage_model, resource_provides_quoted, expected) in _should_work:
