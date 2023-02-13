@@ -106,7 +106,36 @@ class TestDagnabbitUnit:
             },
         )
 
-    def do_one_dagnabbit(self, dagfile, flist, check4={}):
+    @pytest.mark.unit
+    def test_parse_dagnabbit_collapse_H(self):
+        """test dagnabbit parser collapsing project.py duplicated stage dags"""
+        self.do_one_dagnabbit(
+            "dagTestH",
+            [
+                # we should have scripts/cmd files for stages 1,2,12
+                "dag.dag",
+                "stage_1.sh",
+                "stage_2.sh",
+                "stage_12.sh",
+            ],
+            {
+                # our stage_3..11 should all use stage_2.cmd
+                "dag.dag": "JOB stage_3 stage_2.cmd",
+                "dag.dag": "JOB stage_4 stage_2.cmd",
+                "dag.dag": "JOB stage_11 stage_2.cmd",
+            },
+            [
+                # we should NOT have scripts/cmd files for stages 3..11
+                "stage_3.cmd",
+                "stage_3.sh",
+                "stage_4.cmd",
+                "stage_4.sh",
+                "stage_11.cmd",
+                "stage_11.sh",
+            ],
+        )
+
+    def do_one_dagnabbit(self, dagfile, flist, check4={}, fnotlist=[]):
         """test dagnabbit parser on given dagfile make sure it generates
         expected list of files"""
         varg = TestUnit.test_vargs.copy()
@@ -131,6 +160,9 @@ class TestDagnabbitUnit:
 
         for f in flist:
             assert os.path.exists(f"{dest}/{f}")
+
+        for f in fnotlist:
+            assert not os.path.exists(f"{dest}/{f}")
 
         for f, regexp in check4.items():
             with open(f"{dest}/{f}", "r") as fd:

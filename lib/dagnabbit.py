@@ -208,7 +208,7 @@ def parse_dagnabbit(
                         )
                     of.write(f"\nJOB {name} {name}.cmd\n")
                     of.write(
-                        f'VARS {name} JOBSUBJOBSECTION="{count}" CM2="{count-2}" CM2="{count-1}" nodename="$(JOB)"\n'
+                        f'VARS {name} JOBSUBJOBSECTION="{count}" CM2="{count-2}" CM1="{count-1}" nodename="$(JOB)"\n'
                     )
 
                 if in_serial:
