@@ -166,7 +166,7 @@ def get_parser() -> argparse.ArgumentParser:
         " If UNITS is not specified default is 'KB' (a typo in earlier"
         " versions said that default was 'MB', this was wrong)."
         " Allowed values for UNITS are 'KB','MB','GB', and 'TB'",
-        default="35GB",
+        default="10GB",
     )
     parser.add_argument(
         "-d",
