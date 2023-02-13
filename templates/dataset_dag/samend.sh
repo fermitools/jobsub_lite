@@ -93,8 +93,8 @@ export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp
 mkdir -p $JSB_TMP
 redirect_output_start
 setup_ifdh_env
-echo `date` BEGIN executing /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.samend.sh
->&2 echo `date` BEGIN executing /fife/local/scratch/uploads/fermilab/mengel/2020-01-14_162931.318256_6730/fife_wrap_20200114_162957_3316054.samend.sh
+echo `date` BEGIN executing samend.sh
+>&2 echo `date` BEGIN executing samend.sh
 
 if [ "$SAM_PROJECT" = "" ]; then
 SAM_PROJECT=$1
