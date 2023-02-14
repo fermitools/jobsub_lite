@@ -271,8 +271,8 @@ chmod u+x ${CONDOR_DIR_INPUT}/{{fname|basename}}
 
 # -d directories for output
 {%for pair in d%}
-export JOBSUB_OUT_{{pair[0]}}=out_{{pair[0]}}
-mkdir $JOBSUB_OUT_{{pair[0]}}
+export CONDOR_DIR_{{pair[0]}}=out_{{pair[0]}}
+mkdir $CONDOR_DIR_{{pair[0]}}
 {%endfor%}
 
 # ==========
@@ -373,7 +373,7 @@ JOB_RET_STATUS=$?
 
 # copy out -d directories
 {%for pair in d%}
-${JSB_TMP}/ifdh.sh cp -D $JOBSUB_OUT_{{pair[0]}}/* {{pair[1]}}
+${JSB_TMP}/ifdh.sh cp -D $CONDOR_DIR_{{pair[0]}}/* {{pair[1]}}
 {%endfor%}
 
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS
