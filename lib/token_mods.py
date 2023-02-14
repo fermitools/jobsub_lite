@@ -55,7 +55,8 @@ def use_token_copy(tokenfile: str) -> str:
 def get_token_scope(tokenfilename: str) -> List[str]:
     """get the list of scopes from our token file"""
 
-    with os.popen(f"decode_token.sh -e scope {tokenfilename}", "r") as sf:
+    jldir = os.path.dirname(os.path.dirname(__file__))
+    with os.popen(f"{jldir}/bin/decode_token.sh -e scope {tokenfilename}", "r") as sf:
         data = sf.read()
         scopelist = data.strip().strip('"').split(" ")
 
