@@ -4,7 +4,7 @@
 universe           = vanilla
 executable         = {{script_name|default('simple.sh')}}
 arguments          = {{exe_arguments|join(" ")}}
-{% set filebase %}{{executable|basename}}{{date}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
+{% set filebase %}{{executable|basename}}{{datetime}}{{uuid}}cluster.$(Cluster).$(Process){% endset %}
 output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
@@ -46,6 +46,8 @@ notify_user = {{email_to}}
 
 +Jobsub_Group="{{group}}"
 +JobsubJobId="$(CLUSTER).$(PROCESS)@{{schedd}}"
++JobsubOutputURL="{{outurl}}"
++JobsubUUID="{{uuid}}"
 +Drain = False
 
 {% if site is defined and site != 'LOCAL' %}

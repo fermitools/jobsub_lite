@@ -123,7 +123,9 @@ def set_extras_n_fix_units(
     if not "uuid" in args:
         args["uuid"] = str(uuid.uuid4())
     if not "date" in args:
-        args["date"] = datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S")
+        now = datetime.datetime.now()
+        args["date"] = now.strftime("%Y_%m_%d")
+        args["datetime"] = now.strftime("%Y_%m_%d_%H%M%S")
     if args["verbose"] > 1:
         sys.stderr.write(
             f"checking args[executable]: {repr(args.get('executable', None))}\n"
@@ -153,8 +155,14 @@ def set_extras_n_fix_units(
     args["usage_model"] = site_and_usage_model.usage_models
     args["resource_provides_quoted"] = new_resource_provides
 
+    if not "outurl" in args:
+        args["outurl"] = ""
+        if "JOBSUB_OUTPUT_URL" in os.environ:
+            base = os.environ["JOBSUB_OUTPUT_URL"]
+            args["outurl"] = "/".join((base, args["date"], args["uuid"]))
+
     if not "outdir" in args:
-        args["outdir"] = f"{args['outbase']}/js_{args['date']}_{args['uuid']}"
+        args["outdir"] = f"{args['outbase']}/js_{args['datetime']}_{args['uuid']}"
         args["submitdir"] = args["outdir"]
 
     if not os.path.exists(args["outdir"]):
