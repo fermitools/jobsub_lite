@@ -17,6 +17,7 @@
 import sys
 import os
 import os.path
+import re
 from typing import Dict, List, Any
 
 import jinja2 as jinja  # type: ignore
@@ -43,6 +44,8 @@ def parse_dagnabbit(
     jinja_env = jinja.Environment(loader=jinja.FileSystemLoader(srcdir))
     jinja_env.filters["basename"] = os.path.basename
     proxy, token = creds.get_creds(values)
+    prev_jobsub_line = "xxx"
+    prev_jobsub_count = 0
     count = 0
     linenum = 0
     pstack: List[List[List[str]]] = []
@@ -133,50 +136,80 @@ def parse_dagnabbit(
                 in_postscript = False
                 count = count + 1
                 name = f"stage_{count}"
-                parser = get_parser()
-                try:
-                    line_argv = line.strip().split()[1:]
-                    backslash_escape_layer(line_argv)
-                    res = parser.parse_args(line_argv)
-                except:
-                    sys.stderr.write(f"Error at file {values['dag']} line {linenum}\n")
-                    sys.stderr.write(f"parsing: {line.strip().split()}\n")
-                    sys.stderr.flush()
-                    raise
-                # print(f"vars(res): {repr(vars(res))}")
-                # handle -f drobpox: etc. in dag stages
-                do_tarballs(res)
-                thesevalues = values.copy()
-                thesevalues["N"] = 1
-                thesevalues["dag"] = None
-                # don't take executable from command line, only from DAG file
-                if "full_executable" in thesevalues:
-                    del thesevalues["full_executable"]
-                if "executable" in thesevalues:
-                    del thesevalues["executable"]
 
-                # we get a bunch of defaults from the command line parser that
-                # we don't want to override from the initial command line
-                update_with: Dict[str, Any] = vars(res)
-                kl = list(update_with.keys())
-                for k in kl:
-                    if update_with[k] is parser.get_default(k):
-                        del update_with[k]
+                # replace integer params matching count-2 with $(CM2) (which we will pass in as a dag
+                # job parameter) to assist compaction...
+                line = re.sub(f"\\b{count-2}\\b", "$(CM2)", line)
+                line = re.sub(f"\\b{count-1}\\b", "$(CM1)", line)
 
-                thesevalues.update(update_with)
-                set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
-                thesevalues["script_name"] = f"{name}.sh"
-                thesevalues["cmd_name"] = f"{name}.cmd"
-                with open(
-                    os.path.join(dest, f"{name}.cmd"), "w", encoding="UTF-8"
-                ) as cf:
-                    cf.write(jinja_env.get_template("simple.cmd").render(**thesevalues))
-                with open(
-                    os.path.join(dest, f"{name}.sh"), "w", encoding="UTF-8"
-                ) as csf:
-                    csf.write(jinja_env.get_template("simple.sh").render(**thesevalues))
-                of.write(f"\nJOB {name} {name}.cmd\n")
-                of.write(f'VARS {name} JOBSUBJOBSECTION="{count}" nodename="$(JOB)"\n')
+                if line == prev_jobsub_line:
+
+                    prevname = f"stage_{prev_jobsub_count}"
+                    # if it is the same as the last jobsub line, just reuse the same cmd file, which
+                    # uses the same wrapper script, etc.  This considerably trims, for example,the
+                    # dag output of project.py which will happily write 1000 identical worker stages..
+                    of.write(f"\nJOB {name} {prevname}.cmd\n")
+                    of.write(
+                        f'VARS {name} JOBSUBJOBSECTION="{count}" CM2="{count-2}" CM1="{count-1} nodename="$(JOB)"\n'
+                    )
+
+                else:
+
+                    prev_jobsub_line = line
+                    prev_jobsub_count = count
+
+                    parser = get_parser()
+                    try:
+                        line_argv = line.strip().split()[1:]
+                        backslash_escape_layer(line_argv)
+                        res = parser.parse_args(line_argv)
+                    except:
+                        sys.stderr.write(
+                            f"Error at file {values['dag']} line {linenum}\n"
+                        )
+                        sys.stderr.write(f"parsing: {line.strip().split()}\n")
+                        sys.stderr.flush()
+                        raise
+                    # print(f"vars(res): {repr(vars(res))}")
+                    # handle -f drobpox: etc. in dag stages
+                    do_tarballs(res)
+                    thesevalues = values.copy()
+                    thesevalues["N"] = 1
+                    thesevalues["dag"] = None
+                    # don't take executable from command line, only from DAG file
+                    if "full_executable" in thesevalues:
+                        del thesevalues["full_executable"]
+                    if "executable" in thesevalues:
+                        del thesevalues["executable"]
+
+                    # we get a bunch of defaults from the command line parser that
+                    # we don't want to override from the initial command line
+                    update_with: Dict[str, Any] = vars(res)
+                    kl = list(update_with.keys())
+                    for k in kl:
+                        if update_with[k] is parser.get_default(k):
+                            del update_with[k]
+
+                    thesevalues.update(update_with)
+                    set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
+                    thesevalues["script_name"] = f"{name}.sh"
+                    thesevalues["cmd_name"] = f"{name}.cmd"
+                    with open(
+                        os.path.join(dest, f"{name}.cmd"), "w", encoding="UTF-8"
+                    ) as cf:
+                        cf.write(
+                            jinja_env.get_template("simple.cmd").render(**thesevalues)
+                        )
+                    with open(
+                        os.path.join(dest, f"{name}.sh"), "w", encoding="UTF-8"
+                    ) as csf:
+                        csf.write(
+                            jinja_env.get_template("simple.sh").render(**thesevalues)
+                        )
+                    of.write(f"\nJOB {name} {name}.cmd\n")
+                    of.write(
+                        f'VARS {name} JOBSUBJOBSECTION="{count}" CM2="{count-2}" CM1="{count-1}" nodename="$(JOB)"\n'
+                    )
 
                 if in_serial:
                     if not last_serial_in:
