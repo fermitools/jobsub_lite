@@ -276,6 +276,7 @@ def main():
     # token filename the conor_vault_credmon will only refresh it once for both (or all
     # three, etc.) submissions, and push that token to all the jobs with that same handle.
     #
+    token = use_token_copy(token)
     varg["job_scope"] = " ".join(
         get_job_scopes(token, args.need_storage_modify, args.need_scope)
     )
@@ -350,7 +351,7 @@ def main():
     if varg.get("no_submit", False):
         print(f"Submission files are in: {varg['submitdir']}")
     else:
-        cleanup(varg)
+        cleanup(varg, token)
 
 
 if __name__ == "__main__":
