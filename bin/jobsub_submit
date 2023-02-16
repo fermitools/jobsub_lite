@@ -213,9 +213,6 @@ def main():
     schedd_name = schedd_add.eval("Machine")
 
     #
-    # We work on a copy of our bearer token because
-    # condor_vault_storer is going to overwrite it with a token with the weakened scope
-    # then get our weakened job scopes, then
     # set the "oauth handle" we're going to use to a hash of our job scopes, so we have a
     # different handle for different scopes.  This makes condor
     # a) store the token as, say "mu2e_830a3a3188.use" and
@@ -228,7 +225,6 @@ def main():
     # token filename the conor_vault_credmon will only refresh it once for both (or all
     # three, etc.) submissions, and push that token to all the jobs with that same handle.
     #
-    token = use_token_copy(token)
     varg["job_scope"] = " ".join(
         get_job_scopes(token, args.need_storage_modify, args.need_scope)
     )
@@ -238,15 +234,13 @@ def main():
 
     set_extras_n_fix_units(varg, schedd_name, proxy, token)
     submitdir = varg["outdir"]
-
-    # if proxy:
-    #    proxy_dest=os.path.join(submitdir,os.path.basename(proxy))
-    #    shutil.copyfile(proxy, proxy_dest)
-    #    varg["proxy"] = proxy_dest
-    # if token:
-    #    token_dest=os.path.join(submitdir,os.path.basename(token))
-    #    shutil.copyfile(token, token_dest)
-    #    varg["token"] = token_dest
+    #
+    # set up to use our custom condor_vault_storer until we get the updated one in the condor
+    # release
+    #
+    os.environ[
+        "_condor_SEC_CREDENTIAL_STORER"
+    ] = f"{os.dirname(__file__)}/condor_vault_storer"
 
     if args.dag:
         varg["is_dag"] = True
