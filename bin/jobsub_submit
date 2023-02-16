@@ -291,7 +291,7 @@ def main():
     #
     os.environ[
         "_condor_SEC_CREDENTIAL_STORER"
-    ] = f"{os.dirname(__file__)}/condor_vault_storer"
+    ] = f"{os.path.dirname(__file__)}/condor_vault_storer"
 
     if args.dag:
         varg["is_dag"] = True

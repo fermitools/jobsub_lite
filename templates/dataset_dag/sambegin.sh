@@ -1,10 +1,5 @@
 #!/bin/sh -x
 
-{% if role and role != 'Analysis' %}
-export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}.use
-{% else %}
-export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}.use
-{% endif %}
 
 redirect_output_start(){
     exec 7>&1
