@@ -38,10 +38,12 @@ def cleandir(d: str) -> None:
     os.rmdir(d)
 
 
-def cleanup(varg: Dict[str, Any]) -> None:
+def cleanup(varg: Dict[str, Any], extra: str = "") -> None:
     """cleanup submit directory etc."""
     os.chdir(f'{varg["submitdir"]}/..')
     cleandir(varg["submitdir"])
+    if extra:
+        os.unlink(extra)
     # now clean up old submit directories that weren't
     # cleaned up by jobsub_submit at the time
     with os.scandir(".") as it:
