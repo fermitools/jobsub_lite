@@ -315,8 +315,7 @@ class Job:
         """
         s = self._get_schedd()
         # always retrieve whole cluster even if we were specified with
-        # a particular process id, for backwards compatability with old
-        # jobsub_fetchlog
+        # a particular process id, unless partial is True
         ssc = self.cluster
         if not partial:
             self.cluster = True
