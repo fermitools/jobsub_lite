@@ -25,8 +25,6 @@ from typing import Dict, List, Any, Tuple, Optional, Union
 import htcondor  # type: ignore
 import classad  # type: ignore
 
-import packages
-
 random.seed()
 
 # pylint: disable-next=no-member
@@ -155,7 +153,6 @@ def submit(
     cmd = f"/usr/bin/condor_submit -pool {COLLECTOR_HOST} {schedd_args} {qargs}"
     cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
     cmd = f"_condor_CREDD_HOST={schedd_name} {cmd}"
-    packages.orig_env()
     if vargs.get("verbose", 0) > 0:
         print(f"Running: {cmd}")
 

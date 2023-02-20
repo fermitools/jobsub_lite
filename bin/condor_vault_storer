@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Obtain and store condor credentials for each given oath_service
+# Obtain and store condor credentials for each given oath_service 
 # Can be run automatically from condor_submit when configured as
 #   SEC_CREDENTIAL_STORER.
 
@@ -24,8 +24,8 @@ usage()
 {
     newlineifneeded
     echo "Usage: $ME [-vd] oauth_service ..."
-    echo "  -v shows more progress than normal"
-    echo "  -d shows a lot of debug information"
+    echo "  -v shows more progress than normal" 
+    echo "  -d shows a lot of debug information" 
     echo "  Each oauth_service is an issuer optionally followed by underscore and role"
     echo "  Options may be added to each oauth_service:"
     echo "    &handle=<name>       A name to be added to the credential"
@@ -80,24 +80,8 @@ fi
 # Keep the standard duration vault token in $VTOKEN-$SERVICE to make
 #  sure that credmon has a long-duration one, but copy it to $VTOKEN if a
 #  new one is generated.
-
-ID=`id -u`
-
-# pick a uuid instead if we're poms_launcher in a poms launch
-if [ ${POMS_SUBMISSION_ID:-x} != x -a $ID = 55218 ]
-then
-    ID=`uuidgen -r`
-fi
-
-
-# if HTGETTOKENOPTS already has a vaulttokeninfile set, use that
-if echo $HTGETTOKENOPTS | grep -q '[-]-vaulttokeninfile='
-then
-    VTOKEN=`echo $HTGETTOKENOPTS | sed -e 's/.*--vaulttokeninfile=\([^ ]*\).*/\1/' `
-else
-    VTOKEN="/tmp/vt_u$ID"
-fi`
-
+ID="`id -u`"
+VTOKEN="/tmp/vt_u$ID"
 BTOKEN=""
 if [ -z "$BEARER_TOKEN_FILE" ]; then
     # Also store the bearer token with a -$SERVICE suffix
@@ -149,7 +133,7 @@ storecred() {
     fi
 }
 
-for REQUEST; do
+for REQUEST; do 
     SHOWSTORING=false
     if [ -n "$VERBOSE" ]; then
         SHOWSTORING=true
@@ -202,12 +186,12 @@ for REQUEST; do
     OPTS=("--vaulttokenttl=28d" "${OPTS[@]}" "--vaulttokeninfile=$VTOKEN-$SERVICE" "--vaulttokenfile=/dev/stdout" "--showbearerurl")
 
     # This next section may need to be done twice if it turns out that
-    # there is a valid $VTOKEN-$SERVICE vault token but there is no
-    # corresponding credential stored in credd.  The query of credd
+    # there is a valid $VTOKEN-$SERVICE vault token but there is no 
+    # corresponding credential stored in credd.  The query of credd 
     # may require an access token, however, so the query can't be done until
     # after the first time htgettoken runs.
     TRIEDAGAIN=false
-    while true; do
+    while true; do 
         verbose "Attempting to get tokens for $SERVICE"
         # First attempt to get tokens quietly without oidc.
         # If a valid vaulttokeninfile exists, it will not generate a new vault
@@ -245,6 +229,9 @@ for REQUEST; do
                     fatal "No new vault token after second try; logic error"
                 fi
                 if ! querycred $SERVICE "${STOREOPTS[@]}"; then
+                    if [ -f $VTOKEN-$SERVICE ] && [ ! -w $VTOKEN-$SERVICE ]; then
+                        fatal "No $SERVICE credentials stored and $VTOKEN-$SERVICE is readonly"
+                    fi
                     verbose "Removing $VTOKEN-$SERVICE because there are no $SERVICE credentials stored"
                     rm -f "$VTOKEN-$SERVICE"
                     TRIEDAGAIN=true
@@ -276,7 +263,7 @@ for REQUEST; do
     fi
 
     # $CRED now contains a vault token.  It is either a new, long duration
-    # vault token which needs to be exchanged for a shorter duration one, or
+    # vault token which needs to be exchanged for a shorter duration one, or 
     # it was copied from a base token, without a handle.  In the latter case
     # we need to invoke htgettoken anyway in order to calculate the vault URL
     # that credmon will need to use with the handle; the above invocation does
@@ -318,6 +305,7 @@ for REQUEST; do
 
     if [ -n "$HANDLE" ]; then
         querycred $HANDLESERVICE "${HANDLESTOREOPTS[@]}"
+        VAULTURL="$HANDLEURL"
         storecred $HANDLESERVICE "${HANDLESTOREOPTS[@]}"
     fi
 done
