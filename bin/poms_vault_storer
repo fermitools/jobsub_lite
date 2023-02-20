@@ -24,6 +24,7 @@ check_cred() {
 }
 
 store_cred() {
+  v_url="https://htvaultprod.fnal.gov:8200/v1/secret/oauth/creds/$oauth_service/$USER:default"
   printf "{\n  \"vault_token\": \"$v_tok\",\n  \"vault_token\": \"$v_url\"\n}" |
     condor_store_cred add-oauth \
      -u $USER@fnal.gov \
