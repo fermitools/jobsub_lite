@@ -42,9 +42,7 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # this means we don't need fancy ups dependencies..
 #
 sys.path.append(os.path.join(PREFIX, "lib"))
-from packages import pkg_find
 
-pkg_find("jinja")
 import jinja2 as jinja
 
 #
@@ -287,12 +285,14 @@ def main():
     set_extras_n_fix_units(varg, schedd_name, proxy, token)
     submitdir = varg["outdir"]
     #
-    # set up to use our custom condor_vault_storer until we get the updated one in the condor
-    # release
+    # set up to use our custom condor_vault_storer until we get 
+    # the updated one in the condor release
     #
-    os.environ[
-        "_condor_SEC_CREDENTIAL_STORER"
-    ] = f"{os.path.dirname(__file__)}/condor_vault_storer"
+    bindir = os.path.dirname(__file__)
+    if not os.environ.get("_condor_SEC_CREDENTIAL_STORER",""):
+        os.environ["_condor_SEC_CREDENTIAL_STORER"] = (
+            f"{bindir}/condor_vault_storer"
+        )
 
     if args.dag:
         varg["is_dag"] = True
