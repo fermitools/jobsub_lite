@@ -67,6 +67,12 @@ def main():
         help='format for downloaded archive: "tar" (default, compressed with gzip) or "zip"',
         default="tar",
     )
+    parser.add_argument(
+        "--partial",
+        action="store_true",
+        help="download only the stdout, stderr, and scripts for this jobid, not the entire sandbox",
+        default=False,
+    )
     parser.add_argument("job_id", nargs="?", help="job/submission ID")
 
     args = parser.parse_args()
@@ -114,7 +120,7 @@ def main():
 
     # get the output sandbox
     try:
-        j.transfer_data()
+        j.transfer_data(args.partial)
         transfer_complete = True
     except htcondor.HTCondorIOError as e1:
         print(f"Error in transfer_data(): {str(e1)}")

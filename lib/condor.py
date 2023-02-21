@@ -307,15 +307,17 @@ class Job:
             raise Exception(f'attribute "{attr}" not found for job "{str(self)}"')
         return res[0].eval(attr)
 
-    def transfer_data(self) -> None:
+    def transfer_data(self, partial: bool = False) -> None:
         """
-        Transfer the output sandbox, akin to calling condor_transfer_data.
+        Transfer the output sandbox, akin to calling condor_transfer_data. If
+        partial is True, only fetch logs for the specified job, not the whole
+        cluster.
         """
         s = self._get_schedd()
         # always retrieve whole cluster even if we were specified with
-        # a particular process id, for backwards compatability with old
-        # jobsub_fetchlog
+        # a particular process id, unless partial is True
         ssc = self.cluster
-        self.cluster = True
+        if not partial:
+            self.cluster = True
         s.retrieve(self._constraint())
         self.cluster = ssc
