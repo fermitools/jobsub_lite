@@ -77,15 +77,31 @@ if [ -z "$CONDOROPTS" ] && [ -z "$HTGETTOKENOPTS" ]; then
     fatal 'Neither SEC_CREDENTIAL_GETTOKEN_OPTS condor value nor $HTGETTOKENOPTS environment set'
 fi
 
+# putting this here for now, but POMS should do this for us
+if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" ]; then
+   exec 2> /tmp/cvs_$$
+   set -x
+   echo
+   echo logging to /tmp/cvs_$$
+   CONDOR_VAULT_STORER_ID=`uuidgen -r`
+   vtk=`echo $HTGETTOKENOPTS | sed -e 's/.*--vaulttokeninfile=\([^ ]*\).*/\1/' `  
+   cp $vtk /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
+   chmod 400 /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
+fi
+
+# make sure we can find condor_vault_storer
+PATH=/sbin:$PATH
+
 # Keep the standard duration vault token in $VTOKEN-$SERVICE to make
 #  sure that credmon has a long-duration one, but copy it to $VTOKEN if a
 #  new one is generated.
-ID="`id -u`"
-VTOKEN="/tmp/vt_u$ID"
+
+ID="${CONDOR_VAULT_STORER_ID:-u`id -u`}"
+VTOKEN="/tmp/vt_$ID"
 BTOKEN=""
 if [ -z "$BEARER_TOKEN_FILE" ]; then
     # Also store the bearer token with a -$SERVICE suffix
-    BTOKEN="${XDG_RUNTIME_DIR:-/tmp}/bt_u$ID"
+    BTOKEN="${XDG_RUNTIME_DIR:-/tmp}/bt_$ID"
 fi
 
 NL="
@@ -284,13 +300,18 @@ for REQUEST; do
         # properly in combination with --showbearerurl.
         TOKENOUT="$BTOKEN-${SERVICE}_$$"
     fi
-    verbose "Weakening tokens for ${HANDLESERVICE:-SERVICE}"
-    HANDLEURL="`echo "$CRED"|htgettoken "${HANDLEOPTS[@]}" -o $TOKENOUT --vaulttokeninfile=/dev/stdin "--vaulttokenfile=$VTOKEN-$SERVICE" --showbearerurl ${VERBOSE:--q}`"
-    RET="$?"
+
+    if [ -w $VTOKEN-$SERVICE ]; then
+      verbose "Weakening tokens for ${HANDLESERVICE:-SERVICE}"
+      HANDLEURL="`echo "$CRED"|htgettoken "${HANDLEOPTS[@]}" -o $TOKENOUT --vaulttokeninfile=/dev/stdin "--vaulttokenfile=$VTOKEN-$SERVICE" --showbearerurl ${VERBOSE:--q}`"
+      RET="$?"
+    fi
+
     if [ -z "$HANDLE" ]; then
         rm -f $TOKENOUT
     fi
-    if [ $RET != 0 ]; then
+
+    if [ $RET != 0 -a -w $VTOKEN-$SERVICE ]; then
         fatal "Failed to exchange vault token"
     fi
 
