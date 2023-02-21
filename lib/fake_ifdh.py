@@ -72,7 +72,8 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
 
     # if there's a role in the wlcg.groups of the token, pick that
     if os.environ.get("BEARER_TOKEN_FILE", False):
-        with os.popen("decode_token.sh $BEARER_TOKEN_FILE", "r") as f:
+        jldir = os.path.dirname(os.path.dirname(__file__))
+        with os.popen(f"{jldir}/bin/decode_token.sh $BEARER_TOKEN_FILE", "r") as f:
             token_s = f.read()
             token = json.loads(token_s)
             groups: List[str] = token.get("wlcg.groups", [])
@@ -90,7 +91,8 @@ def checkToken(tokenfile: str) -> bool:
     if not os.path.exists(tokenfile):
         return False
     exp_time = None
-    cmd = f"decode_token.sh -e exp {tokenfile} 2>/dev/null"
+    jldir = os.path.dirname(os.path.dirname(__file__))
+    cmd = f"{jldir}/bin/decode_token.sh -e exp {tokenfile} 2>/dev/null"
     with os.popen(cmd, "r") as f:
         exp_time = f.read()
     try:
@@ -138,7 +140,7 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
             raise PermissionError(f"Failed attempting '{cmd}'")
         if checkToken(tokenfile):
             return tokenfile
-        raise PermissionError(f"Failed attempting '{cmd}'")
+        raise PermissionError(f"Failed validating token from '{cmd}'")
     return tokenfile
 
 
