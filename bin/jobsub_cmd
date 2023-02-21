@@ -85,6 +85,9 @@ def main() -> None:
         passthru.append(arglist.jobid)
     if arglist.user:
         passthru.append(arglist.user)
+    # If they gave us --constraint, sanitize it and add to passthru
+    if arglist.constraint:
+        passthru.extend(["-constraint", arglist.constraint])
 
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")

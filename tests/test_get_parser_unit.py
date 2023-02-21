@@ -127,6 +127,7 @@ def all_test_args():
         "xxblacklistxx",
         "--cmtconfig",
         "xxcmtconfigxx",
+        "--constraint",
         "--cpu",
         "xxcpuxx",
         "--dag",
@@ -281,6 +282,7 @@ class TestGetParserUnit:
             "--offsite-only",
             "--offsite",
             "--jobid",
+            "--constraint",
         ]
 
         def filter_excluded(arg_list):

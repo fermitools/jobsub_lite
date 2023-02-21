@@ -125,6 +125,10 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
 def get_jobid_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     parser = get_base_parser(add_condor_epilog=add_condor_epilog)
     parser.add_argument("-J", "--jobid", dest="jobid", help="job/submission ID")
+    parser.add_argument(
+        "--constraint",
+        help="Condor constraint to filter jobs returned.  See https://htcondor.readthedocs.io/en/latest/classads/classad-mechanism.html for more details",
+    )
     return parser
 
 
