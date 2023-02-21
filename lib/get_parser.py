@@ -145,6 +145,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument("-t", help="Experiment test release dir")
     parser.add_argument(
         "--cmtconfig",
+        default=os.environ.get("CMTCONFIG", ""),
         help=" Set up minervasoft release built with cmt configuration. default is $CMTCONFIG",
     )
     parser.add_argument("--cpu", help="request worker nodes have at least NUMBER cpus")

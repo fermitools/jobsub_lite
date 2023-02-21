@@ -331,7 +331,7 @@ mkdir $CONDOR_DIR_{{pair[0]}}
 {%elif group == 'minerva' %}
   # Minerva preamble
   {%if i%}
-    source {{i}}/setup.sh -c {{r}} {{cmtconfig}}
+    source {{i}}/setup.sh -c {{cmtconfig}}
     {%if t%}
       pushd {{t}}/cmt
       cmt config
