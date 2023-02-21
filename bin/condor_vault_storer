@@ -79,12 +79,8 @@ fi
 
 # putting this here for now, but POMS should do this for us
 if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" ]; then
-   exec 2> /tmp/cvs_$$
-   set -x
-   echo
-   echo logging to /tmp/cvs_$$
    CONDOR_VAULT_STORER_ID=`uuidgen -r`
-   vtk=`echo $HTGETTOKENOPTS | sed -e 's/.*--vaulttokeninfile=\([^ ]*\).*/\1/' `  
+   vtk=`echo $HTGETTOKENOPTS | sed -e 's/.*--vaulttokeninfile=\([^ ]*\).*/\1/'`
    cp $vtk /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
    chmod 400 /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
 fi
