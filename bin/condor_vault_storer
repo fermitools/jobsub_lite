@@ -307,7 +307,7 @@ for REQUEST; do
         rm -f $TOKENOUT
     fi
 
-    if [ $RET != 0 -a -w $VTOKEN-$SERVICE ]; then
+    if [ "$RET" != 0 -a -w $VTOKEN-$SERVICE ]; then
         fatal "Failed to exchange vault token"
     fi
 
