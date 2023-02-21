@@ -72,7 +72,7 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
 
     # if there's a role in the wlcg.groups of the token, pick that
     if os.environ.get("BEARER_TOKEN_FILE", False):
-        with os.popen(f"decode_token.sh $BEARER_TOKEN_FILE", "r") as f:
+        with os.popen("decode_token.sh $BEARER_TOKEN_FILE", "r") as f:
             token_s = f.read()
             token = json.loads(token_s)
             groups: List[str] = token.get("wlcg.groups", [])
