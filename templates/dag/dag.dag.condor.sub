@@ -36,6 +36,8 @@ delegate_job_GSI_credentials_lifetime = 0
 
 +Jobsub_Group="{{group}}"
 +JobsubJobId="$(CLUSTER).$(PROCESS)@{{schedd}}"
++JobsubOutputURL="{{outurl}}"
++JobsubUUID="{{uuid}}"
 
 {% if role is defined and role and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role | lower}}
