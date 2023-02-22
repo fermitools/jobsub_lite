@@ -4,6 +4,20 @@
 # Can be run automatically from condor_submit when configured as
 #   SEC_CREDENTIAL_STORER.
 
+# putting this here for now, but POMS should do this for us -- mengel
+if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" ]; then
+   lf=/tmp/csv_$$.log
+   exec 2> $lf
+   set -x
+   echo
+   echo condor_vault_storer: debug log on $lf
+   echo
+   CONDOR_VAULT_STORER_ID=`uuidgen -r`
+   vtk=`echo $HTGETTOKENOPTS | sed -e 's/.*--vaulttokeninfile=\([^ ]*\).*/\1/'`
+   cp $vtk /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
+   chmod 400 /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
+fi
+
 ME="${0##*/}"
 
 ARGS=("$@")
@@ -75,20 +89,6 @@ fi
 CONDOROPTS="`condor_config_val SEC_CREDENTIAL_GETTOKEN_OPTS 2>/dev/null`"
 if [ -z "$CONDOROPTS" ] && [ -z "$HTGETTOKENOPTS" ]; then
     fatal 'Neither SEC_CREDENTIAL_GETTOKEN_OPTS condor value nor $HTGETTOKENOPTS environment set'
-fi
-
-# putting this here for now, but POMS should do this for us
-if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" ]; then
-   lf=/tmp/csv_$$.log
-   exec 2> $lf
-   set -x
-   echo
-   echo condor_vault_storer: debug log on $lf
-   echo
-   CONDOR_VAULT_STORER_ID=`uuidgen -r`
-   vtk=`echo $HTGETTOKENOPTS | sed -e 's/.*--vaulttokeninfile=\([^ ]*\).*/\1/'`
-   cp $vtk /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
-   chmod 400 /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
 fi
 
 # make sure we can find condor_store_cred
@@ -272,8 +272,6 @@ for REQUEST; do
         continue
     fi
 
-    ls -l  /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP >&2
-
     # $CRED now either contains a new, long duration vault token which
     # needs to be exchanged for a shorter duration one, or $CRED is empty
     # and we just need to invoke htgettoken to calculate the vault URL that
@@ -282,21 +280,23 @@ for REQUEST; do
     # so we couldn't have htgettoken calculate that URL there.
     # Normally do this exchange quietly.
     TOKENOUT=
-    if [ -n "$HANDLE" -a -n "$BTOKEN" ]; then
+    if [ -n "$HANDLE" ] && [ -n "$BTOKEN" ]; then
         # We don't necessarily need to save this token, since really the
         # weakened token is only needed in the job, but since we're generating
         # it anyway we might as well save it.  Consider stopping to generate
         # it when --nobearertoken works with --showbearerurl.
-        TOKENOUT="${BTOKEN}-$HANDLESERVICE"
-        verbose "Weakening tokens for ${HANDLESERVICE}"
+        TOKENOUT="$BTOKEN-$HANDLESERVICE"
     else
-        # TODO: When there is no handle and after htgettoken 2.0 or greater
+        # TODO: When this case happens and after htgettoken 2.0 or greater
         # is installed everywhere, use --nobearertoken instead of using a
         # temporary token name.  In older versions --nobearertoken didn't work
         # properly in combination with --showbearerurl.
-        TOKENOUT="`mktemp ${XDG_RUNTIME_DIR:-/tmp}/bt_tmpXXXXXXXXXX`"
-
+        TOKENOUT="`mktemp ${XDG_RUNTIME_DIR:-/tmp}/bt_tmp.XXXXXXXXXX`"
         trap "rm -f $TOKENOUT" 0
+    fi
+
+    if [ -n "$HANDLE" ]; then
+        verbose "Weakening token for ${HANDLESERVICE}"
     fi
 
     HANDLEURL=
@@ -306,10 +306,10 @@ for REQUEST; do
             fatal "Failed to exchange vault token"
         fi
     else
+        # Note that this case only happens when $HANDLE is set, although
+        # it's possible for $HANDLE to be set with the above case as well.
         HANDLEURL="`htgettoken "${HANDLEOPTS[@]}" -o $TOKENOUT "--vaulttokenfile=$VTOKEN-$SERVICE" --showbearerurl ${VERBOSE:--q}`"
-
-        if [ $? != 0 -a -w $VTOKEN-$SERVICE ]; then
-            ls -l  /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP >&2
+        if [ $? != 0 ]; then
             fatal "Failed to obtain weakened token"
         fi
     fi
