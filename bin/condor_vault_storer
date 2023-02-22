@@ -85,13 +85,12 @@ if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" ]; then
    chmod 400 /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
 fi
 
-# make sure we can find condor_vault_storer
-PATH=/sbin:$PATH
+# make sure we can find condor_store_cred
+PATH=/usr/sbin:$PATH
 
 # Keep the standard duration vault token in $VTOKEN-$SERVICE to make
 #  sure that credmon has a long-duration one, but copy it to $VTOKEN if a
 #  new one is generated.
-
 ID="${CONDOR_VAULT_STORER_ID:-u`id -u`}"
 VTOKEN="/tmp/vt_$ID"
 BTOKEN=""
@@ -250,15 +249,8 @@ for REQUEST; do
                     continue
                 fi
 
-                if [ -n "$HANDLE" ]; then
-                    # However, there is a handle, so we need to use the main
-                    # vault token to calculate the vault url associated with
-                    # the reduced scopes and audience of the handle.
-                    CRED="`< $VTOKEN-$SERVICE`"
-                else
-                    # Nothing to store
-                    CRED=""
-                fi
+                # Do not need to create new vault token
+                CRED=""
                 ;;
             2)  # First line is new long-lived vault token, second line is vault url
                 VAULTURL="`echo "$CRED"|(read X; read L; echo "$L")`"
@@ -270,45 +262,46 @@ for REQUEST; do
         break
     done
 
-    if [ -z "$CRED" ]; then
+    if [ -z "$CRED" ] && [ -z "$HANDLE" ]; then
         continue
     fi
 
-    # $CRED now contains a vault token.  It is either a new, long duration
-    # vault token which needs to be exchanged for a shorter duration one, or 
-    # it was copied from a base token, without a handle.  In the latter case
-    # we need to invoke htgettoken anyway in order to calculate the vault URL
-    # that credmon will need to use with the handle; the above invocation does
-    # not include reduced scopes and audiences associated with the handle, so
-    # we couldn't have htgettoken calculate that URL there.
-    # Normally do this quietly.
+    # $CRED now either contains a new, long duration vault token which
+    # needs to be exchanged for a shorter duration one, or $CRED is empty
+    # and we just need to invoke htgettoken to calculate the vault URL that
+    # credmon will need to use with the handle.  The above invocation does
+    # not include reduced scopes and audiences associated with the handle,
+    # so we couldn't have htgettoken calculate that URL there.
+    # Normally do this exchange quietly.
     TOKENOUT=
     if [ -n "$HANDLE" ]; then
         # We don't necessarily need to save this token, since really the
-        # weakened token is only need in the job, but since we're generating
+        # weakened token is only needed in the job, but since we're generating
         # it anyway we might as well save it.  Consider stopping to generate
         # it when --nobearertoken works with --showbearerurl.
         TOKENOUT="$BTOKEN-$HANDLESERVICE"
+        verbose "Weakening tokens for ${HANDLESERVICE}"
     else
         # TODO: When there is no handle and after htgettoken 2.0 or greater
         # is installed everywhere, use --nobearertoken instead of using a
         # temporary token name.  In older versions --nobearertoken didn't work
         # properly in combination with --showbearerurl.
         TOKENOUT="$BTOKEN-${SERVICE}_$$"
+        trap "rm -f $TOKENOUT" 0
     fi
 
-    if [ -w $VTOKEN-$SERVICE ]; then
-      verbose "Weakening tokens for ${HANDLESERVICE:-SERVICE}"
-      HANDLEURL="`echo "$CRED"|htgettoken "${HANDLEOPTS[@]}" -o $TOKENOUT --vaulttokeninfile=/dev/stdin "--vaulttokenfile=$VTOKEN-$SERVICE" --showbearerurl ${VERBOSE:--q}`"
-      RET="$?"
-    fi
-
-    if [ -z "$HANDLE" ]; then
-        rm -f $TOKENOUT
-    fi
-
-    if [ "$RET" != 0 -a -w $VTOKEN-$SERVICE ]; then
-        fatal "Failed to exchange vault token"
+    HANDLEURL=
+    if [ -n "$CRED" ]; then
+        HANDLEURL="`echo "$CRED"|htgettoken "${HANDLEOPTS[@]}" -o $TOKENOUT --vaulttokeninfile=/dev/stdin "--vaulttokenfile=$VTOKEN-$SERVICE" --showbearerurl ${VERBOSE:--q}`"
+        if [ $? != 0 ]; then
+            fatal "Failed to exchange vault token"
+        fi
+    else
+        # this case only happens when $HANDLE is set
+        HANDLEURL="`htgettoken "${HANDLEOPTS[@]}" -o $TOKENOUT "--vaulttokenfile=$VTOKEN-$SERVICE" --showbearerurl ${VERBOSE:--q}`"
+        if [ $? != 0 ]; then
+            fatal "Failed to obtain weakened token"
+        fi
     fi
 
     verbose "Copying $VTOKEN-$SERVICE to $VTOKEN"
