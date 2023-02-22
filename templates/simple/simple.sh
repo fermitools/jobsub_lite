@@ -117,6 +117,12 @@ redirect_output_finish(){
     {% set filebase %}{{executable|basename}}{{datetime}}{{uuid}}cluster.$CLUSTER.$PROCESS{% endset %}
     IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_ERR_FILE.truncated {{outurl}}/{{filebase}}.err
     IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_LOG_FILE.truncated {{outurl}}/{{filebase}}.out
+    # copy script and jdf out to dcache sandbox
+    if [ "$PROCESS" -eq 0 ]; then
+        IFDH_CP_MAXRETRIES=0 ${JSB_TMP}/ifdh.sh cp $JOBSUB_EXE_SCRIPT {{outurl}}/{{executable|basename}}
+        {% set cmdfile %}{{cmd_name|default('simple.cmd')}}{% endset %}
+        IFDH_CP_MAXRETRIES=0 ${JSB_TMP}/ifdh.sh cp {{cmdfile}} {{outurl}}/{{cmdfile}}
+    fi
     {%endif%}
 }
 
@@ -362,15 +368,6 @@ if [ "$JOBSUB_EXE_SCRIPT" = "" ]; then
 fi
 chmod +x $JOBSUB_EXE_SCRIPT
 ${JSB_TMP}/ifdh.sh log "mengel:$JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT   {{exe_arguments|join(" ")}} "
-
-{%if outurl%}
-# copy script and jdf out to dcache sandbox
-if [ "$PROCESS" -eq 0 ]; then
-IFDH_CP_MAXRETRIES=0 ${JSB_TMP}/ifdh.sh cp $JOBSUB_EXE_SCRIPT {{outurl}}/{{executable|basename}}
-{% set cmdfile %}{{cmd_name|default('simple.cmd')}}{% endset %}
-IFDH_CP_MAXRETRIES=0 ${JSB_TMP}/ifdh.sh cp {{cmdfile}} {{outurl}}/{{cmdfile}}
-fi
-{%endif%}
 
 export NODE_NAME=`hostname`
 export BOGOMIPS=`grep bogomips /proc/cpuinfo | tail -1 | cut -d ' ' -f2`
