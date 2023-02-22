@@ -16,10 +16,12 @@ os.chdir(os.path.dirname(__file__))
 #
 if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
     sys.path.append("/opt/jobsub_lite/lib")
-    sys.path.append("/opt/jobsub_lite/bin")
+    _old_path = os.environ["PATH"]
+    os.environ["PATH"] = f"/opt/jobsub_lite/bin:{_old_path}"
 else:
     sys.path.append("../lib")
-    sys.path.append("../bin")
+    _old_path = os.environ["PATH"]
+    os.environ["PATH"] = f"../bin:{_old_path}"
 import dagnabbit
 
 from test_unit import TestUnit
