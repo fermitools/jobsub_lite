@@ -285,13 +285,11 @@ def main():
     set_extras_n_fix_units(varg, schedd_name, proxy, token)
     submitdir = varg["outdir"]
     #
-    # set up to use our custom condor_vault_storer until we get 
+    # set up to use our custom condor_vault_storer until we get
     # the updated one in the condor release
     #
     bindir = os.path.abspath(os.path.dirname(__file__))
-    os.environ["_condor_SEC_CREDENTIAL_STORER"] = (
-        f"{bindir}/condor_vault_storer"
-    )
+    os.environ["_condor_SEC_CREDENTIAL_STORER"] = f"{bindir}/condor_vault_storer"
 
     if args.dag:
         varg["is_dag"] = True
