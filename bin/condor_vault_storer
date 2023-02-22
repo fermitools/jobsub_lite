@@ -6,12 +6,13 @@
 
 # putting this here for now, but POMS should do this for us -- mengel
 if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" ]; then
-   lf=/tmp/csv_$$.log
-   exec 2> $lf
-   set -x
-   echo
-   echo condor_vault_storer: debug log on $lf
-   echo
+   # debugging -- turn on by uncommenting
+   # lf=/tmp/csv_$$.log
+   # exec 2> $lf
+   # set -x
+   # echo
+   # echo condor_vault_storer: debug log on $lf
+   # echo
    CONDOR_VAULT_STORER_ID=`uuidgen -r`
    vtk=`echo $HTGETTOKENOPTS | sed -e 's/.*--vaulttokeninfile=\([^ ]*\).*/\1/'`
    cp $vtk /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
