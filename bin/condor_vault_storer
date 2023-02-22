@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Obtain and store condor credentials for each given oath_service 
+# Obtain and store condor credentials for each given oath_service
 # Can be run automatically from condor_submit when configured as
 #   SEC_CREDENTIAL_STORER.
 
@@ -39,8 +39,8 @@ usage()
 {
     newlineifneeded
     echo "Usage: $ME [-vd] oauth_service ..."
-    echo "  -v shows more progress than normal" 
-    echo "  -d shows a lot of debug information" 
+    echo "  -v shows more progress than normal"
+    echo "  -d shows a lot of debug information"
     echo "  Each oauth_service is an issuer optionally followed by underscore and role"
     echo "  Options may be added to each oauth_service:"
     echo "    &handle=<name>       A name to be added to the credential"
@@ -151,7 +151,7 @@ storecred() {
     fi
 }
 
-for REQUEST; do 
+for REQUEST; do
     SHOWSTORING=false
     if [ -n "$VERBOSE" ]; then
         SHOWSTORING=true
@@ -204,12 +204,12 @@ for REQUEST; do
     OPTS=("--vaulttokenttl=28d" "${OPTS[@]}" "--vaulttokeninfile=$VTOKEN-$SERVICE" "--vaulttokenfile=/dev/stdout" "--showbearerurl")
 
     # This next section may need to be done twice if it turns out that
-    # there is a valid $VTOKEN-$SERVICE vault token but there is no 
-    # corresponding credential stored in credd.  The query of credd 
+    # there is a valid $VTOKEN-$SERVICE vault token but there is no
+    # corresponding credential stored in credd.  The query of credd
     # may require an access token, however, so the query can't be done until
     # after the first time htgettoken runs.
     TRIEDAGAIN=false
-    while true; do 
+    while true; do
         verbose "Attempting to get tokens for $SERVICE"
         # First attempt to get tokens quietly without oidc.
         # If a valid vaulttokeninfile exists, it will not generate a new vault

@@ -193,7 +193,7 @@ def main():
     # While we're running in hybrid proxy/token mode, force us to get a new proxy every time we submit
     # Eventually, this arg and its support in the underlying libraries should be removed
     args.force_proxy = True
-   
+
     varg = vars(args)
 
     proxy, token = get_creds(varg)
@@ -234,13 +234,11 @@ def main():
     set_extras_n_fix_units(varg, schedd_name, proxy, token)
     submitdir = varg["outdir"]
     #
-    # set up to use our custom condor_vault_storer until we get 
+    # set up to use our custom condor_vault_storer until we get
     # the updated one in the condor release
     #
     bindir = os.path.abspath(os.path.dirname(__file__))
-    os.environ["_condor_SEC_CREDENTIAL_STORER"] = (
-        f"{bindir}/condor_vault_storer"
-    )
+    os.environ["_condor_SEC_CREDENTIAL_STORER"] = f"{bindir}/condor_vault_storer"
 
     if args.dag:
         varg["is_dag"] = True
