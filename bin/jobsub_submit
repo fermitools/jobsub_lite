@@ -237,11 +237,10 @@ def main():
     # set up to use our custom condor_vault_storer until we get 
     # the updated one in the condor release
     #
-    bindir = os.path.dirname(__file__)
-    if not os.environ.get("_condor_SEC_CREDENTIAL_STORER",""):
-        os.environ["_condor_SEC_CREDENTIAL_STORER"] = (
-            f"{bindir}/condor_vault_storer"
-        )
+    bindir = os.path.abspath(os.path.dirname(__file__))
+    os.environ["_condor_SEC_CREDENTIAL_STORER"] = (
+        f"{bindir}/condor_vault_storer"
+    )
 
     if args.dag:
         varg["is_dag"] = True
