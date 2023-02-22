@@ -53,4 +53,5 @@ class TestUnit:
         "email_to": "test_user@fnal.gov",
         "version": "test_version",
         "resource_provides_quoted": "usage_model=TEST",
+        "outurl": "https://www.fnal.gov",
     }
