@@ -158,7 +158,12 @@ def set_extras_n_fix_units(
     if not "outurl" in args:
         args["outurl"] = ""
         if "JOBSUB_OUTPUT_URL" in os.environ:
+            # the path included in the output url needs to be included in users'
+            # tokens with storage.create scope (only!)
             base = os.environ["JOBSUB_OUTPUT_URL"]
+            # this path is sanity-checked when fetching logs, so we can't change
+            # it here without also changing the check in jobview (or whatever
+            # comes after it).
             args["outurl"] = "/".join((base, args["date"], args["uuid"]))
 
     if not "outdir" in args:
