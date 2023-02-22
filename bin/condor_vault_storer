@@ -79,6 +79,12 @@ fi
 
 # putting this here for now, but POMS should do this for us
 if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" ]; then
+   lf=/tmp/csv_$$.log
+   exec 2> $lf
+   set -x
+   echo
+   echo condor_vault_storer: debug log on $lf
+   echo
    CONDOR_VAULT_STORER_ID=`uuidgen -r`
    vtk=`echo $HTGETTOKENOPTS | sed -e 's/.*--vaulttokeninfile=\([^ ]*\).*/\1/'`
    cp $vtk /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
@@ -266,6 +272,8 @@ for REQUEST; do
         continue
     fi
 
+    ls -l  /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP >&2
+
     # $CRED now either contains a new, long duration vault token which
     # needs to be exchanged for a shorter duration one, or $CRED is empty
     # and we just need to invoke htgettoken to calculate the vault URL that
@@ -274,19 +282,20 @@ for REQUEST; do
     # so we couldn't have htgettoken calculate that URL there.
     # Normally do this exchange quietly.
     TOKENOUT=
-    if [ -n "$HANDLE" ]; then
+    if [ -n "$HANDLE" -a -n "$BTOKEN" ]; then
         # We don't necessarily need to save this token, since really the
         # weakened token is only needed in the job, but since we're generating
         # it anyway we might as well save it.  Consider stopping to generate
         # it when --nobearertoken works with --showbearerurl.
-        TOKENOUT="$BTOKEN-$HANDLESERVICE"
+        TOKENOUT="${BTOKEN}-$HANDLESERVICE"
         verbose "Weakening tokens for ${HANDLESERVICE}"
     else
         # TODO: When there is no handle and after htgettoken 2.0 or greater
         # is installed everywhere, use --nobearertoken instead of using a
         # temporary token name.  In older versions --nobearertoken didn't work
         # properly in combination with --showbearerurl.
-        TOKENOUT="$BTOKEN-${SERVICE}_$$"
+        TOKENOUT="`mktemp ${XDG_RUNTIME_DIR:-/tmp}/bt_tmpXXXXXXXXXX`"
+
         trap "rm -f $TOKENOUT" 0
     fi
 
@@ -297,9 +306,10 @@ for REQUEST; do
             fatal "Failed to exchange vault token"
         fi
     else
-        # this case only happens when $HANDLE is set
         HANDLEURL="`htgettoken "${HANDLEOPTS[@]}" -o $TOKENOUT "--vaulttokenfile=$VTOKEN-$SERVICE" --showbearerurl ${VERBOSE:--q}`"
-        if [ $? != 0 ]; then
+
+        if [ $? != 0 -a -w $VTOKEN-$SERVICE ]; then
+            ls -l  /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP >&2
             fatal "Failed to obtain weakened token"
         fi
     fi
