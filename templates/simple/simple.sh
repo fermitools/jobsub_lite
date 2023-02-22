@@ -7,8 +7,8 @@
 
 umask 002
 
-# add a link of our original name
-ln $0 {{script_name|default('simple.sh')}}
+# add a copy as our original name so the wrapper is in the job output
+cp $0 {{script_name|default('simple.sh')}}
 
 {% if not no_env_cleanup %}
 #
