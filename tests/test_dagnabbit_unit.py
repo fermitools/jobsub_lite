@@ -16,8 +16,12 @@ os.chdir(os.path.dirname(__file__))
 #
 if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
     sys.path.append("/opt/jobsub_lite/lib")
+    _old_path = os.environ["PATH"]
+    os.environ["PATH"] = f"/opt/jobsub_lite/bin:{_old_path}"
 else:
     sys.path.append("../lib")
+    _old_path = os.environ["PATH"]
+    os.environ["PATH"] = f"../bin:{_old_path}"
 import dagnabbit
 
 from test_unit import TestUnit
@@ -140,6 +144,8 @@ class TestDagnabbitUnit:
         expected list of files"""
         varg = TestUnit.test_vargs.copy()
         dest = "/tmp/dagout{0}".format(os.getpid())
+        if os.path.exists(dest):
+            os.system("rm -rf %s" % dest)
         os.mkdir(dest)
         # the dagTest uses $SUBMIT_FLAGS so make sure we set it
         os.environ[
@@ -152,7 +158,7 @@ class TestDagnabbitUnit:
         else:
             d1 = os.path.join("..", "..", "templates", "simple")
         # file has relative paths in it, so chdir there
-        os.chdir("dagnabbit")
+        os.chdir(f"{os.path.dirname(__file__)}/dagnabbit")
         varg["dag"] = 1
         varg["executable"] = f"file://{dagfile}"
         dagnabbit.parse_dagnabbit(d1, varg, dest, TestUnit.test_schedd)
