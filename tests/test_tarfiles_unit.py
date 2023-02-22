@@ -46,8 +46,7 @@ class TestTarfilesUnit:
         for i in range(5):
             filename = f"file_{i}"
             writefile = temp_path / filename
-            CONTENT = f"This is file {i}"
-            writefile.write_text(CONTENT)
+            writefile.write_text(f"This is file {i}")
         subdir_file = subdir / "test_file"
         subdir_file.write_text("This is a file in a subdirectory")
 
