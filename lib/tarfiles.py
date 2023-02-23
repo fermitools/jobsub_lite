@@ -69,8 +69,12 @@ def tarchmod(tfn: str) -> str:
     with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(ofn, "w|gz") as fout:
         ti = fin.next()
         while ti:
-            st = fin.extractfile(ti)
-            ti.mode = ti.mode | 0o755
+            if ti.type == tarfile_mod.SYMTYPE:
+                # dont mess with symlinks, and cannot extract them
+                st = None
+            else:
+                st = fin.extractfile(ti)
+                ti.mode = ti.mode | 0o755
             fout.addfile(ti, st)
             ti = fin.next()
     return ofn
