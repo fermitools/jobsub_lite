@@ -165,21 +165,23 @@ def submit(
         )
         sys.stdout.write(output.stdout)
 
+        hl = f"\n{'=-'*30}\n\n"  # highlight line to make result stand out
+
         if output.returncode < 0:
             sys.stderr.write(
-                f"Error: Child was terminated by signal {-output.returncode}\n"
+                f"{hl}Error: Child was terminated by signal {-output.returncode}{hl}\n"
             )
             return None
 
         if output.returncode > 0:
             sys.stderr.write(
-                f"Error: condor_submit exited with failed status code {output.returncode}\n"
+                f"{hl}Error: condor_submit exited with failed status code {output.returncode}{hl}\n"
             )
             return None
 
         m = re.search(r"\d+ job\(s\) submitted to cluster (\d+).", output.stdout)
         if m:
-            print(f"Use job id {m.group(1)}.0@{schedd_name} to retrieve output")
+            print(f"{hl}Use job id {m.group(1)}.0@{schedd_name} to retrieve output{hl}")
 
         return True
     except OSError as e:
