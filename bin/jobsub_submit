@@ -26,6 +26,11 @@ import os.path
 import sys
 from typing import Union, List, Dict, Any
 
+if os.environ.get("LD_LIBRARY_PATH", ""):
+    os.environ["HIDE_LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
+    del os.environ["LD_LIBRARY_PATH"]
+    os.execv(sys.argv[0], sys.argv)
+
 #
 # we are in prefix/bin/jobsub_submit, so find our prefix
 #
@@ -175,6 +180,15 @@ def main():
     # so we do that here for backwards compatability
     backslash_escape_layer(sys.argv)
     args = parser.parse_args()
+
+    # if they were trying to pass LD_LIBRARY_PATH to the job, get it from HIDE_LD_LIBRARY_PATH
+    if "LD_LIBRARY_PATH" in args.environment and os.environ.get(
+        "HIDE_LD_LIBRARY_PATH", ""
+    ):
+        args.environment = [
+            f"{x}={os.environ['HIDE_LD_LIBRARY_PATH']}" if x == "LD_LIBRARY_PATH" else x
+            for x in args.environment
+        ]
 
     if args.version:
         print(f"jobsub_lite version {version.__version__}")
