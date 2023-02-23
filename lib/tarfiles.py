@@ -70,7 +70,7 @@ def tarchmod(tfn: str) -> str:
         ti = fin.next()
         while ti:
             st = fin.extractfile(ti)
-            ti.mode = 0o755
+            ti.mode = ti.mode | 0o755
             fout.addfile(ti, st)
             ti = fin.next()
     return ofn
