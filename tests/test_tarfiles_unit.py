@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import tempfile
+import pathlib
 import pytest
 
 #
@@ -31,12 +33,33 @@ class TestTarfilesUnit:
     Use with pytest... unit tests for ../lib/*.py
     """
 
-    # lib/tarfiles.py routines...
+    dir_to_tar: tempfile.TemporaryDirectory = None
 
+    @classmethod
+    def setup_class(cls):
+        """Create our tar directory to tar up"""
+        cls.dir_to_tar = tempfile.TemporaryDirectory()
+        temp_path = pathlib.Path(cls.dir_to_tar.name)
+        subdir = temp_path / "subdir"
+        subdir.mkdir()
+        # Create test files to put in dir
+        for i in range(5):
+            filename = f"file_{i}"
+            writefile = temp_path / filename
+            writefile.write_text(f"This is file {i}")
+        subdir_file = subdir / "test_file"
+        subdir_file.write_text("This is a file in a subdirectory")
+
+    @classmethod
+    def teardown_class(cls):
+        """Delete any test remnants"""
+        cls.dir_to_tar.cleanup()
+
+    # lib/tarfiles.py routines...
     @pytest.mark.unit
     def test_tar_up_1(self):
         """make sure tar up makes a tarfile"""
-        tarfile = tarfiles.tar_up(os.path.dirname(__file__), None)
+        tarfile = tarfiles.tar_up(self.dir_to_tar.name, None)
         assert os.path.exists(tarfile)
         os.unlink(tarfile)
 
@@ -53,7 +76,7 @@ class TestTarfilesUnit:
         t1 = tarfiles.tar_up(
             os.path.dirname(__file__), "/dev/null", os.path.basename(__file__)
         )
-        h1, b1 = tarfiles.slurp_file(t1)
+        h1, _ = tarfiles.slurp_file(t1)
         print(f"h1: {h1}")
         os.system(f"md5sum {t1}")
         os.unlink(t1)
@@ -62,7 +85,7 @@ class TestTarfilesUnit:
         t2 = tarfiles.tar_up(
             os.path.dirname(__file__), "/dev/null", os.path.basename(__file__)
         )
-        h2, b2 = tarfiles.slurp_file(t2)
+        h2, _ = tarfiles.slurp_file(t2)
         print(f"h2: {h2}")
         os.system(f"md5sum {t2}")
         os.unlink(t2)
@@ -79,7 +102,7 @@ class TestTarfilesUnit:
         """test the tarfile publisher object"""
         proxy, token = needs_credentials
         # need something to publish...
-        tarfile = tarfiles.tar_up(os.path.dirname(__file__), None)
+        tarfile = tarfiles.tar_up(self.dir_to_tar.name, None)
         digest, tf = tarfiles.slurp_file(tarfile)
         cid = f"{TestUnit.test_group}/{digest}"
 
@@ -100,17 +123,17 @@ class TestTarfilesUnit:
         else:
             publisher.update_cid()
 
+        os.unlink(tarfile)
         assert location is not None
 
     @pytest.mark.unit
     def test_do_tarballs_1(self, needs_credentials):
         """test that the do_tarballs method does a dropbox:path
         processing"""
-        tdir = os.path.dirname(__file__)
         for dropbox_type in ["cvmfs", "pnfs"]:
             argv = [
                 "--tar_file_name",
-                "tardir:{0}".format(tdir),
+                "tardir:{0}".format(self.dir_to_tar.name),
                 "--use-{0}-dropbox".format(dropbox_type),
                 "--group",
                 TestUnit.test_group,
@@ -129,12 +152,11 @@ class TestTarfilesUnit:
     def test_do_tarballs_2(self, needs_credentials):
         """test that the do_tarballs method does a dropbox:path
         processing"""
-        tdir = os.path.dirname(__file__)
         for dropbox_type in ["cvmfs", "pnfs"]:
             print(f"dropbox type: {dropbox_type}\n===============")
             argv = [
                 "--tar_file_name",
-                "tardir://{0}".format(tdir),
+                "tardir://{0}".format(self.dir_to_tar.name),
                 "--use-{0}-dropbox".format(dropbox_type),
                 "--group",
                 TestUnit.test_group,

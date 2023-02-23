@@ -78,8 +78,8 @@ class TestDagnabbitUnit:
             {
                 "dag.dag": "PARENT stage_1 CHILD stage_2 stage_3",
                 "dag.dag": "PARENT stage_2 stage_5 CHILD stage_6",
-                "stage_1.sh": "ln .0 stage_1.sh",
-                "stage_6.sh": "ln .0 stage_6.sh",
+                "stage_1.sh": "cp .0 stage_1.sh",
+                "stage_6.sh": "cp .0 stage_6.sh",
             },
         )
 
@@ -105,8 +105,8 @@ class TestDagnabbitUnit:
             {
                 "dag.dag": "PARENT stage_1 CHILD stage_2 stage_4 stage_6",
                 "dag.dag": "PARENT stage_3 stage_5 stage_7 CHILD stage_8",
-                "stage_1.sh": "ln .0 stage_1.sh",
-                "stage_6.sh": "ln .0 stage_6.sh",
+                "stage_1.sh": "cp .0 stage_1.sh",
+                "stage_6.sh": "cp .0 stage_6.sh",
             },
         )
 
