@@ -23,6 +23,11 @@ import sys
 import os
 import os.path
 import argparse
+
+if os.environ.get("LD_LIBRARY_PATH", ""):
+    del os.environ["LD_LIBRARY_PATH"]
+    os.execv(sys.argv[0], sys.argv)
+
 import htcondor
 
 #
