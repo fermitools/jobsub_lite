@@ -67,7 +67,7 @@ def main() -> None:
     arglist, passthru = parser.parse_known_args()
 
     if arglist.version:
-        print(f"jobsub_lite version {version.__version__}")
+        print(f"{version.__title__} version {version.__version__}")
         exit()
 
     if arglist.support_email:

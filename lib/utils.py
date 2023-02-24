@@ -27,6 +27,8 @@ import shutil
 import time
 from typing import Union, Dict, Any, NamedTuple, Tuple, List
 
+import version
+
 ONSITE_SITE_NAME = "FermiGrid"
 DEFAULT_USAGE_MODELS = ["DEDICATED", "OPPORTUNISTIC", "OFFSITE"]
 
@@ -116,7 +118,7 @@ def set_extras_n_fix_units(
         args["ipaddr"] = "unknown"
     args["proxy"] = proxy
     args["token"] = token
-    args["jobsub_version"] = "lite_v1_0"
+    args["jobsub_version"] = f"{version.__title__}-v{version.__version__}"
     args["kerberos_principal"] = get_principal()
     args["uid"] = str(os.getuid())
 

@@ -191,7 +191,7 @@ def main():
         ]
 
     if args.version:
-        print(f"jobsub_lite version {version.__version__}")
+        print(f"{version.__title__} version {version.__version__}")
         exit()
 
     if args.support_email:
