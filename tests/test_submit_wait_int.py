@@ -258,6 +258,11 @@ def test_launch_dagnabbit_simple(samdev):
 
 
 @pytest.mark.integration
+def test_launch_dagnabbit_collapse(samdev):
+    dagnabbit_launch("--devserver", "HS")
+
+
+@pytest.mark.integration
 def test_launch_dagnabbit_dropbox(samdev):
     dagnabbit_launch("--devserver", "Dropbox")
 
