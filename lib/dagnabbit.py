@@ -150,7 +150,7 @@ def parse_dagnabbit(
                     # dag output of project.py which will happily write 1000 identical worker stages..
                     of.write(f"\nJOB {name} {prevname}.cmd\n")
                     of.write(
-                        f'VARS {name} JOBSUBJOBSECTION="{count}" CM2="{count-2}" CM1="{count-1} nodename="$(JOB)"\n'
+                        f'VARS {name} JOBSUBJOBSECTION="{count}" CM2="{count-2}" CM1="{count-1}" nodename="$(JOB)"\n'
                     )
 
                 else:
