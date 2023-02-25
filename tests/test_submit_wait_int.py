@@ -34,13 +34,14 @@ import fake_ifdh
 @pytest.fixture
 def add_links():
     # add symlink and harlink in dagnabbit directory for tarfile tests
-    f = "dagnabbit/JobA.sh"
+    os.system("/bin/pwd")
+    f = "dagnabbit/jobA.sh"
     slf = "dagnabbit/test_symlink"
     hlf = "dagnabbit/test_hardlink"
     if not os.path.exists(slf):
-        os.path.link(f, slf)
+        os.link(f, str(slf))
     if not os.path.exists(hlf):
-        os.path.symlink(f, hlf)
+        os.symlink(f, str(hlf))
     return True
 
 
