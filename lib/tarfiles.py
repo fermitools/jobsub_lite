@@ -65,16 +65,16 @@ class TokenAuth(AuthBase):  # type: ignore
 def tarchmod(tfn: str) -> str:
     """copy a tarfile to a compressed tarfile changing modes of contents to 755"""
     os.environ["GZIP"] = "-n"
-    ofn = f"{tfn}.o.gz"
+    ofn = os.path.basename(f"{tfn}.o.gz")
     with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(ofn, "w|gz") as fout:
         ti = fin.next()
         while ti:
-            if ti.type == tarfile_mod.SYMTYPE:
+            if ti.type in (tarfile_mod.SYMTYPE, tarfile_mod.LNKTYPE):
                 # dont mess with symlinks, and cannot extract them
                 st = None
             else:
                 st = fin.extractfile(ti)
-                ti.mode = ti.mode | 0o755
+            ti.mode = ti.mode | 0o755
             fout.addfile(ti, st)
             ti = fin.next()
     return ofn
