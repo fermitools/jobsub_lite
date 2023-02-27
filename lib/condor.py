@@ -42,7 +42,7 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
     devnot = "" if vargs["devserver"] else "!"
     schedds = coll.query(
         htcondor.htcondor.AdTypes.Schedd,
-        constraint="isJobsubLite=?=true"
+        constraint="IsJobsubLite=?=true"
         " && "
         f"""STRINGLISTIMEMBER("{vargs['group']}", SupportedVOList)"""
         " && "
