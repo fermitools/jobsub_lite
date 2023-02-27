@@ -32,6 +32,20 @@ import fake_ifdh
 
 
 @pytest.fixture
+def add_links():
+    # add symlink and harlink in dagnabbit directory for tarfile tests
+    os.system("/bin/pwd")
+    f = "dagnabbit/jobA.sh"
+    slf = "dagnabbit/test_symlink"
+    hlf = "dagnabbit/test_hardlink"
+    if not os.path.exists(slf):
+        os.symlink("jobA.sh", slf)
+    if not os.path.exists(hlf):
+        os.link(f, str(hlf))
+    return True
+
+
+@pytest.fixture
 def job_envs():
     os.environ["IFDH_DEBUG"] = "1"
     os.environ["IFDH_FORCE"] = "https"
@@ -214,7 +228,7 @@ def test_dash_f_dropbox_cvmfs(dune):
 
 
 @pytest.mark.integration
-def test_tar_dir_cvmfs(dune):
+def test_tar_dir_cvmfs(dune, add_links):
     lookaround_launch(
         f"--tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit --use-cvmfs-dropbox",
         f"\\$INPUT_TAR_DIR_LOCAL/ckjobA.sh",
@@ -222,7 +236,7 @@ def test_tar_dir_cvmfs(dune):
 
 
 @pytest.mark.integration
-def test_tar_dir_pnfs(dune):
+def test_tar_dir_pnfs(dune, add_links):
     lookaround_launch(
         f"--tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit --use-pnfs-dropbox",
         f"\\$INPUT_TAR_DIR_LOCAL/ckjobA.sh",

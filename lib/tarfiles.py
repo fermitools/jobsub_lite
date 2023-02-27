@@ -62,19 +62,29 @@ class TokenAuth(AuthBase):  # type: ignore
         return r
 
 
+def check_we_can_write() -> None:
+    if not os.access(".", os.W_OK):
+        print(
+            "jobsub_lite needs to create the tarball, or copy of the tarball you are attempting to upload"
+            " in the current working directory, \nbut this directory is read-only."
+        )
+        sys.exit(1)
+
+
 def tarchmod(tfn: str) -> str:
     """copy a tarfile to a compressed tarfile changing modes of contents to 755"""
     os.environ["GZIP"] = "-n"
-    ofn = f"{tfn}.o.gz"
+    ofn = os.path.basename(f"{tfn}.o.gz")
+    check_we_can_write()
     with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(ofn, "w|gz") as fout:
         ti = fin.next()
         while ti:
-            if ti.type == tarfile_mod.SYMTYPE:
+            if ti.type in (tarfile_mod.SYMTYPE, tarfile_mod.LNKTYPE):
                 # dont mess with symlinks, and cannot extract them
                 st = None
             else:
                 st = fin.extractfile(ti)
-                ti.mode = ti.mode | 0o755
+            ti.mode = ti.mode | 0o755
             fout.addfile(ti, st)
             ti = fin.next()
     return ofn
@@ -85,6 +95,7 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     if not directory:
         directory = "."
     tarfile = os.path.basename(f"{directory}.tar.gz")
+    check_we_can_write()
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
     excludes = f"--exclude-from {excludes} --exclude {tarfile}"

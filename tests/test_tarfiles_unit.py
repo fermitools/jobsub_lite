@@ -51,6 +51,8 @@ class TestTarfilesUnit:
         subdir_file.write_text("This is a file in a subdirectory")
         subdir_link = subdir / "test_link"
         subdir_link.symlink_to(subdir_file)
+        subdir_hlink = subdir / "test_hlink"
+        os.link(str(subdir_file), str(subdir_hlink))
 
     @classmethod
     def teardown_class(cls):
