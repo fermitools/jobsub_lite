@@ -40,72 +40,20 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
     # pylint: disable-next=no-member
     coll = htcondor.Collector(COLLECTOR_HOST)
     # pylint: disable-next=no-member
-    schedd_classads = coll.locateAll(htcondor.DaemonTypes.Schedd)
-
-    # locateAll gives a list of minimal classads... but
-    # need to directQuery for the full classads to check for
-    # SupportedVOList...
-
-    if vargs.get("verbose", 0) > 1:
-        print(f"schedd classads: {schedd_classads} ")
-
-    # pick schedds who do or do not have "dev" in their name, depending if
-    # we have "devserver" set...
-
-    if vargs.get("devserver", ""):
-        schedd_classads = [
-            ca for ca in schedd_classads if ca.eval("Machine").find("dev") != -1
-        ]
-    else:
-        schedd_classads = [
-            ca for ca in schedd_classads if ca.eval("Machine").find("dev") == -1
-        ]
-
-    # print("after dev check:" , [ca.eval("Machine") for ca in schedds])
-
-    full_schedd_classads = []
-
-    # figure out our DNS domain, see below
-    myhostname = socket.gethostname()
-    mydomain = myhostname[myhostname.find(".") :]
-
-    for ca in schedd_classads:
-        # we filter on domain here because schedd's in other domains are often
-        # firewalled off, and we just hang/timeout if we try to query them directly
-        if ca.eval("Machine").find(mydomain) > 0:
-            full_schedd_classads.append(
-                # pylint: disable-next=no-member
-                coll.directQuery(htcondor.DaemonTypes.Schedd, name=ca.eval("Machine"))
-            )
+    devnot = "" if vargs["devserver"] else "!"
+    schedds = coll.query(
+        htcondor.htcondor.AdTypes.Schedd,
+        constraint="isJobsubLite=?=true"
+        " && "
+        f"""STRINGLISTIMEMBER("{vargs['group']}", SupportedVOList)"""
+        " && "
+        "InDownTime != true"
+        " && "
+        f'{devnot} regexp(".*dev.*", Machine)',
+    )
 
     if vargs.get("verbose", 0) > 1:
-        print(f"post-query schedd classads: {schedd_classads} ")
-
-    # Filters to pick our schedds
-    schedds = [
-        schedd_classad
-        for schedd_classad in full_schedd_classads
-        # Pick the jobsub_lite schedds in the pool
-        if (
-            ("IsJobsubLite" in schedd_classad)
-            and (schedd_classad.eval("IsJobsubLite") == True)
-        )
-        # Only get schedds whose SupportedVOLists include our VO (group)
-        and (
-            (
-                ("SupportedVOList" in schedd_classad)
-                and (schedd_classad.eval("SupportedVOList").find(vargs["group"]) != -1)
-            )
-        )
-        # Make sure we don't pick any schedds in downtime
-        and (
-            ("InDownTime" not in schedd_classad)
-            or (
-                ("InDownTime" in schedd_classad)
-                and (schedd_classad.eval("InDownTime") != True)
-            )
-        )
-    ]
+        print(f"post-query schedd classads: {schedds} ")
 
     res = random.choice(schedds)
     return res
