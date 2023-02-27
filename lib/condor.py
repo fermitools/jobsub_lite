@@ -19,6 +19,7 @@ import sys
 import glob
 import re
 import random
+import socket
 import subprocess
 from typing import Dict, List, Any, Tuple, Optional, Union
 
@@ -63,11 +64,22 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
     # print("after dev check:" , [ca.eval("Machine") for ca in schedds])
 
     full_schedd_classads = []
+
+    # figure out our DNS domain, see below
+    myhostname = socket.gethostname()
+    mydomain = myhostname[myhostname.find(".") :]
+
     for ca in schedd_classads:
-        full_schedd_classads.append(
-            # pylint: disable-next=no-member
-            coll.directQuery(htcondor.DaemonTypes.Schedd, name=ca.eval("Machine"))
-        )
+        # we filter on domain here because schedd's in other domains are often
+        # firewalled off, and we just hang/timeout if we try to query them directly
+        if ca.eval("Machine").find(mydomain) > 0:
+            full_schedd_classads.append(
+                # pylint: disable-next=no-member
+                coll.directQuery(htcondor.DaemonTypes.Schedd, name=ca.eval("Machine"))
+            )
+
+    if vargs.get("verbose", 0) > 1:
+        print(f"post-query schedd classads: {schedd_classads} ")
 
     # Filters to pick our schedds
     schedds = [
