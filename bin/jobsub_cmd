@@ -36,7 +36,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 
 import fake_ifdh
 import get_parser
-import version
+from version import print_version, print_support_email
 
 
 class StoreGroupinEnvironment(argparse.Action):
@@ -67,12 +67,10 @@ def main() -> None:
     arglist, passthru = parser.parse_known_args()
 
     if arglist.version:
-        print(f"{version.__title__} version {version.__version__}")
-        exit()
+        print_version()
 
     if arglist.support_email:
-        print(f"Email {version.__email__} for help.")
-        exit()
+        print_support_email()
 
     if cmd != "jobsub_q":
         arglist.user = None

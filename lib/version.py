@@ -24,3 +24,13 @@ __email__ = "jobsub-support@fnal.gov"
 __license__ = "Apache License, Version 2.0"
 __author__ = "Fermi National Accelerator Laboratory"
 __copyright__ = "2023 %s" % __author__
+
+
+def print_version() -> None:
+    print(f"{__title__} version {__version__}")
+    exit()
+
+
+def print_support_email() -> None:
+    print(f"Email {__email__} for help.")
+    exit()

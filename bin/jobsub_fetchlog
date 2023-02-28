@@ -43,10 +43,10 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 # import our local parts
 #
 import creds
-import version
 from get_parser import get_jobid_parser
 from condor import Job
 from utils import cleanup
+from version import print_version, print_support_email
 
 
 def main():
@@ -82,12 +82,10 @@ def main():
     args = parser.parse_args()
 
     if args.version:
-        print(f"{version.__title__} version {version.__version__}")
-        exit()
+        print_version()
 
     if args.support_email:
-        print(f"Email {version.__email__} for help.")
-        exit()
+        print_support_email()
 
     if not args.jobid and not args.job_id:
         raise SystemExit("jobid is required.")
