@@ -197,7 +197,7 @@ def test_launch_lookaround_dune(dune):
 
 
 @pytest.mark.integration
-def xx_test_launch_lookaround_dune_gp(dune_gp):
+def test_launch_lookaround_dune_gp(dune_gp):
     lookaround_launch("")
 
 
@@ -361,7 +361,7 @@ def test_nova_fife_launch(nova):
 
 
 @pytest.mark.integration
-def xx_test_dune_gp_fife_launch(dune_gp):
+def test_dune_gp_fife_launch(dune_gp):
     fife_launch("")
 
 
