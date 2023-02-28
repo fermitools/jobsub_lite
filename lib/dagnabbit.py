@@ -140,12 +140,9 @@ def parse_dagnabbit(
                 # replace integer params matching count-2 with $(CM2)
                 # (which we will pass in as a dag # job parameter)
                 # to assist compaction...
-                # ONLY do the part after the file://script ...
-                lineparts = line.split("file:", 1)
-                if len(lineparts) == 2:
-                    lineparts[1] = re.sub(f"\\b{count-2}\\b", "$(CM2)", line)
-                    lineparts[1] = re.sub(f"\\b{count-1}\\b", "$(CM1)", line)
-                line = "file:".join(lineparts)
+                # ONLY do the very end
+                line = re.sub(f"\\b{count-2}\s*$", "$(CM2)", line)
+                line = re.sub(f"\\b{count-1}\s*$", "$(CM1)", line)
 
                 if line == prev_jobsub_line:
 
