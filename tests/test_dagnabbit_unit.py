@@ -127,6 +127,9 @@ class TestDagnabbitUnit:
                 "dag.dag": "JOB stage_3 stage_2.cmd",
                 "dag.dag": "JOB stage_4 stage_2.cmd",
                 "dag.dag": "JOB stage_11 stage_2.cmd",
+                # and our cmd should use $(CM2) but the sh should use ${CM2}
+                "stage_2.sh": r"\$\{CM2\}",
+                "stage_2.cmd": r"\$\(CM2\)",
             },
             [
                 # we should NOT have scripts/cmd files for stages 3..11
