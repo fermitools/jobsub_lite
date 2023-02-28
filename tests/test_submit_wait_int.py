@@ -182,7 +182,7 @@ def run_launch(cmd):
 def lookaround_launch(extra, verify_files=""):
     """Simple submit of our lookaround script"""
     assert run_launch(
-        f"jobsub_submit --verbose=1 -e SAM_EXPERIMENT {extra} --onsite file://`pwd`/job_scripts/lookaround.sh {verify_files}"
+        f"jobsub_submit --verbose=1 -e SAM_EXPERIMENT {extra} file://`pwd`/job_scripts/lookaround.sh {verify_files}"
     )
 
 
@@ -197,7 +197,7 @@ def test_launch_lookaround_dune(dune):
 
 
 @pytest.mark.integration
-def xx_test_launch_lookaround_dune_gp(dune_gp):
+def test_launch_lookaround_dune_gp(dune_gp):
     lookaround_launch("")
 
 
@@ -259,7 +259,6 @@ def dagnabbit_launch(extra, which=""):
         jobsub_submit \
           --verbose=2 \
           -e SAM_EXPERIMENT {extra} \
-          --onsite \
           --dag file://dagTest{which} \
         """
     )
@@ -305,7 +304,6 @@ def fife_launch(extra):
           -e IFDH_CP_MAXRETRIES \
           -e VERSION \
           -N 5  \
-          --onsite \
           --generate-email-summary \
           --expected-lifetime=2h  \
           --timeout=2h \
@@ -361,7 +359,7 @@ def test_nova_fife_launch(nova):
 
 
 @pytest.mark.integration
-def xx_test_dune_gp_fife_launch(dune_gp):
+def test_dune_gp_fife_launch(dune_gp):
     fife_launch("")
 
 
