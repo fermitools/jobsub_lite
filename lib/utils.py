@@ -130,9 +130,16 @@ def set_extras_n_fix_units(
         sys.stderr.write(
             f"checking args[executable]: {repr(args.get('executable', None))}\n"
         )
+
     if not args["executable"] and args["exe_arguments"]:
         args["executable"] = args["exe_arguments"][-1]
         args["exe_arguments"] = args["exe_arguments"][:-1]
+
+    # fixup collapsed DAG arguments.
+    args["exe_arguments"] = [
+        x.replace("$(CM1)", "${CM1}").replace("$(CM2)", "${CM2}")
+        for x in args["exe_arguments"]
+    ]
 
     if args["executable"]:
         args["full_executable"] = args["executable"]
