@@ -16,19 +16,12 @@ os.chdir(os.path.dirname(__file__))
 #
 if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
     sys.path.append("/opt/jobsub_lite/lib")
-<<<<<<< HEAD
     _old_path = os.environ["PATH"]
     os.environ["PATH"] = f"/opt/jobsub_lite/bin:{_old_path}"
 else:
     sys.path.append("../lib")
     _old_path = os.environ["PATH"]
     os.environ["PATH"] = f"../bin:{_old_path}"
-=======
-    sys.path.append("/opt/jobsub_lite/bin")
-else:
-    sys.path.append("../lib")
-    sys.path.append("../bin")
->>>>>>> ff45b39 (Go back to the assumption that users have decode_token.sh on their PATH.  Added bin dir to PATH for testing)
 import dagnabbit
 
 from test_unit import TestUnit

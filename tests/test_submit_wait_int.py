@@ -432,3 +432,55 @@ def test_check_job_output():
             fd.close()
             assert f_ok
         shutil.rmtree(outdir)
+
+
+@pytest.mark.integration
+def test_valid_constraint_space(samdev):
+    lookaround_launch("--devserver")
+    if len(joblist) == 0:
+        raise AssertionError("No jobs submitted")
+    jid = joblist[-1]
+    group = group_for_job(jid)
+    user = os.environ["USER"]
+    cmd = f"jobsub_q -G {group} --constraint 'Owner==\"{user}\"'  --jobid={jid} -format '%s' ClusterId"
+    with os.popen(cmd) as query:
+        output = query.readlines()
+        assert len(output) == 1 and output[0] in jid
+
+
+@pytest.mark.integration
+def test_valid_constraint_equal(samdev):
+    lookaround_launch("--devserver")
+    if len(joblist) == 0:
+        raise AssertionError("No jobs submitted")
+    jid = joblist[-1]
+    group = group_for_job(jid)
+    user = os.environ["USER"]
+    cmd = f"jobsub_q -G {group} --constraint='Owner==\"{user}\"'  --jobid={jid} -format '%s' ClusterId"
+    with os.popen(cmd) as query:
+        output = query.readlines()
+        assert len(output) == 1 and output[0] in jid
+
+
+@pytest.mark.integration
+def test_invalid_constraint_space(samdev):
+    cmd = f"jobsub_q -G fermilab --constraint 'thisisabadconstraintbutwillparse==true'"
+    query = os.popen(cmd)
+    output = query.readlines()
+    assert len(output) == 0
+    rc = query.close()
+    assert (
+        rc is None
+    )  # We got a 0 return code from the query even if it returned nothing
+
+
+@pytest.mark.integration
+def test_invalid_constraint_equal(samdev):
+    cmd = f"jobsub_q -G fermilab --constraint='thisisabadconstraintbutwillparse==true'"
+    query = os.popen(cmd)
+    output = query.readlines()
+    assert len(output) == 0
+    rc = query.close()
+    assert (
+        rc is None
+    )  # We got a 0 return code from the query even if it returned nothing
