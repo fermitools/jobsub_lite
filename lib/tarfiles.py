@@ -73,10 +73,9 @@ def check_we_can_write() -> None:
 
 def tarchmod(tfn: str) -> str:
     """copy a tarfile to a compressed tarfile changing modes of contents to 755"""
-    os.environ["GZIP"] = "-n"
-    ofn = os.path.basename(f"{tfn}.o.gz")
+    ofn = os.path.basename(f"{tfn}.o.bz2")
     check_we_can_write()
-    with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(ofn, "w|gz") as fout:
+    with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(ofn, "w|bz2") as fout:
         ti = fin.next()
         while ti:
             if ti.type in (tarfile_mod.SYMTYPE, tarfile_mod.LNKTYPE):

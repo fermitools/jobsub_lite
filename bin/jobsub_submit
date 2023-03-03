@@ -210,6 +210,8 @@ def main():
     # Eventually, this arg and its support in the underlying libraries should be removed
     args.force_proxy = True
 
+    do_tarballs(args)
+
     varg = vars(args)
 
     proxy, token = get_creds(varg)
@@ -218,10 +220,8 @@ def main():
         print(f"proxy is : {proxy}")
         print(f"token is : {token}")
 
-    if args.debug:
+    if args.verbose:
         sys.stderr.write(f"varg: {repr(varg)}\n")
-
-    do_tarballs(args)
 
     schedd_add = get_schedd(varg)
     schedd_name = schedd_add.eval("Machine")

@@ -192,6 +192,11 @@ def parse_dagnabbit(
                         if update_with[k] is parser.get_default(k):
                             del update_with[k]
 
+                    # the list ones here do  not get cleaned out by the above
+                    for k in ["input_file", "tar_file_name", "tar_file_orig_basenames"]:
+                        if not update_with[k]:
+                            del update_with[k]
+
                     thesevalues.update(update_with)
                     set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
                     thesevalues["script_name"] = f"{name}.sh"
