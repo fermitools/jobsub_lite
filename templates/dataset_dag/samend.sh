@@ -20,8 +20,6 @@ redirect_output_finish(){
     cat ${JSB_TMP}/JOBSUB_LOG_FILE
     {%if outurl%}
     {% set filebase %}samend.$CLUSTER.$PROCESS{% endset %}
-    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp condor_exec.exe {{outurl}}/samend.sh
-    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp dagend.cmd {{outurl}}/dagend.cmd
     IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_ERR_FILE {{outurl}}/{{filebase}}.err
     IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_LOG_FILE {{outurl}}/{{filebase}}.out
     {%endif%}

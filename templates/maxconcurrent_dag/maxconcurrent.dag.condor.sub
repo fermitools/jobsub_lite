@@ -6,7 +6,7 @@ getenv		= True
 output		= maxconcurrent.dag.lib.out
 error		= maxconcurrent.dag.lib.err
 log		= maxconcurrent.dag.dagman.log
-transfer_input_files = {{",".join(transfer_files)}},maxconcurrent.dag.condor.sub,returnOK.sh
+transfer_input_files = {{",".join(transfer_files)}},returnOK.sh
 #remove_kill_sig	= SIGUSR1
 +OtherJobRemoveRequirements	= "DAGManJobId =?= $(cluster)"
 # Note: default on_exit_remove expression:

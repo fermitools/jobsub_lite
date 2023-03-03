@@ -18,7 +18,6 @@ job_lease_duration = 3600
 notification       = Never
 transfer_error     = True
 transfer_executable= True
-transfer_input_files = dagend.cmd
 transfer_output_files=.empty_file
 when_to_transfer_output = ON_EXIT_OR_EVICT
 request_memory = 100mb
