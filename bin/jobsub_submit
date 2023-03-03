@@ -180,7 +180,7 @@ def transfer_sandbox(src_dir, dest_url):
         return
     for f in os.listdir(src_dir):
         try:
-            cp(os.path.join(src_dir, f), dest_url)
+            cp(os.path.join(src_dir, f), os.path.join(dest_url, f))
         except Exception as e:
             print(
                 f"warning: error copying {f} to sandbox, will not be available through web logs: {e}"
