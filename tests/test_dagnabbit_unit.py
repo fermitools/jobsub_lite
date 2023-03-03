@@ -75,15 +75,15 @@ class TestDagnabbitUnit:
                 "stage_5.cmd",
             ],
             {
-                "stage_1.cmd": r"environment\s*= .*foo=bar;baz=bleem.*",
-                "stage_5.cmd": r"environment\s*= .*foo=bar;baz=bleem.*",
+                "stage_1.cmd": r"environment\s*= .*baz=bleem;foo=bar.*",
+                "stage_5.cmd": r"environment\s*= .*baz=bleem;foo=bar.*",
             },
             submit_flags="-e foo=bar",
             varg_update={"environment": ["baz=bleem"]},
         )
 
     @pytest.mark.unit
-    def test_parse_dagnabbit_merge(self):
+    def test_parse_dagnabbit_merge_tar(self):
         """make sure -tar-file-name values from command line/varg and dagnabbit file get merged"""
         self.do_one_dagnabbit(
             "dagTest",
@@ -102,9 +102,9 @@ class TestDagnabbitUnit:
             ],
             {
                 "stage_1.sh": r"ifdh.sh cp /a/b/c",
-                "stage_1.sh": r"ifdh.sh cp /d/e/f",
+                "./stage_1.sh": r"ifdh.sh cp /d/e/f",
                 "stage_5.sh": r"ifdh.sh cp /a/b/c",
-                "stage_5.sh": r"ifdh.sh cp /d/e/f",
+                "./stage_5.sh": r"ifdh.sh cp /d/e/f",
             },
             submit_flags="--tar-file-name /a/b/c",
             varg_update={"tar_file_name": ["/d/e/f"]},
