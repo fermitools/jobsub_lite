@@ -200,7 +200,9 @@ def parse_dagnabbit(
                     # do not just update, rather update but also merge items that are lists
                     for k in update_with:
                         if isinstance(thesevalues.get(k, False), List):
-                            thesevalues[k].extend(update_with[k])
+                            # note this has to be a list plus, if you do thesevalues[k].extend(update_with[k]) you
+                            # keep expanding the original list and the values pile up
+                            thesevalues[k] = thesevalues[k] + update_with[k]
                         else:
                             thesevalues[k] = update_with[k]
 
