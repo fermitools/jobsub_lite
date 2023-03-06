@@ -59,6 +59,7 @@ from creds import get_creds
 from token_mods import get_job_scopes, use_token_copy
 from version import print_version, print_support_email
 from fake_ifdh import mkdir_p, cp
+import skip_checks
 
 
 def get_basefiles(dlist: List[str]) -> List[str]:
@@ -226,6 +227,13 @@ def main():
 
     if args.support_email:
         print_support_email()
+
+    if args.skip_check:
+        if args.verbose:
+            print(f"Skipped these checks: {args.skip_check}")
+        # Run all the setup items for each check to skip
+        for check in args.skip_check:
+            skip_checks.skip_check_setup(check)
 
     # We want to push users to use jobsub_submit --dag, but there are still some legacy
     # users who use the old jobsub_submit_dag executable.  This patches that use case

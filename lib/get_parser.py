@@ -19,9 +19,10 @@ import argparse
 import os
 import re
 import sys
-from typing import Union, Any
+from typing import Union, Any, List
 
 from utils import DEFAULT_USAGE_MODELS, DEFAULT_SINGULARITY_IMAGE
+import skip_checks
 
 
 def verify_executable_starts_with_file_colon(s: str) -> str:
@@ -60,6 +61,33 @@ class ConvertDebugToVerbose(argparse.Action):
     ) -> None:
         setattr(namespace, self.dest, True)
         setattr(namespace, "verbose", 1)
+
+
+class VerifyAndAddSkipCheck(argparse.Action):
+    """Action to verify that the given skip-check argument is in the allowed
+    list of checks to skip.  If it supported, the argument is added to the list
+    of checks to skip, and the attribute skip_check_{argument} is set to True in
+    the given namespace"""
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: Any,
+        option_string: Union[None, str] = None,
+    ) -> None:
+        _supported_checks = skip_checks.get_supported_checks_to_skip()
+        if values not in _supported_checks:
+            raise TypeError(
+                f'Invalid argument to flag --skip-check: "{values}". Value must '
+                f"be one of the following: {_supported_checks}"
+            )
+        checks_to_skip = getattr(namespace, self.dest, [])
+        if values not in checks_to_skip:
+            checks_to_skip.append(values)
+            setattr(namespace, self.dest, checks_to_skip)
+            new_arg_to_set = f"skip_check_{values}"
+            setattr(namespace, new_arg_to_set, True)
 
 
 def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
@@ -369,6 +397,15 @@ def get_parser() -> argparse.ArgumentParser:
         " example: --resource-provides=CVMFS=OSG will add"
         ' +DESIRED_CVMFS="OSG" to the job classad attributes and'
         " '&&(CVMFS==\"OSG\")' to the job requirements",
+    )
+    parser.add_argument(
+        "--skip-check",
+        type=str,
+        action=VerifyAndAddSkipCheck,
+        default=[],
+        help="Skip checks that jobsub_lite does by default.  Add as many --skip-check "
+        f"flags as desired.  Available checks are {skip_checks.get_supported_checks_to_skip()}."
+        "Example:  --skip-check rcds",
     )
     parser.add_argument(
         "--tar_file_name",

@@ -273,30 +273,41 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
         # cid looks something like dune/bf6a15b4238b72f82...(long hash)
         cid = f"{args.group}/{digest}"
         if args.verbose:
-            print(f"Using RCDS to publish tarball\ncid: {cid}")
+            print(f"\n\nUsing RCDS to publish tarball\ncid: {cid}")
 
         publisher = TarfilePublisherHandler(cid, proxy, token)
         location = publisher.cid_exists()
         if location is None:
             publisher.publish(tf)
-            print("Checking to see if uploaded file is published on RCDS.")
-            # pylint: disable-next=unused-variable
-            for i in range(NUM_RETRIES):
-                location = publisher.cid_exists()
-                if location is not None:
-                    print("Found uploaded file on RCDS.")
-                    break
-                if i < (NUM_RETRIES - 1):
+            if not getattr(args, "skip_check_rcds", False):
+                print("Checking to see if uploaded file is published on RCDS.")
+                # pylint: disable-next=unused-variable
+                for i in range(NUM_RETRIES):
+                    location = publisher.cid_exists()
+                    if location is not None:
+                        print("Found uploaded file on RCDS.")
+                        break
+                    if i < (NUM_RETRIES - 1):
+                        print(
+                            f"Could not locate uploaded file on RCDS.  Will retry in {RETRY_INTERVAL_SEC} seconds."
+                        )
+                        time.sleep(RETRY_INTERVAL_SEC)
+                else:
                     print(
-                        f"Could not locate uploaded file on RCDS.  Will retry in {RETRY_INTERVAL_SEC} seconds."
+                        f"Max retries {NUM_RETRIES} to find RCDS tarball at {cid} exceeded.  Exiting now."
                     )
-                    time.sleep(RETRY_INTERVAL_SEC)
+                    exit(1)
             else:
-                print(
-                    f"Max retries {NUM_RETRIES} to find RCDS tarball at {cid} exceeded.  Exiting now."
-                )
-                exit(1)
+                if args.verbose:
+                    print("Requested to publish uploaded file on RCDS.")
+                    if args.verbose > 1:
+                        print(
+                            "skip_check_rcds is set to True, so will not wait on confirmation of publish to proceed"
+                        )
+                    print("\n")
         else:
+            if args.verbose:
+                print("Found uploaded file on RCDS.")
             # tag it so it stays around
             publisher.update_cid()
 
