@@ -141,8 +141,8 @@ def parse_dagnabbit(
                 # (which we will pass in as a dag # job parameter)
                 # to assist compaction...
                 # ONLY do the very end
-                line = re.sub(f"\\b{count-2}\s*$", "$(CM2)", line)
-                line = re.sub(f"\\b{count-1}\s*$", "$(CM1)", line)
+                line = re.sub(f"\\b{count-2}\\s*$", "$(CM2)", line)
+                line = re.sub(f"\\b{count-1}\\s*$", "$(CM1)", line)
 
                 if line == prev_jobsub_line:
 
@@ -192,7 +192,20 @@ def parse_dagnabbit(
                         if update_with[k] is parser.get_default(k):
                             del update_with[k]
 
-                    thesevalues.update(update_with)
+                    # the list ones here do  not get cleaned out by the above
+                    for k in ["input_file", "tar_file_name", "tar_file_orig_basenames"]:
+                        if not update_with[k]:
+                            del update_with[k]
+
+                    # do not just update, rather update but also merge items that are lists
+                    for k in update_with:
+                        if isinstance(thesevalues.get(k, False), List):
+                            # note this has to be a list plus, if you do thesevalues[k].extend(update_with[k]) you
+                            # keep expanding the original list and the values pile up
+                            thesevalues[k] = thesevalues[k] + update_with[k]
+                        else:
+                            thesevalues[k] = update_with[k]
+
                     set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
                     thesevalues["script_name"] = f"{name}.sh"
                     thesevalues["cmd_name"] = f"{name}.cmd"

@@ -73,10 +73,9 @@ def check_we_can_write() -> None:
 
 def tarchmod(tfn: str) -> str:
     """copy a tarfile to a compressed tarfile changing modes of contents to 755"""
-    os.environ["GZIP"] = "-n"
-    ofn = os.path.basename(f"{tfn}.o.gz")
+    ofn = os.path.basename(f"{tfn}.tbz2")
     check_we_can_write()
-    with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(ofn, "w|gz") as fout:
+    with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(ofn, "w|bz2") as fout:
         ti = fin.next()
         while ti:
             if ti.type in (tarfile_mod.SYMTYPE, tarfile_mod.LNKTYPE):
@@ -94,7 +93,7 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     """build directory.tar from path/to/directory"""
     if not directory:
         directory = "."
-    tarfile = os.path.basename(f"{directory}.tar.gz")
+    tarfile = os.path.basename(f"{directory}.tgz")
     check_we_can_write()
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
@@ -212,7 +211,10 @@ def do_tarballs(args: argparse.Namespace) -> None:
     orig_basenames = []
     for tfn in args.tar_file_name:
         orig_basenames.append(
-            os.path.basename(tfn).replace(".tar", "").replace(".tgz", "")
+            os.path.basename(tfn)
+            .replace(".tbz2", "")
+            .replace(".tar", "")
+            .replace(".tgz", "")
         )
 
         if tfn.startswith("tardir://"):

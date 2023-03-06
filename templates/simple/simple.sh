@@ -253,7 +253,7 @@ chmod u+x ${CONDOR_DIR_INPUT}/{{fname|basename}}
     mkdir .unwind_{{loop.index0}}
     {%set tflocal = '.unwind_%d/%s' % (loop.index0, tfname|basename) %}
     ${JSB_TMP}/ifdh.sh cp {{tfname}} {{tflocal}}
-    tar --directory .unwind_{{loop.index0}} -xzvf {{tflocal}}
+    tar --directory .unwind_{{loop.index0}} -xjvf {{tflocal}}
     {%if loop.first%}
       INPUT_TAR_DIR_LOCAL=`pwd`/.unwind_{{loop.index0}}
       export INPUT_TAR_DIR_LOCAL

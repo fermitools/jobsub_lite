@@ -57,6 +57,60 @@ class TestDagnabbitUnit:
         )
 
     @pytest.mark.unit
+    def test_parse_dagnabbit_merge(self):
+        """make sure -e values from command line/varg and dagnabbit file get merged"""
+        self.do_one_dagnabbit(
+            "dagTest",
+            [
+                "dag.dag",
+                "stage_1.sh",
+                "stage_2.sh",
+                "stage_3.sh",
+                "stage_4.sh",
+                "stage_5.sh",
+                "stage_1.cmd",
+                "stage_2.cmd",
+                "stage_3.cmd",
+                "stage_4.cmd",
+                "stage_5.cmd",
+            ],
+            {
+                "stage_1.cmd": r"environment\s*= .*baz=bleem;foo=bar.*",
+                "stage_5.cmd": r"environment\s*= .*baz=bleem;foo=bar.*",
+            },
+            submit_flags="-e foo=bar",
+            varg_update={"environment": ["baz=bleem"]},
+        )
+
+    @pytest.mark.unit
+    def test_parse_dagnabbit_merge_tar(self):
+        """make sure -tar-file-name values from command line/varg and dagnabbit file get merged"""
+        self.do_one_dagnabbit(
+            "dagTest",
+            [
+                "dag.dag",
+                "stage_1.sh",
+                "stage_2.sh",
+                "stage_3.sh",
+                "stage_4.sh",
+                "stage_5.sh",
+                "stage_1.cmd",
+                "stage_2.cmd",
+                "stage_3.cmd",
+                "stage_4.cmd",
+                "stage_5.cmd",
+            ],
+            {
+                "stage_1.sh": r"ifdh.sh cp /a/b/c",
+                "./stage_1.sh": r"ifdh.sh cp /d/e/f",
+                "stage_5.sh": r"ifdh.sh cp /a/b/c",
+                "./stage_5.sh": r"ifdh.sh cp /d/e/f",
+            },
+            submit_flags="--tar-file-name /a/b/c",
+            varg_update={"tar_file_name": ["/d/e/f"]},
+        )
+
+    @pytest.mark.unit
     def test_parse_dagnabbit_dagTest6(self):
         """test dagnabbit parser on old jobsub dagTest example"""
         self.do_one_dagnabbit(
@@ -142,18 +196,25 @@ class TestDagnabbitUnit:
             ],
         )
 
-    def do_one_dagnabbit(self, dagfile, flist, check4={}, fnotlist=[]):
+    def do_one_dagnabbit(
+        self, dagfile, flist, check4={}, fnotlist=[], submit_flags="", varg_update=None
+    ):
         """test dagnabbit parser on given dagfile make sure it generates
         expected list of files"""
         varg = TestUnit.test_vargs.copy()
+        if varg_update:
+            varg.update(varg_update)
         dest = "/tmp/dagout{0}".format(os.getpid())
         if os.path.exists(dest):
             os.system("rm -rf %s" % dest)
         os.mkdir(dest)
         # the dagTest uses $SUBMIT_FLAGS so make sure we set it
-        os.environ[
-            "SUBMIT_FLAGS"
-        ] = "--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC"
+        if submit_flags:
+            os.environ["SUBMIT_FLAGS"] = submit_flags
+        else:
+            os.environ[
+                "SUBMIT_FLAGS"
+            ] = "--resource-provides=usage_model=DEDICATED,OPPORTUNISTIC"
         os.environ["JOBSUB_EXPORTS"] = "--mail-on-error"
         os.environ["GROUP"] = TestUnit.test_group
         if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
