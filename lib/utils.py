@@ -174,6 +174,10 @@ def set_extras_n_fix_units(
             # it here without also changing the check in jobview (or whatever
             # comes after it).
             args["outurl"] = "/".join((base, args["date"], args["uuid"]))
+        else:
+            sys.stderr.write(
+                "warning: JOBSUB_OUTPUT_URL not defined, web logs will not be available for this submission\n"
+            )
 
     if not "outdir" in args:
         args["outdir"] = f"{args['outbase']}/js_{args['datetime']}_{args['uuid']}"

@@ -17,7 +17,6 @@ job_lease_duration = 3600
 notification       = Never
 transfer_error     = True
 transfer_executable= True
-transfer_input_files = dagbegin.cmd
 when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_output_files = .empty_file
 request_memory = 100mb

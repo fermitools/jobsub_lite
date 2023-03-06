@@ -57,6 +57,7 @@ from utils import set_extras_n_fix_units, cleanup, backslash_escape_layer
 from creds import get_creds
 from token_mods import get_job_scopes, use_token_copy
 from version import print_version, print_support_email
+from fake_ifdh import mkdir_p, cp
 
 
 def get_basefiles(dlist: List[str]) -> List[str]:
@@ -163,6 +164,29 @@ def do_dataset_defaults(varg: Dict[str, Any]) -> None:
         varg["environment"].append(f"SAM_GROUP={experiment}")
 
 
+def transfer_sandbox(src_dir, dest_url):
+    """Transfer files from src_dir to sandbox with fake_ifdh (gfal-copy).
+    Nothing failing here is considered fatal, since it doesn't affect the job
+    itself, just log availability.
+
+    """
+    print("Transferring files to web sandbox...")
+    try:
+        mkdir_p(dest_url)
+    except Exception as e:
+        print(
+            f"warning: error creating sandbox, web logs will not be available for this submission: {e}"
+        )
+        return
+    for f in os.listdir(src_dir):
+        try:
+            cp(os.path.join(src_dir, f), os.path.join(dest_url, f))
+        except Exception as e:
+            print(
+                f"warning: error copying {f} to sandbox, will not be available through web logs: {e}"
+            )
+
+
 def main():
     """script mainline:
     - parse args
@@ -267,6 +291,8 @@ def main():
         parse_dagnabbit(d1, varg, submitdir, schedd_name, varg["verbose"] > 1)
         render_files(d2, varg, submitdir, dlist=[d2, submitdir])
         if not varg.get("no_submit", False):
+            if varg["outurl"]:
+                transfer_sandbox(submitdir, varg["outurl"])
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "dag.dag"), varg, schedd_name)
     elif args.dataset_definition:
@@ -283,6 +309,8 @@ def main():
         varg["N"] = saveN
         render_files(d1, varg, submitdir, dlist=[d1, d2, submitdir])
         if not varg.get("no_submit", False):
+            if varg["outurl"]:
+                transfer_sandbox(submitdir, varg["outurl"])
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "dataset.dag"), varg, schedd_name)
     elif args.maxConcurrent:
@@ -296,6 +324,8 @@ def main():
         varg["N"] = saveN
         render_files(d1, varg, submitdir, dlist=[d1, d2, submitdir])
         if not varg.get("no_submit", False):
+            if varg["outurl"]:
+                transfer_sandbox(submitdir, varg["outurl"])
             os.chdir(varg["submitdir"])
             submit_dag(os.path.join(submitdir, "maxconcurrent.dag"), varg, schedd_name)
     else:
@@ -304,6 +334,8 @@ def main():
         render_files(d, varg, submitdir)
         if not varg.get("no_submit", False):
             os.chdir(varg["submitdir"])
+            if varg["outurl"]:
+                transfer_sandbox(submitdir, varg["outurl"])
             submit(os.path.join(submitdir, "simple.cmd"), varg, schedd_name)
 
     if varg.get("no_submit", False):
