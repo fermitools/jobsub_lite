@@ -227,7 +227,7 @@ def skip_check_arg_parser():
 
 @pytest.fixture
 def get_single_valid_check_to_skip():
-    """This fixture gets a valid check from the skip_checks to set up for tests"""
+    """This fixture gets a valid check from the skip_checks module to set up for tests"""
     from skip_checks import get_supported_checks_to_skip
 
     valid_check: str = ""
