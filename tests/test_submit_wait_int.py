@@ -429,6 +429,11 @@ def test_fetch_output():
 
 @pytest.mark.integration
 def test_check_job_output():
+    for jid, ddir in ddirs.items():
+        print(f"Checking {jid2test[jid]} {jid} -d tag  {ddir}...")
+        fl = fake_ifdh.ls(ddir)
+        assert len(fl)
+
     for jid, outdir in outdirs.items():
         fl = glob.glob("%s/*.log" % outdir)
         for f in fl:
@@ -442,8 +447,3 @@ def test_check_job_output():
             fd.close()
             assert f_ok
         shutil.rmtree(outdir)
-
-    for jid, ddir in ddirs.items():
-        print(f"Checking {jid2test[jid]} {jid} -d tag  {ddir}...")
-        fl = fake_ifdh.ls(ddir)
-        assert len(fl)
