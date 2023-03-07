@@ -54,7 +54,29 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
     if vargs.get("verbose", 0) > 1:
         print(f"post-query schedd classads: {schedds} ")
 
-    res = random.choice(schedds)
+        print("")
+
+    weighted_schedds = []
+    for s in schedds:
+        name = s.eval("Name")
+        rdcdc = s.eval("RecentDaemonCoreDutyCycle")
+
+        if vargs.get("verbose", 0) > 0:
+            print(f"RecentDaemonCoreDutyCycle {name} {rdcdc}")
+
+        # add to weighted list more times the lower the duty cycle..
+        # if they're *all* not busy, that will put them all in the
+        # list 5 times, but then it will be even odds....
+        weighted_schedds.append(s)
+        if rdcdc < 0.5:
+            weighted_schedds.append(s)
+        if rdcdc < 0.1:
+            weighted_schedds.append(s)
+        if rdcdc < 0.05:
+            weighted_schedds.append(s)
+            weighted_schedds.append(s)
+
+    res = random.choice(weighted_schedds)
     return res
 
 
