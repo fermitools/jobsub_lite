@@ -130,6 +130,7 @@ def dune_gp(dune):
 joblist = []
 jid2test = {}
 outdirs = {}
+ddirs = {}
 
 
 def run_launch(cmd):
@@ -189,6 +190,15 @@ def lookaround_launch(extra, verify_files=""):
 @pytest.mark.integration
 def test_launch_lookaround_samdev(samdev):
     lookaround_launch("--devserver")
+
+
+@pytest.mark.integration
+def test_launch_lookaround_ddir(samdev):
+    pid = os.getpid()
+    ddir = f"/pnfs/fermilab/users/$USER/d{pid}"
+    fake_ifdh.mkdir_p(ddir)
+    lookaround_launch(f"--devserver -d D1 {ddir}")
+    ddirs[joblist[-1]] = ddir
 
 
 @pytest.mark.integration
@@ -419,6 +429,11 @@ def test_fetch_output():
 
 @pytest.mark.integration
 def test_check_job_output():
+    for jid, ddir in ddirs.items():
+        print(f"Checking {jid2test[jid]} {jid} -d tag  {ddir}...")
+        fl = fake_ifdh.ls(ddir)
+        assert len(fl)
+
     for jid, outdir in outdirs.items():
         fl = glob.glob("%s/*.log" % outdir)
         for f in fl:

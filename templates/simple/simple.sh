@@ -272,7 +272,7 @@ chmod u+x ${CONDOR_DIR_INPUT}/{{fname|basename}}
 
 # -d directories for output
 {%for pair in d%}
-export CONDOR_DIR_{{pair[0]}}=out_{{pair[0]}}
+export CONDOR_DIR_{{pair[0]}}=`pwd`/out_{{pair[0]}}
 mkdir $CONDOR_DIR_{{pair[0]}}
 {%endfor%}
 

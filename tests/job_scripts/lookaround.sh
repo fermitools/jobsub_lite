@@ -57,3 +57,12 @@ do
        exit 1
    fi
 done
+
+# put something in any -d TAG /return/path areas for testing
+outdirs=`printenv | grep '^CONDOR_DIR_' | sed -e 's/=.*//'`
+echo "=== out dirs: $outdirs ==="
+for od in $outdirs
+do
+   eval "echo $od = \$$od"
+   eval "echo test $od > \$$od/testout.txt"
+done
