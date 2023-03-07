@@ -230,7 +230,7 @@ def main():
 
     if args.skip_check:
         if args.verbose:
-            print(f"Skipped these checks: {args.skip_check}")
+            print(f"Will skip these checks: {args.skip_check}")
         # Run all the setup items for each check to skip
         for check in args.skip_check:
             skip_checks.skip_check_setup(check)
