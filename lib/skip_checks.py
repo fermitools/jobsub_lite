@@ -31,7 +31,7 @@ from typing import Any, List
 
 __all__ = ["SupportedSkipChecks", "skip_check_setup"]
 
-"""Internal functions to handle any presteps for each supported check to skip"""
+# Internal functions to handle any presteps for each supported check to skip
 
 
 def _print_rcds_warning() -> None:
@@ -48,10 +48,15 @@ def _print_rcds_warning() -> None:
 
 # Supported Checks to Skip
 class SupportedSkipChecks(Enum):
+    """Add checks to skip here, with the setup function they should call when skipped
+    Example:
+        foo = setup_func
+    No-op example:
+        blah = lambda *args: None
+    """
+
     rcds = _print_rcds_warning
-    # Add other checks to skip here, with the setup function they should call when skipped
-    # No-op example:
-    # blah = lambda *args: None
+
     @classmethod
     def get_all_checks(cls) -> List[str]:
         """Returns supported checks that can be skipped.  Mainly
