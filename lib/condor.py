@@ -54,7 +54,27 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
     if vargs.get("verbose", 0) > 1:
         print(f"post-query schedd classads: {schedds} ")
 
-    res = random.choice(schedds)
+        print("")
+
+    # pick weights based on (inverse) of  duty cycle of schedd
+    weights = []
+    for s in schedds:
+        name = s.eval("Name")
+        rdcdc = s.eval("RecentDaemonCoreDutyCycle")
+
+        # avoid dividing by zero, and really crazy weights for idle servers
+        # max it out at 1000
+        if rdcdc > 0.01:
+            weight = 10.0 / rdcdc
+        else:
+            weight = 1000.0
+
+        weights.append(weight)
+
+        if vargs.get("verbose", 0) > 0:
+            print(f"Schedd: {name} DutyCycle {rdcdc} weight {weight}")
+
+    res = random.choices(schedds, weights=weights)[0]
     return res
 
 
