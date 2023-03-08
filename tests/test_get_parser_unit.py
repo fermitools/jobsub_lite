@@ -228,10 +228,10 @@ def skip_check_arg_parser():
 @pytest.fixture
 def get_single_valid_check_to_skip():
     """This fixture gets a valid check from the skip_checks module to set up for tests"""
-    from skip_checks import get_supported_checks_to_skip
+    from skip_checks import SupportedSkipChecks
 
     valid_check: str = ""
-    valid_checks = get_supported_checks_to_skip()
+    valid_checks = SupportedSkipChecks.get_all_checks()
     if len(valid_checks) > 0:
         valid_check = valid_checks[0]
     return valid_check
@@ -416,13 +416,13 @@ class TestGetParserUnit:
         assert len(args.skip_check) == 1
         assert getattr(args, f"skip_check_{valid_check}", False)
 
-    def test_verify_and_add_skip_check_invalid(self, skip_check_arg_parser):
+    def test_verify_and_add_skip_check_single_invalid(self, skip_check_arg_parser):
         """This test makes sure that if we pass an invalid check to --skip-check, we
         get a TypeError"""
         with pytest.raises(TypeError, match="Invalid argument to flag --skip-check:"):
             skip_check_arg_parser.parse_args(["--skip-check", "ThisIsAFakeCheck"])
 
-    def test_verify_and_add_skip_check_invalid(
+    def test_verify_and_add_skip_check_mixed_invalid(
         self, skip_check_arg_parser, get_single_valid_check_to_skip
     ):
         """This test makes sure that if we pass a mix of valid and invalid checks

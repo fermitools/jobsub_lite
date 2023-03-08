@@ -22,7 +22,7 @@ import sys
 from typing import Union, Any, List
 
 from utils import DEFAULT_USAGE_MODELS, DEFAULT_SINGULARITY_IMAGE
-import skip_checks
+from skip_checks import SupportedSkipChecks
 
 
 def verify_executable_starts_with_file_colon(s: str) -> str:
@@ -76,7 +76,7 @@ class VerifyAndAddSkipCheck(argparse.Action):
         values: Any,
         option_string: Union[None, str] = None,
     ) -> None:
-        _supported_checks = skip_checks.get_supported_checks_to_skip()
+        _supported_checks = SupportedSkipChecks.get_all_checks()
         if values not in _supported_checks:
             raise TypeError(
                 f'Invalid argument to flag --skip-check: "{values}". Value must '
@@ -404,7 +404,7 @@ def get_parser() -> argparse.ArgumentParser:
         action=VerifyAndAddSkipCheck,
         default=[],
         help="Skip checks that jobsub_lite does by default.  Add as many --skip-check "
-        f"flags as desired.  Available checks are {skip_checks.get_supported_checks_to_skip()}."
+        f"flags as desired.  Available checks are {SupportedSkipChecks.get_all_checks()}."
         "Example:  --skip-check rcds",
     )
     parser.add_argument(

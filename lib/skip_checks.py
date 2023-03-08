@@ -20,38 +20,16 @@ of this module is to serve as both a definitive list of checks users can
 skip, and to control the warning messages users get when they elect to skip
 a check.
 
-To add a check, simply add it to the dict supported_skip_checks.
-
-Optionally create a setup function to call for that check, and register it in
-the skip_check_setup_functions dictionary at the bottom of this file.
+To add a check, simply add it to the Enum class SupportedSkipChecks, setting
+its value to an optional setup function to call for that check.
 Most of these "setup functions" will simply print a warning explaining to the user
 the consequences of skipping the check.
 """
 
-from typing import Dict, Callable, Any, List
+from enum import Enum
+from typing import Any, List
 
-__all__ = ["get_supported_checks_to_skip", "skip_check_setup"]
-
-supported_skip_checks: List[str] = ["rcds"]
-
-
-def get_supported_checks_to_skip() -> List[str]:
-    """Returns supported checks that can be skipped.  Mainly
-    for outside callers"""
-    return supported_skip_checks
-
-
-def skip_check_setup(check_name: str) -> Any:
-    """This function calls the mapped setup function in supported_skip_checks_setup_functions"""
-    if check_name not in supported_skip_checks:
-        raise TypeError(
-            f'Invalid check to skip: "{check_name}". Supported checks to skip '
-            f"are: {supported_skip_checks}"
-        )
-    # If we've registered a setup function, use that.  Otherwise, default to a no-op.
-    setup_func = skip_check_setup_functions.get(check_name, lambda *args: None)
-    return setup_func()
-
+__all__ = ["SupportedSkipChecks", "skip_check_setup"]
 
 """Internal functions to handle any presteps for each supported check to skip"""
 
@@ -68,8 +46,26 @@ def _print_rcds_warning() -> None:
     )
 
 
-# Registration of skipped check setup functions
+# Supported Checks to Skip
+class SupportedSkipChecks(Enum):
+    rcds = _print_rcds_warning
+    # Add other checks to skip here, with the setup function they should call when skipped
+    # No-op example:
+    # blah = lambda *args: None
+    @classmethod
+    def get_all_checks(cls) -> List[str]:
+        """Returns supported checks that can be skipped.  Mainly
+        for outside callers"""
+        return [key for key in cls.__members__.keys()]
 
-skip_check_setup_functions: Dict[str, Callable] = {  # type: ignore
-    "rcds": _print_rcds_warning,
-}
+
+def skip_check_setup(check_name: str, *args: Any, **kwargs: Any) -> Any:
+    """This function calls the mapped setup function in supported_skip_checks_setup_functions"""
+    try:
+        setup_func = getattr(SupportedSkipChecks, check_name)
+    except AttributeError:
+        raise AttributeError(
+            f'Invalid check to skip: "{check_name}". Supported checks to skip '
+            f"are: {SupportedSkipChecks.get_all_checks()}"
+        )
+    return setup_func(*args, **kwargs)
