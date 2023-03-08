@@ -56,27 +56,25 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
 
         print("")
 
-    weighted_schedds = []
+    # pick weights based on (inverse) of  duty cycle of schedd
+    weights = []
     for s in schedds:
         name = s.eval("Name")
         rdcdc = s.eval("RecentDaemonCoreDutyCycle")
 
+        # avoid dividing by zero, and really crazy weights for idle servers
+        # max it out at 1000
+        if rdcdc > 0.01:
+            weight = 10.0 / rdcdc
+        else:
+            weight = 1000.0
+
+        weights.append(weight)
+
         if vargs.get("verbose", 0) > 0:
-            print(f"RecentDaemonCoreDutyCycle {name} {rdcdc}")
+            print(f"Schedd: {name} DutyCycle {rdcdc} weight {weight}")
 
-        # add to weighted list more times the lower the duty cycle..
-        # if they're *all* not busy, that will put them all in the
-        # list 5 times, but then it will be even odds....
-        weighted_schedds.append(s)
-        if rdcdc < 0.5:
-            weighted_schedds.append(s)
-        if rdcdc < 0.1:
-            weighted_schedds.append(s)
-        if rdcdc < 0.05:
-            weighted_schedds.append(s)
-            weighted_schedds.append(s)
-
-    res = random.choice(weighted_schedds)
+    res = random.choices(schedds, weights=weights)[0]
     return res
 
 
