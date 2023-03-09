@@ -21,6 +21,7 @@ transfer_output    = True
 transfer_error     = True
 transfer_executable= True
 transfer_input_files = {{executable|basename}}
+# if transfer_output_files is not explicitly set, condor will transfer ALL the files the job touches (unless in grid universe)
 transfer_output_files = .empty_file
 when_to_transfer_output = ON_EXIT_OR_EVICT
 {%if    cpu is defined and cpu %}request_cpus = {{cpu}}{%endif%}
