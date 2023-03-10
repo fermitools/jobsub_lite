@@ -298,6 +298,8 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
                     )
                     exit(1)
             else:
+                # Here, we don't wait for publish to happen, so we don't know the exact location of the tarball.
+                # We instead set the location to a glob that the wrapper has to handle later
                 if args.verbose:
                     print("Requested to publish uploaded file on RCDS.")
                     if args.verbose > 1:
@@ -305,6 +307,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
                             "skip_check_rcds is set to True, so will not wait on confirmation of publish to proceed"
                         )
                     print("\n")
+                location = publisher.get_glob_path_for_cid()
         else:
             if args.verbose:
                 print("Found uploaded file on RCDS.")

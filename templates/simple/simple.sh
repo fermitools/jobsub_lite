@@ -218,36 +218,54 @@ chmod u+x ${CONDOR_DIR_INPUT}/{{fname|basename}}
 {%for tfname in tar_file_name%}
   {%if tfname[:6] == "/cvmfs" and tfname[-7:] != ".tar.gz" %}
     # RCDS unpacked tarfile
-    {%if loop.first%}
-      INPUT_TAR_DIR_LOCAL={{tfname}}
-      export INPUT_TAR_DIR_LOCAL
-      # Note: this filename doesn't exist, but if you take dirname
-      #       of it you find the contents
-      INPUT_TAR_FILE={{tfname}}/{{tar_file_orig_basenames[loop.index0]}}.tar
-      export INPUT_TAR_FILE
-      ln -s {{tfname}} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
+    # Save tfname into a list in case we couldn't get the exact path, like if user skipped the RCDS upload check
+    tfnamelist=({{tfname}})
+    tfnamelist=( `shuf -e "${tfnamelist[@]}"` ) . # Shuffle our list
 
-      # wait for tarfile to show up
-      num_tries=0
-      max_tries=30
-      slp=30
-      while [ $num_tries -lt $max_tries ]; do
-           num_tries=$(($num_tries + 1))
-           if  test -d "$INPUT_TAR_DIR_LOCAL" ; then
-               break
-           else
-               sleep $slp
-           fi
-      done
-    {%else%}
-      INPUT_TAR_DIR_LOCAL_{{loop.index0}}={{tfname}}
-      export INPUT_TAR_DIR_LOCAL_{{loop.index0}}
-      # Note: this filename doesn't exist, but if you take dirname
-      #       of it you find the contents
-      INPUT_TAR_FILE_{{loop.index0}}={{tfname}}/{{tar_file_orig_basenames[loop.index0]}}.tar
-      export INPUT_TAR_FILE_{{loop.index0}}
-      ln -s {{tfname}} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
-    {%endif%}
+    # Scale number of tries per tar_file_name possible value.  Maximum 30 (if there's only one possible value
+    # or if we know the path beforehand), minimum 10.  Given these two settings, a single tarball path possibility
+    # can take up to 5 minutes to check
+    len_tfnamelist=`echo "${#tfnamelist[@]}"`
+    max_tries=30
+    slp=30
+    min_tries_per_tfname=10
+    num_tries_per_tfname=$((max_tries/len_tfnamelist))
+    if [[ ${num_tries_per_tfname} -lt $min_tries_per_tfname ]]; then
+      num_tries_per_tfname=$min_retries_per_tfname
+    # For each element of the shell list, do all the below
+    for candidate_tfname in "${tfnamelist[@]}"; do
+      {%if loop.first%}
+        INPUT_TAR_DIR_LOCAL=${candidate_tfname}
+        export INPUT_TAR_DIR_LOCAL
+        # Note: this filename doesn't exist, but if you take dirname
+        #       of it you find the contents
+        INPUT_TAR_FILE=${candidate_tfname}/{{tar_file_orig_basenames[loop.index0]}}.tar
+        export INPUT_TAR_FILE
+        ln -s ${candidate_tfname} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
+
+        # wait for tarfile to show up
+        num_tries=0
+        while [ $num_tries -lt $num_tries_per_tfname]; do
+            num_tries=$(($num_tries + 1))
+            if  test -d "$INPUT_TAR_DIR_LOCAL" ; then
+                break
+            else
+                if [[ $num_tries -eq $num_tries_per_tfname ]]; do
+                  continue 2 # Break out of this while loop AND continue to the next $candidate_tfname
+                fi
+                sleep $slp
+            fi
+        done
+      {%else%}
+        INPUT_TAR_DIR_LOCAL_{{loop.index0}}=${candidate_tfname}
+        export INPUT_TAR_DIR_LOCAL_{{loop.index0}}
+        # Note: this filename doesn't exist, but if you take dirname
+        #       of it you find the contents
+        INPUT_TAR_FILE_{{loop.index0}}=${candidate_tfname}/{{tar_file_orig_basenames[loop.index0]}}.tar
+        export INPUT_TAR_FILE_{{loop.index0}}
+        ln -s ${candidate_tfname} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
+      {%endif%}
+    done
   {%else%}
     # tarfile to transfer and unpack
     mkdir .unwind_{{loop.index0}}
