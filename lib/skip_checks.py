@@ -67,10 +67,9 @@ class SupportedSkipChecks(Enum):
 def skip_check_setup(check_name: str, *args: Any, **kwargs: Any) -> Any:
     """This function calls the mapped setup function in supported_skip_checks_setup_functions"""
     try:
-        setup_func = getattr(SupportedSkipChecks, check_name)
+        return getattr(SupportedSkipChecks, check_name)
     except AttributeError:
         raise AttributeError(
             f'Invalid check to skip: "{check_name}". Supported checks to skip '
             f"are: {SupportedSkipChecks.get_all_checks()}"
         )
-    return setup_func(*args, **kwargs)
