@@ -21,7 +21,7 @@ import re
 import sys
 from typing import Union, Any
 
-from utils import DEFAULT_USAGE_MODELS
+from utils import DEFAULT_USAGE_MODELS, DEFAULT_SINGULARITY_IMAGE
 
 
 def verify_executable_starts_with_file_colon(s: str) -> str:
@@ -466,7 +466,7 @@ def get_parser() -> argparse.ArgumentParser:
     singularity_group.add_argument(
         "--singularity-image",
         "--apptainer-image",
-        default="/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
+        default=DEFAULT_SINGULARITY_IMAGE,
         help="Singularity image to run jobs in.  Default is "
         "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
     )
