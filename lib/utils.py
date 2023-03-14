@@ -20,7 +20,6 @@ import os
 import os.path
 import re
 import socket
-import shlex
 import subprocess
 import sys
 import uuid
