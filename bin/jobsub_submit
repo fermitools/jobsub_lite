@@ -345,4 +345,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
