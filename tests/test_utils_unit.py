@@ -1,3 +1,4 @@
+from collections import namedtuple
 import os
 import sys
 import tempfile
@@ -171,23 +172,27 @@ class TestUtilsUnit:
 
     @pytest.mark.unit
     def test_resolve_site_and_usage_model(self):
+        TestCase = namedtuple(
+            "TestCase",
+            ["sites", "usage_model", "resource_provides_quoted", "expected_result"],
+        )
         _should_work = [
             # no flags
-            (
-                "",
-                "DEDICATED,OPPORTUNISTIC,OFFSITE",
-                [],
-                (
+            TestCase(
+                sites="",
+                usage_model="DEDICATED,OPPORTUNISTIC,OFFSITE",
+                resource_provides_quoted=[],
+                expected_result=(
                     utils.SiteAndUsageModel("", "DEDICATED,OPPORTUNISTIC,OFFSITE"),
                     [],
                 ),
             ),
             # --onsite
-            (
-                "",
-                "DEDICATED,OPPORTUNISTIC",
-                [],
-                (
+            TestCase(
+                sites="",
+                usage_model="DEDICATED,OPPORTUNISTIC",
+                resource_provides_quoted=[],
+                expected_result=(
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
                     ),
@@ -195,11 +200,11 @@ class TestUtilsUnit:
                 ),
             ),
             # --site Fermigrid
-            (
-                utils.ONSITE_SITE_NAME,
-                "",
-                [],
-                (
+            TestCase(
+                sites=utils.ONSITE_SITE_NAME,
+                usage_model="",
+                resource_provides_quoted=[],
+                expected_result=(
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
                     ),
@@ -207,41 +212,41 @@ class TestUtilsUnit:
                 ),
             ),
             # --site Random_Site
-            (
-                "Random_Site",
-                "",
-                [],
-                (
+            TestCase(
+                sites="Random_Site",
+                usage_model="",
+                resource_provides_quoted=[],
+                expected_result=(
                     utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
                     [],
                 ),
             ),
             # --offsite
-            (
-                "",
-                "OFFSITE",
-                [],
-                (
+            TestCase(
+                sites="",
+                usage_model="OFFSITE",
+                resource_provides_quoted=[],
+                expected_result=(
                     utils.SiteAndUsageModel("", "OFFSITE"),
                     [],
                 ),
             ),
             # --resource-provides=usage_model=DEDICATED,OFFSITE
-            (
-                "",
-                "",
-                ['usage_model="DEDICATED,OFFSITE"'],
-                (
+            TestCase(
+                sites="",
+                usage_model="",
+                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
+                expected_result=(
                     utils.SiteAndUsageModel("", ""),
                     ['usage_model="DEDICATED,OFFSITE"'],
                 ),
             ),
             # --resource-provides=usage_model=DEDICATED,OFFSITE --site Fermigrid
-            (
-                utils.ONSITE_SITE_NAME,
-                "",
-                ['usage_model="DEDICATED,OFFSITE"'],
-                (
+            TestCase(
+                sites=utils.ONSITE_SITE_NAME,
+                usage_model="",
+                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
+                expected_result=(
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
                     ),
@@ -249,21 +254,21 @@ class TestUtilsUnit:
                 ),
             ),
             # --resource-provides=usage_model=DEDICATED,OFFSITE --site Random_Site
-            (
-                "Random_Site",
-                "",
-                ['usage_model="DEDICATED,OFFSITE"'],
-                (
+            TestCase(
+                sites="Random_Site",
+                usage_model="",
+                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
+                expected_result=(
                     utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
                     [],
                 ),
             ),
             # --site=Fermigrid,Random_Site --resource-provides=usage_model=DEDICATED,OFFSITE
-            (
-                f"{utils.ONSITE_SITE_NAME},Random_Site",
-                "",
-                ['usage_model="DEDICATED,OFFSITE"'],
-                (
+            TestCase(
+                sites=f"{utils.ONSITE_SITE_NAME},Random_Site",
+                usage_model="",
+                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
+                expected_result=(
                     utils.SiteAndUsageModel(
                         f"{utils.ONSITE_SITE_NAME},Random_Site",
                         "DEDICATED,OPPORTUNISTIC,OFFSITE",
@@ -272,11 +277,11 @@ class TestUtilsUnit:
                 ),
             ),
             # --site=Fermigrid,Random_Site
-            (
-                f"{utils.ONSITE_SITE_NAME},Random_Site",
-                "",
-                [],
-                (
+            TestCase(
+                sites=f"{utils.ONSITE_SITE_NAME},Random_Site",
+                usage_model="",
+                resource_provides_quoted=[],
+                expected_result=(
                     utils.SiteAndUsageModel(
                         f"{utils.ONSITE_SITE_NAME},Random_Site",
                         "DEDICATED,OPPORTUNISTIC,OFFSITE",
@@ -285,11 +290,14 @@ class TestUtilsUnit:
                 ),
             ),
             # --site=Fermigrid,Random_Site --resource_provides=usage_model=DEDICATED,OFFSITE --resource-provides=IWANT=this_resource
-            (
-                f"{utils.ONSITE_SITE_NAME},Random_Site",
-                "",
-                ['usage_model="DEDICATED,OFFSITE"', 'IWANT="this_resource"'],
-                (
+            TestCase(
+                sites=f"{utils.ONSITE_SITE_NAME},Random_Site",
+                usage_model="",
+                resource_provides_quoted=[
+                    'usage_model="DEDICATED,OFFSITE"',
+                    'IWANT="this_resource"',
+                ],
+                expected_result=(
                     utils.SiteAndUsageModel(
                         f"{utils.ONSITE_SITE_NAME},Random_Site",
                         "DEDICATED,OPPORTUNISTIC,OFFSITE",
@@ -298,11 +306,14 @@ class TestUtilsUnit:
                 ),
             ),
             # --onsite --resource_provides=usage_model=DEDICATED,OFFSITE --resource-provides=IWANT=this_resource
-            (
-                "",
-                "DEDICATED,OPPORTUNISTIC",
-                ['usage_model="DEDICATED,OFFSITE"', 'IWANT="this_resource"'],
-                (
+            TestCase(
+                sites="",
+                usage_model="DEDICATED,OPPORTUNISTIC",
+                resource_provides_quoted=[
+                    'usage_model="DEDICATED,OFFSITE"',
+                    'IWANT="this_resource"',
+                ],
+                expected_result=(
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
                     ),
@@ -310,11 +321,11 @@ class TestUtilsUnit:
                 ),
             ),
             # --onsite --resource_provides=usage_model=DEDICATED,OFFSITE
-            (
-                "",
-                "DEDICATED,OPPORTUNISTIC",
-                ['usage_model="DEDICATED,OFFSITE"'],
-                (
+            TestCase(
+                sites="",
+                usage_model="DEDICATED,OPPORTUNISTIC",
+                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
+                expected_result=(
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
                     ),
@@ -322,31 +333,31 @@ class TestUtilsUnit:
                 ),
             ),
             # --resource_provides=usage_model=DEDICATED,OPPORTUNISTIC --site Random_Site
-            (
-                "Random_Site",
-                "",
-                ['usage_model="DEDICATED,OPPORTUNISTIC"'],
-                (
+            TestCase(
+                sites="Random_Site",
+                usage_model="",
+                resource_provides_quoted=['usage_model="DEDICATED,OPPORTUNISTIC"'],
+                expected_result=(
                     utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
                     [],
                 ),
             ),
             # --resource-provides=usage_model=DEDICATED --site Random_Site
-            (
-                "Random_Site",
-                "",
-                ['usage_model="DEDICATED"'],
-                (
+            TestCase(
+                sites="Random_Site",
+                usage_model="",
+                resource_provides_quoted=['usage_model="DEDICATED"'],
+                expected_result=(
                     utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
                     [],
                 ),
             ),
             # --resource-provides=usage_model=OFFSITE --site Fermigrid
-            (
-                utils.ONSITE_SITE_NAME,
-                "",
-                ['usage_model="OFFSITE"'],
-                (
+            TestCase(
+                sites=utils.ONSITE_SITE_NAME,
+                usage_model="",
+                resource_provides_quoted=['usage_model="OFFSITE"'],
+                expected_result=(
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
                     ),
@@ -354,21 +365,21 @@ class TestUtilsUnit:
                 ),
             ),
             # --site=Random_Site_1,Random_Site_2 --resource-provides=usage_model=DEDICATED,OFFSITE
-            (
-                "Random_Site_1,Random_Site_2",
-                "",
-                ['usage_model="DEDICATED,OFFSITE"'],
-                (
+            TestCase(
+                sites="Random_Site_1,Random_Site_2",
+                usage_model="",
+                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
+                expected_result=(
                     utils.SiteAndUsageModel("Random_Site_1,Random_Site_2", "OFFSITE"),
                     [],
                 ),
             ),
             # --onsite --resource-provides=usage_model=DEDICATED,OFFSITE
-            (
-                "",
-                "DEDICATED,OPPORTUNISTIC",
-                ['usage_model="DEDICATED,OFFSITE"'],
-                (
+            TestCase(
+                sites="",
+                usage_model="DEDICATED,OPPORTUNISTIC",
+                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
+                expected_result=(
                     utils.SiteAndUsageModel(
                         utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
                     ),
@@ -376,33 +387,37 @@ class TestUtilsUnit:
                 ),
             ),
             # --offsite --resource-provides=usage_model=DEDICATED
-            (
-                "",
-                "OFFSITE",
-                ['usage_model="DEDICATED"'],
-                (
+            TestCase(
+                sites="",
+                usage_model="OFFSITE",
+                resource_provides_quoted=['usage_model="DEDICATED"'],
+                expected_result=(
                     utils.SiteAndUsageModel("", "OFFSITE"),
                     [],
                 ),
             ),
             # --site FERMIGRID --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE (wrong case for fermigrid)
-            (
-                "FERMIGRID",
-                "",
-                ['usage_model="DEDICATED,OPPORTUNISTIC,OFFSITE"'],
-                (
+            TestCase(
+                sites="FERMIGRID",
+                usage_model="",
+                resource_provides_quoted=[
+                    'usage_model="DEDICATED,OPPORTUNISTIC,OFFSITE"'
+                ],
+                expected_result=(
                     utils.SiteAndUsageModel("FermiGrid", "DEDICATED,OPPORTUNISTIC"),
                     [],
                 ),
             ),
         ]
 
-        for (sites, usage_model, resource_provides_quoted, expected) in _should_work:
+        for test_case in _should_work:
             assert (
                 utils.resolve_site_and_usage_model(
-                    sites, usage_model, resource_provides_quoted
+                    test_case.sites,
+                    test_case.usage_model,
+                    test_case.resource_provides_quoted,
                 )
-                == expected
+                == test_case.expected_result
             )
 
         # I honestly can't think of any combos that don't work/won't get corrected before we get to validation,
@@ -415,3 +430,69 @@ class TestUtilsUnit:
                 utils.resolve_site_and_usage_model(
                     sites, usage_model, resource_provides_quoted
                 )
+
+    @pytest.mark.unit
+    def test_resolve_singularity_image(self):
+        non_default_singularity_image = (
+            "/cvmfs/singularity.opensciencegrid.org/fake/image:latest"
+        )
+        non_default_singularity_image_lines = (
+            "/cvmfs/singularity.opensciencegrid.org/fake/image:latest_lines"
+        )
+        lines_with_singularity = [
+            "key1=value1",
+            "key2=value2",
+            f'+SingularityImage=\\"{non_default_singularity_image_lines}\\"',
+            "key3=value3",
+        ]
+        lines_without_singularity = [
+            "key1=value1",
+            "key2=value2",
+            "key3=value3",
+        ]
+        TestCase = namedtuple(
+            "TestCase",
+            [
+                "singularity_image_arg",
+                "lines_arg",
+                "expected_singularity_image",
+                "expected_lines",
+            ],
+        )
+        _test_cases = (
+            # --singularity_image=DEFAULT_SINGULARITY_IMAGE, --lines does not have SingularityImage:  DEFAULT_SINGULARITY_IMAGE, lines=old lines
+            TestCase(
+                singularity_image_arg=utils.DEFAULT_SINGULARITY_IMAGE,
+                lines_arg=lines_without_singularity,
+                expected_singularity_image=utils.DEFAULT_SINGULARITY_IMAGE,
+                expected_lines=lines_without_singularity,
+            ),
+            # --singularity_image=DEFAULT_SINGULARITY_IMAGE, --lines has non-default SingularityImage:  non-default lines-Singularity_image, lines modified
+            TestCase(
+                singularity_image_arg=utils.DEFAULT_SINGULARITY_IMAGE,
+                lines_arg=lines_with_singularity,
+                expected_singularity_image=non_default_singularity_image_lines,
+                expected_lines=lines_without_singularity,
+            ),
+            # --singularity_image=non-default-image, --lines does not have SingularityImage: non-default singularity_image from arg, lines=old lines
+            TestCase(
+                singularity_image_arg=non_default_singularity_image,
+                lines_arg=lines_without_singularity,
+                expected_singularity_image=non_default_singularity_image,
+                expected_lines=lines_without_singularity,
+            ),
+            # --singularity_image=non-default-image, --lines has non-default SingularityImage: non-default singularity_image from arg, lines modified (and ignored)
+            TestCase(
+                singularity_image_arg=non_default_singularity_image,
+                lines_arg=lines_with_singularity,
+                expected_singularity_image=non_default_singularity_image,
+                expected_lines=lines_without_singularity,
+            ),
+        )
+
+        for test_case in _test_cases:
+            assert (
+                test_case.expected_singularity_image
+            ), test_case.expected_lines == utils._resolve_singularity_image(
+                test_case.singularity_image_arg, test_case.lines_arg
+            )
