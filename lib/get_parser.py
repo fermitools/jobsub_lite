@@ -364,7 +364,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--resource-provides",
         action="append",
-        default=[""],
+        default=[],
         help="request specific resources by changing condor jdf file. For"
         " example: --resource-provides=CVMFS=OSG will add"
         ' +DESIRED_CVMFS="OSG" to the job classad attributes and'
