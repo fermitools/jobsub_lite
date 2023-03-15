@@ -76,7 +76,7 @@ def parse_dagnabbit(
             if line.find("<parallel>") >= 0:
                 if in_parallel:
                     sys.stderr.write(
-                        f"Error: file {values['dag']} line {linenum}: <parallel>"
+                        f"Error: file {dagfile} line {linenum}: <parallel>"
                         f" inside <parallel> not currently supported\n"
                     )
                     sys.exit(1)
@@ -167,7 +167,7 @@ def parse_dagnabbit(
                         res = parser.parse_args(line_argv)
                     except:
                         sys.stderr.write(
-                            f"Error at file {values['dag']} line {linenum}\n"
+                            f"Syntax Error at file {dagfile} line {linenum}\n"
                         )
                         sys.stderr.write(f"parsing: {line.strip().split()}\n")
                         sys.stderr.flush()
@@ -244,7 +244,7 @@ def parse_dagnabbit(
                     of.write("# saw prescript\n")
                 if in_prescript:
                     sys.stderr.write(
-                        f"Error: file {dagfile} line {linenum}\n"
+                        f"Syntax Error: file {dagfile} line {linenum}\n"
                         f" only 1 prescript line per jobsub line is allowed\n"
                     )
                     sys.exit(1)
@@ -254,7 +254,7 @@ def parse_dagnabbit(
                 try:
                     res = parser.parse_args(line.strip().split()[1:])
                 except:
-                    sys.stderr.write(f"Error at file {dagfile} line {linenum}\n")
+                    sys.stderr.write(f"Syntax Error: file {dagfile} line {linenum}\n")
                     sys.stderr.write(f"parsing: {line.strip().split()}\n")
                     sys.stderr.flush()
                     raise
@@ -271,7 +271,7 @@ def parse_dagnabbit(
                     of.write("# saw postscript\n")
                 if in_postscript:
                     sys.stderr.write(
-                        f"Error: file {dagfile} line {linenum}\n"
+                        f"Syntax Error: file {dagfile} line {linenum}\n"
                         f" only 1 postscript line per jobsub line is allowed\n"
                     )
                     sys.exit(1)
@@ -281,7 +281,7 @@ def parse_dagnabbit(
                 try:
                     res = parser.parse_args(line.strip().split()[1:])
                 except:
-                    sys.stderr.write(f"Error at file {dagfile} line {linenum}\n")
+                    sys.stderr.write(f"Syntax Error: file {dagfile} line {linenum}\n")
                     sys.stderr.write(f"parsing: {line.strip().split()}\n")
                     sys.stderr.flush()
                     raise
@@ -293,11 +293,13 @@ def parse_dagnabbit(
                 thesevalues.update(update_with)
                 set_extras_n_fix_units(thesevalues, schedd_name, proxy, token)
 
-            elif not line:
-                # blank lines are fine
+            elif not line.strip() or line.strip().startswith("#"):
+                # blank lines and comments are fine
                 pass
             else:
-                sys.stderr.write(f"Syntax Error: ignoring {line} at line {linenum}\n")
+                sys.stderr.write(
+                    f"Syntax Error: file {dagfile} ignoring {line} at line {linenum}\n"
+                )
 
         if values["maxConcurrent"]:
             of.write("CONFIG dagmax.config\n")
