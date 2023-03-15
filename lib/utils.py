@@ -20,17 +20,20 @@ import os
 import os.path
 import re
 import socket
-import sys
 import subprocess
+import sys
 import uuid
 import shutil
 import time
-from typing import Union, Dict, Any, NamedTuple, Tuple, List
+from typing import Union, Dict, Any, NamedTuple, Tuple, List, Optional
 
 import version
 
 ONSITE_SITE_NAME = "FermiGrid"
 DEFAULT_USAGE_MODELS = ["DEDICATED", "OPPORTUNISTIC", "OFFSITE"]
+DEFAULT_SINGULARITY_IMAGE = (
+    "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest"
+)
 
 
 def cleandir(d: str) -> None:
@@ -231,6 +234,23 @@ def set_extras_n_fix_units(
     # in, so guard against those kinds of things
     if args.get("lines"):
         args["lines"] = [line for line in args["lines"] if line not in ('""', "''")]
+        # Check --lines for SingularityImage, resolve the possible case where that AND --singularity-image
+        # are specified, as long as --no-singularity is not set
+        if not args.get("no_singularity", False):
+            args["singularity_image"], args["lines"] = _resolve_singularity_image(
+                args.get("singularity_image", DEFAULT_SINGULARITY_IMAGE), args["lines"]
+            )
+        else:
+            # Strip out any line with "SingularityImage=" in it, since --no-singularity is specified
+            _lines = [line for line in args["lines"] if "SingularityImage=" not in line]
+            if len(_lines) != args["lines"]:
+                print(
+                    "Warning:  --lines contains a SingularityImage specification "
+                    "but --no-singularity was also passed on command line. "
+                    "jobsub_lite will remove the --lines parameter that contains "
+                    "SingularityImage."
+                )
+            args["lines"] = _lines
 
     #
     # allow short, medium, and long for duration values (--expected_lifetime, --timeout)
@@ -565,3 +585,57 @@ class SiteAndUsageModelConflictError(Exception):
             f"a site list that does not include {ONSITE_SITE_NAME}."
         )
         super().__init__(self.message)
+
+
+def _resolve_singularity_image(
+    singularity_image_from_args: str, lines: List[str]
+) -> Tuple[str, List[str]]:
+    """
+    Determine what the proper --singularity-image flag should be, parsing both that flag and the --lines
+    arguments.  If --lines has a SingularityImage flag specified, we should remove that from --lines and
+    put it in the return value of singularity_image.
+
+    Order of precedence:
+    1. Non-default singularity-image argument
+    2. --lines SingularityImage argument
+    3. Default singularity-image argument
+
+    Returns a tuple of (singularity_image, lines (modified or not))
+    """
+    lines_singularity_re = re.compile(".+SingularityImage\=(.+)")
+    lines_singularity_image: Optional[str] = None
+    return_lines: List[str] = []
+
+    # Parse lines.
+    # Look for something like:
+    #     '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"'
+    # in lines and remove it while setting lines_singularity_image
+    # In the above example, if there were such a line, lines_singularity_image would be set to
+    # "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest"
+    for line in lines:
+        m = lines_singularity_re.match(line)
+        if m:
+            raw_singularity_image = m.group(1)
+            # Since most of the time the SingularityImage here is heavily-escaped, we need to strip out all double-quotes and backslashes
+            lines_singularity_image = raw_singularity_image.strip('"\\')
+            msg = (
+                f"Warning: SingularityImage {lines_singularity_image} specified in "
+                "--lines.  A non-default --singularity-image value takes precedence, "
+                "but a non-default SingularityImage may be specified here for backward-compatibility. "
+                "--lines SingularityImage ONLY takes precedence over --singularity-image if "
+                "--singularity-image value is not the default and --no-singularity is not given "
+                "on the command line."
+            )
+            print(msg)
+        else:
+            return_lines.append(line)
+
+    # If we have a non-default --singularity-image given on the command line, use that
+    if singularity_image_from_args != DEFAULT_SINGULARITY_IMAGE:
+        return (singularity_image_from_args, return_lines)
+
+    # If SingularityImage is specified in lines, use that
+    if lines_singularity_image:
+        return (lines_singularity_image, return_lines)
+
+    return (DEFAULT_SINGULARITY_IMAGE, return_lines)
