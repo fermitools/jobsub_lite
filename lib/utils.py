@@ -240,6 +240,17 @@ def set_extras_n_fix_units(
             args["singularity_image"], args["lines"] = _resolve_singularity_image(
                 args.get("singularity_image", DEFAULT_SINGULARITY_IMAGE), args["lines"]
             )
+        else:
+            # Strip out any line with "SingularityImage=" in it, since --no-singularity is specified
+            _lines = [line for line in args["lines"] if "SingularityImage=" not in line]
+            if len(_lines) != args["lines"]:
+                print(
+                    "Warning:  --lines contains a SingularityImage specification "
+                    "but --no-singularity was also passed on command line. "
+                    "jobsub_lite will remove the --lines parameter that contains "
+                    "SingularityImage."
+                )
+            args["lines"] = _lines
 
     #
     # allow short, medium, and long for duration values (--expected_lifetime, --timeout)
