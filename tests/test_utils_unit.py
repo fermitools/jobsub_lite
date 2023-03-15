@@ -1,4 +1,5 @@
 from collections import namedtuple
+import json
 import os
 import sys
 import tempfile
@@ -26,6 +27,8 @@ import utils
 from test_unit import TestUnit
 from test_creds_unit import needs_credentials  # pylint: disable=unused-import
 from test_creds_unit import clear_x509_user_proxy  # pylint: disable=unused-import
+
+DATADIR = f"{os.path.abspath(os.path.dirname(__file__))}/data"
 
 
 def fill_in(dir):
@@ -75,7 +78,7 @@ class TestUtilsUnit:
     def test_grep_n_1(self):
         """check the grep_n routine on us"""
         assert utils.grep_n(r"class (\w*):", 1, __file__) == "TestUtilsUnit"
-        assert utils.grep_n(r"import (\w*)", 1, __file__) == "os"
+        assert utils.grep_n(r"import (\w*)", 1, __file__) == "json"
 
     @pytest.mark.unit
     def test_fix_unit_1(self):
@@ -176,241 +179,27 @@ class TestUtilsUnit:
             "TestCase",
             ["sites", "usage_model", "resource_provides_quoted", "expected_result"],
         )
-        _should_work = [
-            # no flags
+
+        DATA_FILENAME = "site_and_usagemodel.json"
+        with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
+            tests_json = json.load(datafile)
+
+        test_cases = [
             TestCase(
-                sites="",
-                usage_model="DEDICATED,OPPORTUNISTIC,OFFSITE",
-                resource_provides_quoted=[],
-                expected_result=(
-                    utils.SiteAndUsageModel("", "DEDICATED,OPPORTUNISTIC,OFFSITE"),
-                    [],
-                ),
-            ),
-            # --onsite
-            TestCase(
-                sites="",
-                usage_model="DEDICATED,OPPORTUNISTIC",
-                resource_provides_quoted=[],
+                sites=test_json["sites"],
+                usage_model=test_json["usage_model"],
+                resource_provides_quoted=test_json["resource_provides_quoted"],
                 expected_result=(
                     utils.SiteAndUsageModel(
-                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
+                        **test_json["expected_result"]["site_and_usage_model"]
                     ),
-                    [],
+                    test_json["expected_result"]["resource_provides_remainder"],
                 ),
-            ),
-            # --site Fermigrid
-            TestCase(
-                sites=utils.ONSITE_SITE_NAME,
-                usage_model="",
-                resource_provides_quoted=[],
-                expected_result=(
-                    utils.SiteAndUsageModel(
-                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
-                    ),
-                    [],
-                ),
-            ),
-            # --site Random_Site
-            TestCase(
-                sites="Random_Site",
-                usage_model="",
-                resource_provides_quoted=[],
-                expected_result=(
-                    utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
-                    [],
-                ),
-            ),
-            # --offsite
-            TestCase(
-                sites="",
-                usage_model="OFFSITE",
-                resource_provides_quoted=[],
-                expected_result=(
-                    utils.SiteAndUsageModel("", "OFFSITE"),
-                    [],
-                ),
-            ),
-            # --resource-provides=usage_model=DEDICATED,OFFSITE
-            TestCase(
-                sites="",
-                usage_model="",
-                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
-                expected_result=(
-                    utils.SiteAndUsageModel("", ""),
-                    ['usage_model="DEDICATED,OFFSITE"'],
-                ),
-            ),
-            # --resource-provides=usage_model=DEDICATED,OFFSITE --site Fermigrid
-            TestCase(
-                sites=utils.ONSITE_SITE_NAME,
-                usage_model="",
-                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
-                expected_result=(
-                    utils.SiteAndUsageModel(
-                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
-                    ),
-                    [],
-                ),
-            ),
-            # --resource-provides=usage_model=DEDICATED,OFFSITE --site Random_Site
-            TestCase(
-                sites="Random_Site",
-                usage_model="",
-                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
-                expected_result=(
-                    utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
-                    [],
-                ),
-            ),
-            # --site=Fermigrid,Random_Site --resource-provides=usage_model=DEDICATED,OFFSITE
-            TestCase(
-                sites=f"{utils.ONSITE_SITE_NAME},Random_Site",
-                usage_model="",
-                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
-                expected_result=(
-                    utils.SiteAndUsageModel(
-                        f"{utils.ONSITE_SITE_NAME},Random_Site",
-                        "DEDICATED,OPPORTUNISTIC,OFFSITE",
-                    ),
-                    [],
-                ),
-            ),
-            # --site=Fermigrid,Random_Site
-            TestCase(
-                sites=f"{utils.ONSITE_SITE_NAME},Random_Site",
-                usage_model="",
-                resource_provides_quoted=[],
-                expected_result=(
-                    utils.SiteAndUsageModel(
-                        f"{utils.ONSITE_SITE_NAME},Random_Site",
-                        "DEDICATED,OPPORTUNISTIC,OFFSITE",
-                    ),
-                    [],
-                ),
-            ),
-            # --site=Fermigrid,Random_Site --resource_provides=usage_model=DEDICATED,OFFSITE --resource-provides=IWANT=this_resource
-            TestCase(
-                sites=f"{utils.ONSITE_SITE_NAME},Random_Site",
-                usage_model="",
-                resource_provides_quoted=[
-                    'usage_model="DEDICATED,OFFSITE"',
-                    'IWANT="this_resource"',
-                ],
-                expected_result=(
-                    utils.SiteAndUsageModel(
-                        f"{utils.ONSITE_SITE_NAME},Random_Site",
-                        "DEDICATED,OPPORTUNISTIC,OFFSITE",
-                    ),
-                    ['IWANT="this_resource"'],
-                ),
-            ),
-            # --onsite --resource_provides=usage_model=DEDICATED,OFFSITE --resource-provides=IWANT=this_resource
-            TestCase(
-                sites="",
-                usage_model="DEDICATED,OPPORTUNISTIC",
-                resource_provides_quoted=[
-                    'usage_model="DEDICATED,OFFSITE"',
-                    'IWANT="this_resource"',
-                ],
-                expected_result=(
-                    utils.SiteAndUsageModel(
-                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
-                    ),
-                    ['IWANT="this_resource"'],
-                ),
-            ),
-            # --onsite --resource_provides=usage_model=DEDICATED,OFFSITE
-            TestCase(
-                sites="",
-                usage_model="DEDICATED,OPPORTUNISTIC",
-                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
-                expected_result=(
-                    utils.SiteAndUsageModel(
-                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
-                    ),
-                    [],
-                ),
-            ),
-            # --resource_provides=usage_model=DEDICATED,OPPORTUNISTIC --site Random_Site
-            TestCase(
-                sites="Random_Site",
-                usage_model="",
-                resource_provides_quoted=['usage_model="DEDICATED,OPPORTUNISTIC"'],
-                expected_result=(
-                    utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
-                    [],
-                ),
-            ),
-            # --resource-provides=usage_model=DEDICATED --site Random_Site
-            TestCase(
-                sites="Random_Site",
-                usage_model="",
-                resource_provides_quoted=['usage_model="DEDICATED"'],
-                expected_result=(
-                    utils.SiteAndUsageModel("Random_Site", "OFFSITE"),
-                    [],
-                ),
-            ),
-            # --resource-provides=usage_model=OFFSITE --site Fermigrid
-            TestCase(
-                sites=utils.ONSITE_SITE_NAME,
-                usage_model="",
-                resource_provides_quoted=['usage_model="OFFSITE"'],
-                expected_result=(
-                    utils.SiteAndUsageModel(
-                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
-                    ),
-                    [],
-                ),
-            ),
-            # --site=Random_Site_1,Random_Site_2 --resource-provides=usage_model=DEDICATED,OFFSITE
-            TestCase(
-                sites="Random_Site_1,Random_Site_2",
-                usage_model="",
-                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
-                expected_result=(
-                    utils.SiteAndUsageModel("Random_Site_1,Random_Site_2", "OFFSITE"),
-                    [],
-                ),
-            ),
-            # --onsite --resource-provides=usage_model=DEDICATED,OFFSITE
-            TestCase(
-                sites="",
-                usage_model="DEDICATED,OPPORTUNISTIC",
-                resource_provides_quoted=['usage_model="DEDICATED,OFFSITE"'],
-                expected_result=(
-                    utils.SiteAndUsageModel(
-                        utils.ONSITE_SITE_NAME, "DEDICATED,OPPORTUNISTIC"
-                    ),
-                    [],
-                ),
-            ),
-            # --offsite --resource-provides=usage_model=DEDICATED
-            TestCase(
-                sites="",
-                usage_model="OFFSITE",
-                resource_provides_quoted=['usage_model="DEDICATED"'],
-                expected_result=(
-                    utils.SiteAndUsageModel("", "OFFSITE"),
-                    [],
-                ),
-            ),
-            # --site FERMIGRID --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE (wrong case for fermigrid)
-            TestCase(
-                sites="FERMIGRID",
-                usage_model="",
-                resource_provides_quoted=[
-                    'usage_model="DEDICATED,OPPORTUNISTIC,OFFSITE"'
-                ],
-                expected_result=(
-                    utils.SiteAndUsageModel("FermiGrid", "DEDICATED,OPPORTUNISTIC"),
-                    [],
-                ),
-            ),
+            )
+            for test_json in tests_json
         ]
 
-        for test_case in _should_work:
+        for test_case in test_cases:
             assert (
                 utils.resolve_site_and_usage_model(
                     test_case.sites,

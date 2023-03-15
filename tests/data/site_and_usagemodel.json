@@ -1,0 +1,278 @@
+[
+    {
+        "sites": "",
+        "usage_model": "DEDICATED,OPPORTUNISTIC,OFFSITE",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "",
+                "usage_models": "DEDICATED,OPPORTUNISTIC,OFFSITE"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "",
+        "usage_model": "DEDICATED,OPPORTUNISTIC",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "FermiGrid",
+        "usage_model": "",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "Random_Site",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "",
+        "usage_model": "OFFSITE",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "",
+                "usage_models": ""
+            },
+            "resource_provides_remainder": [
+                "usage_model=\"DEDICATED,OFFSITE\""
+            ]
+        }
+    },
+    {
+        "sites": "FermiGrid",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "Random_Site",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "FermiGrid,Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid,Random_Site",
+                "usage_models": "DEDICATED,OPPORTUNISTIC,OFFSITE"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "FermiGrid,Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid,Random_Site",
+                "usage_models": "DEDICATED,OPPORTUNISTIC,OFFSITE"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "FermiGrid,Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\"",
+            "IWANT=\"this_resource\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid,Random_Site",
+                "usage_models": "DEDICATED,OPPORTUNISTIC,OFFSITE"
+            },
+            "resource_provides_remainder": [
+                "IWANT=\"this_resource\""
+            ]
+        }
+    },
+    {
+        "sites": "",
+        "usage_model": "DEDICATED,OPPORTUNISTIC",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\"",
+            "IWANT=\"this_resource\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": [
+                "IWANT=\"this_resource\""
+            ]
+        }
+    },
+    {
+        "sites": "",
+        "usage_model": "DEDICATED,OPPORTUNISTIC",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OPPORTUNISTIC\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "Random_Site",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "Random_Site",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "FermiGrid",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "Random_Site_1,Random_Site_2",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "Random_Site_1,Random_Site_2",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "",
+        "usage_model": "DEDICATED,OPPORTUNISTIC",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "",
+        "usage_model": "OFFSITE",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        }
+    },
+    {
+        "sites": "FERMIGRID",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OPPORTUNISTIC,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        }
+    }
+]
