@@ -332,7 +332,7 @@ class TestGetParserUnit:
                 assert vres["dataset_definition"] == "xxdataset-definitionxx"
             elif arg in listargs:
                 # args are in a list, so look for list containing xxflagxx
-                if arg in ["resource-provides", "lines"]:
+                if arg in ["lines"]:
                     # some of our arguments start with blank in the list
                     # so a "\nprefix:".join(list) prefixes the useful items
                     assert vres[uarg] == [
