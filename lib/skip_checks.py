@@ -27,6 +27,7 @@ the consequences of skipping the check.
 """
 
 from enum import Enum
+from functools import partial
 from typing import Any, List
 
 __all__ = ["SupportedSkipChecks", "skip_check_setup"]
@@ -50,12 +51,19 @@ def _print_rcds_warning() -> None:
 class SupportedSkipChecks(Enum):
     """Add checks to skip here, with the setup function they should call when skipped
     Example:
-        foo = setup_func
+        foo = partial(setup_func)
     No-op example:
-        blah = lambda *args: None
+        blah = partial(lambda *args: None)
+
+    Need to use the functools.partial as explained here:
+    https://stackoverflow.com/a/40339397
+    because functions in Enums are not considered attributes
+
+    This changes in  3.11, where you can specify if a function is a member using the
+    Enum.member() function.  But for now, we need to have this workaround
     """
 
-    rcds = _print_rcds_warning
+    rcds = partial(_print_rcds_warning)
 
     @classmethod
     def get_all_checks(cls) -> List[str]:
@@ -67,7 +75,7 @@ class SupportedSkipChecks(Enum):
 def skip_check_setup(check_name: str, *args: Any, **kwargs: Any) -> Any:
     """This function calls the mapped setup function in supported_skip_checks_setup_functions"""
     try:
-        return getattr(SupportedSkipChecks, check_name)
+        return getattr(SupportedSkipChecks, check_name).value(*args, **kwargs)
     except AttributeError:
         raise AttributeError(
             f'Invalid check to skip: "{check_name}". Supported checks to skip '
