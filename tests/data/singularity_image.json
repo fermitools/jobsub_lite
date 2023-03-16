@@ -1,0 +1,64 @@
+[
+    {
+        "singularity_image_arg": "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
+        "lines_arg": [
+            "key1=value1",
+            "key2=value2",
+            "key3=value3"
+        ],
+        "expected_singularity_image": "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
+        "expected_lines": [
+            "key1=value1",
+            "key2=value2",
+            "key3=value3"
+        ],
+        "helptext": "--singularity_image=DEFAULT_SINGULARITY_IMAGE, --lines does not have SingularityImage:  DEFAULT_SINGULARITY_IMAGE, lines=old lines"
+    },
+    {
+        "singularity_image_arg": "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
+        "lines_arg": [
+            "key1=value1",
+            "key2=value2",
+            "+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fake/image:latest_lines\\\"",
+            "key3=value3"
+        ],
+        "expected_singularity_image": "/cvmfs/singularity.opensciencegrid.org/fake/image:latest_lines",
+        "expected_lines": [
+            "key1=value1",
+            "key2=value2",
+            "key3=value3"
+        ],
+        "helptext": "--singularity_image=DEFAULT_SINGULARITY_IMAGE, --lines has non-default SingularityImage:  non-default lines-Singularity_image, lines modified"
+    },
+    {
+        "singularity_image_arg": "/cvmfs/singularity.opensciencegrid.org/fake/image:latest",
+        "lines_arg": [
+            "key1=value1",
+            "key2=value2",
+            "key3=value3"
+        ],
+        "expected_singularity_image": "/cvmfs/singularity.opensciencegrid.org/fake/image:latest",
+        "expected_lines": [
+            "key1=value1",
+            "key2=value2",
+            "key3=value3"
+        ],
+        "helptext": "--singularity_image=non-default-image, --lines does not have SingularityImage: non-default singularity_image from arg, lines=old lines"
+    },
+    {
+        "singularity_image_arg": "/cvmfs/singularity.opensciencegrid.org/fake/image:latest",
+        "lines_arg": [
+            "key1=value1",
+            "key2=value2",
+            "+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fake/image:latest_lines\\\"",
+            "key3=value3"
+        ],
+        "expected_singularity_image": "/cvmfs/singularity.opensciencegrid.org/fake/image:latest",
+        "expected_lines": [
+            "key1=value1",
+            "key2=value2",
+            "key3=value3"
+        ],
+        "helptext": "--singularity_image=non-default-image, --lines has non-default SingularityImage: non-default singularity_image from arg, lines modified (and ignored)"
+    }
+]

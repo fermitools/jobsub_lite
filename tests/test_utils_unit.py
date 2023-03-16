@@ -177,7 +177,13 @@ class TestUtilsUnit:
     def test_resolve_site_and_usage_model(self):
         TestCase = namedtuple(
             "TestCase",
-            ["sites", "usage_model", "resource_provides_quoted", "expected_result"],
+            [
+                "sites",
+                "usage_model",
+                "resource_provides_quoted",
+                "expected_result",
+                "helptext",
+            ],
         )
 
         DATA_FILENAME = "site_and_usagemodel.json"
@@ -195,19 +201,24 @@ class TestUtilsUnit:
                     ),
                     test_json["expected_result"]["resource_provides_remainder"],
                 ),
+                helptext=test_json["helptext"],
             )
             for test_json in tests_json
         ]
 
         for test_case in test_cases:
-            assert (
-                utils.resolve_site_and_usage_model(
-                    test_case.sites,
-                    test_case.usage_model,
-                    test_case.resource_provides_quoted,
+            try:
+                assert (
+                    utils.resolve_site_and_usage_model(
+                        test_case.sites,
+                        test_case.usage_model,
+                        test_case.resource_provides_quoted,
+                    )
+                    == test_case.expected_result
                 )
-                == test_case.expected_result
-            )
+            except AssertionError:
+                print(f"Assertion failed for test: {test_case.helptext}")
+                raise
 
         # I honestly can't think of any combos that don't work/won't get corrected before we get to validation,
         # but I'm leaving this here unless I missed something
@@ -222,23 +233,6 @@ class TestUtilsUnit:
 
     @pytest.mark.unit
     def test_resolve_singularity_image(self):
-        non_default_singularity_image = (
-            "/cvmfs/singularity.opensciencegrid.org/fake/image:latest"
-        )
-        non_default_singularity_image_lines = (
-            "/cvmfs/singularity.opensciencegrid.org/fake/image:latest_lines"
-        )
-        lines_with_singularity = [
-            "key1=value1",
-            "key2=value2",
-            f'+SingularityImage=\\"{non_default_singularity_image_lines}\\"',
-            "key3=value3",
-        ]
-        lines_without_singularity = [
-            "key1=value1",
-            "key2=value2",
-            "key3=value3",
-        ]
         TestCase = namedtuple(
             "TestCase",
             [
@@ -246,42 +240,22 @@ class TestUtilsUnit:
                 "lines_arg",
                 "expected_singularity_image",
                 "expected_lines",
+                "helptext",
             ],
         )
-        _test_cases = (
-            # --singularity_image=DEFAULT_SINGULARITY_IMAGE, --lines does not have SingularityImage:  DEFAULT_SINGULARITY_IMAGE, lines=old lines
-            TestCase(
-                singularity_image_arg=utils.DEFAULT_SINGULARITY_IMAGE,
-                lines_arg=lines_without_singularity,
-                expected_singularity_image=utils.DEFAULT_SINGULARITY_IMAGE,
-                expected_lines=lines_without_singularity,
-            ),
-            # --singularity_image=DEFAULT_SINGULARITY_IMAGE, --lines has non-default SingularityImage:  non-default lines-Singularity_image, lines modified
-            TestCase(
-                singularity_image_arg=utils.DEFAULT_SINGULARITY_IMAGE,
-                lines_arg=lines_with_singularity,
-                expected_singularity_image=non_default_singularity_image_lines,
-                expected_lines=lines_without_singularity,
-            ),
-            # --singularity_image=non-default-image, --lines does not have SingularityImage: non-default singularity_image from arg, lines=old lines
-            TestCase(
-                singularity_image_arg=non_default_singularity_image,
-                lines_arg=lines_without_singularity,
-                expected_singularity_image=non_default_singularity_image,
-                expected_lines=lines_without_singularity,
-            ),
-            # --singularity_image=non-default-image, --lines has non-default SingularityImage: non-default singularity_image from arg, lines modified (and ignored)
-            TestCase(
-                singularity_image_arg=non_default_singularity_image,
-                lines_arg=lines_with_singularity,
-                expected_singularity_image=non_default_singularity_image,
-                expected_lines=lines_without_singularity,
-            ),
-        )
+        DATA_FILENAME = "singularity_image.json"
+        with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
+            tests_json = json.load(datafile)
 
-        for test_case in _test_cases:
-            assert (
-                test_case.expected_singularity_image
-            ), test_case.expected_lines == utils._resolve_singularity_image(
-                test_case.singularity_image_arg, test_case.lines_arg
-            )
+        test_cases = (TestCase(**test_json) for test_json in tests_json)
+
+        for test_case in test_cases:
+            try:
+                assert (
+                    test_case.expected_singularity_image
+                ), test_case.expected_lines == utils._resolve_singularity_image(
+                    test_case.singularity_image_arg, test_case.lines_arg
+                )
+            except AssertionError:
+                print(f"Assertion failed for test: {test_case.helptext}")
+                raise
