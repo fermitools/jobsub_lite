@@ -26,6 +26,9 @@ environment	= _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address;
 +JobsubClientKerberosPrincipal="{{kerberos_principal}}"
 +JobsubOutputURL="{{outurl}}"
 +JobsubUUID="{{uuid}}"
+{%if skip_check is defined and skip_check%}
++JobsubSkipChecks = "{{skip_check|join(",")}}"
+{%endif%}
 
 {{lines|join("\n")}}
 
