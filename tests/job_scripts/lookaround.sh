@@ -66,3 +66,4 @@ do
    eval "echo $od = \$$od"
    eval "echo test $od > \$$od/testout.txt"
 done
+exit 0
