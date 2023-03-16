@@ -218,7 +218,7 @@ export PATH="${PATH}:."
     # Scale number of tries per input_file possible value.  Maximum 30 (if there's only one possible value
     # or if we know the path beforehand), minimum 10.  Given these two settings, a single tarball path possibility
     # can take up to 5 minutes to check
-    len_fnamelist=`echo "${#fnamelist[@]}"`
+    len_fnamelist=`echo "${{ '{#' }}fnamelist[@]}"`
     num_tries=0
     slp=30
     max_tries_limit=40
@@ -260,7 +260,7 @@ export PATH="${PATH}:."
     # Scale number of tries per tar_file_name possible value.  Maximum 30 (if there's only one possible value
     # or if we know the path beforehand), minimum 10.  Given these two settings, a single tarball path possibility
     # can take up to 5 minutes to check
-    len_tfnamelist=`echo "${#tfnamelist[@]}"`
+    len_tfnamelist=`echo "${{ '{#' }}tfnamelist[@]}"`
     num_tries=0
     slp=30
     max_tries_limit=40
