@@ -1,0 +1,298 @@
+[
+    {
+        "sites": "",
+        "usage_model": "DEDICATED,OPPORTUNISTIC,OFFSITE",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "",
+                "usage_models": "DEDICATED,OPPORTUNISTIC,OFFSITE"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "no flags"
+    },
+    {
+        "sites": "",
+        "usage_model": "DEDICATED,OPPORTUNISTIC",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "onsite"
+    },
+    {
+        "sites": "FermiGrid",
+        "usage_model": "",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--site Fermigrid"
+    },
+    {
+        "sites": "Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "Random_Site",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--site Random_Site"
+    },
+    {
+        "sites": "",
+        "usage_model": "OFFSITE",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--offsite"
+    },
+    {
+        "sites": "",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "",
+                "usage_models": ""
+            },
+            "resource_provides_remainder": [
+                "usage_model=\"DEDICATED,OFFSITE\""
+            ]
+        },
+        "helptext": "--resource-provides=usage_model=DEDICATED,OFFSITE"
+    },
+    {
+        "sites": "FermiGrid",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--resource-provides=usage_model=DEDICATED,OFFSITE --site Fermigrid"
+    },
+    {
+        "sites": "Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "Random_Site",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--resource-provides=usage_model=DEDICATED,OFFSITE --site Random_Site"
+    },
+    {
+        "sites": "FermiGrid,Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid,Random_Site",
+                "usage_models": "DEDICATED,OPPORTUNISTIC,OFFSITE"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--site=Fermigrid,Random_Site --resource-provides=usage_model=DEDICATED,OFFSITE"
+    },
+    {
+        "sites": "FermiGrid,Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid,Random_Site",
+                "usage_models": "DEDICATED,OPPORTUNISTIC,OFFSITE"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--site=Fermigrid,Random_Site"
+    },
+    {
+        "sites": "FermiGrid,Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\"",
+            "IWANT=\"this_resource\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid,Random_Site",
+                "usage_models": "DEDICATED,OPPORTUNISTIC,OFFSITE"
+            },
+            "resource_provides_remainder": [
+                "IWANT=\"this_resource\""
+            ]
+        },
+        "helptext": "--site=Fermigrid,Random_Site --resource_provides=usage_model=DEDICATED,OFFSITE --resource-provides=IWANT=this_resource"
+    },
+    {
+        "sites": "",
+        "usage_model": "DEDICATED,OPPORTUNISTIC",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\"",
+            "IWANT=\"this_resource\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": [
+                "IWANT=\"this_resource\""
+            ]
+        },
+        "helptext": "--onsite --resource_provides=usage_model=DEDICATED,OFFSITE --resource-provides=IWANT=this_resource"
+    },
+    {
+        "sites": "",
+        "usage_model": "DEDICATED,OPPORTUNISTIC",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--onsite --resource_provides=usage_model=DEDICATED,OFFSITE"
+    },
+    {
+        "sites": "Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OPPORTUNISTIC\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "Random_Site",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--resource_provides=usage_model=DEDICATED,OPPORTUNISTIC --site Random_Site"
+    },
+    {
+        "sites": "Random_Site",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "Random_Site",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--resource-provides=usage_model=DEDICATED --site Random_Site"
+    },
+    {
+        "sites": "FermiGrid",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--resource-provides=usage_model=OFFSITE --site Fermigrid"
+    },
+    {
+        "sites": "Random_Site_1,Random_Site_2",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "Random_Site_1,Random_Site_2",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--site=Random_Site_1,Random_Site_2 --resource-provides=usage_model=DEDICATED,OFFSITE"
+    },
+    {
+        "sites": "",
+        "usage_model": "DEDICATED,OPPORTUNISTIC",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--onsite --resource-provides=usage_model=DEDICATED,OFFSITE"
+    },
+    {
+        "sites": "",
+        "usage_model": "OFFSITE",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "",
+                "usage_models": "OFFSITE"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--offsite --resource-provides=usage_model=DEDICATED"
+    },
+    {
+        "sites": "FERMIGRID",
+        "usage_model": "",
+        "resource_provides_quoted": [
+            "usage_model=\"DEDICATED,OPPORTUNISTIC,OFFSITE\""
+        ],
+        "expected_result": {
+            "site_and_usage_model": {
+                "sites": "FermiGrid",
+                "usage_models": "DEDICATED,OPPORTUNISTIC"
+            },
+            "resource_provides_remainder": []
+        },
+        "helptext": "--site FERMIGRID --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE (wrong case for fermigrid)"
+    }
+]
