@@ -19,6 +19,7 @@
 
 """ submit command for jobsub layer over condor """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
+import argparse
 import glob
 import hashlib
 import os
@@ -187,6 +188,9 @@ def transfer_sandbox(src_dir, dest_url):
             )
 
 
+args = argparse.Namespace()
+
+
 def main():
     """script mainline:
     - parse args
@@ -196,6 +200,7 @@ def main():
     - convert/render template files to submission files
     - launch
     """
+    global args
     # pylint: disable=too-many-statements
     parser = get_parser()
 
@@ -348,4 +353,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
+        if args.verbose:
+            raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")

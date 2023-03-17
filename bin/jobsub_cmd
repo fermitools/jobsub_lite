@@ -49,8 +49,12 @@ class StoreGroupinEnvironment(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
+arglist = argparse.Namespace()
+
+
 def main() -> None:
     """main line of code, proces args, etc."""
+    global arglist
     parser = get_parser.get_jobid_parser(add_condor_epilog=True)
     parser.add_argument("-name", help="Set schedd name", default=None)
     parser.add_argument(
@@ -233,4 +237,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
+        if arglist.verbose:
+            raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
