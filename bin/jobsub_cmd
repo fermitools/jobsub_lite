@@ -121,6 +121,7 @@ def main() -> None:
             "-better-analyze",
             "-dag",
             "-format",
+            "-hold",
             "-io",
             "-json",
             "-long",
