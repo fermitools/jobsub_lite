@@ -38,9 +38,12 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 import fake_ifdh
 import get_parser
 
+verbose = 0
+
 
 def main() -> None:
     """main line of code, proces args, etc."""
+    global verbose
     parser = get_parser.get_jobid_parser(add_condor_epilog=True)
     parser.add_argument("--user", help="Set username to look at", default="")
     parser.add_argument(
@@ -55,6 +58,8 @@ def main() -> None:
     )
 
     arglist, passthru = parser.parse_known_args()
+
+    verbose = arglist.verbose
 
     passthru.append("-backwards")
 
@@ -160,4 +165,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
+        if verbose:
+            raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")

@@ -49,6 +49,9 @@ from utils import cleanup
 from version import print_version, print_support_email
 
 
+verbose = 0
+
+
 def main():
     """script mainline:
     - parse args
@@ -57,6 +60,7 @@ def main():
     - condor_transfer_data
     - make tarball
     """
+    global verbose
     parser = get_jobid_parser()
     transfer_complete = False
 
@@ -80,6 +84,8 @@ def main():
     parser.add_argument("job_id", nargs="?", help="job/submission ID")
 
     args = parser.parse_args()
+
+    verbose = args.verbose
 
     if args.version:
         print_version()
@@ -172,4 +178,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
+        if verbose:
+            raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")

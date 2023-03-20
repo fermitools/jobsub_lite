@@ -19,6 +19,7 @@
 
 """ submit command for jobsub layer over condor """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
+import argparse
 import glob
 import hashlib
 import os
@@ -187,6 +188,9 @@ def transfer_sandbox(src_dir, dest_url):
             )
 
 
+verbose = 0
+
+
 def main():
     """script mainline:
     - parse args
@@ -196,6 +200,7 @@ def main():
     - convert/render template files to submission files
     - launch
     """
+    global verbose
     # pylint: disable=too-many-statements
     parser = get_parser()
 
@@ -204,6 +209,8 @@ def main():
     # so we do that here for backwards compatability
     backslash_escape_layer(sys.argv)
     args = parser.parse_args()
+
+    verbose = args.verbose
 
     # if they were trying to pass LD_LIBRARY_PATH to the job, get it from HIDE_LD_LIBRARY_PATH
     if "LD_LIBRARY_PATH" in args.environment and os.environ.get(
@@ -348,4 +355,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
+        if verbose:
+            raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
