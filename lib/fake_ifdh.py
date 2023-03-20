@@ -245,13 +245,15 @@ def fix_pnfs(path: str) -> str:
         path = f"https://fndcadoor.fnal.gov:2880/{m.group(1)}"
     return path
 
+
 def chmod(dest: str, mode: int) -> None:
     # can't really chmod over https, but can over nfs mount, so
     # just try with the raw path, and ignore it if it doesn't work
     try:
-        res = os.chmod(dest, mode)
+        os.chmod(dest, mode)
     except Exception as e:
         pass
+
 
 def mkdir_p(dest: str) -> None:
     """make possibly multiple directories"""
