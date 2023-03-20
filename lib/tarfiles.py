@@ -193,8 +193,10 @@ def do_tarballs(args: argparse.Namespace) -> None:
                 if existing:
                     print(f"file {pfn} already copied to resilient area")
                 else:
+                    oldmask = os.umask(0o002)
                     fake_ifdh.mkdir_p(os.path.dirname(location))
                     fake_ifdh.cp(pfn, location)
+                    os.umask(oldmask)
                     existing = fake_ifdh.ls(location)
                     if not existing:
                         raise PermissionError(f"Error: Unable to create {location}")
