@@ -49,12 +49,12 @@ class StoreGroupinEnvironment(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-arglist = argparse.Namespace()
+verbose = 0
 
 
 def main() -> None:
     """main line of code, proces args, etc."""
-    global arglist
+    global verbose
     parser = get_parser.get_jobid_parser(add_condor_epilog=True)
     parser.add_argument("-name", help="Set schedd name", default=None)
     parser.add_argument(
@@ -69,6 +69,7 @@ def main() -> None:
         parser.add_argument("--user", help="username to query", default=None)
 
     arglist, passthru = parser.parse_known_args()
+    verbose = arglist.verbose
 
     if arglist.version:
         print_version()
@@ -237,6 +238,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        if arglist.verbose:
+        if verbose:
             raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
