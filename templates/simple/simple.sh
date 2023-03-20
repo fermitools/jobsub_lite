@@ -223,17 +223,20 @@ export PATH="${PATH}:."
     slp=30
     max_tries_limit=40
     min_tries_per_fname=10
-    max_tries=$((min_tries_per_fname * len_fname_list))
+    max_tries=$((min_tries_per_fname * len_fnamelist))
     if [[ ${max_tries} -gt ${max_tries_limit} ]]; then
       max_tries=$max_tries_limit
+    fi
 
     # wait for RCDS file to show up
     num_tries=0
     while [ ${num_tries} -lt ${max_tries} ]; do
-      fnamelist=( `shuf -e "${fnamelist[@]}"` ) . # Shuffle our list
+      fnamelist=( `shuf -e "${fnamelist[@]}"` ) # Shuffle our list
       candidate_fname="${fnamelist[0]}"
+      echo "Looking for file ${candidate_fname} on RCDS.  Try ${num_tries} of ${max_tries}"
       num_tries=$(($num_tries + 1))
-      if  test -f ${candidate_fname}; then
+      if test -f "${candidate_fname}"; then
+          echo "Found file ${candidate_fname} on RCDS.  Copying in."
           ${JSB_TMP}/ifdh.sh cp -D ${candidate_fname} ${CONDOR_DIR_INPUT}
           break
       else
@@ -265,16 +268,18 @@ export PATH="${PATH}:."
     slp=30
     max_tries_limit=40
     min_tries_per_tfname=10
-    max_tries=$((min_tries_per_tfname * len_tfname_list))
+    max_tries=$((min_tries_per_tfname * len_tfnamelist))
     if [[ ${max_tries} -gt ${max_tries_limit} ]]; then
       max_tries=$max_tries_limit
+    fi
 
     # wait for tarfile to show up
     while [[ ${num_tries} -lt ${max_tries} ]]; do
       # Pick a random tfname to try by shuffling our possible tarfile names and picking the first one
-      tfnamelist=( `shuf -e "${tfnamelist[@]}"` ) . # Shuffle our list
+      tfnamelist=( `shuf -e "${tfnamelist[@]}"` ) # Shuffle our list
       candidate_tfname="${tfnamelist[0]}"
       num_tries=$(($num_tries + 1))
+      echo "Looking for file ${candidate_tfname} on RCDS.  Try ${num_tries} of ${max_tries}"
       if test -d "${candidate_tfname}" ; then
         # found the tarfile.  Set the environment variables
         {%if loop.first%}
