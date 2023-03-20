@@ -193,10 +193,10 @@ def do_tarballs(args: argparse.Namespace) -> None:
                 if existing:
                     print(f"file {pfn} already copied to resilient area")
                 else:
-                    oldmask = os.umask(0o002)
                     fake_ifdh.mkdir_p(os.path.dirname(location))
+                    fake_ifdh.chmod(os.path.dirname(location), 0o775)
                     fake_ifdh.cp(pfn, location)
-                    os.umask(oldmask)
+                    fake_ifdh.chmod(location, 0o775)
                     existing = fake_ifdh.ls(location)
                     if not existing:
                         raise PermissionError(f"Error: Unable to create {location}")
@@ -307,7 +307,9 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
             print(f"file {tfn} already copied to resilient area")
         else:
             fake_ifdh.mkdir_p(os.path.dirname(location))
+            fake_ifdh.chmod(os.path.dirname(location), 0o775)
             fake_ifdh.cp(tfn, location)
+            fake_ifdh.chmod(location, 0o775)
             existing = fake_ifdh.ls(location)
             if not existing:
                 raise PermissionError(f"Error: Unable to create {location}")
