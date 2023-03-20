@@ -129,11 +129,12 @@ def dune_gp(dune):
 
 joblist = []
 jid2test = {}
+jid2nout = {}
 outdirs = {}
 ddirs = {}
 
 
-def run_launch(cmd):
+def run_launch(cmd, expected_out=1):
     """
     run a jobsub launch command, get jobids from output to watch
     for, etc.
@@ -166,6 +167,7 @@ def run_launch(cmd):
             joblist.append("%s@%s" % (jobid, schedd))
             # note which test led to this jobid
             jid2test["%s@%s" % (jobid, schedd)] = inspect.stack()[2][3]
+            jid2nout["%s@%s" % (jobid, schedd)] = expected_out
     res = pf.close()
 
     if not added:
@@ -261,7 +263,7 @@ def test_dash_f_dropbox_pnfs(dune):
     )
 
 
-def dagnabbit_launch(extra, which=""):
+def dagnabbit_launch(extra, which="", nout_files=5):
     os.environ["SUBMIT_FLAGS"] = ""
     os.chdir(os.path.join(os.path.dirname(__file__), "dagnabbit"))
     assert run_launch(
@@ -270,7 +272,8 @@ def dagnabbit_launch(extra, which=""):
           --verbose=2 \
           -e SAM_EXPERIMENT {extra} \
           --dag file://dagTest{which} \
-        """
+        """,
+        nout_files,
     )
     os.chdir(os.path.dirname(__file__))
 
@@ -282,7 +285,7 @@ def test_launch_dagnabbit_simple(samdev):
 
 @pytest.mark.integration
 def test_launch_dagnabbit_collapse(samdev):
-    dagnabbit_launch("--devserver", "HS")
+    dagnabbit_launch("--devserver", "HS", 12)
 
 
 @pytest.mark.integration
@@ -295,7 +298,7 @@ def test_launch_dagnabbit_complex(samdev):
     os.environ["JOBSUB_EXPORTS"] = ""
     os.environ["SUBMIT_FLAGS"] = ""
 
-    dagnabbit_launch("--devserver", "7")
+    dagnabbit_launch("--devserver", "7", 8)
 
 
 def fife_launch(extra):
@@ -435,17 +438,19 @@ def test_check_job_output():
         assert len(fl)
 
     for jid, outdir in outdirs.items():
-        fl = glob.glob("%s/*.log" % outdir)
+        fl = glob.glob("%s/*.out" % outdir)
+
+        # make sure we have enough output files
+        assert len(fl) >= jid2nout[jid]
+
         for f in fl:
-            print(f"Checking {jid2test[jid]} {jid} logfile {f}...")
+            print(f"Checking {jid2test[jid]} {jid} output file {f}...")
             fd = open(f, "r")
             f_ok = False
-            for l in fd.readlines():
-                if l.find("(1) Normal termination (return value 0)") > 0:
-                    f_ok = True
-                    print("-- ok")
+            ll = fd.readlines()
             fd.close()
-            assert f_ok
+            assert ll[-1].endswith("COMPLETED with exit status 0\n")
+            print("-- ok")
         shutil.rmtree(outdir)
 
 
