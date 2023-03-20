@@ -246,6 +246,15 @@ def fix_pnfs(path: str) -> str:
     return path
 
 
+def chmod(dest: str, mode: int) -> None:
+    # can't really chmod over https, but can over nfs mount, so
+    # just try with the raw path, and ignore it if it doesn't work
+    try:
+        os.chmod(dest, mode)
+    except FileNotFoundError as e:
+        pass
+
+
 def mkdir_p(dest: str) -> None:
     """make possibly multiple directories"""
     dest = fix_pnfs(dest)
