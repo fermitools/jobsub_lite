@@ -223,7 +223,7 @@ export PATH="${PATH}:."
     slp=30
     max_tries_limit=40
     min_tries_per_fname=10
-    max_tries = $((min_tries_per_fname * len_fname_list))
+    max_tries=$((min_tries_per_fname * len_fname_list))
     if [[ ${max_tries} -gt ${max_tries_limit} ]]; then
       max_tries=$max_tries_limit
 
@@ -265,7 +265,7 @@ export PATH="${PATH}:."
     slp=30
     max_tries_limit=40
     min_tries_per_tfname=10
-    max_tries = $((min_tries_per_tfname * len_tfname_list))
+    max_tries=$((min_tries_per_tfname * len_tfname_list))
     if [[ ${max_tries} -gt ${max_tries_limit} ]]; then
       max_tries=$max_tries_limit
 
