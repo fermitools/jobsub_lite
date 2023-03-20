@@ -438,7 +438,7 @@ def test_check_job_output():
         assert len(fl)
 
     for jid, outdir in outdirs.items():
-        fl = glob.glob("%s/*.out" % outdir)
+        fl = glob.glob("%s/*[0-9].out" % outdir)
 
         # make sure we have enough output files
         assert len(fl) >= jid2nout[jid]
