@@ -251,7 +251,7 @@ def chmod(dest: str, mode: int) -> None:
     # just try with the raw path, and ignore it if it doesn't work
     try:
         os.chmod(dest, mode)
-    except Exception as e:
+    except FileNotFoundError as e:
         pass
 
 
