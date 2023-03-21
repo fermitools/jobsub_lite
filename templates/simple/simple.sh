@@ -240,7 +240,7 @@ export PATH="${PATH}:."
           ${JSB_TMP}/ifdh.sh cp -D ${candidate_fname} ${CONDOR_DIR_INPUT}
           break
       else
-          if [[ $num_tries -eq $num_tries_per_fname ]]; then
+          if [[ $num_tries -eq $max_tries ]]; then
             echo "Max retries ${num_tries} exceeded to find ${fname}.  Job may fail."
             break
           fi
@@ -290,6 +290,7 @@ export PATH="${PATH}:."
           INPUT_TAR_FILE=${candidate_tfname}/{{tar_file_orig_basenames[loop.index0]}}.tar
           export INPUT_TAR_FILE
           ln -s ${candidate_tfname} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
+          break
         {%else%}
           INPUT_TAR_DIR_LOCAL_{{loop.index0}}=${candidate_tfname}
           export INPUT_TAR_DIR_LOCAL_{{loop.index0}}
@@ -298,9 +299,10 @@ export PATH="${PATH}:."
           INPUT_TAR_FILE_{{loop.index0}}=${candidate_tfname}/{{tar_file_orig_basenames[loop.index0]}}.tar
           export INPUT_TAR_FILE_{{loop.index0}}
           ln -s ${candidate_tfname} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
+          break
         {%endif%}
       else
-          if [[ $num_tries -eq $max_tries]]; then
+          if [[ $num_tries -eq $max_tries ]] ; then
             echo "Max retries ${num_tries} exceeded to find ${tfname}.  Job may fail."
             break
           fi
