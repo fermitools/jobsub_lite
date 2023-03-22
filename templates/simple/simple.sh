@@ -215,9 +215,9 @@ export PATH="${PATH}:."
     # Save tfname into a list in case we couldn't get the exact path, like if user skipped the RCDS upload check
     fnamelist=({{fname}})
 
-    # Scale number of tries per input_file possible value.  Maximum 30 (if there's only one possible value
+    # Scale number of tries per input_file possible value.  Maximum 40 (if there's only one possible value
     # or if we know the path beforehand), minimum 10.  Given these two settings, a single tarball path possibility
-    # can take up to 5 minutes to check
+    # can take 5-20 minutes to check
     len_fnamelist=`echo "${{ '{#' }}fnamelist[@]}"`
     num_tries=0
     slp=30
@@ -241,7 +241,7 @@ export PATH="${PATH}:."
           break
       else
           if [[ $num_tries -eq $max_tries ]]; then
-            echo "Max retries ${num_tries} exceeded to find ${fname}.  Job may fail."
+            echo "Max retries ${num_tries} exceeded to find ${candidate_fname}.  Job may fail."
             break
           fi
           sleep $slp
@@ -260,9 +260,9 @@ export PATH="${PATH}:."
     # Save tfname into a list in case we couldn't get the exact path, like if user skipped the RCDS upload check
     tfnamelist=({{tfname}})
 
-    # Scale number of tries per tar_file_name possible value.  Maximum 30 (if there's only one possible value
+    # Scale number of tries per tar_file_name possible value.  Maximum 40 (if there's only one possible value
     # or if we know the path beforehand), minimum 10.  Given these two settings, a single tarball path possibility
-    # can take up to 5 minutes to check
+    # can take 5-20 minutes to check
     len_tfnamelist=`echo "${{ '{#' }}tfnamelist[@]}"`
     num_tries=0
     slp=30
@@ -279,9 +279,10 @@ export PATH="${PATH}:."
       tfnamelist=( `shuf -e "${tfnamelist[@]}"` ) # Shuffle our list
       candidate_tfname="${tfnamelist[0]}"
       num_tries=$(($num_tries + 1))
-      echo "Looking for file ${candidate_tfname} on RCDS.  Try ${num_tries} of ${max_tries}"
+      echo "Looking for directory ${candidate_tfname} on RCDS.  Try ${num_tries} of ${max_tries}"
       if test -d "${candidate_tfname}" ; then
         # found the tarfile.  Set the environment variables
+        echo "Found file ${candidate_tfname} on RCDS.  Setting environment variables and links in job."
         {%if loop.first%}
           INPUT_TAR_DIR_LOCAL=${candidate_tfname}
           export INPUT_TAR_DIR_LOCAL
@@ -303,7 +304,7 @@ export PATH="${PATH}:."
         {%endif%}
       else
           if [[ $num_tries -eq $max_tries ]] ; then
-            echo "Max retries ${num_tries} exceeded to find ${tfname}.  Job may fail."
+            echo "Max retries ${num_tries} exceeded to find ${candidate_tfname}.  Job may fail."
             break
           fi
           sleep $slp
