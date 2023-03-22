@@ -481,7 +481,7 @@ class TarfilePublisherHandler:
         response = self._get_configured_pubapi_repos()
         _match = re.match("repos\:(.+)", response.text)
         repos = _match.group(1) if _match is not None else DEFAULT_REPOS
-        return f"/cvmfs/{repos}/sw/{self.cid}"
+        return f"/cvmfs/{{{repos}}}/sw/{self.cid}"
 
     @pubapi_operation
     def _get_configured_pubapi_repos(self) -> requests.Response:
