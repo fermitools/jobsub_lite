@@ -272,31 +272,45 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
 
         # cid looks something like dune/bf6a15b4238b72f82...(long hash)
         cid = f"{args.group}/{digest}"
-        if args.verbose:
-            print(f"Using RCDS to publish tarball\ncid: {cid}")
 
         publisher = TarfilePublisherHandler(cid, proxy, token)
         location = publisher.cid_exists()
         if location is None:
+            if args.verbose:
+                print(f"\n\nUsing RCDS to publish tarball\ncid: {cid}")
             publisher.publish(tf)
-            print("Checking to see if uploaded file is published on RCDS.")
-            # pylint: disable-next=unused-variable
-            for i in range(NUM_RETRIES):
-                location = publisher.cid_exists()
-                if location is not None:
-                    print("Found uploaded file on RCDS.")
-                    break
-                if i < (NUM_RETRIES - 1):
+            if not getattr(args, "skip_check_rcds", False):
+                print("Checking to see if uploaded file is published on RCDS.")
+                # pylint: disable-next=unused-variable
+                for i in range(NUM_RETRIES):
+                    location = publisher.cid_exists()
+                    if location is not None:
+                        print("Found uploaded file on RCDS.")
+                        break
+                    if i < (NUM_RETRIES - 1):
+                        print(
+                            f"Could not locate uploaded file on RCDS.  Will retry in {RETRY_INTERVAL_SEC} seconds."
+                        )
+                        time.sleep(RETRY_INTERVAL_SEC)
+                else:
                     print(
-                        f"Could not locate uploaded file on RCDS.  Will retry in {RETRY_INTERVAL_SEC} seconds."
+                        f"Max retries {NUM_RETRIES} to find RCDS tarball at {cid} exceeded.  Exiting now."
                     )
-                    time.sleep(RETRY_INTERVAL_SEC)
+                    exit(1)
             else:
-                print(
-                    f"Max retries {NUM_RETRIES} to find RCDS tarball at {cid} exceeded.  Exiting now."
-                )
-                exit(1)
+                # Here, we don't wait for publish to happen, so we don't know the exact location of the tarball.
+                # We instead set the location to a glob that the wrapper has to handle later
+                if args.verbose:
+                    print("Requested to publish uploaded file on RCDS.")
+                    if args.verbose > 1:
+                        print(
+                            "skip_check_rcds is set to True, so will not wait on confirmation of publish to proceed"
+                        )
+                    print("\n")
+                location = publisher.get_glob_path_for_cid()
         else:
+            if args.verbose:
+                print("Found uploaded file on RCDS.")
             # tag it so it stays around
             publisher.update_cid()
 
@@ -339,6 +353,7 @@ class TarfilePublisherHandler:
     def __init__(
         self, cid: str, proxy: Union[None, str] = None, token: Union[None, str] = None
     ):
+        self.cid = cid
         self.cid_url = _quote(cid, safe="")  # Encode CID for passing to URL
         self.proxy = proxy
         self.token = token
@@ -348,13 +363,16 @@ class TarfilePublisherHandler:
             print(f"Using X509 proxy located at {self.proxy} to authenticate to RCDS")
         self.dropbox_servers = tuple(self.dropbox_server_string.split())
         self.pubapi_base_url_formatter_full = (
-            f"https://{{dropbox_server}}/pubapi/{{endpoint}}?cid={self.cid_url}"
+            f"https://{{dropbox_server}}/pubapi/{{endpoint}}"
         )
         self.pubapi_base_url_formatter = self.pubapi_base_url_formatter_full
+        self.pubapi_cid_url_formatter = (
+            self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
+        )
 
     # pylint: disable-next=no-self-argument
     def pubapi_operation(func: Callable) -> Callable:  # type: ignore
-        """Wrap various PubAPI operations, return path if we get it from response"""
+        """Wrap various PubAPI operations, setting dropbox server and handling retries"""
 
         class SafeDict(dict):  # type: ignore
             """Use this object to allow us to not need all keys of dict when
@@ -365,7 +383,7 @@ class TarfilePublisherHandler:
                 """missing item handler"""
                 return f"{{{key}}}"  # "{<key>}"
 
-        def wrapper(self, *args, **kwargs):  # type: ignore
+        def wrapper(self, *args: Any, **kwargs: Any) -> requests.Response:  # type: ignore
             """wrapper function for decorator"""
             # pylint: disable-next=protected-access
             _dropbox_server_selector = self.__select_dropbox_server()
@@ -377,6 +395,9 @@ class TarfilePublisherHandler:
                         self.pubapi_base_url_formatter_full.format_map(
                             SafeDict(dropbox_server=_dropbox_server)
                         )
+                    )
+                    self.pubapi_cid_url_formatter = (
+                        self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
                     )
                     # pylint: disable-next=not-callable
                     response = func(self, *args, **kwargs)
@@ -390,26 +411,40 @@ class TarfilePublisherHandler:
                     time.sleep(RETRY_INTERVAL_SEC)
                 else:
                     break
+            return response
+
+        return wrapper
+
+    # pylint: disable-next=no-self-argument
+    def cid_operation(func: Callable) -> Callable:  # type: ignore
+        """Decorator to call PubAPI operations, and return location of tarball
+        locations if known"""
+
+        def wrapper(self, *args: Any, **kwargs: Any) -> Optional[str]:  # type: ignore
+            response = func(self, *args, **kwargs)
             _match = self.check_tarball_present_re.match(response.text)
             if _match is not None:
-                return _match.group(1)
+                return str(_match.group(1))
             return None
 
         return wrapper
 
+    @cid_operation
     @pubapi_operation
     def update_cid(self) -> requests.Response:
-        """Make PubAPI update call to check if we already have this tarfile
+        """Make PubAPI update call to check if we
+        already have this tarfile
 
         Returns:
             requests.Response: Response from PubAPI call indicating if tarball
             represented by self.cid is present
         """
-        url = self.pubapi_base_url_formatter.format(endpoint="update")
+        url = self.pubapi_cid_url_formatter.format(endpoint="update")
         if self.token:
             return requests.get(url, auth=TokenAuth(self.token))
         return requests.get(url, cert=(self.proxy, self.proxy))
 
+    @cid_operation
     @pubapi_operation
     def publish(self, tarfile: str) -> requests.Response:
         """Make PubAPI publish call to upload this tarfile
@@ -421,11 +456,12 @@ class TarfilePublisherHandler:
             requests.Response: Response from PubAPI call indicating if tarball
             represented by self.cid is present
         """
-        url = self.pubapi_base_url_formatter.format(endpoint="publish")
+        url = self.pubapi_cid_url_formatter.format(endpoint="publish")
         if self.token:
             return requests.post(url, auth=TokenAuth(self.token), data=tarfile)
         return requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
 
+    @cid_operation
     @pubapi_operation
     def cid_exists(self) -> requests.Response:
         """Make PubAPI update call to check if we already have this tarfile
@@ -434,10 +470,24 @@ class TarfilePublisherHandler:
             requests.Response: Response from PubAPI call indicating if tarball
             represented by self.cid is present
         """
-        url = self.pubapi_base_url_formatter.format(endpoint="exists")
+        url = self.pubapi_cid_url_formatter.format(endpoint="exists")
         if self.token:
             return requests.get(url, auth=TokenAuth(self.token))
+        return requests.get(url, cert=(self.proxy, self.proxy))
 
+    def get_glob_path_for_cid(self) -> Optional[str]:
+        """Return a glob path where a tarball given by self.cid can be found"""
+        DEFAULT_REPOS: str = "fifeuser1.opensciencegrid.org,fifeuser2.opensciencegrid.org,fifeuser3.opensciencegrid.org,fifeuser4.opensciencegrid.org"
+        response = self._get_configured_pubapi_repos()
+        _match = re.match("repos\:(.+)", response.text)
+        repos = _match.group(1) if _match is not None else DEFAULT_REPOS
+        return f"/cvmfs/{{{repos}}}/sw/{self.cid}"
+
+    @pubapi_operation
+    def _get_configured_pubapi_repos(self) -> requests.Response:
+        url = self.pubapi_base_url_formatter.format(endpoint="config")
+        if self.token:
+            return requests.get(url, auth=TokenAuth(self.token))
         return requests.get(url, cert=(self.proxy, self.proxy))
 
     def __select_dropbox_server(self) -> Iterator[str]:

@@ -210,44 +210,106 @@ export PATH="${PATH}:."
 
 # -f files for input
 {%for fname in input_file%}
-${JSB_TMP}/ifdh.sh cp -D {{fname}} ${CONDOR_DIR_INPUT}
-chmod u+x ${CONDOR_DIR_INPUT}/{{fname|basename}}
+  {%if fname[:6] == "/cvmfs" and "fifeuser" in fname%}
+    # RCDS unpacked tarfile
+    # Save tfname into a list in case we couldn't get the exact path, like if user skipped the RCDS upload check
+    fnamelist=({{fname}})
+
+    # Scale number of tries per input_file possible value.  Maximum 40 (if there's only one possible value
+    # or if we know the path beforehand), minimum 10.  Given these two settings, a single tarball path possibility
+    # can take 5-20 minutes to check
+    len_fnamelist=`echo "${{ '{#' }}fnamelist[@]}"`
+    num_tries=0
+    slp=30
+    max_tries_limit=40
+    min_tries_per_fname=10
+    max_tries=$((min_tries_per_fname * len_fnamelist))
+    if [[ ${max_tries} -gt ${max_tries_limit} ]]; then
+      max_tries=$max_tries_limit
+    fi
+
+    # wait for RCDS file to show up
+    num_tries=0
+    while [ ${num_tries} -lt ${max_tries} ]; do
+      fnamelist=( `shuf -e "${fnamelist[@]}"` ) # Shuffle our list
+      candidate_fname="${fnamelist[0]}"
+      echo "Looking for file ${candidate_fname} on RCDS.  Try ${num_tries} of ${max_tries}"
+      num_tries=$(($num_tries + 1))
+      if test -f "${candidate_fname}"; then
+          echo "Found file ${candidate_fname} on RCDS.  Copying in."
+          ${JSB_TMP}/ifdh.sh cp -D ${candidate_fname} ${CONDOR_DIR_INPUT}
+          break
+      else
+          if [[ $num_tries -eq $max_tries ]]; then
+            echo "Max retries ${num_tries} exceeded to find ${candidate_fname}.  Job may fail."
+            break
+          fi
+          sleep $slp
+      fi
+      done
+  {%else%}
+    ${JSB_TMP}/ifdh.sh cp -D {{fname}} ${CONDOR_DIR_INPUT}
+    chmod u+x ${CONDOR_DIR_INPUT}/{{fname|basename}}
+  {%endif%}
 {%endfor%}
 
 # --tar_file_name for input
 {%for tfname in tar_file_name%}
   {%if tfname[:6] == "/cvmfs" and tfname[-7:] != ".tar.gz" %}
     # RCDS unpacked tarfile
-    {%if loop.first%}
-      INPUT_TAR_DIR_LOCAL={{tfname}}
-      export INPUT_TAR_DIR_LOCAL
-      # Note: this filename doesn't exist, but if you take dirname
-      #       of it you find the contents
-      INPUT_TAR_FILE={{tfname}}/{{tar_file_orig_basenames[loop.index0]}}.tar
-      export INPUT_TAR_FILE
-      ln -s {{tfname}} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
+    # Save tfname into a list in case we couldn't get the exact path, like if user skipped the RCDS upload check
+    tfnamelist=({{tfname}})
 
-      # wait for tarfile to show up
-      num_tries=0
-      max_tries=30
-      slp=30
-      while [ $num_tries -lt $max_tries ]; do
-           num_tries=$(($num_tries + 1))
-           if  test -d "$INPUT_TAR_DIR_LOCAL" ; then
-               break
-           else
-               sleep $slp
-           fi
-      done
-    {%else%}
-      INPUT_TAR_DIR_LOCAL_{{loop.index0}}={{tfname}}
-      export INPUT_TAR_DIR_LOCAL_{{loop.index0}}
-      # Note: this filename doesn't exist, but if you take dirname
-      #       of it you find the contents
-      INPUT_TAR_FILE_{{loop.index0}}={{tfname}}/{{tar_file_orig_basenames[loop.index0]}}.tar
-      export INPUT_TAR_FILE_{{loop.index0}}
-      ln -s {{tfname}} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
-    {%endif%}
+    # Scale number of tries per tar_file_name possible value.  Maximum 40 (if there's only one possible value
+    # or if we know the path beforehand), minimum 10.  Given these two settings, a single tarball path possibility
+    # can take 5-20 minutes to check
+    len_tfnamelist=`echo "${{ '{#' }}tfnamelist[@]}"`
+    num_tries=0
+    slp=30
+    max_tries_limit=40
+    min_tries_per_tfname=10
+    max_tries=$((min_tries_per_tfname * len_tfnamelist))
+    if [[ ${max_tries} -gt ${max_tries_limit} ]]; then
+      max_tries=$max_tries_limit
+    fi
+
+    # wait for tarfile to show up
+    while [[ ${num_tries} -lt ${max_tries} ]]; do
+      # Pick a random tfname to try by shuffling our possible tarfile names and picking the first one
+      tfnamelist=( `shuf -e "${tfnamelist[@]}"` ) # Shuffle our list
+      candidate_tfname="${tfnamelist[0]}"
+      num_tries=$(($num_tries + 1))
+      echo "Looking for directory ${candidate_tfname} on RCDS.  Try ${num_tries} of ${max_tries}"
+      if test -d "${candidate_tfname}" ; then
+        # found the tarfile.  Set the environment variables
+        echo "Found file ${candidate_tfname} on RCDS.  Setting environment variables and links in job."
+        {%if loop.first%}
+          INPUT_TAR_DIR_LOCAL=${candidate_tfname}
+          export INPUT_TAR_DIR_LOCAL
+          # Note: this filename doesn't exist, but if you take dirname
+          #       of it you find the contents
+          INPUT_TAR_FILE=${candidate_tfname}/{{tar_file_orig_basenames[loop.index0]}}.tar
+          export INPUT_TAR_FILE
+          ln -s ${candidate_tfname} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
+          break
+        {%else%}
+          INPUT_TAR_DIR_LOCAL_{{loop.index0}}=${candidate_tfname}
+          export INPUT_TAR_DIR_LOCAL_{{loop.index0}}
+          # Note: this filename doesn't exist, but if you take dirname
+          #       of it you find the contents
+          INPUT_TAR_FILE_{{loop.index0}}=${candidate_tfname}/{{tar_file_orig_basenames[loop.index0]}}.tar
+          export INPUT_TAR_FILE_{{loop.index0}}
+          ln -s ${candidate_tfname} ${CONDOR_DIR_INPUT}/{{tar_file_orig_basenames[loop.index0]}}
+          break
+        {%endif%}
+      else
+          if [[ $num_tries -eq $max_tries ]] ; then
+            echo "Max retries ${num_tries} exceeded to find ${candidate_tfname}.  Job may fail."
+            break
+          fi
+          sleep $slp
+      fi
+    done
   {%else%}
     # tarfile to transfer and unpack
     mkdir .unwind_{{loop.index0}}

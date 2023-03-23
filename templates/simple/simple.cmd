@@ -51,6 +51,7 @@ notify_user = {{email_to}}
 +JobsubUUID="{{uuid}}"
 +Drain = False
 
+
 {% if site is defined and site != 'LOCAL' %}
 +DESIRED_SITES = "{{site}}"
 {% endif %}
@@ -60,6 +61,9 @@ notify_user = {{email_to}}
 +GeneratedBy ="{{jobsub_version}} {{schedd}}"
 {%if usage_model is defined and usage_model  %}
 +DESIRED_usage_model = "{{usage_model}}"
+{% endif %}
+{% if skip_check is defined and skip_check %}
++JobsubSkipChecks = "{{skip_check|join(",")}}"
 {% endif %}
 {%if resource_provides_quoted%}
 +DESIRED_{{resource_provides_quoted|join("\n+DESIRED_")}}

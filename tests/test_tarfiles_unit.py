@@ -205,3 +205,46 @@ class TestTarfilesUnit:
     def x_test_do_tarballs_5(self):
         # should have another one here to test existing /cvmfs path
         pass
+
+    @pytest.mark.unit
+    def test_tarfile_publisher_glob_path(self, needs_credentials):
+        """Tests that the TarfilePublisherHandler glob path generator
+        returns the expected glob for the CID given"""
+        import re
+
+        proxy, token = needs_credentials
+        fake_cid = f"{TestUnit.test_group}/12345abcde"
+        tfh = tarfiles.TarfilePublisherHandler(fake_cid, proxy, token)
+        expected_pattern = r"/cvmfs/{(.+)}/sw/" + fake_cid
+        assert re.match(expected_pattern, tfh.get_glob_path_for_cid())
+
+    @pytest.mark.unit
+    def test_tarfile_publisher_cid_operation(self):
+        """Test the cid_operation decorator of the TarfilePublisherHandler."""
+        from collections import namedtuple
+
+        fake_cid = f"{TestUnit.test_group}/12345abcde"
+        fake_location = "thisisthepath"
+
+        # We have to use this fake object to mimic a requests.Response's structure:
+        # specifically, we need to return an object which has a "text"
+        # attribute from our test functions wrapped with the cid_operation
+        # handler, since the cid_operation decorator inspects the text
+        # attribute of the return value of the function it wraps
+        FakeTextContainer = namedtuple("FakeTextContainer", ["text"])
+
+        class FakePublisherHandler(tarfiles.TarfilePublisherHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+            @tarfiles.TarfilePublisherHandler.cid_operation
+            def fail_function(self):
+                return FakeTextContainer("thiswillnotmatch")
+
+            @tarfiles.TarfilePublisherHandler.cid_operation
+            def present_function(self):
+                return FakeTextContainer(f"PRESENT:{fake_location}")
+
+        f = FakePublisherHandler(cid=fake_cid)
+        assert f.fail_function() is None
+        assert f.present_function() == fake_location
