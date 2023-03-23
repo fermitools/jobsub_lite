@@ -215,7 +215,7 @@ class TestTarfilesUnit:
         proxy, token = needs_credentials
         fake_cid = f"{TestUnit.test_group}/12345abcde"
         tfh = tarfiles.TarfilePublisherHandler(fake_cid, proxy, token)
-        expected_pattern = f"/cvmfs/\{{(.+)\}}/sw/{fake_cid}"
+        expected_pattern = r"/cvmfs/{(.+)}/sw/" + fake_cid
         assert re.match(expected_pattern, tfh.get_glob_path_for_cid())
 
     @pytest.mark.unit
