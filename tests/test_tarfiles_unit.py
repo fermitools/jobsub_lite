@@ -215,7 +215,7 @@ class TestTarfilesUnit:
         proxy, token = needs_credentials
         fake_cid = f"{TestUnit.test_group}/12345abcde"
         tfh = tarfiles.TarfilePublisherHandler(fake_cid, proxy, token)
-        expected_pattern = f"/cvmfs/(.+)/sw/{fake_cid}"
+        expected_pattern = f"/cvmfs/\{{(.+)\}}/sw/{fake_cid}"
         assert re.match(expected_pattern, tfh.get_glob_path_for_cid())
 
     @pytest.mark.unit
@@ -226,6 +226,11 @@ class TestTarfilesUnit:
         fake_cid = f"{TestUnit.test_group}/12345abcde"
         fake_location = "thisisthepath"
 
+        # We have to use this fake object to mimic a requests.Response's structure:
+        # specifically, we need to return an object which has a "text"
+        # attribute from our test functions wrapped with the cid_operation
+        # handler, since the cid_operation decorator inspects the text
+        # attribute of the return value of the function it wraps
         FakeTextContainer = namedtuple("FakeTextContainer", ["text"])
 
         class FakePublisherHandler(tarfiles.TarfilePublisherHandler):
