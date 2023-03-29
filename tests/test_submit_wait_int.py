@@ -232,6 +232,15 @@ def test_dash_f_plain(dune_test_file):
 
 
 @pytest.mark.integration
+def test_dash_f_sl6(dune_test_file):
+    lookaround_launch(
+        f"-f {dune_test_file} "
+        "--singularity=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl6:latest",
+        f"\\$CONDOR_DIR_INPUT/{os.path.basename(dune_test_file)}",
+    )
+
+
+@pytest.mark.integration
 def test_dash_f_dropbox_cvmfs(dune):
     lookaround_launch(
         f"-f dropbox://{__file__} --use-cvmfs-dropbox",
