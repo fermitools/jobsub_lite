@@ -18,6 +18,12 @@ do
 done
 {% endif %}
 
+if grep -q release.6 /etc/system-release
+then
+    : tokens do not work on SL6...
+    unset BEARER_TOKEN_FILE
+else
+
 {% if role is defined and role and role != 'Analysis' %}
 #export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}_{{oauth_handle}}.use
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}.use
@@ -25,6 +31,8 @@ export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}.use
 #export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{oauth_handle}}.use
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}.use
 {% endif %}
+
+fi
 
 set_jobsub_debug(){
     export PS4='$LINENO:'
