@@ -34,13 +34,13 @@ COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", None)
 
 
 # pylint: disable-next=no-member
-def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
+def get_schedd_list(vargs: Dict[str, Any]) -> List[classad.ClassAd]:
     """get jobsub* schedd names from collector, pick one."""
     # pylint: disable-next=no-member
     coll = htcondor.Collector(COLLECTOR_HOST)
     # pylint: disable-next=no-member
     devnot = "" if vargs["devserver"] else "!"
-    schedds = coll.query(
+    schedds: List[classad.ClassAd] = coll.query(
         htcondor.htcondor.AdTypes.Schedd,
         constraint="IsJobsubLite=?=true"
         " && "
@@ -56,6 +56,21 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
 
         print("")
 
+    return schedds
+
+
+def get_schedd_names(vargs: Dict[str, Any]) -> List[str]:
+    schedds = get_schedd_list(vargs)
+    res = []
+    for s in schedds:
+        name = s.eval("Name")
+        res.append(name)
+    return res
+
+
+# pylint: disable-next=no-member
+def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
+    schedds = get_schedd_list(vargs)
     # pick weights based on (inverse) of  duty cycle of schedd
     weights = []
     for s in schedds:

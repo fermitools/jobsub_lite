@@ -135,6 +135,12 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
         nargs=0,
         help="dump internal state of program (useful for debugging)",
     )
+    parser.add_argument(
+        "--devserver",
+        default=False,
+        action="store_true",
+        help="Use jobsubdevgpvm01 etc. to submit",
+    )
     group.add_argument(
         "--version",
         action="store_true",
@@ -458,12 +464,6 @@ def get_parser() -> argparse.ArgumentParser:
         const="pnfs",
         help="use pnfs resilient for dropbox (default is cvmfs)",
         default=None,
-    )
-    parser.add_argument(
-        "--devserver",
-        default=False,
-        action="store_true",
-        help="Use jobsubdevgpvm01 etc. to submit",
     )
     parser.add_argument(
         "executable",
