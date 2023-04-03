@@ -36,6 +36,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 
 import fake_ifdh
 import get_parser
+import condor
 from version import print_version, print_support_email
 
 
@@ -100,7 +101,9 @@ def main() -> None:
     #   any 234@schedd style arguments, pick out the schedd and
     #   keep the 234, and pass --name schedd as well
     execargs = []
-    schedd = None
+    schedd_list = []
+    # save beginning of 1234@schedd in list of args for that schedd
+    args_for_schedd = {}
 
     if arglist.name:
         schedd = arglist.name
@@ -112,10 +115,14 @@ def main() -> None:
         m = re.match(r"([\d.]*)@([\w.]+)", i)
         if m:
             # looks like a jobsub id 12.34@schedd.name
-            schedd = m.group(2)
-            i = m.group(1)
-            if not i:
-                continue
+            schedd_list.append(m.group(2))
+            if m.group(1):
+                if not m.group(2) in args_for_schedd:
+                    args_for_schedd[m.group(2)] = [m.group(1)]
+                else:
+                    args_for_schedd[m.group(2)].append(m.group(1))
+            continue
+
         # convert --better-analyze to -better-analyze, etc.
         if i.startswith("--"):
             i = i[1:]
@@ -150,12 +157,6 @@ def main() -> None:
             default_constraint = False
 
         execargs.append(i)
-
-    if schedd:
-        execargs.insert(0, schedd)
-        execargs.insert(0, "-name")
-        if not os.getenv("_condor_CREDD_HOST", False):
-            os.environ["_condor_CREDD_HOST"] = schedd
 
     # also make sure we have suitable credentials...
     role = fake_ifdh.getRole(arglist.role)
@@ -229,10 +230,23 @@ def main() -> None:
 
     cmd = cmd.replace("jobsub_", "condor_")
 
-    execargs.insert(0, cmd)
+    if not schedd_list:
+        # if no specific schedds given, get list of all...
+        schedd_list = condor.get_schedd_names(vars(arglist))
 
-    # now run the command with those arguments
-    os.execvp("/usr/bin/" + cmd, execargs)
+    if verbose:
+        print("schedd list:", schedd_list)
+
+    for schedd in schedd_list:
+        os.environ["_condor_CREDD_HOST"] = schedd
+        these_args = [cmd, "-name", schedd] + execargs + args_for_schedd.get(schedd, [])
+        if verbose:
+            print("running:", these_args)
+        pid = os.fork()
+        if pid:
+            os.wait()
+        else:
+            os.execvp("/usr/bin/" + cmd, these_args)
 
 
 if __name__ == "__main__":
