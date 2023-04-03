@@ -165,6 +165,8 @@ def fetch_from_landscape(
         pprint(r.json())
         print("Token contents:")
         os.system("httokendecode")
+    elif r.status_code >= 400:
+        print(f"Got error from landscape:\n{r.text}")
     r.raise_for_status()
 
     of = os.path.join(owd, f"{jobid}.tgz")
