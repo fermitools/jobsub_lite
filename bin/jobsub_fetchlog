@@ -91,8 +91,16 @@ def fetch_from_condor(
             os.stat(owd)
         except FileNotFoundError:
             os.makedirs(owd, mode=0o750)
-        for f in files:
-            shutil.copy2(os.path.join(iwd, f), owd)  # copy2 tries to preserve metadata
+        try:
+            for f in files:
+                shutil.copy2(
+                    os.path.join(iwd, f), owd
+                )  # copy2 tries to preserve metadata
+        except:
+            print(f"error copying logs to {owd}, leaving them in {iwd}")
+            raise
+        else:
+            shutil.rmtree(iwd)
     else:
         # build archive
         cmd = []
