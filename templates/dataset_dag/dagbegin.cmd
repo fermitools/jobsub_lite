@@ -20,6 +20,7 @@ transfer_executable= True
 when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_output_files = .empty_file
 request_memory = 100mb
+{%if     OS is defined and OS %}+DesiredOS="{{OS}}"{%endif%}
 +JobsubClientDN="{{clientdn}}"
 +JobsubClientIpAddress="{{ipaddr}}"
 +JobsubServerVersion="{{jobsub_version}}"
