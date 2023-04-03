@@ -410,7 +410,7 @@ def get_parser() -> argparse.ArgumentParser:
         action=VerifyAndAddSkipCheck,
         default=[],
         help="Skip checks that jobsub_lite does by default.  Add as many --skip-check "
-        f"flags as desired.  Available checks are {SupportedSkipChecks.get_all_checks()}."
+        f"flags as desired.  Available checks are {SupportedSkipChecks.get_all_checks()}. "
         "Example:  --skip-check rcds",
     )
     parser.add_argument(
