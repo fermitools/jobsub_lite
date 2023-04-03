@@ -139,7 +139,8 @@ def fetch_from_landscape(
 
     if _FETCHLOG_URL_ENV not in os.environ:
         raise Exception(
-            f"{_FETCHLOG_URL_ENV} not set. You may still be able to download with --condor"
+            f"{_FETCHLOG_URL_ENV} not set in the environment. "
+            "You may still be able to download with --condor"
         )
     base_url = os.environ[_FETCHLOG_URL_ENV]
     url = f"{base_url}/job/{jobid}.tar.gz"
