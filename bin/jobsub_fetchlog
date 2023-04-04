@@ -22,6 +22,9 @@ import sys
 import os
 import subprocess
 import shutil
+from typing import Optional
+import requests  # type: ignore
+from pprint import pprint
 
 if os.environ.get("LD_LIBRARY_PATH", ""):
     del os.environ["LD_LIBRARY_PATH"]
@@ -51,6 +54,145 @@ from version import print_version, print_support_email
 
 verbose = 0
 
+# environment variable containing base fetchlog server url
+_FETCHLOG_URL_ENV = "JOBSUB_FETCHLOG_URL"
+# archive download chunk size in bytes
+_CHUNK_SIZE = 1024 * 1024
+
+
+def fetch_from_condor(
+    jobid: str, destdir: Optional[str], archive_format: str, partial: bool
+):
+    # find where the condor_transfer_data will put the output
+    j = Job(jobid)
+    iwd = j.get_attribute("SUBMIT_Iwd")
+    if verbose:
+        print(f"job output to {iwd}")
+    # make sure it exists, create if not
+    try:
+        os.stat(iwd)
+    except FileNotFoundError:
+        os.makedirs(iwd, mode=0o750)
+
+    # get the output sandbox
+    try:
+        j.transfer_data(partial)
+        transfer_complete = True
+    except htcondor.HTCondorIOError as e1:
+        print(f"Error in transfer_data(): {str(e1)}")
+    files = os.listdir(iwd)
+
+    if destdir is not None:
+        # If the user wants output in a specific directory, copy files there,
+        # don't build an archive. Old jobsub would get an archive from the
+        # server, upack it into the dest dir, then delete the archive.
+        owd = destdir
+        try:
+            os.stat(owd)
+        except FileNotFoundError:
+            os.makedirs(owd, mode=0o750)
+        try:
+            for f in files:
+                shutil.copy2(
+                    os.path.join(iwd, f), owd
+                )  # copy2 tries to preserve metadata
+        except:
+            print(f"error copying logs to {owd}, leaving them in {iwd}")
+            raise
+        else:
+            shutil.rmtree(iwd)
+    else:
+        # build archive
+        cmd = []
+        if archive_format == "tar":
+            cmd = ["/usr/bin/tar", "-C", iwd, "-czf", f"{str(j)}.tgz"] + files
+            # -C: move into directory so paths are relative
+            # -c: create
+            # -z: gzip
+            # -f: filename
+        elif archive_format == "zip":
+            cmd = ["/usr/bin/zip", "-jq", f"{str(j)}.zip"] + [
+                os.path.join(iwd, f) for f in files
+            ]
+            # -j: junk (don't record) directory names
+            # -q: quiet
+        else:
+            raise Exception(f'unknown archive format "{archive_format}"')
+        if verbose:
+            print(f'running "{cmd}"')
+        p = subprocess.Popen(cmd)
+        if p.wait() != 0:
+            raise Exception(f"error creating archive")
+
+    cleanup({"submitdir": iwd})
+
+    if not transfer_complete:
+        print("Transfer may be incomplete.")
+
+
+def fetch_from_landscape(
+    jobid: str, destdir: Optional[str], archive_format: str, partial: bool
+):
+    # landscape doesn't support zip, does anyone actually use it?
+    if archive_format != "tar":
+        raise Exception(f'unknown/unsupported archive format "{archive_format}"')
+
+    if _FETCHLOG_URL_ENV not in os.environ:
+        raise Exception(
+            f"{_FETCHLOG_URL_ENV} not set in the environment. "
+            "You may still be able to download with --condor"
+        )
+    base_url = os.environ[_FETCHLOG_URL_ENV]
+    url = f"{base_url}/job/{jobid}.tar.gz"
+    if partial:
+        url = url + "?partial"
+
+    owd = os.getcwd()
+    if destdir is not None:
+        owd = destdir
+        try:
+            os.stat(owd)
+        except FileNotFoundError:
+            os.makedirs(owd, mode=0o750)
+
+    with open(os.environ["BEARER_TOKEN_FILE"]) as f:
+        tok = f.readline().strip()
+    if verbose:
+        print(f"making request for archive from {url}")
+    r = requests.get(url, stream=True, headers={"Authorization": f"Bearer {tok}"})
+    if r.status_code == 401:
+        print("Got permission denied from landscape: ")
+        pprint(r.json())
+        print("Token contents:")
+        os.system("httokendecode")
+    elif r.status_code >= 400:
+        print(f"Got error from landscape:\n{r.text}")
+    r.raise_for_status()
+
+    of = os.path.join(owd, f"{jobid}.tgz")
+    if verbose:
+        print(f"downloading archive to {of}")
+    with open(of, "wb") as fb:
+        n = 0
+        for chunk in r.iter_content(chunk_size=_CHUNK_SIZE):
+            n += fb.write(chunk)
+    if verbose:
+        print(f"{n} bytes downloaded to {of}")
+
+    if destdir is not None:
+        cmd = ["/usr/bin/tar", "-C", owd, "-xzf", of]
+        # -C: move into directory
+        # -x: extract
+        # -z: gzip
+        # -f: filename
+        if verbose:
+            print(f'running "{cmd}"')
+        p = subprocess.Popen(cmd)
+        if p.wait() != 0:
+            raise Exception(f"error extracting archive to {owd}. Archive left at {of}")
+        else:
+            os.unlink(of)
+
 
 def main():
     """script mainline:
@@ -79,6 +221,12 @@ def main():
         "--partial",
         action="store_true",
         help="download only the stdout, stderr, and scripts for this jobid, not the entire sandbox",
+        default=False,
+    )
+    parser.add_argument(
+        "--condor",
+        action="store_true",
+        help="transfer logs directly from condor using condor_transfer_data",
         default=False,
     )
     parser.add_argument("job_id", nargs="?", help="job/submission ID")
@@ -115,63 +263,8 @@ def main():
         print("proxy is : %s" % proxy)
         print("token is : %s" % token)
 
-    # find where the condor_transfer_data will put the output
-    j = Job(args.jobid)
-    iwd = j.get_attribute("SUBMIT_Iwd")
-    if args.verbose:
-        print(f"job output to {iwd}")
-    # make sure it exists, create if not
-    try:
-        os.stat(iwd)
-    except FileNotFoundError:
-        os.makedirs(iwd, mode=0o750)
-
-    # get the output sandbox
-    try:
-        j.transfer_data(args.partial)
-        transfer_complete = True
-    except htcondor.HTCondorIOError as e1:
-        print(f"Error in transfer_data(): {str(e1)}")
-    files = os.listdir(iwd)
-
-    if args.destdir is not None:
-        # If the user wants output in a specific directory, copy files there,
-        # don't build an archive. Old jobsub would get an archive from the
-        # server, upack it into the dest dir, then delete the archive.
-        owd = args.destdir
-        try:
-            os.stat(owd)
-        except FileNotFoundError:
-            os.makedirs(owd, mode=0o750)
-        for f in files:
-            shutil.copy2(os.path.join(iwd, f), owd)  # copy2 tries to preserve metadata
-    else:
-        # build archive
-        cmd = []
-        if args.archive_format == "tar":
-            cmd = ["/usr/bin/tar", "-C", iwd, "-czf", f"{str(j)}.tgz"] + files
-            # -C: move into directory so paths are relative
-            # -c: create
-            # -z: gzip
-            # -f: filename
-        elif args.archive_format == "zip":
-            cmd = ["/usr/bin/zip", "-jq", f"{str(j)}.zip"] + [
-                os.path.join(iwd, f) for f in files
-            ]
-            # -j: junk (don't record) directory names
-            # -q: quiet
-        else:
-            raise Exception(f'unknown archive format "{args.archive_format}"')
-        if args.verbose:
-            print(f'running "{cmd}"')
-        p = subprocess.Popen(cmd)
-        if p.wait() != 0:
-            raise Exception(f"error creating archive")
-
-    cleanup({"submitdir": iwd})
-
-    if not transfer_complete:
-        print("Transfer may be incomplete.")
+    fetcher = fetch_from_condor if args.condor else fetch_from_landscape
+    fetcher(args.jobid, args.destdir, args.archive_format, args.partial)
 
 
 if __name__ == "__main__":

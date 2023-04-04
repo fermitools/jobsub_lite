@@ -35,6 +35,8 @@ notify_user = {{email_to}}
 +JobsubOutputURL="{{outurl}}"
 +JobsubUUID="{{uuid}}"
 +Drain = False
+# default for remote submits is to keep completed jobs in the queue for 10 days
++LeaveJobInQueue = False
 {% if site is defined and site != 'LOCAL' %}
 +DESIRED_SITES = "{{site}}"
 {% endif %}
