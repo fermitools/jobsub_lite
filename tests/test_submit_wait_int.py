@@ -493,7 +493,7 @@ def test_valid_constraint_equal(samdev):
 
 @pytest.mark.integration
 def test_invalid_constraint_space(samdev):
-    cmd = f"jobsub_q -G fermilab --constraint 'thisisabadconstraintbutwillparse==true'"
+    cmd = f"jobsub_q -G fermilab --constraint 'thisisabadconstraintbutwillparse==true' -autoformat ClusterId"
     query = os.popen(cmd)
     output = query.readlines()
     assert len(output) == 0
@@ -505,7 +505,7 @@ def test_invalid_constraint_space(samdev):
 
 @pytest.mark.integration
 def test_invalid_constraint_equal(samdev):
-    cmd = f"jobsub_q -G fermilab --constraint='thisisabadconstraintbutwillparse==true'"
+    cmd = f"jobsub_q -G fermilab --constraint='thisisabadconstraintbutwillparse==true' -autoformat ClusterId"
     query = os.popen(cmd)
     output = query.readlines()
     assert len(output) == 0
