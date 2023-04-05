@@ -58,6 +58,49 @@ def test_old_dir(test_job_dir):
     return test_job_dir
 
 
+def site_and_usage_model_test_data():
+    """Pull in site and usage model test data from data file and
+    return a list of test data for use in test"""
+    DATA_FILENAME = "site_and_usagemodel.json"
+    with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
+        tests_json = json.load(datafile)
+
+    return [
+        (
+            test_json["sites"],
+            test_json["usage_model"],
+            test_json["resource_provides_quoted"],
+            (
+                utils.SiteAndUsageModel(
+                    **test_json["expected_result"]["site_and_usage_model"]
+                ),
+                test_json["expected_result"]["resource_provides_remainder"],
+            ),
+            test_json["helptext"],
+        )
+        for test_json in tests_json
+    ]
+
+
+def singularity_test_data():
+    """Pull in singularity test data from data file and return a list of
+    test cases"""
+    DATA_FILENAME = "singularity_image.json"
+    with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
+        tests_json = json.load(datafile)
+
+    return [
+        (
+            test_json["singularity_image_arg"],
+            test_json["lines_arg"],
+            test_json["expected_singularity_image"],
+            test_json["expected_lines"],
+            test_json["helptext"],
+        )
+        for test_json in tests_json
+    ]
+
+
 class TestUtilsUnit:
     """
     Use with pytest... unit tests for ../lib/*.py
@@ -174,52 +217,35 @@ class TestUtilsUnit:
         assert os.path.exists(f"{newd}/simple.cmd")
 
     @pytest.mark.unit
-    def test_resolve_site_and_usage_model(self):
-        TestCase = namedtuple(
-            "TestCase",
-            [
-                "sites",
-                "usage_model",
-                "resource_provides_quoted",
-                "expected_result",
-                "helptext",
-            ],
-        )
-
-        DATA_FILENAME = "site_and_usagemodel.json"
-        with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
-            tests_json = json.load(datafile)
-
-        test_cases = [
-            TestCase(
-                sites=test_json["sites"],
-                usage_model=test_json["usage_model"],
-                resource_provides_quoted=test_json["resource_provides_quoted"],
-                expected_result=(
-                    utils.SiteAndUsageModel(
-                        **test_json["expected_result"]["site_and_usage_model"]
-                    ),
-                    test_json["expected_result"]["resource_provides_remainder"],
-                ),
-                helptext=test_json["helptext"],
-            )
-            for test_json in tests_json
-        ]
-
-        for test_case in test_cases:
-            try:
-                assert (
-                    utils.resolve_site_and_usage_model(
-                        test_case.sites,
-                        test_case.usage_model,
-                        test_case.resource_provides_quoted,
-                    )
-                    == test_case.expected_result
+    @pytest.mark.parametrize(
+        "sites,usage_model,resource_provides_quoted,expected_result,helptext",
+        site_and_usage_model_test_data(),
+    )
+    def test_resolve_site_and_usage_model(
+        self,
+        sites,
+        usage_model,
+        resource_provides_quoted,
+        expected_result,
+        helptext,
+    ):
+        """Check that site, usage model, and resource provides inputs are resolved
+        correctly"""
+        try:
+            assert (
+                utils.resolve_site_and_usage_model(
+                    sites,
+                    usage_model,
+                    resource_provides_quoted,
                 )
-            except AssertionError:
-                print(f"Assertion failed for test: {test_case.helptext}")
-                raise
+                == expected_result
+            )
+        except AssertionError:
+            print(f"Assertion failed for test: {helptext}")
+            raise
 
+    @pytest.mark.unit
+    def test_resolve_site_and_usage_model_invalid(self):
         # I honestly can't think of any combos that don't work/won't get corrected before we get to validation,
         # but I'm leaving this here unless I missed something
         _should_not_work = []
@@ -232,30 +258,25 @@ class TestUtilsUnit:
                 )
 
     @pytest.mark.unit
-    def test_resolve_singularity_image(self):
-        TestCase = namedtuple(
-            "TestCase",
-            [
-                "singularity_image_arg",
-                "lines_arg",
-                "expected_singularity_image",
-                "expected_lines",
-                "helptext",
-            ],
-        )
-        DATA_FILENAME = "singularity_image.json"
-        with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
-            tests_json = json.load(datafile)
-
-        test_cases = (TestCase(**test_json) for test_json in tests_json)
-
-        for test_case in test_cases:
-            try:
-                assert (
-                    test_case.expected_singularity_image
-                ), test_case.expected_lines == utils._resolve_singularity_image(
-                    test_case.singularity_image_arg, test_case.lines_arg
-                )
-            except AssertionError:
-                print(f"Assertion failed for test: {test_case.helptext}")
-                raise
+    @pytest.mark.parametrize(
+        "singularity_image_arg,lines_arg,expected_singularity_image,expected_lines,helptext",
+        singularity_test_data(),
+    )
+    def test_resolve_singularity_image(
+        self,
+        singularity_image_arg,
+        lines_arg,
+        expected_singularity_image,
+        expected_lines,
+        helptext,
+    ):
+        """Test to make sure that given simgularity image and lines arguments are handled
+        correctly"""
+        try:
+            assert (
+                expected_singularity_image,
+                expected_lines,
+            ) == utils._resolve_singularity_image(singularity_image_arg, lines_arg)
+        except AssertionError:
+            print(f"Assertion error for test {helptext}")
+            raise
