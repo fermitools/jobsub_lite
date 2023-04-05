@@ -21,7 +21,6 @@ else:
 import condor
 
 from test_unit import TestUnit
-from test_creds_unit import needs_credentials
 
 
 @pytest.fixture

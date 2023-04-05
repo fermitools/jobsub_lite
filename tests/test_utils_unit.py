@@ -25,8 +25,6 @@ else:
 import utils
 
 from test_unit import TestUnit
-from test_creds_unit import needs_credentials  # pylint: disable=unused-import
-from test_creds_unit import clear_x509_user_proxy  # pylint: disable=unused-import
 
 DATADIR = f"{os.path.abspath(os.path.dirname(__file__))}/data"
 

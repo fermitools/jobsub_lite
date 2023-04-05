@@ -21,22 +21,6 @@ import creds
 from test_unit import TestUnit
 
 
-@pytest.fixture
-def needs_credentials():
-    os.environ["GROUP"] = TestUnit.test_group
-    return creds.get_creds({"role": "Analysis"})
-
-
-@pytest.fixture
-def clear_x509_user_proxy():
-    """Clear environment variable X509_USER_PROXY to test credentials overrides"""
-    old_x509_user_proxy_value = os.environ.pop("X509_USER_PROXY", None)
-    yield
-
-    if old_x509_user_proxy_value is not None:
-        os.environ["X509_USER_PROXY"] = old_x509_user_proxy_value
-
-
 class TestCredUnit:
     """
     Use with pytest... unit tests for ../lib/*.py
