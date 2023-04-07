@@ -65,8 +65,8 @@ requirements = target.machine =!= MachineAttrMachine1 && target.machine =!= Mach
 use_oauth_services = {{group}}_{{role | lower}}
 {{group}}_{{role | lower}}_oauth_permissions_{{oauth_handle}}  = "{{job_scope}}"
 {% else %}
-use_oauth_services_{{oauth_handle}} = {{group}}
-{{group}}_oauth_permissions = "{{job_scope}}"
+use_oauth_services = {{group}}
+{{group}}_oauth_permissions_{{oauth_handle}}  = "{{job_scope}}"
 {% endif %}
 {% if role is defined %}
 +x509userproxy = "{{proxy|basename}}"
