@@ -94,46 +94,34 @@ def test_getToken_fail(clear_token):
 
 
 @pytest.mark.unit
-def test_getProxy_good(clear_token):
+def test_getProxy_good(check_user_kerberos_creds, clear_token):
     os.environ["GROUP"] = "fermilab"
     proxy = fake_ifdh.getProxy("Analysis")
     assert os.path.exists(proxy)
 
 
 @pytest.mark.unit
-def test_getProxy_override(clear_token, tmp_path):
+def test_getProxy_override(
+    check_user_kerberos_creds, clear_x509_user_proxy, clear_token, tmp_path
+):
     fake_path = tmp_path / "test_proxy"
-    old_x509_user_proxy = os.environ.get("X509_USER_PROXY")
     os.environ["X509_USER_PROXY"] = str(fake_path)
     os.environ["GROUP"] = "fermilab"
     proxy = fake_ifdh.getProxy("Analysis")
-    try:
-        assert proxy == str(fake_path)
-    except AssertionError:
-        raise
-    finally:
-        if old_x509_user_proxy is not None:
-            os.environ["X509_USER_PROXY"] = old_x509_user_proxy
+    assert proxy == str(fake_path)
 
 
 @pytest.mark.unit
-def test_getProxy_fail(clear_token, tmp_path):
+def test_getProxy_fail(
+    check_user_kerberos_creds, clear_x509_user_proxy, clear_token, tmp_path
+):
     fake_path = tmp_path / "test_proxy"
     if os.path.exists(fake_path):
         os.unlink(fake_path)
-    old_x509_user_proxy = os.environ.get("X509_USER_PROXY")
     os.environ["X509_USER_PROXY"] = str(fake_path)
     os.environ["GROUP"] = "bozo"
-    try:
-        proxy = fake_ifdh.getProxy("Analysis")
-        print(f"got proxy: {proxy}")
-    except PermissionError:
-        assert True
-    else:
-        assert False
-    finally:
-        if old_x509_user_proxy is not None:
-            os.environ["X509_USER_PROXY"] = old_x509_user_proxy
+    with pytest.raises(PermissionError):
+        fake_ifdh.getProxy("Analysis")
 
 
 @pytest.mark.unit

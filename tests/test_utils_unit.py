@@ -25,8 +25,6 @@ else:
 import utils
 
 from test_unit import TestUnit
-from test_creds_unit import needs_credentials  # pylint: disable=unused-import
-from test_creds_unit import clear_x509_user_proxy  # pylint: disable=unused-import
 
 DATADIR = f"{os.path.abspath(os.path.dirname(__file__))}/data"
 
@@ -56,6 +54,70 @@ def test_old_dir(test_job_dir):
     eightdaysago = time.time() - 691200
     os.utime(d, times=(eightdaysago, eightdaysago))
     return test_job_dir
+
+
+def site_and_usage_model_test_data():
+    """Pull in site and usage model test data from data file and
+    return a list of test data for use in test"""
+    SiteAndUsageModelTestCase = namedtuple(
+        "SiteAndUsageModelTestCase",
+        [
+            "sites",
+            "usage_model",
+            "resource_provides_quoted",
+            "expected_result",
+            "helptext",
+        ],
+    )
+    DATA_FILENAME = "site_and_usagemodel.json"
+    with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
+        tests_json = json.load(datafile)
+
+    return [
+        SiteAndUsageModelTestCase(
+            sites=test_json["sites"],
+            usage_model=test_json["usage_model"],
+            resource_provides_quoted=test_json["resource_provides_quoted"],
+            expected_result=(
+                utils.SiteAndUsageModel(
+                    **test_json["expected_result"]["site_and_usage_model"]
+                ),
+                test_json["expected_result"]["resource_provides_remainder"],
+            ),
+            helptext=test_json["helptext"],
+        )
+        for test_json in tests_json
+    ]
+
+
+def singularity_test_data():
+    """Pull in singularity test data from data file and return a list of
+    test cases"""
+    SingularityTestCase = namedtuple(
+        "SingularityTestCase",
+        [
+            "singularity_image_arg",
+            "lines_arg",
+            "expected_singularity_image",
+            "expected_lines",
+            "helptext",
+        ],
+    )
+
+    DATA_FILENAME = "singularity_image.json"
+    with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
+        tests_json = json.load(datafile)
+
+    return [SingularityTestCase(**test_json) for test_json in tests_json]
+
+
+def create_id_for_test_case(value) -> str:
+    """Creates test IDs for our TestCase classes (namedtuples).  Will return
+    the "helptext" attribute of the TestCase if it exists"""
+    try:
+        return value.helptext
+    except AttributeError:
+        pass
 
 
 class TestUtilsUnit:
@@ -174,52 +236,25 @@ class TestUtilsUnit:
         assert os.path.exists(f"{newd}/simple.cmd")
 
     @pytest.mark.unit
-    def test_resolve_site_and_usage_model(self):
-        TestCase = namedtuple(
-            "TestCase",
-            [
-                "sites",
-                "usage_model",
-                "resource_provides_quoted",
-                "expected_result",
-                "helptext",
-            ],
+    @pytest.mark.parametrize(
+        "site_and_usage_model_test_case",
+        site_and_usage_model_test_data(),
+        ids=create_id_for_test_case,
+    )
+    def test_resolve_site_and_usage_model(self, site_and_usage_model_test_case):
+        """Check that site, usage model, and resource provides inputs are resolved
+        correctly"""
+        assert (
+            utils.resolve_site_and_usage_model(
+                site_and_usage_model_test_case.sites,
+                site_and_usage_model_test_case.usage_model,
+                site_and_usage_model_test_case.resource_provides_quoted,
+            )
+            == site_and_usage_model_test_case.expected_result
         )
 
-        DATA_FILENAME = "site_and_usagemodel.json"
-        with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
-            tests_json = json.load(datafile)
-
-        test_cases = [
-            TestCase(
-                sites=test_json["sites"],
-                usage_model=test_json["usage_model"],
-                resource_provides_quoted=test_json["resource_provides_quoted"],
-                expected_result=(
-                    utils.SiteAndUsageModel(
-                        **test_json["expected_result"]["site_and_usage_model"]
-                    ),
-                    test_json["expected_result"]["resource_provides_remainder"],
-                ),
-                helptext=test_json["helptext"],
-            )
-            for test_json in tests_json
-        ]
-
-        for test_case in test_cases:
-            try:
-                assert (
-                    utils.resolve_site_and_usage_model(
-                        test_case.sites,
-                        test_case.usage_model,
-                        test_case.resource_provides_quoted,
-                    )
-                    == test_case.expected_result
-                )
-            except AssertionError:
-                print(f"Assertion failed for test: {test_case.helptext}")
-                raise
-
+    @pytest.mark.unit
+    def test_resolve_site_and_usage_model_invalid(self):
         # I honestly can't think of any combos that don't work/won't get corrected before we get to validation,
         # but I'm leaving this here unless I missed something
         _should_not_work = []
@@ -232,30 +267,18 @@ class TestUtilsUnit:
                 )
 
     @pytest.mark.unit
-    def test_resolve_singularity_image(self):
-        TestCase = namedtuple(
-            "TestCase",
-            [
-                "singularity_image_arg",
-                "lines_arg",
-                "expected_singularity_image",
-                "expected_lines",
-                "helptext",
-            ],
+    @pytest.mark.parametrize(
+        "singularity_test_case",
+        singularity_test_data(),
+        ids=create_id_for_test_case,
+    )
+    def test_resolve_singularity_image(self, singularity_test_case):
+        """Test to make sure that given simgularity image and lines arguments are handled
+        correctly"""
+        assert (
+            singularity_test_case.expected_singularity_image,
+            singularity_test_case.expected_lines,
+        ) == utils._resolve_singularity_image(
+            singularity_test_case.singularity_image_arg,
+            singularity_test_case.lines_arg,
         )
-        DATA_FILENAME = "singularity_image.json"
-        with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
-            tests_json = json.load(datafile)
-
-        test_cases = (TestCase(**test_json) for test_json in tests_json)
-
-        for test_case in test_cases:
-            try:
-                assert (
-                    test_case.expected_singularity_image
-                ), test_case.expected_lines == utils._resolve_singularity_image(
-                    test_case.singularity_image_arg, test_case.lines_arg
-                )
-            except AssertionError:
-                print(f"Assertion failed for test: {test_case.helptext}")
-                raise
