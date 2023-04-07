@@ -441,16 +441,17 @@ def test_fetch_output():
 
 @pytest.mark.integration
 def test_check_job_output():
+    res = True
     for jid, ddir in ddirs.items():
         print(f"Checking {jid2test[jid]} {jid} -d tag  {ddir}...")
         fl = fake_ifdh.ls(ddir)
-        assert len(fl)
+        res = res and bool(len(fl))
 
     for jid, outdir in outdirs.items():
         fl = glob.glob("%s/*[0-9].out" % outdir)
 
         # make sure we have enough output files
-        assert len(fl) >= jid2nout[jid]
+        res = res and (len(fl) >= jid2nout[jid])
 
         for f in fl:
             print(f"Checking {jid2test[jid]} {jid} output file {f}...")
@@ -458,9 +459,14 @@ def test_check_job_output():
             f_ok = False
             ll = fd.readlines()
             fd.close()
-            assert ll[-1].endswith("status 0\n") or ll[-1].endswith("success!\n")
-            print("-- ok")
+            if ll[-1].endswith("status 0\n") or ll[-1].endswith("success!\n"):
+                print("-- ok")
+            else:
+                print("-- bad")
+                res = False
+
         shutil.rmtree(outdir)
+        assert res
 
 
 @pytest.mark.integration
