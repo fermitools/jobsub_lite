@@ -46,6 +46,14 @@ def main():
     - get credentials
     - launch
     """
+
+    #
+    # set up to use our custom condor_vault_storer until we get
+    # the updated one in the condor release
+    #
+    bindir = os.path.abspath(os.path.dirname(__file__))
+    os.environ["_condor_SEC_CREDENTIAL_STORER"] = f"{bindir}/condor_vault_storer"
+
     f = sys.argv[-1]
     sys.argv = sys.argv[1:-1]
 

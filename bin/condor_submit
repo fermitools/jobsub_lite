@@ -67,6 +67,11 @@ def main():
     - launch
     """
 
+    # set up to use our custom condor_vault_storer until we get
+    # the updated one in the condor release
+    #
+    bindir = os.path.abspath(os.path.dirname(__file__))
+    os.environ["_condor_SEC_CREDENTIAL_STORER"] = f"{bindir}/condor_vault_storer"
     condor_parser = get_parser.get_jobid_parser(add_condor_epilog=True)
 
     condor_parser.add_argument(
