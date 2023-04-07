@@ -418,10 +418,11 @@ def test_wait_for_jobs():
             else:
                 status = None
             print("jobid: ", jid, " status: ", status)
-            if status == "4" or status == "A":
+            if status == "4" or status == "A" or status == None:
                 # '4' is Completed.
                 # 'A' is when it says 'All queues are empty' (so they're
                 #     all completed...)
+                # None is when there's no output...
                 count = count - 1
     print("Done.")
     assert True
