@@ -151,6 +151,13 @@ def submit(
     cmd = f"/usr/bin/condor_submit -pool {COLLECTOR_HOST} {schedd_args} {qargs}"
     cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
     cmd = f"_condor_CREDD_HOST={schedd_name} {cmd}"
+    #
+    # set up to use our custom condor_vault_storer until we get
+    # the updated one in the condor release
+    #
+    jldir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cmd = f"_condor_SEC_CREDENTIAL_STORER={jldir}/bin/condor_vault_storer {cmd}"
+    #
     packages.orig_env()
     if vargs.get("verbose", 0) > 0:
         print(f"Running: {cmd}")
