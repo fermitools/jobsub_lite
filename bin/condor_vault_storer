@@ -4,20 +4,30 @@
 # Can be run automatically from condor_submit when configured as
 #   SEC_CREDENTIAL_STORER.
 
+# debugging -- turn on by uncommenting
+#lf=/tmp/csv_$$.log
+#exec 2> $lf
+#set -x
+#echo
+#echo condor_vault_storer: debug log on $lf
+#echo
 # putting this here for now, but POMS should do this for us -- mengel
-if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" ]; then
-   # debugging -- turn on by uncommenting
-   # lf=/tmp/csv_$$.log
-   # exec 2> $lf
-   # set -x
-   # echo
-   # echo condor_vault_storer: debug log on $lf
-   # echo
+if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" -a 
+     -z "$CONDOR_VAULT_STORER_ID" -a -z "$CONDOR_VAULT_STORER_USER" ]; then
    CONDOR_VAULT_STORER_ID=`uuidgen -r`
+   CONDOR_VAULT_STORER_USER="$USER@fnal.gov"
    vtk=`echo $HTGETTOKENOPTS | sed -e 's/.*--vaulttokeninfile=\([^ ]*\).*/\1/'`
    cp $vtk /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
    chmod 400 /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
 fi
+
+condor_user() {
+  : credd ${_condor_CREDD_HOST}
+  if [ -n "${CONDOR_VAULT_STORER_USER:-}" ]
+  then
+     echo "-u ${CONDOR_VAULT_STORER_USER}"
+  fi
+}
 
 ME="${0##*/}"
 
@@ -115,7 +125,7 @@ NL="
 querycred() {
     STORENAME="$1"
     verbose "Checking if $@ credentials exist"
-    STOREMSG="`condor_store_cred query-oauth -s "$@" >$STOREOUT 2>&1`"
+    STOREMSG="`condor_store_cred query-oauth $(condor_user) -s "$@" >$STOREOUT 2>&1`"
     case $? in
         0) ;;
         1)  if [ -n "$STOREMSG" ]; then
@@ -125,7 +135,7 @@ querycred() {
             ;;
         2) fatal "Credentials exist that do not match the request.
 They can be removed by
-  condor_store_cred delete-oauth -s $STORENAME
+  condor_store_cred delete-oauth $(condor_user) -s $STORENAME
 but make sure no other job is using them."
             ;;
         *) fatal "${STOREMSG}${NL}Querying condor credentials failed";;
@@ -145,7 +155,7 @@ storecred() {
     fi
     echo "  \"vault_url\": \"$VAULTURL\""
     echo "}"
-    )|condor_store_cred add-oauth -s "$@" -i - >$STOREOUT
+    )|condor_store_cred add-oauth $(condor_user) -s "$@" -i - >$STOREOUT
     if [ $? != 0 ]; then
         fatal "Failed to store condor credentials for $STORENAME"
     fi
