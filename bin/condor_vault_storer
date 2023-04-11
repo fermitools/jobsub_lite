@@ -12,7 +12,7 @@
 #echo condor_vault_storer: debug log on $lf
 #echo
 # putting this here for now, but POMS should do this for us -- mengel
-if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" -a 
+if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" -a \
      -z "$CONDOR_VAULT_STORER_ID" -a -z "$CONDOR_VAULT_STORER_USER" ]; then
    CONDOR_VAULT_STORER_ID=`uuidgen -r`
    CONDOR_VAULT_STORER_USER="$USER@fnal.gov"
