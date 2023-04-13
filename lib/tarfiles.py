@@ -150,6 +150,10 @@ def do_tarballs(args: argparse.Namespace) -> None:
     clean_up: List[str] = []
     res: List[str] = []
     path: Optional[str] = None
+
+    args.orig_input_file = args.input_file.copy()
+    args.orig_tar_file_name = args.tar_file_name.copy()
+
     for fn in args.input_file:
 
         if fn.startswith("dropbox:"):

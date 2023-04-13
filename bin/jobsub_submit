@@ -353,6 +353,21 @@ def main():
                 transfer_sandbox(submitdir, varg["outurl"])
             submit(os.path.join(submitdir, "simple.cmd"), varg, schedd_name)
 
+    if args.verbose:
+        # remind folks where transferred data goes.
+        for f in args.orig_input_file:
+            print(
+                f"File {f}\n ... will be available as: $CONDOR_DIR_INPUT/{os.path.basename(f)}"
+            )
+        i = 0
+        for f in args.orig_tar_file_name:
+            print(
+                f"Contents of {f}\n ... will be avaliable in $INPUT_TAR_DIR_LOCAL{'_'+str(i) if i else ''}"
+            )
+            i = i + 1
+        if args.orig_input_file or args.orig_tar_file_name:
+            print("in your job.")
+
     if varg.get("no_submit", False):
         print(f"Submission files are in: {varg['submitdir']}")
     else:
