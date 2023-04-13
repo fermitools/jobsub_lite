@@ -281,6 +281,12 @@ def get_parser() -> argparse.ArgumentParser:
         " jobs in a DAG",
     )
     parser.add_argument(
+        "--job-info",
+        action="append",
+        default=[],
+        help="script to call with jobid, etc. when job is launched",
+    )
+    parser.add_argument(
         "-L", "--log-file", "--log_file", help="Log file to hold log output from job."
     )
     parser.add_argument(

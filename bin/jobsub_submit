@@ -192,6 +192,11 @@ def transfer_sandbox(src_dir, dest_url):
 verbose = 0
 
 
+def get_env_list(name: str) -> List[str]:
+    """get a split comma separated list of strings from an environment variable"""
+    return [x for x in os.environ.get(name, "").split(",") if x]
+
+
 def main():
     """script mainline:
     - parse args
@@ -210,6 +215,13 @@ def main():
     # so we do that here for backwards compatability
     backslash_escape_layer(sys.argv)
     args = parser.parse_args()
+
+    # Allow environment variables to append to some command lists to get rid of
+    # need for poms_jobsub_wrapper to get in front of us on the path -- we will
+    # just set these and have a job-info script report the job id, etc.
+    args.environment.extend(get_env_list("JOBSUB_EXTRA_ENVIRONMENT"))
+    args.lines.extend(get_env_list("JOBSUB_EXTRA_LINES"))
+    args.job_info.extend(get_env_list("JOBSUB_EXTRA_JOB_INFO"))
 
     verbose = args.verbose
 
