@@ -176,6 +176,7 @@ def parse_dagnabbit(
                     # handle -f drobpox: etc. in dag stages
                     do_tarballs(res)
                     thesevalues = values.copy()
+                    thesevalues["mail"] = "never"
                     thesevalues["N"] = 1
                     thesevalues["dag"] = None
                     # don't take executable from command line, only from DAG file
