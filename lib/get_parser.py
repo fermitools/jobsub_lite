@@ -22,7 +22,6 @@ import sys
 from typing import Union, Any, List
 
 from utils import DEFAULT_USAGE_MODELS, DEFAULT_SINGULARITY_IMAGE
-import pool
 from skip_checks import SupportedSkipChecks
 
 
@@ -115,13 +114,6 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
         help="Group/Experiment/Subgroup for priorities and accounting",
         action=StoreGroupinEnvironment,
         default=os.environ.get("GROUP", None),
-    )
-    parser.add_argument(
-        "--global-pool",
-        default="",
-        action=pool.SetPool,
-        help="direct jobs/commands to a particular known global pool."
-        f"Currently known pools are: {pool.get_poolmap().keys()}",
     )
     group.add_argument(
         "--role",
