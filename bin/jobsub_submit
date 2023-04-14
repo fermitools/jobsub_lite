@@ -59,6 +59,7 @@ from creds import get_creds
 from token_mods import get_job_scopes, use_token_copy
 from version import print_version, print_support_email
 from fake_ifdh import mkdir_p, cp
+import pool
 import skip_checks
 
 
@@ -210,6 +211,9 @@ def main():
     # so we do that here for backwards compatability
     backslash_escape_layer(sys.argv)
     args = parser.parse_args()
+
+    if not args.global_pool and os.environ.get("JOBSUB_GLOBAL_POOL", ""):
+        pool.set_pool(os.environ["JOBSUB_GLOBAL_POOL"])
 
     verbose = args.verbose
 
