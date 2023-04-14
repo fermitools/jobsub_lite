@@ -15,7 +15,6 @@ notification  = Error
 transfer_executable     = True
 rank               = Mips / 2 + Memory
 job_lease_duration = 3600
-notification       = Never
 transfer_error     = True
 transfer_executable= True
 transfer_output_files=.empty_file

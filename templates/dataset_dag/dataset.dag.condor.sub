@@ -32,7 +32,7 @@ environment	= _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address;
 
 {% if generate_email_summary %}
 notify_user= "{{email_to}}"
-notification = "Always"
+notification = Always
 {% endif %}
 
 {{lines|join("\n")}}
