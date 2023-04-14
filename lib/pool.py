@@ -29,7 +29,9 @@ class SetPool(argparse.Action):
     ) -> None:
         poolmap = get_poolmap()
         if not values in poolmap:
-            raise KeyError(f"--global-pool value must be one of {poolmap.keys()}")
+            raise KeyError(
+                f"--global-pool value must be one of ({', '.join(poolmap.keys())})"
+            )
         os.environ["_condor_COLLECTOR_HOST"] = poolmap[values]["collector"]
         condor.COLLECTOR_HOST = poolmap[values]["collector"]
         utils.ONSITE_SITE_NAME = poolmap[values]["onsite"]
