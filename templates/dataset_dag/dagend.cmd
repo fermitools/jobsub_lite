@@ -28,7 +28,6 @@ request_memory = 100mb
 +JobsubClientVersion="{{jobsub_version}}"
 +JobsubClientKerberosPrincipal="{{kerberos_principal}}"
 +JOB_EXPECTED_MAX_LIFETIME = {{expected_lifetime}}
-notify_user = {{email_to}}
 +AccountingGroup = "group_{{group}}.{{user}}"
 +Jobsub_Group="{{group}}"
 +JobsubJobId="$(CLUSTER).$(PROCESS)@{{schedd}}"

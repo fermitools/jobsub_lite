@@ -34,8 +34,8 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 +JobsubClientVersion="{{jobsub_version}}"
 +JobsubClientKerberosPrincipal="{{kerberos_principal}}"
 +JOB_EXPECTED_MAX_LIFETIME = {{expected_lifetime}}
-notify_user = {{email_to|default(user+"@fnal.gov")}}
-notification = {{mail}}
+notify_user = "{{email_to}}"
+notification = "{{mail}}"
 
 # set command to user executable for jobsub_q
 +JobsubCmd = "{{executable|basename}}"
