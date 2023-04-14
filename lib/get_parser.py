@@ -284,7 +284,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--job-info",
         action="append",
         default=[],
-        help="script to call with jobid, etc. when job is launched",
+        help="script to call with jobid and command line when job is submitted",
     )
     parser.add_argument(
         "-L", "--log-file", "--log_file", help="Log file to hold log output from job."
