@@ -32,8 +32,8 @@ delegate_job_GSI_credentials_lifetime = 0
 {{lines|join("\n")}}
 
 {% if generate_email_summary %}
-notify = "{{email_to}}"
-notification = "always"
+notify_user = "{{email_to}}"
+notification = "Always"
 {% endif %}
 
 {% if subgroup is defined and subgroup %}
