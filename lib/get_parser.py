@@ -314,8 +314,8 @@ def get_parser() -> argparse.ArgumentParser:
         "--mail-never",
         dest="mail",
         action="store_const",
-        const="never",
-        default="never",
+        const="Never",
+        default="Never",
         help="never send mail about job results (default)",
     )
 
@@ -324,7 +324,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--mail-on-error",
         dest="mail",
         action="store_const",
-        const="on_error",
+        const="Error",
         help="send mail about job results if job fails",
     )
     parser.add_argument(
@@ -332,7 +332,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--mail-always",
         dest="mail",
         action="store_const",
-        const="always",
+        const="Always",
         help="send mail about job results",
     )
 
