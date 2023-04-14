@@ -54,7 +54,12 @@ from get_parser import get_parser
 from condor import get_schedd, submit, submit_dag
 from dagnabbit import parse_dagnabbit
 from tarfiles import do_tarballs
-from utils import set_extras_n_fix_units, cleanup, backslash_escape_layer
+from utils import (
+    set_extras_n_fix_units,
+    cleanup,
+    backslash_escape_layer,
+    sanitize_lines,
+)
 from creds import get_creds
 from token_mods import get_job_scopes, use_token_copy
 from version import print_version, print_support_email
@@ -222,6 +227,8 @@ def main():
     args.environment.extend(get_env_list("JOBSUB_EXTRA_ENVIRONMENT"))
     args.lines.extend(get_env_list("JOBSUB_EXTRA_LINES"))
     args.job_info.extend(get_env_list("JOBSUB_EXTRA_JOB_INFO"))
+
+    sanitize_lines(args.lines)
 
     verbose = args.verbose
 
