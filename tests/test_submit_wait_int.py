@@ -209,6 +209,11 @@ def test_launch_lookaround_dune(dune):
 
 
 @pytest.mark.integration
+def test_launch_lookaround_dune_gp_poolflag(dune):
+    lookaround_launch("--global-pool=dune")
+
+
+@pytest.mark.integration
 def test_launch_lookaround_dune_gp(dune_gp):
     lookaround_launch("")
 

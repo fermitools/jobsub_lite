@@ -23,6 +23,7 @@ else:
     sys.path.append("../lib")
 
 import utils
+import pool
 
 from test_unit import TestUnit
 
@@ -32,6 +33,10 @@ DATADIR = f"{os.path.abspath(os.path.dirname(__file__))}/data"
 def fill_in(dir):
     open(f"{dir}/simple.sh", "w").close()
     open(f"{dir}/simple.cmd", "w").close()
+
+
+def test_reset_pool():
+    pool.reset_pool()
 
 
 @pytest.fixture

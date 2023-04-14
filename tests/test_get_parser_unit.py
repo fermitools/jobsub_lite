@@ -19,6 +19,7 @@ else:
     sys.path.append("../lib")
 
 import get_parser
+import pool
 
 from test_unit import TestUnit
 
@@ -148,6 +149,8 @@ def all_test_args():
         "-f",
         "xxfxx",
         "--generate-email-summary",
+        "--global-pool",
+        "dune",
         "--group",
         "xxgroupxx",
         "--jobid",
@@ -356,6 +359,8 @@ class TestGetParserUnit:
                 assert vres["verbose"] == 1
             elif arg == "dataset":
                 assert vres["dataset_definition"] == "xxdataset-definitionxx"
+            elif arg == "global-pool":
+                assert vres["global_pool"] == "dune"
             elif arg in listargs:
                 # args are in a list, so look for list containing xxflagxx
                 if arg in ["lines"]:
@@ -435,3 +440,6 @@ class TestGetParserUnit:
             skip_check_arg_parser.parse_args(
                 ["--skip-check", valid_check, "--skip-check", "ThisIsAFakeCheck"]
             )
+
+    def test_put_back_pool(self):
+        pool.reset_pool()
