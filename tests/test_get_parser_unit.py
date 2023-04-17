@@ -150,6 +150,8 @@ def all_test_args():
         "--generate-email-summary",
         "--group",
         "xxgroupxx",
+        "--job-info",
+        "xxjob-infoxx",
         "--jobid",
         "--log-file",
         "xxlog-filexx",
