@@ -154,6 +154,7 @@ def do_tarballs(args: argparse.Namespace) -> None:
     args.orig_input_file = args.input_file.copy()
     args.orig_tar_file_name = args.tar_file_name.copy()
 
+    pnfs_classad_line: List[str] = []
     for fn in args.input_file:
 
         if fn.startswith("dropbox:"):
@@ -205,6 +206,7 @@ def do_tarballs(args: argparse.Namespace) -> None:
                     if not existing:
                         raise PermissionError(f"Error: Unable to create {location}")
                 res.append(location)
+                pnfs_classad_line.append(location)
             else:
 
                 res.append(pfn)
@@ -242,6 +244,9 @@ def do_tarballs(args: argparse.Namespace) -> None:
             else:
                 tfn = tfn.replace("dropbox:", "", 1)
 
+            if args.use_dropbox == "pnfs":
+                pnfs_classad_line.append(tfn)
+
         res.append(tfn)
     args.tar_file_name = res
     args.tar_file_orig_basenames = orig_basenames
@@ -252,6 +257,9 @@ def do_tarballs(args: argparse.Namespace) -> None:
             os.unlink(tarfile)
         except:  # pylint: disable=bare-except
             print(f"Notice: unable to remove generated tarfile {tarfile}")
+
+    if pnfs_classad_line:
+        args.lines.append(f'+PNFS_INPUT_FILES="{",".join(pnfs_classad_line)}"')
 
 
 def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:

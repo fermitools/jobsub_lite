@@ -16,7 +16,6 @@ JOBSUBJOBSECTION=$(Process)
 environment        = CM1=$(CM1);CM2=$(CM2);CLUSTER=$(Cluster);PROCESS=$(Process);JOBSUBJOBSECTION=$(JOBSUBJOBSECTION);CONDOR_TMP={{outdir}};BEARER_TOKEN_FILE=.condor_creds/{{group}}.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
 rank               = Mips / 2 + Memory
 job_lease_duration = 3600
-notification       = Never
 transfer_output    = True
 transfer_error     = True
 transfer_executable= True
@@ -34,7 +33,8 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 +JobsubClientVersion="{{jobsub_version}}"
 +JobsubClientKerberosPrincipal="{{kerberos_principal}}"
 +JOB_EXPECTED_MAX_LIFETIME = {{expected_lifetime}}
-notify_user = {{email_to}}
+notify_user = "{{email_to}}"
+notification = {{mail}}
 
 # set command to user executable for jobsub_q
 +JobsubCmd = "{{executable|basename}}"

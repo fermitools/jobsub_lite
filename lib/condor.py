@@ -179,6 +179,12 @@ def submit(
         if m:
             print(f"{hl}Use job id {m.group(1)}.0@{schedd_name} to retrieve output{hl}")
 
+            # call any job_info commands requested with the jobid
+            for ji in vargs["job_info"]:
+                os.system(
+                    f'{ji} {m.group(1)}.0@{schedd_name} "{repr(sys.argv)}" </dev/null'
+                )
+
         return True
     except OSError as e:
         print("Execution failed: ", e)

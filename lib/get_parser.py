@@ -281,6 +281,12 @@ def get_parser() -> argparse.ArgumentParser:
         " jobs in a DAG",
     )
     parser.add_argument(
+        "--job-info",
+        action="append",
+        default=[],
+        help="script to call with jobid and command line when job is submitted",
+    )
+    parser.add_argument(
         "-L", "--log-file", "--log_file", help="Log file to hold log output from job."
     )
     parser.add_argument(
@@ -314,8 +320,8 @@ def get_parser() -> argparse.ArgumentParser:
         "--mail-never",
         dest="mail",
         action="store_const",
-        const="never",
-        default="never",
+        const="Never",
+        default="Never",
         help="never send mail about job results (default)",
     )
 
@@ -324,7 +330,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--mail-on-error",
         dest="mail",
         action="store_const",
-        const="on_error",
+        const="Error",
         help="send mail about job results if job fails",
     )
     parser.add_argument(
@@ -332,7 +338,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--mail-always",
         dest="mail",
         action="store_const",
-        const="always",
+        const="Always",
         help="send mail about job results",
     )
 
