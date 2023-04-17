@@ -398,10 +398,50 @@ def group_for_job(jid):
 
 
 @pytest.mark.integration
+def test_jobsub_q_repititions():
+    # test to make sure if we do jobsub_q 1@jobsub01 2@jobsub01 3@jobsub02 4@jobsub02 we get only one repitition
+    jobs_by_schedd = {}
+    all_schedds = set()
+    for jid in joblist:
+        schedd = re.sub(r"@.*", "", jid)
+        all_schedds.add(schedd)
+        if jid in jobs_by_schedd:
+            jobs_by_schedd[schedd].append(jid)
+        else:
+            jobs_by_schedd[schedd] = [jid]
+
+    args = ["jobsub_q", "-G", "fermilab"]
+    scount = 0
+    for schedd in all_schedds:
+        scount = scount + 1
+        if scount > 2:
+            break
+        jcount = 0
+        for jid in jobs_by_schedd[schedd]:
+            jcount = jcount + 1
+            if jcount > 2:
+                break
+            args.append(jid)
+
+    # now we have 4 jobs on 2 schedd's from our list
+    count = 0
+    with os.popen(" ".join(args), "r") as fin:
+        for line in fin.readlines():
+            count = count + 1
+    assert count == 5
+
+
+@pytest.mark.integration
 def test_wait_for_jobs():
     """Not really a test, but we have to wait for jobs to complete..."""
     count = 1
     print("Waiting for jobs: ", " ".join(joblist))
+
+    # put the list somewhere so we can see what the test is waiting for
+    # when not running with -s or whatever...
+    with open("/tmp/jobsub_lite_test_joblist", "w") as f:
+        f.write(" ".join(joblist))
+
     while count > 0:
         time.sleep(10)
         count = len(joblist)
