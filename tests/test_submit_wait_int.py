@@ -411,17 +411,16 @@ def test_jobsub_q_repititions():
             jobs_by_schedd[schedd] = [jid]
 
     args = ["jobsub_q", "-G", "fermilab"]
-    scount = 0
+    jcount = 0
     for schedd in all_schedds:
-        scount = scount + 1
-        if scount > 2:
-            break
-        jcount = 0
-        for jid in jobs_by_schedd[schedd]:
-            jcount = jcount + 1
-            if jcount > 2:
+        # pick the most recent 2 of jobs from each schedd that has more than 3 jobs
+        nj = len(jobs_by_schedd[schedd])
+        if nj > 3:
+            args.append(jobs_by_schedd[-1])
+            args.append(jobs_by_schedd[-2])
+            jcount = jcount + 2
+            if jcount == 4:
                 break
-            args.append(jid)
 
     # now we have 4 jobs on 2 schedd's from our list
     count = 0
