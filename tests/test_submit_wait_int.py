@@ -20,15 +20,20 @@ os.chdir(os.path.dirname(__file__))
 # unless we're testing installed, then use /opt/jobsub_lite/...
 #
 if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
-    os.environ["PATH"] = "/opt/jobsub_lite/bin:" + os.environ["PATH"]
     sys.path.append("/opt/jobsub_lite/lib")
 else:
-    os.environ["PATH"] = (
-        os.path.dirname(os.path.dirname(__file__)) + "/bin:" + os.environ["PATH"]
-    )
     sys.path.append("../lib")
 
 import fake_ifdh
+
+if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+    os.environ["PATH"] = "/opt/jobsub_lite/bin:" + os.environ["PATH"]
+else:
+    os.environ["PATH"] = (
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        + "/bin:"
+        + os.environ["PATH"]
+    )
 
 
 @pytest.fixture
@@ -398,34 +403,47 @@ def group_for_job(jid):
 
 
 @pytest.mark.integration
-def test_jobsub_q_repititions():
+def test_jobsub_q_repititions(samdev):
     # test to make sure if we do jobsub_q 1@jobsub01 2@jobsub01 3@jobsub02 4@jobsub02 we get only one repitition
+    # first submit a few more jobs so we have fresh ones
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
     jobs_by_schedd = {}
     all_schedds = set()
     for jid in joblist:
-        schedd = re.sub(r"@.*", "", jid)
+        schedd = re.sub(r".*@", "", jid)
         all_schedds.add(schedd)
-        if jid in jobs_by_schedd:
+        if schedd in jobs_by_schedd:
             jobs_by_schedd[schedd].append(jid)
         else:
             jobs_by_schedd[schedd] = [jid]
 
+    print(f"jobs_by_schedd: {repr(jobs_by_schedd)}")
     args = ["jobsub_q", "-G", "fermilab"]
     jcount = 0
-    for schedd in all_schedds:
-        # pick the most recent 2 of jobs from each schedd that has more than 3 jobs
+    all_schedds_l = list(all_schedds)
+    all_schedds_l.sort()
+    for schedd in all_schedds_l:
+        # pick the most recent 2 of jobs from each schedd
         nj = len(jobs_by_schedd[schedd])
-        if nj > 3:
-            args.append(jobs_by_schedd[-1])
-            args.append(jobs_by_schedd[-2])
+        if nj > 1:
+            args.append(jobs_by_schedd[schedd][-1])
+            args.append(jobs_by_schedd[schedd][-2])
             jcount = jcount + 2
             if jcount == 4:
                 break
 
     # now we have 4 jobs on 2 schedd's from our list
     count = 0
-    with os.popen(" ".join(args), "r") as fin:
+    cmd = " ".join(args)
+    print("Running: ", cmd)
+    with os.popen(cmd, "r") as fin:
         for line in fin.readlines():
+            print("got: ", line)
             count = count + 1
     assert count == 5
 
