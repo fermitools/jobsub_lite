@@ -20,15 +20,20 @@ os.chdir(os.path.dirname(__file__))
 # unless we're testing installed, then use /opt/jobsub_lite/...
 #
 if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
-    os.environ["PATH"] = "/opt/jobsub_lite/bin:" + os.environ["PATH"]
     sys.path.append("/opt/jobsub_lite/lib")
 else:
-    os.environ["PATH"] = (
-        os.path.dirname(os.path.dirname(__file__)) + "/bin:" + os.environ["PATH"]
-    )
     sys.path.append("../lib")
 
 import fake_ifdh
+
+if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+    os.environ["PATH"] = "/opt/jobsub_lite/bin:" + os.environ["PATH"]
+else:
+    os.environ["PATH"] = (
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        + "/bin:"
+        + os.environ["PATH"]
+    )
 
 
 @pytest.fixture
@@ -398,10 +403,62 @@ def group_for_job(jid):
 
 
 @pytest.mark.integration
+def test_jobsub_q_repetitions(samdev):
+    # test to make sure if we do jobsub_q 1@jobsub01 2@jobsub01 3@jobsub02 4@jobsub02 we get only one repitition
+    # first submit a few more jobs so we have fresh ones
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
+    jobs_by_schedd = {}
+    all_schedds = set()
+    for jid in joblist:
+        schedd = re.sub(r".*@", "", jid)
+        all_schedds.add(schedd)
+        if schedd in jobs_by_schedd:
+            jobs_by_schedd[schedd].append(jid)
+        else:
+            jobs_by_schedd[schedd] = [jid]
+
+    print(f"jobs_by_schedd: {repr(jobs_by_schedd)}")
+    args = ["jobsub_q", "-G", "fermilab"]
+    jcount = 0
+    all_schedds_l = list(all_schedds)
+    all_schedds_l.sort()
+    for schedd in all_schedds_l:
+        # pick the most recent 2 of jobs from each schedd
+        nj = len(jobs_by_schedd[schedd])
+        if nj > 1:
+            args.append(jobs_by_schedd[schedd][-1])
+            args.append(jobs_by_schedd[schedd][-2])
+            jcount = jcount + 2
+            if jcount == 4:
+                break
+
+    # now we have 4 jobs on 2 schedd's from our list
+    count = 0
+    cmd = " ".join(args)
+    print("Running: ", cmd)
+    with os.popen(cmd, "r") as fin:
+        for line in fin.readlines():
+            print("got: ", line)
+            count = count + 1
+    assert count == 5
+
+
+@pytest.mark.integration
 def test_wait_for_jobs():
     """Not really a test, but we have to wait for jobs to complete..."""
     count = 1
     print("Waiting for jobs: ", " ".join(joblist))
+
+    # put the list somewhere so we can see what the test is waiting for
+    # when not running with -s or whatever...
+    with open("/tmp/jobsub_lite_test_joblist", "w") as f:
+        f.write(" ".join(joblist))
+
     while count > 0:
         time.sleep(10)
         count = len(joblist)
@@ -418,7 +475,7 @@ def test_wait_for_jobs():
             else:
                 status = None
             print("jobid: ", jid, " status: ", status)
-            if status == "4" or status == "A":
+            if status == "4" or status == "A" or status == None:
                 # '4' is Completed.
                 # 'A' is when it says 'All queues are empty' (so they're
                 #     all completed...)
@@ -451,7 +508,11 @@ def test_check_job_output():
         fl = glob.glob("%s/*[0-9].out" % outdir)
 
         # make sure we have enough output files
-        res = res and (len(fl) >= jid2nout[jid])
+        if len(fl) >= jid2nout[jid]:
+            print(f"-- ok: {len(fl)} files for {jid} --  expected {jid2nout[jid]}")
+        else:
+            res = False
+            print(f"-- bad: {len(fl)} files for {jid} --  expected {jid2nout[jid]}")
 
         for f in fl:
             print(f"Checking {jid2test[jid]} {jid} output file {f}...")
