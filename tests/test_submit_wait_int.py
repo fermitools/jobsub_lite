@@ -403,7 +403,7 @@ def group_for_job(jid):
 
 
 @pytest.mark.integration
-def test_jobsub_q_repititions(samdev):
+def test_jobsub_q_repetitions(samdev):
     # test to make sure if we do jobsub_q 1@jobsub01 2@jobsub01 3@jobsub02 4@jobsub02 we get only one repitition
     # first submit a few more jobs so we have fresh ones
     lookaround_launch("")
