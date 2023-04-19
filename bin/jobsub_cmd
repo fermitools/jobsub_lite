@@ -227,6 +227,7 @@ def main() -> None:
                 "JOBSUBJOBID                             OWNER       \tSUBMITTED     RUNTIME"
                 "   ST PRIO   SIZE  COMMAND"
             )
+            sys.stdout.flush()
 
     cmd = cmd.replace("jobsub_", "condor_")
 

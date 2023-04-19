@@ -285,7 +285,7 @@ def test_dash_f_dropbox_pnfs(dune):
 def dagnabbit_launch(extra, which="", nout_files=5):
     os.environ["SUBMIT_FLAGS"] = ""
     os.chdir(os.path.join(os.path.dirname(__file__), "dagnabbit"))
-    assert run_launch(
+    res = run_launch(
         f"""
         jobsub_submit \
           --verbose=2 \
@@ -295,6 +295,7 @@ def dagnabbit_launch(extra, which="", nout_files=5):
         nout_files,
     )
     os.chdir(os.path.dirname(__file__))
+    assert res
 
 
 @pytest.mark.integration
@@ -484,6 +485,7 @@ def test_wait_for_jobs():
                 # '4' is Completed.
                 # 'A' is when it says 'All queues are empty' (so they're
                 #     all completed...)
+                # None is when there's no output...
                 count = count - 1
     print("Done.")
     assert True

@@ -13,7 +13,7 @@ log                = {{filebase}}.log
 JOBSUBJOBSECTION=$(Process)
 {%endif%}
 
-environment        = CM1=$(CM1);CM2=$(CM2);CLUSTER=$(Cluster);PROCESS=$(Process);JOBSUBJOBSECTION=$(JOBSUBJOBSECTION);CONDOR_TMP={{outdir}};BEARER_TOKEN_FILE=.condor_creds/{{group}}.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
+environment        = CM1=$(CM1);CM2=$(CM2);CLUSTER=$(Cluster);PROCESS=$(Process);JOBSUBJOBSECTION=$(JOBSUBJOBSECTION);CONDOR_TMP={{outdir}};BEARER_TOKEN_FILE=.condor_creds/{% if role is defined and role and role != 'Analysis' %}{{group}}_{{role | lower}}_{{oauth_handle}}.use{%else%}{{group}}_{{oauth_handle}}.use{%endif%};CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
 rank               = Mips / 2 + Memory
 job_lease_duration = 3600
 transfer_output    = True
@@ -89,12 +89,12 @@ requirements  = {%if overwrite_requirements is defined and overwrite_requirement
 {% if role is defined and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role | lower}}
 {% if job_scope is defined and job_scope %}
-#{{group}}_{{role | lower}}_oauth_permissions_{{oauth_handle}} = " {{job_scope}} "
+{{group}}_{{role | lower}}_oauth_permissions_{{oauth_handle}} = " {{job_scope}} "
 {% endif %}
 {% else %}
 use_oauth_services = {{group}}
 {% if job_scope is defined and job_scope %}
-#{{group}}_oauth_permissions_{{oauth_handle}} = " {{job_scope}} "
+{{group}}_oauth_permissions_{{oauth_handle}} = " {{job_scope}} "
 {% endif %}
 {% endif %}
 {% if role is defined %}
