@@ -8,13 +8,22 @@ os.chdir(os.path.dirname(__file__))
 #
 # import modules we need to test, since we chdir()ed, can use relative path
 #
-sys.path.append("../lib")
+if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+    sys.path.append("/opt/jobsub_lite/lib")
+else:
+    sys.path.append("../lib")
+
 import token_mods
 
 # change path to get our decode_token.sh
-os.environ["PATH"] = (
-    os.path.dirname(os.path.dirname(__file__)) + "/bin:" + os.environ["PATH"]
-)
+if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+    os.environ["PATH"] = "/opt/jobsub_lite/bin:" + os.environ["PATH"]
+else:
+    os.environ["PATH"] = (
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        + "/bin:"
+        + os.environ["PATH"]
+    )
 
 
 @pytest.fixture

@@ -28,6 +28,12 @@ environment	= _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address;
 {%if skip_check is defined and skip_check%}
 +JobsubSkipChecks = "{{skip_check|join(",")}}"
 {%endif%}
+
+{% if generate_email_summary %}
+notify_user = "{{email_to}}"
+notification = Always
+{% endif %}
+
 {{lines|join("\n")}}
 
 {% if subgroup is defined and subgroup %}

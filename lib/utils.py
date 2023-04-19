@@ -15,6 +15,7 @@
 # limitations under the License.
 """ misc. utility functions """
 from collections import OrderedDict
+import classad  # type: ignore
 import datetime
 import os
 import os.path
@@ -54,6 +55,15 @@ def cleanup(varg: Dict[str, Any]) -> None:
             sb = os.stat(entry.name)
             if entry.name.startswith("js_") and time.time() - sb.st_mtime > 604800:
                 cleandir(entry.name)
+
+
+def sanitize_lines(linelist: List[str]) -> None:
+    """check all the items in the linelist to see if they are a valid htcondor classad entries"""
+    for line in linelist:
+        try:
+            res = classad.parseOne(line)
+        except classad.ClassAdParseError as err:
+            raise SyntaxError(f"in --lines '{line}'")
 
 
 def fixquote(s: str) -> str:

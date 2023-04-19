@@ -1,5 +1,6 @@
 DOT dataset.dag.dot UPDATE
 {%for i in range(N) %}
 JOB WORKER_{{i}} simple.cmd
+VARS WORKER_{{i}} JOBSUBJOBSECTION="{{i}}" nodename="$(JOB)"
 {%endfor%}
 CONFIG dagmax.config

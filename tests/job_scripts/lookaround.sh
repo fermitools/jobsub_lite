@@ -64,4 +64,7 @@ do
    eval "echo $od = \$$od"
    eval "echo test $od > \$$od/testout.txt"
 done
+
+# now sleep for a bit
+sleep 300
 exit 0

@@ -31,6 +31,11 @@ delegate_job_GSI_credentials_lifetime = 0
 {%endif%}
 {{lines|join("\n")}}
 
+{% if generate_email_summary %}
+notify_user = "{{email_to}}"
+notification = Always
+{% endif %}
+
 {% if subgroup is defined and subgroup %}
 +AccountingGroup = "group_{{group}}.{{subgroup}}.{{user}}"
 {% else %}

@@ -1,5 +1,5 @@
 NAME = jobsub_lite
-VERSION = v1.2
+VERSION = v1.2.1
 ROOTDIR = $(shell pwd)
 rpmVersion := $(subst v,,$(VERSION))
 BUILD_DIR = $(NAME)-$(rpmVersion)
@@ -32,8 +32,8 @@ tarball: set-version
 set-version:
 	sed -Ei 's/Version\:[ ]*.+/Version:        $(rpmVersion)/' $(specfile)
 	echo "Set version in spec file to $(rpmVersion)"
-	sed -Ei 's/__version__ = \".+\"/__version__ = "$(VERSION)"/' $(versionfile)
-	echo "Set version in version file to $(VERSION)"
+	sed -Ei 's/__version__ = \".+\"/__version__ = "$(rpmVersion)"/' $(versionfile)
+	echo "Set version in version file to $(rpmVersion)"
 
 clean:
 	(test -e $(BUILD_DIR)) && (rm -Rf $(BUILD_DIR)) || echo "$(BUILD_DIR) does not exist"

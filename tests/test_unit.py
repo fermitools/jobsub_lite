@@ -36,6 +36,8 @@ class TestUnit:
         "job_scope": "storage.create:/foo storage:modify:/foo compute.create compute.modify compute.read",
         "oauth_handle": "0a1b2c3d4e5f",
         "project_name": "",
+        "job_info": [],
+        "generate_email_summary": False,
     }
     test_extra_template_args = {
         "role": "Analysis",
