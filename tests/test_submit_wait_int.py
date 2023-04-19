@@ -508,7 +508,11 @@ def test_check_job_output():
         fl = glob.glob("%s/*[0-9].out" % outdir)
 
         # make sure we have enough output files
-        res = res and (len(fl) >= jid2nout[jid])
+        if len(fl) >= jid2nout[jid]:
+            print(f"-- ok: {len(fl)} files for {jid} --  expected {jid2nout[jid]}")
+        else:
+            res = False
+            print(f"-- bad: {len(fl)} files for {jid} --  expected {jid2nout[jid]}")
 
         for f in fl:
             print(f"Checking {jid2test[jid]} {jid} output file {f}...")
