@@ -141,6 +141,12 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
         action="store_true",
         help="Use jobsubdevgpvm01 etc. to submit",
     )
+    parser.add_argument(
+        "--job-info",
+        action="append",
+        default=[],
+        help="script to call with jobid and command line when job is submitted",
+    )
     group.add_argument(
         "--version",
         action="store_true",
@@ -279,12 +285,6 @@ def get_parser() -> argparse.ArgumentParser:
         default=False,
         help="generate and mail a summary report of completed/failed/removed"
         " jobs in a DAG",
-    )
-    parser.add_argument(
-        "--job-info",
-        action="append",
-        default=[],
-        help="script to call with jobid and command line when job is submitted",
     )
     parser.add_argument(
         "-L", "--log-file", "--log_file", help="Log file to hold log output from job."
