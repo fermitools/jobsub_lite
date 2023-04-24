@@ -89,7 +89,7 @@ def main():
     if group is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
-    schedd_add = get_schedd({"group": group})
+    schedd_add = get_schedd(vars(args))
     schedd_name = schedd_add.eval("Machine")
 
     if args.verbose:

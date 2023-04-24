@@ -66,7 +66,7 @@ def main():
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
-    schedd_add = get_schedd({})
+    schedd_add = get_schedd(vars(arglist))
 
     submit_dag(f, {}, schedd_add, cmd_args)
 
