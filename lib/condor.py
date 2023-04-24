@@ -39,7 +39,7 @@ def get_schedd_list(vargs: Dict[str, Any]) -> List[classad.ClassAd]:
     # pylint: disable-next=no-member
     coll = htcondor.Collector(COLLECTOR_HOST)
     # pylint: disable-next=no-member
-    devnot = "" if vargs["devserver"] else "!"
+    devnot = "" if vargs.get("devserver", False) else "!"
     schedds: List[classad.ClassAd] = coll.query(
         htcondor.htcondor.AdTypes.Schedd,
         constraint="IsJobsubLite=?=true"
@@ -180,7 +180,7 @@ def submit(
             print(f"{hl}Use job id {m.group(1)}.0@{schedd_name} to retrieve output{hl}")
 
             # call any job_info commands requested with the jobid
-            for ji in vargs["job_info"]:
+            for ji in vargs.get("job_info", []):
                 os.system(
                     f'{ji} {m.group(1)}.0@{schedd_name} "{repr(sys.argv)}" </dev/null'
                 )
