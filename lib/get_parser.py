@@ -157,6 +157,7 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
 
 
 def get_submit_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
+    """build the jobsub argument parser for the condor_submit/condor_submit_dag commands and return it"""
     parser = get_base_parser(add_condor_epilog=add_condor_epilog)
     parser.add_argument(
         "--job-info",
@@ -168,6 +169,7 @@ def get_submit_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParse
 
 
 def get_jobid_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
+    """build the jobsub_cmd (jobsub_q, etc.) argument parser and return it"""
     parser = get_base_parser(add_condor_epilog=add_condor_epilog)
     parser.add_argument("-J", "--jobid", dest="jobid", help="job/submission ID")
     parser.add_argument(
