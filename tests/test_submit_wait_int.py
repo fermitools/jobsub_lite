@@ -139,7 +139,7 @@ outdirs = {}
 ddirs = {}
 
 
-def run_launch(cmd, expected_out=1):
+def run_launch(cmd, expected_out=1, get_dir=False):
     """
     run a jobsub launch command, get jobids from output to watch
     for, etc.
@@ -152,6 +152,10 @@ def run_launch(cmd, expected_out=1):
     pf = os.popen(cmd + " 2>&1")
     for l in pf.readlines():
         print(l)
+        m = re.match(r"Submission files are in: (\S+)", l)
+        if get_dir and m:
+            pf.close()
+            return m.group(1).strip()
         m = re.match(r"Running:.*/usr/bin/condor_submit.*-remote (\S+)", l)
         if m:
             print("Found schedd!")
@@ -197,6 +201,16 @@ def lookaround_launch(extra, verify_files=""):
 @pytest.mark.integration
 def test_launch_lookaround_samdev(samdev):
     lookaround_launch("--devserver")
+
+
+@pytest.mark.integration
+def test_no_submit_condor_submit(samdev):
+    dir = run_launch(
+        "jobsub_submit --verbose=1 --no-submit "
+        "file://`pwd`/job_scripts/lookaround.sh",
+        get_dir=True,
+    )
+    assert run_launch(f"cd {dir} && condor_submit --verbose=1 simple.cmd")
 
 
 @pytest.mark.integration

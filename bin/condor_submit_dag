@@ -38,6 +38,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 #
 from condor import get_schedd, submit_dag
 from creds import get_creds
+import get_parser
 
 
 def main():
@@ -57,7 +58,7 @@ def main():
     f = sys.argv[-1]
     sys.argv = sys.argv[1:-1]
 
-    parser = get_parser.get_jobid_parser(add_condor_epilog=True)
+    parser = get_parser.get_submit_parser(add_condor_epilog=True)
 
     arglist, cmd_args = parser.parse_known_args()
 
@@ -74,7 +75,7 @@ def main():
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
-    schedd_add = get_schedd({})
+    schedd_add = get_schedd(vars(arglist))
 
     submit_dag(f, {}, schedd_add, cmd_args)
 

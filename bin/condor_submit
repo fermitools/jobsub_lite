@@ -67,12 +67,13 @@ def main():
     - launch
     """
 
-    # set up to use our custom condor_vault_storer until we get
+    # use our custom condor_vault_storer until we get
     # the updated one in the condor release
     #
     bindir = os.path.abspath(os.path.dirname(__file__))
     os.environ["_condor_SEC_CREDENTIAL_STORER"] = f"{bindir}/condor_vault_storer"
-    condor_parser = get_parser.get_jobid_parser(add_condor_epilog=True)
+
+    condor_parser = get_parser.get_submit_parser(add_condor_epilog=True)
 
     condor_parser.add_argument(
         "-spool",
@@ -94,7 +95,7 @@ def main():
     if group is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
-    schedd_add = get_schedd({"group": group})
+    schedd_add = get_schedd(vars(args))
     schedd_name = schedd_add.eval("Machine")
 
     if args.verbose:

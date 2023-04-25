@@ -164,7 +164,20 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     return parser
 
 
+def get_submit_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
+    """build the jobsub argument parser for the condor_submit/condor_submit_dag commands and return it"""
+    parser = get_base_parser(add_condor_epilog=add_condor_epilog)
+    parser.add_argument(
+        "--job-info",
+        action="append",
+        default=[],
+        help="script to call with jobid and command line when job is submitted",
+    )
+    return parser
+
+
 def get_jobid_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
+    """build the jobsub_cmd (jobsub_q, etc.) argument parser and return it"""
     parser = get_base_parser(add_condor_epilog=add_condor_epilog)
     parser.add_argument("-J", "--jobid", dest="jobid", help="job/submission ID")
     parser.add_argument(
@@ -176,7 +189,7 @@ def get_jobid_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser
 
 def get_parser() -> argparse.ArgumentParser:
     """build the jobsub_submit argument parser and return it"""
-    parser = get_base_parser()
+    parser = get_submit_parser()
     parser.add_argument(
         "-c",
         "--append-condor-requirements",
@@ -287,12 +300,6 @@ def get_parser() -> argparse.ArgumentParser:
         default=False,
         help="generate and mail a summary report of completed/failed/removed"
         " jobs in a DAG",
-    )
-    parser.add_argument(
-        "--job-info",
-        action="append",
-        default=[],
-        help="script to call with jobid and command line when job is submitted",
     )
     parser.add_argument(
         "-L", "--log-file", "--log_file", help="Log file to hold log output from job."
