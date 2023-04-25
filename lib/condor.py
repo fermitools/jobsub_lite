@@ -39,7 +39,7 @@ def get_schedd_list(vargs: Dict[str, Any]) -> List[classad.ClassAd]:
     # pylint: disable-next=no-member
     coll = htcondor.Collector(COLLECTOR_HOST)
     # pylint: disable-next=no-member
-    devnot = "" if vargs["devserver"] else "!"
+    devnot = "" if vargs.get("devserver", False) else "!"
     schedds: List[classad.ClassAd] = coll.query(
         htcondor.htcondor.AdTypes.Schedd,
         constraint="IsJobsubLite=?=true"
@@ -151,6 +151,13 @@ def submit(
     cmd = f"/usr/bin/condor_submit -pool {COLLECTOR_HOST} {schedd_args} {qargs}"
     cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
     cmd = f"_condor_CREDD_HOST={schedd_name} {cmd}"
+    #
+    # set up to use our custom condor_vault_storer until we get
+    # the updated one in the condor release
+    #
+    jldir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cmd = f"_condor_SEC_CREDENTIAL_STORER={jldir}/bin/condor_vault_storer {cmd}"
+    #
     packages.orig_env()
     if vargs.get("verbose", 0) > 0:
         print(f"Running: {cmd}")
@@ -180,7 +187,7 @@ def submit(
             print(f"{hl}Use job id {m.group(1)}.0@{schedd_name} to retrieve output{hl}")
 
             # call any job_info commands requested with the jobid
-            for ji in vargs["job_info"]:
+            for ji in vargs.get("job_info", []):
                 os.system(
                     f'{ji} {m.group(1)}.0@{schedd_name} "{repr(sys.argv)}" </dev/null'
                 )

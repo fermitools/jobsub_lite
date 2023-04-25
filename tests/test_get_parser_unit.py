@@ -19,6 +19,7 @@ else:
     sys.path.append("../lib")
 
 import get_parser
+import pool
 
 from test_unit import TestUnit
 
@@ -148,6 +149,8 @@ def all_test_args():
         "-f",
         "xxfxx",
         "--generate-email-summary",
+        "--global-pool",
+        "dune",
         "--group",
         "xxgroupxx",
         "--job-info",
@@ -358,6 +361,8 @@ class TestGetParserUnit:
                 assert vres["verbose"] == 1
             elif arg == "dataset":
                 assert vres["dataset_definition"] == "xxdataset-definitionxx"
+            elif arg == "global-pool":
+                assert vres["global_pool"] == "dune"
             elif arg in listargs:
                 # args are in a list, so look for list containing xxflagxx
                 if arg in ["lines"]:
@@ -380,6 +385,7 @@ class TestGetParserUnit:
         for i in range(4):
             assert "xx_executable_arg_%s_xx" % i in vres["exe_arguments"]
 
+    @pytest.mark.unit
     def test_get_condor_epilog(self):
         """make sure we get the condor_q help epilog if we are jobsub_q"""
         sys.argv[0] = "/blah/blah/jobsub_q"
@@ -387,6 +393,7 @@ class TestGetParserUnit:
         assert epilog.find("also condor_q arguments") == 0
         assert epilog.find("-better-analyze") > 0
 
+    @pytest.mark.unit
     def test_verify_and_add_skip_check_valid(
         self, skip_check_arg_parser, get_single_valid_check_to_skip
     ):
@@ -401,6 +408,7 @@ class TestGetParserUnit:
         assert valid_check in args.skip_check
         assert getattr(args, f"skip_check_{valid_check}", False)
 
+    @pytest.mark.unit
     def test_verify_and_add_skip_check_duplicate(
         self, skip_check_arg_parser, get_single_valid_check_to_skip
     ):
@@ -418,12 +426,14 @@ class TestGetParserUnit:
         assert len(args.skip_check) == 1
         assert getattr(args, f"skip_check_{valid_check}", False)
 
+    @pytest.mark.unit
     def test_verify_and_add_skip_check_single_invalid(self, skip_check_arg_parser):
         """This test makes sure that if we pass an invalid check to --skip-check, we
         get a TypeError"""
         with pytest.raises(TypeError, match="Invalid argument to flag --skip-check:"):
             skip_check_arg_parser.parse_args(["--skip-check", "ThisIsAFakeCheck"])
 
+    @pytest.mark.unit
     def test_verify_and_add_skip_check_mixed_invalid(
         self, skip_check_arg_parser, get_single_valid_check_to_skip
     ):
@@ -437,3 +447,7 @@ class TestGetParserUnit:
             skip_check_arg_parser.parse_args(
                 ["--skip-check", valid_check, "--skip-check", "ThisIsAFakeCheck"]
             )
+
+    @pytest.mark.unit
+    def test_put_back_pool(self):
+        pool.reset_pool()
