@@ -38,6 +38,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 #
 from condor import get_schedd, submit_dag
 from creds import get_creds
+import get_parser
 
 
 def main():
@@ -49,7 +50,7 @@ def main():
     f = sys.argv[-1]
     sys.argv = sys.argv[1:-1]
 
-    parser = get_parser.get_jobid_parser(add_condor_epilog=True)
+    parser = get_parser.get_submit_parser(add_condor_epilog=True)
 
     arglist, cmd_args = parser.parse_known_args()
 

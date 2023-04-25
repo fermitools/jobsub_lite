@@ -67,7 +67,7 @@ def main():
     - launch
     """
 
-    condor_parser = get_parser.get_jobid_parser(add_condor_epilog=True)
+    condor_parser = get_parser.get_submit_parser(add_condor_epilog=True)
 
     condor_parser.add_argument(
         "-spool",

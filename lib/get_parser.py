@@ -141,12 +141,6 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
         action="store_true",
         help="Use jobsubdevgpvm01 etc. to submit",
     )
-    parser.add_argument(
-        "--job-info",
-        action="append",
-        default=[],
-        help="script to call with jobid and command line when job is submitted",
-    )
     group.add_argument(
         "--version",
         action="store_true",
@@ -158,6 +152,17 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
         action="store_true",
         help="jobsub_lite support email",
         default=False,
+    )
+    return parser
+
+
+def get_submit_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
+    parser = get_base_parser(add_condor_epilog=add_condor_epilog)
+    parser.add_argument(
+        "--job-info",
+        action="append",
+        default=[],
+        help="script to call with jobid and command line when job is submitted",
     )
     return parser
 
@@ -174,7 +179,7 @@ def get_jobid_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser
 
 def get_parser() -> argparse.ArgumentParser:
     """build the jobsub_submit argument parser and return it"""
-    parser = get_base_parser()
+    parser = get_submit_parser()
     parser.add_argument(
         "-c",
         "--append-condor-requirements",
