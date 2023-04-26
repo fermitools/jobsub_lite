@@ -22,6 +22,20 @@ import get_parser
 import pool
 
 from test_unit import TestUnit
+from test_submit_wait_int import get_collector
+
+
+def set_pool_map():
+    """we need a pool map set to test the --global-pool option"""
+    os.environ["GROUP"] = "dune"
+    os.environ["JOBSUB_POOL_MAP"] = (
+        '{"dune":{"collector":"' + get_collector() + '","onsite":"FNAL_GPGRID"}}'
+    )
+    del os.environ["GROUP"]
+
+
+# we need to set the pool map when we're imported...
+set_pool_map()
 
 
 @pytest.fixture
