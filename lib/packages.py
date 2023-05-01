@@ -18,8 +18,9 @@
 import os
 import sys
 from glob import glob
+from typing import Dict
 
-SAVED_ENV = None
+SAVED_ENV: Dict[str, str] = {}
 
 
 def orig_env() -> None:

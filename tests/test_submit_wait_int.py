@@ -20,15 +20,20 @@ os.chdir(os.path.dirname(__file__))
 # unless we're testing installed, then use /opt/jobsub_lite/...
 #
 if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
-    os.environ["PATH"] = "/opt/jobsub_lite/bin:" + os.environ["PATH"]
     sys.path.append("/opt/jobsub_lite/lib")
 else:
-    os.environ["PATH"] = (
-        os.path.dirname(os.path.dirname(__file__)) + "/bin:" + os.environ["PATH"]
-    )
     sys.path.append("../lib")
 
 import fake_ifdh
+
+if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+    os.environ["PATH"] = "/opt/jobsub_lite/bin:" + os.environ["PATH"]
+else:
+    os.environ["PATH"] = (
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        + "/bin:"
+        + os.environ["PATH"]
+    )
 
 
 @pytest.fixture
@@ -130,6 +135,8 @@ def dune_gp(dune):
 joblist = []
 jid2test = {}
 jid2nout = {}
+jid2group = {}
+jid2pool = {}
 outdirs = {}
 ddirs = {}
 
@@ -144,6 +151,8 @@ def run_launch(cmd, expected_out=1, get_dir=False):
     outdir = None
     jobsubjobid = None
     added = False
+    # do not submit too fast...
+    time.sleep(1)
     pf = os.popen(cmd + " 2>&1")
     for l in pf.readlines():
         print(l)
@@ -168,10 +177,14 @@ def run_launch(cmd, expected_out=1, get_dir=False):
         if jobid and schedd and jobsubjobid and not added:
             added = True
             print("Found all three! ", jobid, schedd, jobsubjobid)
-            joblist.append("%s@%s" % (jobid, schedd))
+            joblist.append("%s.0@%s" % (jobid, schedd))
             # note which test led to this jobid
-            jid2test["%s@%s" % (jobid, schedd)] = inspect.stack()[2][3]
-            jid2nout["%s@%s" % (jobid, schedd)] = expected_out
+            jid2test["%s.0@%s" % (jobid, schedd)] = inspect.stack()[2][3]
+            jid2nout["%s.0@%s" % (jobid, schedd)] = expected_out
+            jid2group["%s.0@%s" % (jobid, schedd)] = os.environ.get("GROUP", "fermilab")
+            jid2pool["%s.0@%s" % (jobid, schedd)] = os.environ.get(
+                "_condor_COLLECTOR_HOST", ""
+            )
     res = pf.close()
 
     if not added:
@@ -189,7 +202,7 @@ def run_launch(cmd, expected_out=1, get_dir=False):
 def lookaround_launch(extra, verify_files=""):
     """Simple submit of our lookaround script"""
     assert run_launch(
-        f"jobsub_submit --verbose=1 -e SAM_EXPERIMENT {extra} file://`pwd`/job_scripts/lookaround.sh {verify_files}"
+        f"jobsub_submit --mail-never --verbose=1 -e SAM_EXPERIMENT {extra} file://`pwd`/job_scripts/lookaround.sh {verify_files}"
     )
 
 
@@ -220,6 +233,11 @@ def test_launch_lookaround_ddir(samdev):
 @pytest.mark.integration
 def test_launch_lookaround_dune(dune):
     lookaround_launch("--devserver")
+
+
+@pytest.mark.integration
+def test_launch_lookaround_dune_gp_poolflag(dune):
+    lookaround_launch("--global-pool=dune")
 
 
 @pytest.mark.integration
@@ -289,9 +307,10 @@ def test_dash_f_dropbox_pnfs(dune):
 def dagnabbit_launch(extra, which="", nout_files=5):
     os.environ["SUBMIT_FLAGS"] = ""
     os.chdir(os.path.join(os.path.dirname(__file__), "dagnabbit"))
-    assert run_launch(
+    res = run_launch(
         f"""
         jobsub_submit \
+          --mail-never \
           --verbose=2 \
           -e SAM_EXPERIMENT {extra} \
           --dag file://dagTest{which} \
@@ -299,6 +318,7 @@ def dagnabbit_launch(extra, which="", nout_files=5):
         nout_files,
     )
     os.chdir(os.path.dirname(__file__))
+    assert res
 
 
 @pytest.mark.integration
@@ -328,6 +348,7 @@ def fife_launch(extra):
     assert run_launch(
         """
         jobsub_submit \
+          --mail-never \
           --verbose=1 \
           -e EXPERIMENT \
           -e IFDH_DEBUG \
@@ -375,7 +396,8 @@ def fife_launch(extra):
               gen.troot \
               -c \
               hist_gen.troot """
-        % {"exp": os.environ["GROUP"], "extra": extra}
+        % {"exp": os.environ["GROUP"], "extra": extra},
+        expected_out=5,
     )
 
 
@@ -400,15 +422,69 @@ def test_dune_gp_fife_launch(dune_gp):
 
 
 def group_for_job(jid):
+
+    group = jid2group.get(jid, "")
+
     if jid.find("dune") > 0:
-        group = "dune"
-        os.environ["GROUP"] = group
-        os.environ["_condor_COLLECTOR_HOST"] = get_collector()
+        if not group:
+            group = "dune"
+        if jid2pool.get(jid, ""):
+            os.environ["_condor_COLLECTOR_HOST"] = get_collector()
     else:
-        group = "fermilab"
+        if not group:
+            group = "fermilab"
         if os.environ.get("_condor_COLLECTOR_HOST"):
             del os.environ["_condor_COLLECTOR_HOST"]
+    os.environ["GROUP"] = group
     return group
+
+
+# turning this test off for now; I can not seem to get it to consistently get
+# the setup of two jobs each on two schedd's... mengel
+# @pytest.mark.integration
+def xx_test_jobsub_q_repetitions(samdev):
+    # test to make sure if we do jobsub_q 1@jobsub01 2@jobsub01 3@jobsub02 4@jobsub02 we get only one repitition
+    # first submit a few more jobs so we have fresh ones
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
+    lookaround_launch("")
+    jobs_by_schedd = {}
+    all_schedds = set()
+    for jid in joblist:
+        schedd = re.sub(r".*@", "", jid)
+        all_schedds.add(schedd)
+        if schedd in jobs_by_schedd:
+            jobs_by_schedd[schedd].append(jid)
+        else:
+            jobs_by_schedd[schedd] = [jid]
+
+    print(f"jobs_by_schedd: {repr(jobs_by_schedd)}")
+    args = ["jobsub_q", "-G", "fermilab"]
+    jcount = 0
+    all_schedds_l = list(all_schedds)
+    all_schedds_l.sort()
+    for schedd in all_schedds_l:
+        # pick the most recent 2 of jobs from each schedd
+        nj = len(jobs_by_schedd[schedd])
+        if nj > 1 and not schedd.find("dune") == 0:
+            args.append(jobs_by_schedd[schedd][-1])
+            args.append(jobs_by_schedd[schedd][-2])
+            jcount = jcount + 2
+            if jcount == 4:
+                break
+
+    # now we have 4 jobs on 2 schedd's from our list
+    count = 0
+    cmd = " ".join(args)
+    print("Running: ", cmd)
+    with os.popen(cmd, "r") as fin:
+        for line in fin.readlines():
+            print("got: ", line)
+            count = count + 1
+    assert count == 5
 
 
 @pytest.mark.integration
@@ -416,8 +492,16 @@ def test_wait_for_jobs():
     """Not really a test, but we have to wait for jobs to complete..."""
     count = 1
     print("Waiting for jobs: ", " ".join(joblist))
-    while count > 0:
-        time.sleep(10)
+
+    # put the list somewhere so we can see what the test is waiting for
+    # when not running with -s or whatever...
+    with open("/tmp/jobsub_lite_test_joblist", "w") as f:
+        f.write(" ".join(joblist))
+
+    repeats = 0
+    while count > 0 and repeats < 3:
+        if repeats == 0:
+            time.sleep(20)
         count = len(joblist)
         for jid in joblist:
             group = group_for_job(jid)
@@ -432,11 +516,19 @@ def test_wait_for_jobs():
             else:
                 status = None
             print("jobid: ", jid, " status: ", status)
-            if status == "4" or status == "A":
+            if status == "4" or status == "A" or status == None:
                 # '4' is Completed.
                 # 'A' is when it says 'All queues are empty' (so they're
                 #     all completed...)
+                # None is when there's no output...
                 count = count - 1
+
+        # have to all look good 3 times in a row...
+        if count == 0:
+            repeats = repeats + 1
+        else:
+            repeats = 0
+
     print("Done.")
     assert True
 
@@ -464,8 +556,34 @@ def test_check_job_output():
     for jid, outdir in outdirs.items():
         fl = glob.glob("%s/*[0-9].out" % outdir)
 
+        if len(fl) < jid2nout[jid]:
+            # if not enough files, try fetching again...
+            # sometimes when we look later they're all there
+            print(f"Notice: re-fetching {jid} logs...")
+            group = group_for_job(jid)
+            subprocess.run(
+                [
+                    "jobsub_fetchlog",
+                    "--group",
+                    group,
+                    "--jobid",
+                    jid,
+                    "--destdir",
+                    outdir,
+                ],
+                check=True,
+            )
+            fl = glob.glob("%s/*[0-9].out" % outdir)
+
         # make sure we have enough output files
-        res = res and (len(fl) >= jid2nout[jid])
+        print(
+            f"Checking out file count test {jid2test[jid]} {jid} expecting {jid2nout[jid]} actual count {len(fl)}"
+        )
+        if len(fl) >= jid2nout[jid]:
+            print("-- ok")
+        else:
+            res = False
+            print("-- bad")
 
         for f in fl:
             print(f"Checking {jid2test[jid]} {jid} output file {f}...")
