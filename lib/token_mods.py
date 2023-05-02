@@ -44,8 +44,7 @@ def get_job_scopes(
 
 def use_token_copy(tokenfile: str) -> str:
     """copy our submit scitoken file and point BEARER_TOKEN_FILE there, so when
-    condor stomps on it we don't lose our original permissions for next time
-    """
+    condor stomps on it we don't lose our original permissions for next time"""
     pid = os.getpid()
     copyto = f"{tokenfile}.{pid}"
     shutil.copy(tokenfile, copyto)
