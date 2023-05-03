@@ -108,7 +108,11 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
     excludes = f"--exclude-from {excludes} --exclude {tarfile}"
-    os.system(f"GZIP=-n tar czvf {tarfile} {excludes} --directory {directory} {file}")
+    # note: the TZ=UTC stops tar from whining about the date format
+    # if we are doing the --mtime flag, above...
+    os.system(
+        f"TZ=UTC GZIP=-n tar czvf {tarfile} {excludes} {mtime} --directory {directory} {file}"
+    )
     return tarfile
 
 
