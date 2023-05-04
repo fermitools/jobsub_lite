@@ -285,14 +285,18 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
         # cid looks something like dune/bf6a15b4238b72f82...(long hash)
         cid = f"{args.group}/{digest}"
 
-        publisher = TarfilePublisherHandler(cid, proxy, token)
+        publisher = TarfilePublisherHandler(cid, proxy, token, args.verbose)
         location = publisher.cid_exists()
         if location is None:
             if args.verbose:
                 print(f"\n\nUsing RCDS to publish tarball\ncid: {cid}")
             publisher.publish(tf)
             if not getattr(args, "skip_check_rcds", False):
-                print("Checking to see if uploaded file is published on RCDS.")
+                msg = "Checking to see if uploaded file is published on RCDS"
+                if args.verbose:
+                    msg = msg + f" for CID {cid}"
+                print(msg)
+
                 # pylint: disable-next=unused-variable
                 for i in range(NUM_RETRIES):
                     location = publisher.cid_exists()
@@ -363,17 +367,23 @@ class TarfilePublisherHandler:
     )  # RCDS returns this if a tarball represented by cid is present
 
     def __init__(
-        self, cid: str, proxy: Union[None, str] = None, token: Union[None, str] = None
+        self,
+        cid: str,
+        proxy: Union[None, str] = None,
+        token: Union[None, str] = None,
+        verbose: int = 0,
     ):
         self.cid = cid
         self.cid_url = _quote(cid, safe="")  # Encode CID for passing to URL
         self.proxy = proxy
         self.token = token
+        self.verbose = verbose
+
         if token is not None:
             print(f"Using bearer token located at {self.token} to authenticate to RCDS")
         else:
             print(f"Using X509 proxy located at {self.proxy} to authenticate to RCDS")
-        self.dropbox_servers = tuple(self.dropbox_server_string.split())
+
         self.pubapi_base_url_formatter_full = (
             f"https://{{dropbox_server}}/pubapi/{{endpoint}}"
         )
@@ -381,6 +391,7 @@ class TarfilePublisherHandler:
         self.pubapi_cid_url_formatter = (
             self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
         )
+        self._dropbox_server_selector = self.__setup_dropbox_server_selector()
 
     # pylint: disable-next=no-self-argument
     def pubapi_operation(func: Callable) -> Callable:  # type: ignore
@@ -398,11 +409,12 @@ class TarfilePublisherHandler:
         def wrapper(self, *args: Any, **kwargs: Any) -> requests.Response:  # type: ignore
             """wrapper function for decorator"""
             # pylint: disable-next=protected-access
-            _dropbox_server_selector = self.__select_dropbox_server()
             retry_count = itertools.count()
             while True:
                 try:
-                    _dropbox_server = next(_dropbox_server_selector)
+                    _dropbox_server = next(self._dropbox_server_selector)
+                    if self.verbose > 0:
+                        print(f"Using PubAPI server {_dropbox_server}")
                     self.pubapi_base_url_formatter = (
                         self.pubapi_base_url_formatter_full.format_map(
                             SafeDict(dropbox_server=_dropbox_server)
@@ -415,6 +427,8 @@ class TarfilePublisherHandler:
                     response = func(self, *args, **kwargs)
                     response.raise_for_status()
                 except:  # pylint: disable=bare-except
+                    # Note:  This retry loop is in case the request itself fails.  Not
+                    # if we couldn't find the tarball!
                     tb.print_exc()
                     if next(retry_count) == NUM_RETRIES:
                         print(f"Max retries {NUM_RETRIES} exceeded.  Exiting now.")
@@ -444,14 +458,16 @@ class TarfilePublisherHandler:
     @cid_operation
     @pubapi_operation
     def update_cid(self) -> requests.Response:
-        """Make PubAPI update call to check if we
-        already have this tarfile
+        """Make PubAPI update call to update the last-accessed timestamp on
+        this tarfile
 
         Returns:
             requests.Response: Response from PubAPI call indicating if tarball
             represented by self.cid is present
         """
         url = self.pubapi_cid_url_formatter.format(endpoint="update")
+        if self.verbose:
+            print(f"Calling URL {url}")
         if self.token:
             return requests.get(url, auth=TokenAuth(self.token))
         return requests.get(url, cert=(self.proxy, self.proxy))
@@ -469,6 +485,8 @@ class TarfilePublisherHandler:
             represented by self.cid is present
         """
         url = self.pubapi_cid_url_formatter.format(endpoint="publish")
+        if self.verbose:
+            print(f"Calling URL {url}")
         if self.token:
             return requests.post(url, auth=TokenAuth(self.token), data=tarfile)
         return requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
@@ -483,6 +501,8 @@ class TarfilePublisherHandler:
             represented by self.cid is present
         """
         url = self.pubapi_cid_url_formatter.format(endpoint="exists")
+        if self.verbose:
+            print(f"Calling URL {url}")
         if self.token:
             return requests.get(url, auth=TokenAuth(self.token))
         return requests.get(url, cert=(self.proxy, self.proxy))
@@ -502,11 +522,8 @@ class TarfilePublisherHandler:
             return requests.get(url, auth=TokenAuth(self.token))
         return requests.get(url, cert=(self.proxy, self.proxy))
 
-    def __select_dropbox_server(self) -> Iterator[str]:
-        """Yield a dropbox server for client to upload tarball to"""
-        dropbox_servers_working_list: List[str] = []
-        while True:
-            if len(dropbox_servers_working_list) == 0:
-                dropbox_servers_working_list = list(self.dropbox_servers)
-                random.shuffle(dropbox_servers_working_list)
-            yield dropbox_servers_working_list.pop()
+    def __setup_dropbox_server_selector(self) -> Iterator[str]:
+        """Return an infinite iterator of dropbox servers for client to upload tarball to"""
+        dropbox_servers_working_list = self.dropbox_server_string.split()
+        random.shuffle(dropbox_servers_working_list)
+        return itertools.cycle(dropbox_servers_working_list)
