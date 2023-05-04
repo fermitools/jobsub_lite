@@ -383,7 +383,7 @@ class TarfilePublisherHandler:
             print(f"Using bearer token located at {self.token} to authenticate to RCDS")
         else:
             print(f"Using X509 proxy located at {self.proxy} to authenticate to RCDS")
-        self.dropbox_servers = tuple(self.dropbox_server_string.split())
+
         self.pubapi_base_url_formatter_full = (
             f"https://{{dropbox_server}}/pubapi/{{endpoint}}"
         )
@@ -391,6 +391,7 @@ class TarfilePublisherHandler:
         self.pubapi_cid_url_formatter = (
             self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
         )
+        self._dropbox_server_selector = self.__setup_dropbox_server_selector()
 
     # pylint: disable-next=no-self-argument
     def pubapi_operation(func: Callable) -> Callable:  # type: ignore
@@ -408,11 +409,10 @@ class TarfilePublisherHandler:
         def wrapper(self, *args: Any, **kwargs: Any) -> requests.Response:  # type: ignore
             """wrapper function for decorator"""
             # pylint: disable-next=protected-access
-            _dropbox_server_selector = self.__select_dropbox_server()
             retry_count = itertools.count()
             while True:
                 try:
-                    _dropbox_server = next(_dropbox_server_selector)
+                    _dropbox_server = next(self._dropbox_server_selector)
                     if self.verbose > 0:
                         print(f"Using PubAPI server {_dropbox_server}")
                     self.pubapi_base_url_formatter = (
@@ -522,11 +522,8 @@ class TarfilePublisherHandler:
             return requests.get(url, auth=TokenAuth(self.token))
         return requests.get(url, cert=(self.proxy, self.proxy))
 
-    def __select_dropbox_server(self) -> Iterator[str]:
-        """Yield a dropbox server for client to upload tarball to"""
-        dropbox_servers_working_list: List[str] = []
-        while True:
-            if len(dropbox_servers_working_list) == 0:
-                dropbox_servers_working_list = list(self.dropbox_servers)
-                random.shuffle(dropbox_servers_working_list)
-            yield dropbox_servers_working_list.pop()
+    def __setup_dropbox_server_selector(self) -> Iterator[str]:
+        """Return an infinite iterator of dropbox servers for client to upload tarball to"""
+        dropbox_servers_working_list = self.dropbox_server_string.split()
+        random.shuffle(dropbox_servers_working_list)
+        return itertools.cycle(dropbox_servers_working_list)
