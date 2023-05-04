@@ -48,7 +48,7 @@ def submit_vt(vo: str, role: str, schedd: str, verbose: int) -> None:
         pid = os.getpid()
         if verbose > 1:
             print("pre-pre:")
-            os.system(f"ls -l {tmp}/vt_{uid}*")
+            os.system(f"ls -l {tmp}/vt_u{uid}*")
         votfname = f"{tmp}/vt_u{uid}-{schedd}-{vo}_{role}"
         if role != fake_ifdh.DEFAULT_ROLE:
             tfname = f"{tmp}/vt_u{uid}-{vo}_{role}"
@@ -64,7 +64,7 @@ def submit_vt(vo: str, role: str, schedd: str, verbose: int) -> None:
             os.rename(votfname, tfname)
         if verbose > 1:
             print("post-pre:")
-            os.system(f"ls -l {tmp}/vt_{uid}*")
+            os.system(f"ls -l {tmp}/vt_u{uid}*")
 
         yield None
 
@@ -80,7 +80,7 @@ def submit_vt(vo: str, role: str, schedd: str, verbose: int) -> None:
 
         if verbose > 1:
             print("post-post:")
-            os.system(f"ls -l {tmp}/vt*")
+            os.system(f"ls -l {tmp}/vt_u{uid}*")
 
 
 # pylint: disable-next=no-member
