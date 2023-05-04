@@ -16,6 +16,7 @@ class TestUnit:
     """
 
     test_group = "fermilab"
+    test_role = "Analysis"
     # test_group = "dune"
     test_schedd = getschedd("devgpvm")
     test_vargs = {
@@ -30,6 +31,7 @@ class TestUnit:
         "devserver": True,
         "environment": ["USER"],
         "group": test_group,
+        "role": test_role,
         "N": 1,
         "maxConcurrent": None,
         "resource_provides": ["usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE"],
@@ -40,7 +42,7 @@ class TestUnit:
         "generate_email_summary": False,
     }
     test_extra_template_args = {
-        "role": "Analysis",
+        "role": test_role,
         "clientdn": "test_client_dn",
         "ipaddr": "TEST.IP.ADDRESS",
         "user": "test_user",
