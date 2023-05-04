@@ -20,12 +20,14 @@ import glob
 import re
 import random
 import subprocess
+from contextlib import contextmanager
 from typing import Dict, List, Any, Tuple, Optional, Union
 
 import htcondor  # type: ignore
 import classad  # type: ignore
 
 import packages
+import fake_ifdh
 
 random.seed()
 
@@ -33,58 +35,52 @@ random.seed()
 COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", None)
 
 
-def pre_submit_vt(vo: str, role: str, schedd: str, verbose: int) -> None:
-    """
-    Shuffle vaulttoken files around if we have a saved vaulttoken for
-    this schedd and role.
-    Rename it to keep timestamps, etc.
-    """
-    tmp = os.environ.get("TMPDIR", "/tmp")
-    uid = os.getuid()
-    pid = os.getpid()
-    if verbose > 1:
-        print("pre-pre:")
-        os.system(f"ls -l {tmp}/vt*")
-    votfname = f"{tmp}/vt_u{uid}-{schedd}-{vo}_{role}"
-    if role != "Analysis":
-        tfname = f"{tmp}/vt_u{uid}-{vo}_{role}"
-    else:
-        tfname = f"{tmp}/vt_u{uid}-{vo}"
-    if os.path.exists(votfname):
-        if verbose > 0:
-            print(f"moving in saved vaulttoken {votfname}")
+@contextmanager  # type: ignore
+def submit_vt(vo: str, role: str, schedd: str, verbose: int) -> None:
 
+    """
+    Rearrange vaulttoken files around a submit
+    Rename them to keep timestamps, etc.
+    """
+    try:
+        tmp = os.environ.get("TMPDIR", "/tmp")
+        uid = os.getuid()
+        pid = os.getpid()
+        if verbose > 1:
+            print("pre-pre:")
+            os.system(f"ls -l {tmp}/vt_{uid}*")
+        votfname = f"{tmp}/vt_u{uid}-{schedd}-{vo}_{role}"
+        if role != fake_ifdh.DEFAULT_ROLE:
+            tfname = f"{tmp}/vt_u{uid}-{vo}_{role}"
+        else:
+            tfname = f"{tmp}/vt_u{uid}-{vo}"
+
+        if os.path.exists(votfname):
+            if verbose > 0:
+                print(f"moving in saved vaulttoken {votfname}")
+
+            if os.path.exists(tfname):
+                os.rename(tfname, f"{tfname}.{pid}")
+            os.rename(votfname, tfname)
+        if verbose > 1:
+            print("post-pre:")
+            os.system(f"ls -l {tmp}/vt_{uid}*")
+
+        yield None
+
+    finally:
         if os.path.exists(tfname):
-            os.rename(tfname, f"{tfname}.{pid}")
-        os.rename(votfname, tfname)
-    if verbose > 1:
-        print("post-pre:")
-        os.system(f"ls -l {tmp}/vt*")
+            if verbose > 0:
+                print(f"saving vaulttoken as {votfname}")
+            os.rename(tfname, votfname)
 
+        # if we saved a vaulttokenfile earlier, put it back,
+        if os.path.exists(f"{tfname}.{pid}"):
+            os.rename(f"{tfname}.{pid}", tfname)
 
-def post_submit_vt(vo: str, role: str, schedd: str, verbose: int) -> None:
-    """
-    Save the vaulttoken for this schedd and role in case we need
-    it for later.  Rename it to keep timestamps, etc.
-    """
-    tmp = os.environ.get("TMPDIR", "/tmp")
-    uid = os.getuid()
-    pid = os.getpid()
-    votfname = f"{tmp}/vt_u{uid}-{schedd}-{vo}_{role}"
-    if role != "Analysis":
-        tfname = f"{tmp}/vt_u{uid}-{vo}_{role}"
-    else:
-        tfname = f"{tmp}/vt_u{uid}-{vo}"
-    if os.path.exists(tfname):
-        if verbose > 0:
-            print(f"saving vaulttoken as {votfname}")
-        os.rename(tfname, votfname)
-    # if we saved a vaulttokenfile earlier, put it back,
-    if os.path.exists(f"{tfname}.{pid}"):
-        os.rename(f"{tfname}.{pid}", tfname)
-    if verbose > 1:
-        print("post-post:")
-        os.system(f"ls -l {tmp}/vt*")
+        if verbose > 1:
+            print("post-post:")
+            os.system(f"ls -l {tmp}/vt*")
 
 
 # pylint: disable-next=no-member
@@ -218,12 +214,12 @@ def submit(
         print(f"Running: {cmd}")
 
     try:
-        pre_submit_vt(vargs["group"], vargs["role"], schedd_name, verbose)
-        output = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE, encoding="UTF-8", check=False
-        )
-        post_submit_vt(vargs["group"], vargs["role"], schedd_name, verbose)
-        sys.stdout.write(output.stdout)
+
+        with submit_vt(vargs["group"], vargs["role"], schedd_name, verbose):
+            output = subprocess.run(
+                cmd, shell=True, stdout=subprocess.PIPE, encoding="UTF-8", check=False
+            )
+            sys.stdout.write(output.stdout)
 
         hl = f"\n{'=-'*30}\n\n"  # highlight line to make result stand out
 
@@ -251,7 +247,6 @@ def submit(
 
         return True
     except OSError as e:
-        post_submit_vt(vargs["group"], vargs["role"], schedd_name, verbose)
         print("Execution failed: ", e)
         return None
 
