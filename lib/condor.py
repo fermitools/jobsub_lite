@@ -47,39 +47,39 @@ def submit_vt(vo: str, role: str, schedd: str, verbose: int) -> None:
         uid = os.getuid()
         pid = os.getpid()
         if verbose > 1:
-            print("pre-pre:")
+            print("vault tokens before pre-submit renaming:")
             os.system(f"ls -l {tmp}/vt_u{uid}*")
-        votfname = f"{tmp}/vt_u{uid}-{schedd}-{vo}_{role}"
+        schedvtname = f"{tmp}/vt_u{uid}-{schedd}-{vo}_{role}"
         if role != fake_ifdh.DEFAULT_ROLE:
-            tfname = f"{tmp}/vt_u{uid}-{vo}_{role}"
+            vtname = f"{tmp}/vt_u{uid}-{vo}_{role}"
         else:
-            tfname = f"{tmp}/vt_u{uid}-{vo}"
+            vtname = f"{tmp}/vt_u{uid}-{vo}"
 
-        if os.path.exists(votfname):
+        if os.path.exists(schedvtname):
             if verbose > 0:
-                print(f"moving in saved vaulttoken {votfname}")
+                print(f"moving in saved vaulttoken {schedvtname}")
 
-            if os.path.exists(tfname):
-                os.rename(tfname, f"{tfname}.{pid}")
-            os.rename(votfname, tfname)
+            if os.path.exists(vtname):
+                os.rename(vtname, f"{vtname}.{pid}")
+            os.rename(schedvtname, vtname)
         if verbose > 1:
-            print("post-pre:")
+            print("vault tokens after pre-submit renaming:")
             os.system(f"ls -l {tmp}/vt_u{uid}*")
 
         yield None
 
     finally:
-        if os.path.exists(tfname):
+        if os.path.exists(vtname):
             if verbose > 0:
-                print(f"saving vaulttoken as {votfname}")
-            os.rename(tfname, votfname)
+                print(f"saving vaulttoken as {schedvtname}")
+            os.rename(vtname, schedvtname)
 
         # if we saved a vaulttokenfile earlier, put it back,
-        if os.path.exists(f"{tfname}.{pid}"):
-            os.rename(f"{tfname}.{pid}", tfname)
+        if os.path.exists(f"{vtname}.{pid}"):
+            os.rename(f"{vtname}.{pid}", vtname)
 
         if verbose > 1:
-            print("post-post:")
+            print("vault tokens after post-submit renaming:")
             os.system(f"ls -l {tmp}/vt_u{uid}*")
 
 
