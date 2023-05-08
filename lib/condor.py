@@ -21,7 +21,7 @@ import re
 import random
 import subprocess
 from contextlib import contextmanager
-from typing import Dict, List, Any, Tuple, Optional, Union
+from typing import Dict, List, Any, Tuple, Optional, Union, Generator
 
 import htcondor  # type: ignore
 import classad  # type: ignore
@@ -35,8 +35,10 @@ random.seed()
 COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", None)
 
 
-@contextmanager  # type: ignore
-def submit_vt(vo: str, role: str, schedd: str, verbose: int) -> None:
+@contextmanager
+def submit_vt(
+    vo: str, role: str, schedd: str, verbose: int
+) -> Generator[None, None, None]:
 
     """
     Rearrange vaulttoken files around a submit
