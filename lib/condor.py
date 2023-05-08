@@ -20,17 +20,69 @@ import glob
 import re
 import random
 import subprocess
-from typing import Dict, List, Any, Tuple, Optional, Union
+from contextlib import contextmanager
+from typing import Dict, List, Any, Tuple, Optional, Union, Generator
 
 import htcondor  # type: ignore
 import classad  # type: ignore
 
 import packages
+import fake_ifdh
 
 random.seed()
 
 # pylint: disable-next=no-member
 COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", None)
+
+
+@contextmanager
+def submit_vt(
+    vo: str, role: str, schedd: str, verbose: int
+) -> Generator[None, None, None]:
+
+    """
+    Rearrange vaulttoken files around a submit
+    Rename them to keep timestamps, etc.
+    """
+    try:
+        tmp = os.environ.get("TMPDIR", "/tmp")
+        uid = os.getuid()
+        pid = os.getpid()
+        if verbose > 1:
+            print("vault tokens before pre-submit renaming:")
+            os.system(f"ls -l {tmp}/vt_u{uid}*")
+        schedvtname = f"{tmp}/vt_u{uid}-{schedd}-{vo}_{role}"
+        if role != fake_ifdh.DEFAULT_ROLE:
+            vtname = f"{tmp}/vt_u{uid}-{vo}_{role}"
+        else:
+            vtname = f"{tmp}/vt_u{uid}-{vo}"
+
+        if os.path.exists(schedvtname):
+            if verbose > 0:
+                print(f"moving in saved vaulttoken {schedvtname}")
+
+            if os.path.exists(vtname):
+                os.rename(vtname, f"{vtname}.{pid}")
+            os.rename(schedvtname, vtname)
+        if verbose > 1:
+            print("vault tokens after pre-submit renaming:")
+            os.system(f"ls -l {tmp}/vt_u{uid}*")
+
+        yield None
+
+    finally:
+        if os.path.exists(vtname):
+            if verbose > 0:
+                print(f"saving vaulttoken as {schedvtname}")
+            os.rename(vtname, schedvtname)
+
+        # if we saved a vaulttokenfile earlier, put it back,
+        if os.path.exists(f"{vtname}.{pid}"):
+            os.rename(f"{vtname}.{pid}", vtname)
+
+        if verbose > 1:
+            print("vault tokens after post-submit renaming:")
+            os.system(f"ls -l {tmp}/vt_u{uid}*")
 
 
 # pylint: disable-next=no-member
@@ -159,14 +211,17 @@ def submit(
     cmd = f"_condor_SEC_CREDENTIAL_STORER={jldir}/bin/condor_vault_storer {cmd}"
     #
     packages.orig_env()
-    if vargs.get("verbose", 0) > 0:
+    verbose = vargs.get("verbose", 0)
+    if verbose > 0:
         print(f"Running: {cmd}")
 
     try:
-        output = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE, encoding="UTF-8", check=False
-        )
-        sys.stdout.write(output.stdout)
+
+        with submit_vt(vargs["group"], vargs["role"], schedd_name, verbose):
+            output = subprocess.run(
+                cmd, shell=True, stdout=subprocess.PIPE, encoding="UTF-8", check=False
+            )
+            sys.stdout.write(output.stdout)
 
         hl = f"\n{'=-'*30}\n\n"  # highlight line to make result stand out
 
