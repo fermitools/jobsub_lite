@@ -19,6 +19,7 @@ import sys
 import glob
 import re
 import random
+import shutil
 import subprocess
 from contextlib import contextmanager
 from typing import Dict, List, Any, Tuple, Optional, Union, Generator
@@ -56,33 +57,47 @@ def submit_vt(
             vtname = f"{tmp}/vt_u{uid}-{vo}_{role}"
         else:
             vtname = f"{tmp}/vt_u{uid}-{vo}"
+        plainvtname = f"{tmp}/vt_u{uid}"
 
-        if os.path.exists(schedvtname):
-            if verbose > 0:
-                print(f"moving in saved vaulttoken {schedvtname}")
+        if os.path.exists(vtname) and not os.access(vtname, os.W_OK):
+            if verbose > 1:
+                print("Not doing vault token renaming: readonly vault token")
+        else:
+            if os.path.exists(schedvtname):
+                if verbose > 0:
+                    print(f"moving in saved vaulttoken {schedvtname}")
 
-            if os.path.exists(vtname):
-                os.rename(vtname, f"{vtname}.{pid}")
-            os.rename(schedvtname, vtname)
-        if verbose > 1:
-            print("vault tokens after pre-submit renaming:")
-            os.system(f"ls -l {tmp}/vt_u{uid}*")
+                if os.path.exists(vtname):
+                    os.rename(vtname, f"{vtname}.{pid}")
+                os.rename(schedvtname, vtname)
+
+            if not os.path.exists(vtname) and os.path.exists(plainvtname):
+                shutil.copy(plainvtname, vtname)
+
+            if verbose > 1:
+                print("vault tokens after pre-submit renaming:")
+                os.system(f"ls -l {tmp}/vt_u{uid}*")
 
         yield None
 
     finally:
-        if os.path.exists(vtname):
-            if verbose > 0:
-                print(f"saving vaulttoken as {schedvtname}")
-            os.rename(vtname, schedvtname)
 
-        # if we saved a vaulttokenfile earlier, put it back,
-        if os.path.exists(f"{vtname}.{pid}"):
-            os.rename(f"{vtname}.{pid}", vtname)
+        if os.path.exists(vtname) and not os.access(vtname, os.W_OK):
+            if verbose > 1:
+                print("Not doing vault token renaming: readonly vault token")
+        else:
+            if os.path.exists(vtname):
+                if verbose > 0:
+                    print(f"saving vaulttoken as {schedvtname}")
+                os.rename(vtname, schedvtname)
 
-        if verbose > 1:
-            print("vault tokens after post-submit renaming:")
-            os.system(f"ls -l {tmp}/vt_u{uid}*")
+            # if we saved a vaulttokenfile earlier, put it back,
+            if os.path.exists(f"{vtname}.{pid}"):
+                os.rename(f"{vtname}.{pid}", vtname)
+
+            if verbose > 1:
+                print("vault tokens after post-submit renaming:")
+                os.system(f"ls -l {tmp}/vt_u{uid}*")
 
 
 # pylint: disable-next=no-member
@@ -211,7 +226,7 @@ def submit(
     cmd = f"_condor_SEC_CREDENTIAL_STORER={jldir}/bin/condor_vault_storer {cmd}"
     #
     packages.orig_env()
-    verbose = vargs.get("verbose", 0)
+    verbose = int(vargs.get("verbose", 0))
     if verbose > 0:
         print(f"Running: {cmd}")
 
