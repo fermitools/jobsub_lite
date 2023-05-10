@@ -274,3 +274,4 @@ if __name__ == "__main__":
         if verbose:
             raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
+        sys.exit(1)
