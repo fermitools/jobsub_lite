@@ -247,6 +247,9 @@ def main():
     if not args.jobid and args.job_id:
         args.jobid = args.job_id
 
+    # handle 1234.@jobsub0n.fnal.gov
+    args.jobid = args.jobid.replace(".@", "@")
+
     if args.verbose:
         htcondor.set_subsystem("TOOL")
         htcondor.param["TOOL_DEBUG"] = "D_FULLDEBUG"
