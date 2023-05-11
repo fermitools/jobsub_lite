@@ -422,8 +422,13 @@ ${JSB_TMP}/ifdh.sh log poms_data=$poms_data
 echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}} >&2
 echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}}
 
-{%if timeout is defined and timeout %} timeout {{timeout}} {%endif%} $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}}
+{%if timeout is defined and timeout %} timeout {{timeout}} {%endif%} $JOBSUB_EXE_SCRIPT {{exe_arguments|join(" ")}} {%if log_file is defined and log_file %}> _joblogfile 2>&1 {% endif %}
 JOB_RET_STATUS=$?
+
+# copy out job log file
+{%if log_file is defined and log_file %}
+${JSB_TMP}/ifdh.sh cp _joblogfile {{log_file}}
+{%endif%}
 
 # copy out -d directories
 {%for pair in d%}
