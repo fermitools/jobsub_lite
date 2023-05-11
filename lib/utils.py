@@ -178,7 +178,7 @@ def set_extras_n_fix_units(
     args["resource_provides_quoted"] = new_resource_provides
 
     # Check site and blacklist to ensure there are no conflicts
-    check_sites_and_blacklist(args.get("site", ""), args.get("blacklist", ""))
+    check_site_and_blacklist(args.get("site", ""), args.get("blacklist", ""))
 
     if not "outurl" in args:
         args["outurl"] = ""
@@ -638,14 +638,17 @@ def resolve_singularity_image(
     return (DEFAULT_SINGULARITY_IMAGE, return_lines)
 
 
-def check_sites_and_blacklist(sites: str, blacklist: str) -> None:
+def check_site_and_blacklist(site: str, blacklist: str) -> None:
     """Check list of sites and blacklist to make sure there are no
     conflicting options.  If there are conflicts, raise a SiteAndBlacklistConflictError.
     Otherwise, return None.
     """
-    sites_set = set(sites.split(","))
+    # If we have empty --site and --blacklist, this is fine.
+    if (not site) or (not blacklist):
+        return None
+    site_set = set(site.split(","))
     blacklist_set = set(blacklist.split(","))
-    common_sites = sites_set.intersection(blacklist_set)
+    common_sites = site_set.intersection(blacklist_set)
     if common_sites:
         raise SiteAndBlacklistConflictError(list(common_sites))
     return None
