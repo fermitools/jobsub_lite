@@ -304,6 +304,14 @@ def test_dash_f_dropbox_pnfs(dune):
     )
 
 
+@pytest.mark.integration
+def test_dash_f_dropbox_pnfs_exra_slashes(dune):
+    lookaround_launch(
+        f"-f dropbox:////{__file__} --use-pnfs-dropbox",
+        f"\\$CONDOR_DIR_INPUT/{os.path.basename(__file__)}",
+    )
+
+
 def dagnabbit_launch(extra, which="", nout_files=5):
     os.environ["SUBMIT_FLAGS"] = ""
     os.chdir(os.path.join(os.path.dirname(__file__), "dagnabbit"))

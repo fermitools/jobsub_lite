@@ -234,6 +234,10 @@ gfal_clean_env = (
 
 
 def fix_pnfs(path: str) -> str:
+
+    if path[0] == "/":
+        path = os.path.realpath(path)
+
     # use nfs4 mount if present
     mountpoint_end = path.find("/", 7)
     if os.path.isdir(path[:mountpoint_end]):
