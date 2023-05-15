@@ -117,10 +117,11 @@ def main() -> None:
             # looks like a jobsub id 12.34@schedd.name
             schedd_list.add(m.group(2))
             if m.group(1):
+                jobid = m.group(1).strip(".")
                 if not m.group(2) in args_for_schedd:
-                    args_for_schedd[m.group(2)] = [m.group(1)]
+                    args_for_schedd[m.group(2)] = [jobid]
                 else:
-                    args_for_schedd[m.group(2)].append(m.group(1))
+                    args_for_schedd[m.group(2)].append(jobid)
             continue
 
         # convert --better-analyze to -better-analyze, etc.

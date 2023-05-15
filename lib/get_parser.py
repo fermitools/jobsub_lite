@@ -121,7 +121,7 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
         default="",
         action=pool.SetPool,
         help="direct jobs/commands to a particular known global pool."
-        f"Currently known pools are: {pool.get_poolmap().keys()}",
+        f"Currently known pools are: {' '.join(pool.get_poolmap().keys())}",
     )
     group.add_argument(
         "--role",
