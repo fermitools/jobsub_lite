@@ -23,6 +23,7 @@
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 
 import argparse
+from collections import defaultdict
 import os
 import sys
 import re
@@ -103,7 +104,7 @@ def main() -> None:
     execargs = []
     schedd_list = set()
     # save beginning of 1234@schedd in list of args for that schedd
-    args_for_schedd = {}
+    args_for_schedd = defaultdict(list)
 
     if arglist.name:
         schedd = arglist.name
@@ -115,13 +116,11 @@ def main() -> None:
         m = re.match(r"([\d.]*)@([\w.]+)", i)
         if m:
             # looks like a jobsub id 12.34@schedd.name
-            schedd_list.add(m.group(2))
-            if m.group(1):
-                jobid = m.group(1).strip(".")
-                if not m.group(2) in args_for_schedd:
-                    args_for_schedd[m.group(2)] = [jobid]
-                else:
-                    args_for_schedd[m.group(2)].append(jobid)
+            match_jobid, match_schedd = m.groups()
+            schedd_list.add(match_schedd)
+            if match_jobid:
+                jobid = match_jobid.strip(".")
+                args_for_schedd[match_schedd].append(jobid)
             continue
 
         # convert --better-analyze to -better-analyze, etc.
