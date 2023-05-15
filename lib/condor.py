@@ -147,7 +147,7 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
         rdcdc = s.eval("RecentDaemonCoreDutyCycle")
 
         # avoid dividing by zero, and really crazy weights for idle servers
-        # max it out at 1000
+        # max it out at 1000 #
         if rdcdc > 0.01:
             weight = 10.0 / rdcdc
         else:
