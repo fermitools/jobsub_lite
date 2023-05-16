@@ -177,6 +177,9 @@ def set_extras_n_fix_units(
     args["usage_model"] = site_and_usage_model.usage_models
     args["resource_provides_quoted"] = new_resource_provides
 
+    # Check site and blacklist to ensure there are no conflicts
+    check_site_and_blacklist(args.get("site", ""), args.get("blacklist", ""))
+
     if not "outurl" in args:
         args["outurl"] = ""
         if "JOBSUB_OUTPUT_URL" in os.environ:
@@ -247,7 +250,7 @@ def set_extras_n_fix_units(
         # Check --lines for SingularityImage, resolve the possible case where that AND --singularity-image
         # are specified, as long as --no-singularity is not set
         if not args.get("no_singularity", False):
-            args["singularity_image"], args["lines"] = _resolve_singularity_image(
+            args["singularity_image"], args["lines"] = resolve_singularity_image(
                 args.get("singularity_image", DEFAULT_SINGULARITY_IMAGE), args["lines"]
             )
         else:
@@ -581,23 +584,7 @@ def resolve_site_and_usage_model(
     )
 
 
-class SiteAndUsageModelConflictError(Exception):
-    # Exception to raise if a site/usage model are in conflict
-    def __init__(self, site: str, usage_model: str):
-        self.site = site
-        self.usage_model = usage_model
-        self.message = (
-            f"Site {self.site} and usage_model {self.usage_model} are in "
-            "conflict.  Please ensure that you are not attempting to submit "
-            f"jobs that request to run at {ONSITE_SITE_NAME} while also "
-            "requesting to run only OFFSITE, or that you are not requesting to "
-            "run with OPPORTUNISTIC or DEDICATED usage_models while specifying "
-            f"a site list that does not include {ONSITE_SITE_NAME}."
-        )
-        super().__init__(self.message)
-
-
-def _resolve_singularity_image(
+def resolve_singularity_image(
     singularity_image_from_args: str, lines: List[str]
 ) -> Tuple[str, List[str]]:
     """
@@ -649,3 +636,50 @@ def _resolve_singularity_image(
         return (lines_singularity_image, return_lines)
 
     return (DEFAULT_SINGULARITY_IMAGE, return_lines)
+
+
+def check_site_and_blacklist(site: str, blacklist: str) -> None:
+    """Check list of sites and blacklist to make sure there are no
+    conflicting options.  If there are conflicts, raise a SiteAndBlacklistConflictError.
+    Otherwise, return None.
+    """
+    # If we have empty --site and --blacklist, this is fine.
+    if (not site) or (not blacklist):
+        return None
+    site_set = set(site.split(","))
+    blacklist_set = set(blacklist.split(","))
+    common_sites = site_set.intersection(blacklist_set)
+    if common_sites:
+        raise SiteAndBlacklistConflictError(list(common_sites))
+    return None
+
+
+class SiteAndUsageModelConflictError(Exception):
+    # Exception to raise if a site/usage model are in conflict
+    def __init__(self, site: str, usage_model: str):
+        self.site = site
+        self.usage_model = usage_model
+        self.message = (
+            f"Site {self.site} and usage_model {self.usage_model} are in "
+            "conflict.  Please ensure that you are not attempting to submit "
+            f"jobs that request to run at {ONSITE_SITE_NAME} while also "
+            "requesting to run only OFFSITE, or that you are not requesting to "
+            "run with OPPORTUNISTIC or DEDICATED usage_models while specifying "
+            f"a site list that does not include {ONSITE_SITE_NAME}."
+        )
+        super().__init__(self.message)
+
+
+class SiteAndBlacklistConflictError(Exception):
+    """Exception to raise if any of the sites the user passed in are also in the user-passed
+    blacklist"""
+
+    def __init__(self, common_sites: List[str]):
+        self.common_sites = common_sites
+        self.message = (
+            "The following site(s) are both in the --site and --blacklist "
+            f"argument: {self.common_sites}. If your job tries to "
+            "run at one of these sites, it will never start.  Please adjust "
+            "either the --site list or the --blacklist list."
+        )
+        super().__init__(self.message)

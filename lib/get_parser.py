@@ -197,7 +197,8 @@ def get_parser() -> argparse.ArgumentParser:
         help="append condor requirements",
     )
     parser.add_argument(
-        "--blacklist", help="enusure that jobs do not land at these sites"
+        "--blacklist",
+        help="ensure that jobs do not land at these (comma-separated) sites",
     )
     parser.add_argument("-r", help="Experiment release version")
     parser.add_argument("-i", help="Experiment release dir")

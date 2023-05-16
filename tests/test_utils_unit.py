@@ -111,6 +111,20 @@ def singularity_test_data():
     return [SingularityTestCase(**test_json) for test_json in tests_json]
 
 
+def site_blacklist_test_data(good=True):
+    """Pull in site/blacklist test data from data file and return a list of
+    test cases"""
+    SiteAndBlacklistTestData = namedtuple(
+        "SiteAndBlacklistTestData", ["helptext", "site_arg", "blacklist_arg"]
+    )
+    good_or_bad = "good" if good else "bad"
+    DATA_FILENAME = f"site_blacklist_{good_or_bad}.json"
+    with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
+        tests_json = json.load(datafile)
+
+    return [SiteAndBlacklistTestData(**test_json) for test_json in tests_json]
+
+
 def create_id_for_test_case(value) -> str:
     """Creates test IDs for our TestCase classes (namedtuples).  Will return
     the "helptext" attribute of the TestCase if it exists"""
@@ -278,7 +292,39 @@ class TestUtilsUnit:
         assert (
             singularity_test_case.expected_singularity_image,
             singularity_test_case.expected_lines,
-        ) == utils._resolve_singularity_image(
+        ) == utils.resolve_singularity_image(
             singularity_test_case.singularity_image_arg,
             singularity_test_case.lines_arg,
         )
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "site_blacklist_test_case",
+        site_blacklist_test_data(good=True),
+        ids=create_id_for_test_case,
+    )
+    def test_check_site_and_blacklist_good(self, site_blacklist_test_case):
+        """Test to make sure that a given comma-separated site list string
+        and blacklist string are handled correctly"""
+        assert (
+            utils.check_site_and_blacklist(
+                site_blacklist_test_case.site_arg,
+                site_blacklist_test_case.blacklist_arg,
+            )
+            is None
+        )
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "site_blacklist_test_case",
+        site_blacklist_test_data(good=False),
+        ids=create_id_for_test_case,
+    )
+    def test_check_site_and_blacklist_bad(self, site_blacklist_test_case):
+        """Test to make sure that a given comma-separated site list string
+        and blacklist string are handled correctly"""
+        with pytest.raises(utils.SiteAndBlacklistConflictError):
+            utils.check_site_and_blacklist(
+                site_blacklist_test_case.site_arg,
+                site_blacklist_test_case.blacklist_arg,
+            )

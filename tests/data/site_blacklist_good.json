@@ -1,0 +1,22 @@
+[
+    {
+        "helptext": "Non-intersecting site/blacklist",
+        "site_arg": "site1,site2,site3",
+        "blacklist_arg": "site4,site5,site6"
+    },
+    {
+        "helptext": "Empty site/blacklist",
+        "site_arg": "",
+        "blacklist_arg": ""
+    },
+    {
+        "helptext": "Non-empty site, empty blacklist",
+        "site_arg": "site1,site2,site3",
+        "blacklist_arg": ""
+    },
+    {
+        "helptext": "Empty site, non-empty blacklist",
+        "site_arg": "",
+        "blacklist_arg": "site1,site2,site3"
+    }
+]
