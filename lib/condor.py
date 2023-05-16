@@ -71,9 +71,6 @@ def submit_vt(
                     os.rename(vtname, f"{vtname}.{pid}")
                 os.rename(schedvtname, vtname)
 
-            if not os.path.exists(vtname) and os.path.exists(plainvtname):
-                shutil.copy(plainvtname, vtname)
-
             if verbose > 1:
                 print("vault tokens after pre-submit renaming:")
                 os.system(f"ls -l {tmp}/vt_u{uid}*")
