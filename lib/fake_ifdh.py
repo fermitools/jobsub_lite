@@ -253,6 +253,8 @@ def chmod(dest: str, mode: int) -> None:
         os.chmod(dest, mode)
     except FileNotFoundError as e:
         pass
+    except PermissionError as e:
+        pass
 
 
 def mkdir_p(dest: str) -> None:
