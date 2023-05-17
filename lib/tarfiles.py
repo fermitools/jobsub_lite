@@ -75,17 +75,27 @@ def tarchmod(tfn: str) -> str:
     """copy a tarfile to a compressed tarfile changing modes of contents to 755"""
     ofn = os.path.basename(f"{tfn}.tbz2")
     check_we_can_write()
-    with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(ofn, "w|bz2") as fout:
-        ti = fin.next()
-        while ti:
-            if ti.type in (tarfile_mod.SYMTYPE, tarfile_mod.LNKTYPE):
-                # dont mess with symlinks, and cannot extract them
-                st = None
-            else:
-                st = fin.extractfile(ti)
-            ti.mode = ti.mode | 0o755
-            fout.addfile(ti, st)
+    try:
+        with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(
+            ofn, "w|bz2"
+        ) as fout:
             ti = fin.next()
+            while ti:
+                if ti.type in (tarfile_mod.SYMTYPE, tarfile_mod.LNKTYPE):
+                    # dont mess with symlinks, and cannot extract them
+                    st = None
+                else:
+                    st = fin.extractfile(ti)
+                ti.mode = ti.mode | 0o755
+                fout.addfile(ti, st)
+                ti = fin.next()
+    except tarfile_mod.TarError:
+        if not tarfile_mod.is_tarfile(tfn):
+            print(
+                f"ERROR: Argument to --tar-file-name {tfn} must be a tarfile.  If you would like to upload a file that is not a tarfile, "
+                "please use the -f option.\n"
+            )
+        raise
     return ofn
 
 

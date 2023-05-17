@@ -1,5 +1,6 @@
 import os
 import sys
+import tarfile as tarfile_mod
 import time
 import tempfile
 import pathlib
@@ -247,3 +248,17 @@ class TestTarfilesUnit:
         f = FakePublisherHandler(cid=fake_cid)
         assert f.fail_function() is None
         assert f.present_function() == fake_location
+
+    @pytest.mark.unit
+    def test_tarchmod_not_tarfile(self, tmp_path):
+        """Test that if we give tarchmod a file that is not a tarfile to
+        operate on, it raises the appropriate error"""
+        # Make a temp file with some content in it that is not a tarball
+        CONTENT = "This is a fake temp file, not a tar archive"
+        tmp_file = tmp_path / "test_file.txt"
+        tmp_file.write_text(CONTENT)
+        assert tmp_file.read_text() == CONTENT
+
+        # The actual test
+        with pytest.raises(tarfile_mod.TarError):
+            tarfiles.tarchmod(str(tmp_file))
