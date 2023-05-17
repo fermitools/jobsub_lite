@@ -43,7 +43,7 @@ def _print_rcds_warning() -> None:
         "directory using RCDS/CVMFS, the uploaded tarball is published "
         "on CVMFS before the job is submitted.  Skipping this check "
         "may result in jobs running on the worker nodes that cannot "
-        "find the intended uploaded files."
+        "find the intended uploaded files.\n"
     )
 
 
