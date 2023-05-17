@@ -218,8 +218,8 @@ Skip checks that jobsub_lite does by default. Add as
 many --skip-check flags as desired. Available checks
 are ['rcds']. Example: --skip-check rcds
 .HP
---tar_file_name TAR_FILE_NAME, --tar-file-name TAR_FILE_NAME
-dropbox://PATH/TO/TAR_FILE tardir://PATH/TO/DIRECTORY
+--tar-file-name dropbox://PATH/TO/TAR_FILE,
+--tar-file-name tardir://PATH/TO/DIRECTORY
 specify TAR_FILE or DIRECTORY to be transferred to
 worker node.  TAR_FILE will be copied with RCDS/cvmfs
 (or /pnfs), transferred to the job and unpacked there.
