@@ -199,6 +199,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--blacklist",
         help="ensure that jobs do not land at these (comma-separated) sites",
+        default="",
     )
     parser.add_argument("-r", help="Experiment release version")
     parser.add_argument("-i", help="Experiment release dir")
