@@ -599,7 +599,7 @@ def resolve_singularity_image(
 
     Returns a tuple of (singularity_image, lines (modified or not))
     """
-    lines_singularity_re = re.compile(".+SingularityImage\=(.+)")
+    lines_singularity_re = re.compile(".+SingularityImage=(.+)")
     lines_singularity_image: Optional[str] = None
     return_lines: List[str] = []
 

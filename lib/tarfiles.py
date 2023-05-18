@@ -73,7 +73,7 @@ def check_we_can_write() -> None:
 
 def tarchmod(tfn: str) -> str:
     """copy a tarfile to a compressed tarfile changing modes of contents to 755"""
-    ofn = os.path.basename(f"{tfn}.tbz2")
+    ofn = os.path.basename(f"{tfn}{os.getpid()}.tbz2")
     check_we_can_write()
     try:
         with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(
@@ -103,7 +103,7 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     """build directory.tar from path/to/directory"""
     if not directory:
         directory = "."
-    tarfile = os.path.basename(f"{directory}.tgz")
+    tarfile = os.path.basename(f"{directory}{os.getpid()}.tgz")
     check_we_can_write()
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
@@ -521,7 +521,7 @@ class TarfilePublisherHandler:
         """Return a glob path where a tarball given by self.cid can be found"""
         DEFAULT_REPOS: str = "fifeuser1.opensciencegrid.org,fifeuser2.opensciencegrid.org,fifeuser3.opensciencegrid.org,fifeuser4.opensciencegrid.org"
         response = self._get_configured_pubapi_repos()
-        _match = re.match("repos\:(.+)", response.text)
+        _match = re.match("repos:(.+)", response.text)
         repos = _match.group(1) if _match is not None else DEFAULT_REPOS
         return f"/cvmfs/{{{repos}}}/sw/{self.cid}"
 
