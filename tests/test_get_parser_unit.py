@@ -18,6 +18,7 @@ if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
 else:
     sys.path.append("../lib")
 
+from condor import get_schedd_names
 import get_parser
 import pool
 
@@ -202,6 +203,7 @@ def all_test_args():
         "--singularity-image",
         "xxsingularity-imagexx",
         "--apptainer-image",
+        "--schedd-for-testing",
         "--site",
         "xxsitexx",
         "--skip-check",
@@ -233,6 +235,16 @@ def all_test_args():
 
 
 @pytest.fixture
+def clear_group_from_environment():
+    """This fixture clears out the group environment variable"""
+    old_group = os.environ.get("GROUP", None)
+    if old_group:
+        del os.environ["GROUP"]
+    yield
+    os.environ["GROUP"] = old_group
+
+
+@pytest.fixture
 def skip_check_arg_parser():
     """This fixture sets up a lightweight ArgumentParser to test the --skip-check flag"""
     import argparse
@@ -254,6 +266,18 @@ def get_single_valid_check_to_skip():
     if len(valid_checks) > 0:
         valid_check = valid_checks[0]
     return valid_check
+
+
+@pytest.fixture
+def schedd_for_testing_arg_parser():
+    """This fixture sets up a lightweight ArgumentParser to test the --schedd-for-testing flag"""
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--schedd-for-testing", type=str, action=get_parser.CheckIfValidSchedd
+    )
+    return parser
 
 
 class TestGetParserUnit:
@@ -328,6 +352,7 @@ class TestGetParserUnit:
             "--jobid",
             "--constraint",
             "--skip-check",  # Skipping this one because we do a special test later on for this
+            "--schedd-for-testing",  # Skipping this one because we do a special test later on for this
         ]
 
         def filter_excluded(arg_list):
@@ -465,3 +490,26 @@ class TestGetParserUnit:
     @pytest.mark.unit
     def test_put_back_pool(self):
         pool.reset_pool()
+
+    @pytest.mark.unit
+    def test_schedd_for_testing_valid(
+        self, clear_group_from_environment, schedd_for_testing_arg_parser
+    ):
+        """This test ensures that if we give a valid schedd to --schedd-for-testing,
+        we are allowed to proceed"""
+        schedds = get_schedd_names({})
+        valid_schedd = schedds[0]
+
+        args = schedd_for_testing_arg_parser.parse_args(
+            ["--schedd-for-testing", valid_schedd]
+        )
+        assert args.schedd_for_testing == valid_schedd
+
+    @pytest.mark.unit
+    def test_schedd_for_testing_invalid(self, schedd_for_testing_arg_parser):
+        """This test makes sure that if we give an invalid schedd to --schedd-for-testing,
+        we get a TypeError"""
+        with pytest.raises(TypeError, match="Invalid schedd specified"):
+            schedd_for_testing_arg_parser.parse_args(
+                ["--schedd-for-testing", "this_is_an_invalid_schedd.domain"]
+            )

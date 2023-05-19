@@ -133,8 +133,6 @@ def get_schedd_list(vargs: Dict[str, Any]) -> List[classad.ClassAd]:
     if vargs.get("verbose", 0) > 1:
         print(f"post-query schedd classads: {schedds} ")
 
-        print("")
-
     return schedds
 
 
