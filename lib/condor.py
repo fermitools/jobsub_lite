@@ -104,15 +104,33 @@ def get_schedd_list(vargs: Dict[str, Any]) -> List[classad.ClassAd]:
     coll = htcondor.Collector(COLLECTOR_HOST)
     # pylint: disable-next=no-member
     devnot = "" if vargs.get("devserver", False) else "!"
-    schedds: List[classad.ClassAd] = coll.query(
-        htcondor.htcondor.AdTypes.Schedd,
-        constraint="IsJobsubLite=?=true"
-        " && "
-        f"""STRINGLISTIMEMBER("{vargs['group']}", SupportedVOList)"""
+    supported_groups_constraint = (
+        f' && STRINGLISTIMEMBER("{vargs["group"]}", SupportedVOList)'
+        if vargs.get("group", None)
+        else ""
+    )
+    name_constraint = (
+        f' && Name == "{vargs["schedd_for_testing"]}"'
+        if vargs.get("schedd_for_testing", None)
+        else ""
+    )
+    final_schedd_constraint = (
+        "IsJobsubLite=?=true"
+        f"{supported_groups_constraint}"
+        f"{name_constraint}"
         " && "
         "InDownTime != true"
         " && "
-        f'{devnot} regexp(".*dev.*", Machine)',
+        f'{devnot} regexp(".*dev.*", Machine)'
+    )
+    if vargs.get("verbose", 0) > 0:
+        print(
+            f"Using the following constraint for finding schedds: {final_schedd_constraint}"
+        )
+
+    schedds: List[classad.ClassAd] = coll.query(
+        htcondor.htcondor.AdTypes.Schedd,
+        constraint=final_schedd_constraint,
     )
 
     if vargs.get("verbose", 0) > 1:
@@ -137,10 +155,22 @@ def get_schedd_names(vargs: Dict[str, Any]) -> List[str]:
 def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
     """pick a jobsub* schedd name from collector"""
     schedds = get_schedd_list(vargs)
+    if len(schedds) == 0:
+        raise Exception("Error: No schedds satisfying the constraint were found")
+
     # pick weights based on (inverse) of  duty cycle of schedd
     weights = []
     for s in schedds:
         name = s.eval("Name")
+
+        # If user has specified a schedd, just use that one.  Don't worry about
+        #  weighting or anything like that
+        if vargs.get("schedd_for_testing", None):
+            if name == vargs["schedd_for_testing"]:
+                print(f"Using requested schedd {name}")
+                return s
+            continue
+
         rdcdc = s.eval("RecentDaemonCoreDutyCycle")
 
         # avoid dividing by zero, and really crazy weights for idle servers
@@ -154,6 +184,15 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
 
         if vargs.get("verbose", 0) > 0:
             print(f"Schedd: {name} DutyCycle {rdcdc} weight {weight}")
+
+    # If we requested a specific schedd to test with, we should have found it by now and returned
+    # before we even got here.  If not, raise an error
+    if vargs.get("schedd_for_testing", None):
+        raise ValueError(
+            "Requested testing schedd not found.  Please either remomve "
+            "--schedd-for-testing flag or choose a different schedd to test "
+            "with."
+        )
 
     res = random.choices(schedds, weights=weights)[0]
     return res

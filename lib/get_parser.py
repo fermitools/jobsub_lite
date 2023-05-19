@@ -21,9 +21,10 @@ import re
 import sys
 from typing import Union, Any, List
 
-from utils import DEFAULT_USAGE_MODELS, DEFAULT_SINGULARITY_IMAGE
 import pool
 from skip_checks import SupportedSkipChecks
+from utils import DEFAULT_USAGE_MODELS, DEFAULT_SINGULARITY_IMAGE
+from condor import get_schedd_names
 
 
 def verify_executable_starts_with_file_colon(s: str) -> str:
@@ -89,6 +90,26 @@ class VerifyAndAddSkipCheck(argparse.Action):
             setattr(namespace, self.dest, checks_to_skip)
             new_arg_to_set = f"skip_check_{values}"
             setattr(namespace, new_arg_to_set, True)
+
+
+class CheckIfValidSchedd(argparse.Action):
+    """Action to check if the tester has requested a valid schedd to submit to"""
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: Any,
+        option_string: Union[None, str] = None,
+    ) -> None:
+        group = os.environ.get("JOBSUB_GROUP", os.environ.get("GROUP", None))
+        vargs = {"group": group} if group is not None else {}
+        valid_schedds = get_schedd_names(vargs)
+        if values not in valid_schedds:
+            raise TypeError(
+                f"Invalid schedd specified: {values}.  Valid choices are {valid_schedds}"
+            )
+        setattr(namespace, self.dest, values)
 
 
 def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
@@ -426,6 +447,12 @@ def get_parser() -> argparse.ArgumentParser:
         " example: --resource-provides=CVMFS=OSG will add"
         ' +DESIRED_CVMFS="OSG" to the job classad attributes and'
         " '&&(CVMFS==\"OSG\")' to the job requirements",
+    )
+    parser.add_argument(
+        "--schedd-for-testing",  # Non-advertised option for testers to direct jobs to certain schedds
+        type=str,
+        action=CheckIfValidSchedd,
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--skip-check",
