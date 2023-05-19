@@ -25,6 +25,7 @@ from contextlib import contextmanager
 from typing import Dict, List, Any, Tuple, Optional, Union, Generator
 
 import htcondor  # type: ignore
+import jinja2  # type: ignore
 import classad  # type: ignore
 
 import packages
@@ -100,37 +101,33 @@ def submit_vt(
 # pylint: disable-next=no-member
 def get_schedd_list(vargs: Dict[str, Any]) -> List[classad.ClassAd]:
     """get jobsub* schedd classads from collector"""
+    constraint = (
+        "IsJobsubLite=?=true"
+        '{% if group is defined and group %} && STRINGLISTIMEMBER("{{group}}", SupportedVOList){% endif %}'
+        '{% if schedd_for_testing is defined and schedd_for_testing %} && Name == "{{schedd_for_testing}}"{% endif %}'
+        ' && {% if devserver is defined and devserver %}{% else %}!{%endif%}regexp(".*dev.*", Machine)'
+        " && InDownTime != true"
+    )
+
+    jinja_env = jinja2.Environment()
+    constraint_template = jinja_env.from_string(constraint)
+    try:
+        schedd_constraint = constraint_template.render(vargs)
+    except jinja2.TemplateError as e:
+        print(f"Could not render constraint template: {e}")
+        raise
+
     # pylint: disable-next=no-member
     coll = htcondor.Collector(COLLECTOR_HOST)
     # pylint: disable-next=no-member
-    devnot = "" if vargs.get("devserver", False) else "!"
-    supported_groups_constraint = (
-        f' && STRINGLISTIMEMBER("{vargs["group"]}", SupportedVOList)'
-        if vargs.get("group", None)
-        else ""
-    )
-    name_constraint = (
-        f' && Name == "{vargs["schedd_for_testing"]}"'
-        if vargs.get("schedd_for_testing", None)
-        else ""
-    )
-    final_schedd_constraint = (
-        "IsJobsubLite=?=true"
-        f"{supported_groups_constraint}"
-        f"{name_constraint}"
-        " && "
-        "InDownTime != true"
-        " && "
-        f'{devnot} regexp(".*dev.*", Machine)'
-    )
     if vargs.get("verbose", 0) > 0:
         print(
-            f"Using the following constraint for finding schedds: {final_schedd_constraint}"
+            f"Using the following constraint for finding schedds: {schedd_constraint}"
         )
 
     schedds: List[classad.ClassAd] = coll.query(
         htcondor.htcondor.AdTypes.Schedd,
-        constraint=final_schedd_constraint,
+        constraint=schedd_constraint,
     )
 
     if vargs.get("verbose", 0) > 1:
@@ -195,6 +192,8 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
         )
 
     res = random.choices(schedds, weights=weights)[0]
+    if vargs.get("verbose", 0) > 0:
+        print(f'Chose schedd {res.eval("Name")}')
     return res
 
 
