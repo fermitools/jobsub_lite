@@ -182,6 +182,12 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
         help="jobsub_lite support email",
         default=False,
     )
+    parser.add_argument(
+        "--schedd-for-testing",  # Non-advertised option for testers to direct jobs to certain schedds
+        type=str,
+        action=CheckIfValidSchedd,
+        help=argparse.SUPPRESS,
+    )
     return parser
 
 
@@ -447,12 +453,6 @@ def get_parser() -> argparse.ArgumentParser:
         " example: --resource-provides=CVMFS=OSG will add"
         ' +DESIRED_CVMFS="OSG" to the job classad attributes and'
         " '&&(CVMFS==\"OSG\")' to the job requirements",
-    )
-    parser.add_argument(
-        "--schedd-for-testing",  # Non-advertised option for testers to direct jobs to certain schedds
-        type=str,
-        action=CheckIfValidSchedd,
-        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--skip-check",
