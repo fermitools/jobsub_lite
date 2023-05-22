@@ -25,6 +25,7 @@ from contextlib import contextmanager
 from typing import Dict, List, Any, Tuple, Optional, Union, Generator
 
 import htcondor  # type: ignore
+import jinja2  # type: ignore
 import classad  # type: ignore
 
 import packages
@@ -100,25 +101,37 @@ def submit_vt(
 # pylint: disable-next=no-member
 def get_schedd_list(vargs: Dict[str, Any]) -> List[classad.ClassAd]:
     """get jobsub* schedd classads from collector"""
+    constraint = (
+        "IsJobsubLite=?=true"
+        '{% if group is defined and group %} && STRINGLISTIMEMBER("{{group}}", SupportedVOList){% endif %}'
+        '{% if schedd_for_testing is defined and schedd_for_testing %} && Name == "{{schedd_for_testing}}"{% endif %}'
+        ' && {% if devserver is defined and devserver %}{% else %}!{%endif%}regexp(".*dev.*", Machine)'
+        " && InDownTime != true"
+    )
+
+    jinja_env = jinja2.Environment()
+    constraint_template = jinja_env.from_string(constraint)
+    try:
+        schedd_constraint = constraint_template.render(vargs)
+    except jinja2.TemplateError as e:
+        print(f"Could not render constraint template: {e}")
+        raise
+
     # pylint: disable-next=no-member
     coll = htcondor.Collector(COLLECTOR_HOST)
     # pylint: disable-next=no-member
-    devnot = "" if vargs.get("devserver", False) else "!"
+    if vargs.get("verbose", 0) > 0:
+        print(
+            f"Using the following constraint for finding schedds: {schedd_constraint}"
+        )
+
     schedds: List[classad.ClassAd] = coll.query(
         htcondor.htcondor.AdTypes.Schedd,
-        constraint="IsJobsubLite=?=true"
-        " && "
-        f"""STRINGLISTIMEMBER("{vargs['group']}", SupportedVOList)"""
-        " && "
-        "InDownTime != true"
-        " && "
-        f'{devnot} regexp(".*dev.*", Machine)',
+        constraint=schedd_constraint,
     )
 
     if vargs.get("verbose", 0) > 1:
         print(f"post-query schedd classads: {schedds} ")
-
-        print("")
 
     return schedds
 
@@ -137,10 +150,22 @@ def get_schedd_names(vargs: Dict[str, Any]) -> List[str]:
 def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
     """pick a jobsub* schedd name from collector"""
     schedds = get_schedd_list(vargs)
+    if len(schedds) == 0:
+        raise Exception("Error: No schedds satisfying the constraint were found")
+
     # pick weights based on (inverse) of  duty cycle of schedd
     weights = []
     for s in schedds:
         name = s.eval("Name")
+
+        # If user has specified a schedd, just use that one.  Don't worry about
+        #  weighting or anything like that
+        if vargs.get("schedd_for_testing", None):
+            if name == vargs["schedd_for_testing"]:
+                print(f"Using requested schedd {name}")
+                return s
+            continue
+
         rdcdc = s.eval("RecentDaemonCoreDutyCycle")
 
         # avoid dividing by zero, and really crazy weights for idle servers
@@ -155,7 +180,18 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
         if vargs.get("verbose", 0) > 0:
             print(f"Schedd: {name} DutyCycle {rdcdc} weight {weight}")
 
+    # If we requested a specific schedd to test with, we should have found it by now and returned
+    # before we even got here.  If not, raise an error
+    if vargs.get("schedd_for_testing", None):
+        raise ValueError(
+            "Requested testing schedd not found.  Please either remomve "
+            "--schedd-for-testing flag or choose a different schedd to test "
+            "with."
+        )
+
     res = random.choices(schedds, weights=weights)[0]
+    if vargs.get("verbose", 0) > 0:
+        print(f'Chose schedd {res.eval("Name")}')
     return res
 
 
