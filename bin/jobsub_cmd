@@ -107,7 +107,7 @@ def main() -> None:
     args_for_schedd = defaultdict(list)
 
     if arglist.name:
-        schedd = arglist.name
+        schedd_list.add(arglist.name)
 
     default_formatting = True
     default_constraint = True
