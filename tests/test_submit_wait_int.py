@@ -153,6 +153,13 @@ def run_launch(cmd, expected_out=1, get_dir=False):
     added = False
     # do not submit too fast...
     time.sleep(1)
+
+    if os.environ.get("JOBSUB_TEST_SUBMIT_EXTRA", ""):
+        # add extra submit flags, if available
+        cmd = cmd.replace(
+            "jobsub_submit", "jobsub_submit " + os.environ["JOBSUB_TEST_SUBMIT_EXTRA"]
+        )
+
     pf = os.popen(cmd + " 2>&1")
     for l in pf.readlines():
         print(l)
