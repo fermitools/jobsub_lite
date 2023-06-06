@@ -87,7 +87,8 @@ def main() -> None:
         passthru.append("-debug")
     # if they gave us --jobid or --user put in the value plain, condor figures it out
     if arglist.jobid:
-        passthru.append(arglist.jobid)
+        for jid in arglist.jobid.split(","):
+            passthru.append(jid)
     if arglist.user:
         passthru.append(arglist.user)
     # If they gave us --constraint, sanitize it and add to passthru
