@@ -103,12 +103,14 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     """build directory.tar from path/to/directory"""
     if not directory:
         directory = "."
+
     if file != ".":
         # the --mtime reduces repeated uploads to rcds for the same file
         # with different dates
         mtime = "--mtime='1970-01-01 00:00:01'"
     else:
         mtime = ""
+
     tarfile = os.path.basename(f"{directory}{os.getpid()}.tgz")
     check_we_can_write()
     if not excludes:
