@@ -224,16 +224,16 @@ def main() -> None:
                 ]
             )
 
-            # pipe our output through jobsub_totals
-            totalsf = os.popen("jobsub_totals", "w")
-            os.close(1)
-            os.dup2(totalsf.fileno(), 1)
-
             print(
                 "JOBSUBJOBID                             OWNER       \tSUBMITTED     RUNTIME"
                 "   ST PRIO   SIZE  COMMAND"
             )
             sys.stdout.flush()
+
+            # pipe our remaining output through sort (by date) and jobsub_totals
+            totalsf = os.popen("sort -k 3,4 | jobsub_totals", "w")
+            os.close(1)
+            os.dup2(totalsf.fileno(), 1)
 
     cmd = cmd.replace("jobsub_", "condor_")
 
