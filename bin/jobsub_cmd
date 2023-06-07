@@ -224,6 +224,11 @@ def main() -> None:
                 ]
             )
 
+            # pipe our output through jobsub_totals
+            totalsf = os.popen("jobsub_totals", "w")
+            os.close(1)
+            os.dup2(totalsf.fileno(), 1)
+
             print(
                 "JOBSUBJOBID                             OWNER       \tSUBMITTED     RUNTIME"
                 "   ST PRIO   SIZE  COMMAND"
@@ -249,6 +254,10 @@ def main() -> None:
             os.wait()
         else:
             os.execvp("/usr/bin/" + cmd, these_args)
+
+    if default_formatting:
+        os.close(1)
+        totalsf.close()
 
 
 if __name__ == "__main__":
