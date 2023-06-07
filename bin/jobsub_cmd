@@ -87,8 +87,7 @@ def main() -> None:
         passthru.append("-debug")
     # if they gave us --jobid or --user put in the value plain, condor figures it out
     if arglist.jobid:
-        for jid in arglist.jobid.split(","):
-            passthru.append(jid)
+        passthru.append(arglist.jobid)
     if arglist.user:
         passthru.append(arglist.user)
     # If they gave us --constraint, sanitize it and add to passthru
@@ -224,6 +223,11 @@ def main() -> None:
                 ]
             )
 
+            # pipe our output through jobsub_totals
+            totalsf = os.popen("jobsub_totals", "w")
+            os.close(1)
+            os.dup2(totalsf.fileno(), 1)
+
             print(
                 "JOBSUBJOBID                             OWNER       \tSUBMITTED     RUNTIME"
                 "   ST PRIO   SIZE  COMMAND"
@@ -249,6 +253,10 @@ def main() -> None:
             os.wait()
         else:
             os.execvp("/usr/bin/" + cmd, these_args)
+
+    if default_formatting:
+        os.close(1)
+        totalsf.close()
 
 
 if __name__ == "__main__":
