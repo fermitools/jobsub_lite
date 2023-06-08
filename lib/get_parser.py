@@ -250,6 +250,18 @@ def get_parser() -> argparse.ArgumentParser:
         help="SAM dataset definition used in a Directed Acyclic Graph (DAG)",
     )
     parser.add_argument(
+        "--dd-start-prefetch-divisor",
+        help="SAM dataset definition start script divisor used to compute minimum cached files to proceed. ",
+        type=float,
+        default=2.0,
+    )
+    parser.add_argument(
+        "--dd-start-extra-datasets",
+        help="SAM dataset definition start script extra dataset to check as staged. You can add multiple of them.",
+        action="append",
+        default=[],
+    )
+    parser.add_argument(
         "--disk",
         help="Request worker nodes have at least NUMBER[UNITS] of disk space."
         " If UNITS is not specified default is 'KB' (a typo in earlier"

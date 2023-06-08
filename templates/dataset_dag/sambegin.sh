@@ -128,63 +128,90 @@ fi
 if [ "$SAM_USER" = "" ]; then
 SAM_USER=$4
 fi
-${JSB_TMP}/ifdh.sh describeDefinition $SAM_DATASET
+
+extra_projects=""
+suffix=""
+first=false
+for SAM_DATASET in $SAM_DATASET {{" ".join(dd_start_extra_datasets)}}
+do
+
+    SAM_PROJECT=$SAM_PROJECT$suffix
+
+    ${JSB_TMP}/ifdh.sh describeDefinition $SAM_DATASET
 
 
-yell() { echo "$0: $*" >&2; }
-die() { yell "$*"; exit 111; }
-try() { echo "$@"; "$@" || die "FAILED $*"; }
+    yell() { echo "$0: $*" >&2; }
+    die() { yell "$*"; exit 111; }
+    try() { echo "$@"; "$@" || die "FAILED $*"; }
 
-num_tries=0
-max_tries=60
-if [ "$JOBSUB_MAX_SAM_STAGE_MINUTES" != "" ]; then
-    max_tries=$JOBSUB_MAX_SAM_STAGE_MINUTES
-fi
-try ${JSB_TMP}/ifdh.sh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP
-while true; do
-    STATION_STATE=${JSB_TMP}/$SAM_STATION.`date '+%s'`
-    PROJECT_STATE=${JSB_TMP}/$SAM_DATASET.`date '+%s'`
-    try ${JSB_TMP}/ifdh.sh dumpStation $SAM_STATION > $STATION_STATE
-    grep $SAM_PROJECT $STATION_STATE > $PROJECT_STATE
-    if [ "$?" != "0" ]; then
-        num_tries=$(($num_tries + 1))
-        if [ $num_tries -gt $max_tries ]; then
-            echo "Something wrong with $SAM_PROJECT in $SAM_STATION, giving up"
-            exit 111
+    num_tries=0
+    max_tries=60
+    if [ "$JOBSUB_MAX_SAM_STAGE_MINUTES" != "" ]; then
+        max_tries=$JOBSUB_MAX_SAM_STAGE_MINUTES
+    fi
+    try ${JSB_TMP}/ifdh.sh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP
+    while true; do
+        STATION_STATE=${JSB_TMP}/$SAM_STATION.`date '+%s'`
+        PROJECT_STATE=${JSB_TMP}/$SAM_DATASET.`date '+%s'`
+        try ${JSB_TMP}/ifdh.sh dumpStation $SAM_STATION > $STATION_STATE
+        grep $SAM_PROJECT $STATION_STATE > $PROJECT_STATE
+        if [ "$?" != "0" ]; then
+            num_tries=$(($num_tries + 1))
+            if [ $num_tries -gt $max_tries ]; then
+                echo "Something wrong with $SAM_PROJECT in $SAM_STATION, giving up"
+                exit 111
+            fi
+            echo "attempt $num_tries of $max_tries: Sam Station $SAM_STATION still waiting for project $SAM_PROJECT, dataset $SAM_DATASET, sleeping 60 seconds"
+            sleep 60
+            continue
         fi
-        echo "attempt $num_tries of $max_tries: Sam Station $SAM_STATION still waiting for project $SAM_PROJECT, dataset $SAM_DATASET, sleeping 60 seconds"
+        TOTAL_FILES=`cat $PROJECT_STATE | sed "s/^.* contains //" | sed "s/ total files:.*$//"`
+        CACHE_MIN=$TOTAL_FILES
+
+        PROJECT_PREFETCH=`grep 'Per-project prefetched files' $STATION_STATE | sed "s/^.* files: //"`
+        SCALED_PREFETCH=`echo "$PROJECT_PREFETCH/{{dd_start_prefetch_divisor}}" | bc`
+        if [ $SCALED_PREFETCH -lt $CACHE_MIN ]; then
+            CACHE_MIN=$SCALED_PREFETCH
+        fi
+
+        IN_CACHE=`cat $PROJECT_STATE | sed "s/^.*of these //" | sed "s/ in cache.*$//"`
+
+        echo "$IN_CACHE files of $TOTAL_FILES are staged, waiting for $CACHE_MIN to stage"
+
+        if [ $TOTAL_FILES -le 0 ]; then
+            echo there are no files in $SAM_PROJECT! exiting....
+            cat $STATION_STATE
+            exit 1
+        fi
+        if [ ! -s "$PROJECT_STATE" ]; then
+            echo "$SAM_PROJECT" not found in  "$SAM_STATION" ! exiting....
+            cat $STATION_STATE
+            exit 1
+        fi
+        if [ $IN_CACHE -ge $CACHE_MIN  ]; then
+            echo $IN_CACHE files of $TOTAL_FILES are staged, success!
+            break
+        fi
         sleep 60
-        continue
-    fi
-    TOTAL_FILES=`cat $PROJECT_STATE | sed "s/^.* contains //" | sed "s/ total files:.*$//"`
-    CACHE_MIN=$TOTAL_FILES
 
-    PROJECT_PREFETCH=`grep 'Per-project prefetched files' $STATION_STATE | sed "s/^.* files: //"`
-    SCALED_PREFETCH=$[$PROJECT_PREFETCH/2]
-    if [ $SCALED_PREFETCH -lt $CACHE_MIN ]; then
-        CACHE_MIN=$SCALED_PREFETCH
-    fi
+    done
 
-    IN_CACHE=`cat $PROJECT_STATE | sed "s/^.*of these //" | sed "s/ in cache.*$//"`
-
-    echo "$IN_CACHE files of $TOTAL_FILES are staged, waiting for $CACHE_MIN to stage"
-
-    if [ $TOTAL_FILES -le 0 ]; then
-        echo there are no files in $SAM_PROJECT! exiting....
-        cat $STATION_STATE
-        exit 1
+    # keep track of "extra" projects made just to check staging...
+    if $first
+    then
+       :
+    else
+       extra_projects="$extra_projects $SAM_PROJECT"
     fi
-    if [ ! -s "$PROJECT_STATE" ]; then
-        echo "$SAM_PROJECT" not found in  "$SAM_STATION" ! exiting....
-        cat $STATION_STATE
-        exit 1
-    fi
-    if [ $IN_CACHE -ge $CACHE_MIN  ]; then
-        echo $IN_CACHE files of $TOTAL_FILES are staged, success!
-        exit 0
-    fi
-    sleep 60
+    suffix="_x"
+    first=false
 
 done
 
-        exit $SPSTATUS
+# if we started extra projects to check amount staged, end them
+for SAM_PROJECT in $extra_projects
+do
+    try ${JSB_TMP}/ifdh.sh endProject $SAM_PROJECT
+done
+
+exit 0
