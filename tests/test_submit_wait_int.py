@@ -258,6 +258,13 @@ def test_maxconcurrent(samdev):
 
 
 @pytest.mark.integration
+def test_dd_args(samdev):
+    fife_launch(
+        " --dd-start-prefetch-divisor 3.0 " " --dd-start-extra-datasets mwm_out_1 "
+    )
+
+
+@pytest.mark.integration
 def test_maxconcurrent_dataset(samdev):
     fife_launch("--maxConcurrent 2")
 

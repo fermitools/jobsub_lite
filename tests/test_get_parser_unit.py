@@ -149,6 +149,10 @@ def all_test_args():
         "--dag",
         "--dataset-definition",
         "xxdataset-definitionxx",
+        "--dd-start-prefetch-divisor",
+        "3.0",
+        "--dd-start-extra-datasets",
+        "xxdd-start-extra-datasetsxx",
         "--debug",
         "--disk",
         "xxdiskxx",
@@ -402,6 +406,8 @@ class TestGetParserUnit:
                 assert vres["dataset_definition"] == "xxdataset-definitionxx"
             elif arg == "global-pool":
                 assert vres["global_pool"] == "dune"
+            elif arg == "dd-start-prefetch-divisor":
+                assert vres["dd_start_prefetch_divisor"] == 3.0
             elif arg in listargs:
                 # args are in a list, so look for list containing xxflagxx
                 if arg in ["lines"]:
