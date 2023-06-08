@@ -209,9 +209,10 @@ do
 done
 
 # if we started extra projects to check amount staged, end them
-for SAM_PROJECT in $extra_projects
+for PRJ_NAME in $extra_projects
 do
-    try ${JSB_TMP}/ifdh.sh endProject $SAM_PROJECT
+    CPURL=`${JSB_TMP}/ifdh.sh findProject $PRJ_NAME ''`
+    try ${JSB_TMP}/ifdh.sh  endProject $CPURL
 done
 
 exit 0
