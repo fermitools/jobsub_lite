@@ -131,7 +131,7 @@ fi
 
 extra_projects=""
 suffix=""
-first=false
+first=true
 for SAM_DATASET in $SAM_DATASET {{" ".join(dd_start_extra_datasets)}}
 do
 
