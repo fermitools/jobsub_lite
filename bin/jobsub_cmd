@@ -230,8 +230,11 @@ def main() -> None:
             )
             sys.stdout.flush()
 
-            # pipe our remaining output through sort (by date) and jobsub_totals
-            totalsf = os.popen("sort -k 3,4 | jobsub_totals", "w")
+            # pipe our remaining output through sort (by date) and jobsub_totals next to us
+            jobsub_totals_path = os.path.join(
+                os.path.dirname(__file__), "jobsub_totals"
+            )
+            totalsf = os.popen(f"sort -k 3,4 | {jobsub_totals_path}", "w")
             os.close(1)
             os.dup2(totalsf.fileno(), 1)
 
