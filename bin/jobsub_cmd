@@ -230,6 +230,14 @@ def main() -> None:
             )
             sys.stdout.flush()
 
+            # pipe our remaining output through sort (by date) and jobsub_totals next to us
+            jobsub_totals_path = os.path.join(
+                os.path.dirname(__file__), "jobsub_totals"
+            )
+            totalsf = os.popen(f"sort -k 3,4 | {jobsub_totals_path}", "w")
+            os.close(1)
+            os.dup2(totalsf.fileno(), 1)
+
     cmd = cmd.replace("jobsub_", "condor_")
 
     if not schedd_list:
@@ -249,6 +257,10 @@ def main() -> None:
             os.wait()
         else:
             os.execvp("/usr/bin/" + cmd, these_args)
+
+    if default_formatting:
+        os.close(1)
+        totalsf.close()
 
 
 if __name__ == "__main__":
