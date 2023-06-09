@@ -250,13 +250,13 @@ def get_parser() -> argparse.ArgumentParser:
         help="SAM dataset definition used in a Directed Acyclic Graph (DAG)",
     )
     parser.add_argument(
-        "--dd-start-prefetch-divisor",
-        help="SAM dataset definition start script divisor used to compute minimum cached files to proceed. ",
-        type=float,
-        default=2.0,
+        "--dd-percentage",
+        help="percentage to apply to SAM dataset size for --dataset-definition start job.",
+        type=int,
+        default=100,
     )
     parser.add_argument(
-        "--dd-start-extra-datasets",
+        "--dd-extra-dataset",
         help="SAM dataset definition start script extra dataset to check as staged. You can add multiple of them.",
         action="append",
         default=[],

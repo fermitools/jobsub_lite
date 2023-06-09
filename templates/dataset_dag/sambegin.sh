@@ -132,7 +132,7 @@ fi
 extra_projects=""
 suffix=""
 first=true
-for SAM_DATASET in $SAM_DATASET {{" ".join(dd_start_extra_datasets)}}
+for SAM_DATASET in $SAM_DATASET {{" ".join(dd_extra_datasets)}}
 do
 
     SAM_PROJECT=$SAM_PROJECT$suffix
@@ -166,10 +166,12 @@ do
             continue
         fi
         TOTAL_FILES=`cat $PROJECT_STATE | sed "s/^.* contains //" | sed "s/ total files:.*$//"`
+        # scale for --dd-percentage
+        TOTAL_FILES=$((TOTAL_FILES * {{dd_percentage}} / 100 ))
         CACHE_MIN=$TOTAL_FILES
 
         PROJECT_PREFETCH=`grep 'Per-project prefetched files' $STATION_STATE | sed "s/^.* files: //"`
-        SCALED_PREFETCH=`echo "$PROJECT_PREFETCH/{{dd_start_prefetch_divisor}}" | bc`
+        SCALED_PREFETCH=`echo "$PROJECT_PREFETCH/2" | bc`
         if [ $SCALED_PREFETCH -lt $CACHE_MIN ]; then
             CACHE_MIN=$SCALED_PREFETCH
         fi
