@@ -126,6 +126,29 @@ class TestCondorUnit:
         assert schedd["Name"] == TestUnit.test_schedd
 
     @pytest.mark.unit
+    def test_get_schedd_list_cache(self, capsys):
+        """Call get_schedd_list twice. The first time, we should get the
+        schedd ads from the collector.  The second time, it should come
+        from cache.  Call it a third time, and force the refresh."""
+        vargs = TestUnit.test_vargs
+        vargs["verbose"] = 2
+
+        # First time:  We should query collector
+        condor.get_schedd_list(vargs)
+        captured = capsys.readouterr()
+        assert "Querying condor collector" in captured.out
+
+        # Second time: We should query cache
+        condor.get_schedd_list(vargs)
+        captured = capsys.readouterr()
+        assert "Using cached schedd ads - NOT querying condor collector" in captured.out
+
+        # Third time: Force re-querying of collector
+        condor.get_schedd_list(vargs, refresh_schedd_ads=True)
+        captured = capsys.readouterr()
+        assert "Querying condor collector" in captured.out
+
+    @pytest.mark.unit
     def test_load_submit_file_1(self, get_submit_file):
         """make sure load_submit_file result has bits of the submit file"""
         res = condor.load_submit_file(get_submit_file)
@@ -138,6 +161,26 @@ class TestCondorUnit:
         res = condor.submit(get_submit_file, TestUnit.test_vargs, TestUnit.test_schedd)
         print("got: ", res)
         assert res
+
+    @pytest.mark.unit
+    def test_submit_too_many_procs(self, get_submit_file, needs_credentials, capsys):
+        """Submit a job with too many procs being submitted.  Note that this test takes
+        a long time since we're trying to submit TOO_MANY_PROCS jobs"""
+        TOO_MANY_PROCS = 50000
+        submit_file = get_submit_file
+        # Need to swap out the queue value
+        with open(submit_file, "r+") as f:
+            lines = (line for line in f.readlines())
+            edited_lines = [
+                f"queue {TOO_MANY_PROCS}" if "queue" in line else line for line in lines
+            ]
+            f.writelines([edited_line + "\n" for edited_line in edited_lines])
+        condor.submit(submit_file, TestUnit.test_vargs, TestUnit.test_schedd)
+        captured = capsys.readouterr()
+        assert (
+            "MAX_JOBS_PER_SUBMISSION limits the number of jobs allowed in a submission"
+            in captured.err
+        )
 
     @pytest.mark.unit
     def test_submit_dag_1(self, get_dag_file, needs_credentials):
