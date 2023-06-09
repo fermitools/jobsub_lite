@@ -126,6 +126,29 @@ class TestCondorUnit:
         assert schedd["Name"] == TestUnit.test_schedd
 
     @pytest.mark.unit
+    def test_get_schedd_list_cache(self, capsys):
+        """Call get_schedd_list twice. The first time, we should get the
+        schedd ads from the collector.  The second time, it should come
+        from cache.  Call it a third time, and force the refresh."""
+        vargs = TestUnit.test_vargs
+        vargs["verbose"] = 2
+
+        # First time:  We should query collector
+        condor.get_schedd_list(vargs)
+        captured = capsys.readouterr()
+        assert "Querying condor collector" in captured.out
+
+        # Second time: We should query cache
+        condor.get_schedd_list(vargs)
+        captured = capsys.readouterr()
+        assert "Using cached schedd ads - NOT querying condor collector" in captured.out
+
+        # Third time: Force re-querying of collector
+        condor.get_schedd_list(vargs, refresh_schedd_ads=True)
+        captured = capsys.readouterr()
+        assert "Querying condor collector" in captured.out
+
+    @pytest.mark.unit
     def test_load_submit_file_1(self, get_submit_file):
         """make sure load_submit_file result has bits of the submit file"""
         res = condor.load_submit_file(get_submit_file)
