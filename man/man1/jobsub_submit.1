@@ -8,6 +8,8 @@ jobsub_submit
                      [--blacklist BLACKLIST] [-r R] [-i I] [-t T]
                      [--cmtconfig CMTCONFIG] [--cpu CPU] [--dag DAG]
                      [--dataset-definition DATASET_DEFINITION]
+                     [--dd-percentage DD_PERCENTAGE]
+                     [--dd-extra-dataset DD_EXTRA_DATASET]
                      [--debug DEBUG]
                      [--disk DISK] [-d tag dir] [--email-to EMAIL_TO]
                      [-e ENVIRONMENT]
@@ -74,6 +76,12 @@ configuration. default is $CMTCONFIG
 --dataset-definition DATASET_DEFINITION, --dataset_definition DATASET_DEFINITION, --dataset DATASET_DEFINITION
 SAM dataset definition used in a Directed Acyclic
 Graph (DAG)
+.HP
+--dd-percentage DD_PERCENTAGE
+                      percentage to apply to SAM dataset size for --dataset-definition start job.
+.HP
+--dd-extra-dataset DD_EXTRA_DATASET
+                      SAM dataset definition start script extra dataset to check as staged. You can add multiple of them.
 .HP
 --debug DEBUG         Turn on debugging
 .HP

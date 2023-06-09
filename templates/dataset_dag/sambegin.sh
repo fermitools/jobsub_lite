@@ -132,7 +132,7 @@ fi
 extra_projects=""
 suffix=""
 first=true
-for SAM_DATASET in $SAM_DATASET {{" ".join(dd_extra_datasets)}}
+for SAM_DATASET in $SAM_DATASET {{" ".join(dd_extra_dataset)}}
 do
 
     SAM_PROJECT=$SAM_PROJECT$suffix
