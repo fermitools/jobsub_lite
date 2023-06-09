@@ -69,6 +69,33 @@ class TestJobsubSubmitUnit:
         assert os.path.exists("%s/dagbegin.cmd" % dest)
 
     @pytest.mark.unit
+    def test_render_files_dd_flags(self):
+        """make sure --dd-percentage and --dd-extra-dataset values get into sambegin.sh"""
+        if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
+            srcdir = "/opt/jobsub_lite/templates/dataset_dag"
+        else:
+            srcdir = (
+                os.path.dirname(os.path.dirname(__file__)) + "/templates/dataset_dag"
+            )
+        dest = "/tmp/out{0}".format(os.getpid())
+        os.mkdir(dest)
+        args = {**TestUnit.test_vargs, **TestUnit.test_extra_template_args}
+        args["outdir"] = dest
+        args["proxy"] = "/fake/proxy/path"
+        args["dd_percentage"] = 33
+        args["dd_extra_dataset"] = ["dataset1", "dataset2"]
+        jobsub_submit.render_files(srcdir, args, dest)
+        found_percent = False
+        found_extra_dataset = False
+        with open("%s/sambegin.sh" % dest, "r") as fin:
+            for line in fin.readlines():
+                if line.find("* 33 / 100") >= 0:
+                    found_percent = True
+                if line.find("for SAM_DATASET in $SAM_DATASET dataset1 dataset2") >= 0:
+                    found_extra_dataset = True
+        assert found_percent and found_extra_dataset
+
+    @pytest.mark.unit
     def test_render_files_undefined_vars(self, tmp_path):
         """Test rendering files when a template variable is undefined.
         Should raise jinja2.exceptions.UndefinedError

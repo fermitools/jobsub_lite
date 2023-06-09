@@ -258,6 +258,11 @@ def test_maxconcurrent(samdev):
 
 
 @pytest.mark.integration
+def test_dd_args(samdev):
+    fife_launch(" --dd-percentage 50 " " --dd-extra-dataset mwm_out_1 ")
+
+
+@pytest.mark.integration
 def test_maxconcurrent_dataset(samdev):
     fife_launch("--maxConcurrent 2")
 
