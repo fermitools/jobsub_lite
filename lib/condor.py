@@ -36,6 +36,10 @@ random.seed()
 # pylint: disable-next=no-member
 COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", None)
 
+# Global dict to hold onto schedd ads so we only have to query schedd once
+# This should ONLY be changed by get_schedd_list
+__schedd_ads: Dict[str, classad.ClassAd] = {}
+
 
 @contextmanager
 def submit_vt(
@@ -99,8 +103,26 @@ def submit_vt(
 
 
 # pylint: disable-next=no-member
-def get_schedd_list(vargs: Dict[str, Any]) -> List[classad.ClassAd]:
-    """get jobsub* schedd classads from collector"""
+def get_schedd_list(
+    vargs: Dict[str, Any], refresh_schedd_ads: bool = False
+) -> List[classad.ClassAd]:
+    """
+    Get jobsub* schedd classads from collector.  Also, populate the in-memory store of the schedd
+    classads
+    """
+    global __schedd_ads
+
+    # First, try to load schedd ads from memory
+    if __schedd_ads and not refresh_schedd_ads:
+        if vargs.get("verbose", 0) > 1:
+            print("\nUsing cached schedd ads - NOT querying condor collector\n")
+        return [ad for ad in __schedd_ads.values()]
+
+    # If schedd ads not in memory or refresh_schedd_ads is True, go ahead and get the classads from the collector
+    if vargs.get("verbose", 0) > 1:
+        print(f"\nQuerying condor collector {COLLECTOR_HOST} for schedd ads\n")
+
+    # Constraint setup
     constraint = (
         "IsJobsubLite=?=true"
         '{% if group is defined and group %} && STRINGLISTIMEMBER("{{group}}", SupportedVOList){% endif %}'
@@ -122,13 +144,15 @@ def get_schedd_list(vargs: Dict[str, Any]) -> List[classad.ClassAd]:
     # pylint: disable-next=no-member
     if vargs.get("verbose", 0) > 0:
         print(
-            f"Using the following constraint for finding schedds: {schedd_constraint}"
+            f"Using the following constraint for finding schedds: {schedd_constraint}\n"
         )
 
+    # Get schedd ads from collector and store them in memory
     schedds: List[classad.ClassAd] = coll.query(
         htcondor.htcondor.AdTypes.Schedd,
         constraint=schedd_constraint,
     )
+    __schedd_ads = {ad.eval("Name"): ad for ad in schedds}
 
     if vargs.get("verbose", 0) > 1:
         print(f"post-query schedd classads: {schedds} ")
@@ -264,10 +288,15 @@ def submit(
         print(f"Running: {cmd}")
 
     try:
-
+        # Submit the job!
         with submit_vt(vargs["group"], vargs["role"], schedd_name, verbose):
             output = subprocess.run(
-                cmd, shell=True, stdout=subprocess.PIPE, encoding="UTF-8", check=False
+                cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                encoding="UTF-8",
+                check=False,
             )
             sys.stdout.write(output.stdout)
 
@@ -280,11 +309,29 @@ def submit(
             return None
 
         if output.returncode > 0:
+            specific_error_msg_list = []
+            # Specific error text cases.  For each kind of error message we want to make more
+            # user-friendly, search the output, generate the message, and append it to
+            # specific_errors_msg_list.
+
+            # 1. Number of submitted jobs > MAX_JOBS_PER_SUBMISSION
+            m = re.search(
+                "Number of submitted jobs would exceed MAX_JOBS_PER_SUBMISSION",
+                output.stderr,
+            )
+            if m:
+                msg = generate_error_message_for_too_many_procs(vargs, schedd_name)
+                specific_error_msg_list.append(msg)
+            ## Specify any more specific error messages here
+
+            specific_error_msgs = "\n".join(specific_error_msg_list)
             sys.stderr.write(
-                f"{hl}Error: condor_submit exited with failed status code {output.returncode}{hl}\n"
+                f"{hl}Error: condor_submit exited with failed status code {output.returncode}\n\n"
+                f"{specific_error_msgs}{hl}\n"
             )
             return None
 
+        # If we had a successful submission, give the job id to the user
         m = re.search(r"\d+ job\(s\) submitted to cluster (\d+).", output.stdout)
         if m:
             print(f"{hl}Use job id {m.group(1)}.0@{schedd_name} to retrieve output{hl}")
@@ -435,3 +482,30 @@ class Job:
             self.cluster = True
         s.retrieve(self._constraint())
         self.cluster = ssc
+
+
+def generate_error_message_for_too_many_procs(
+    vargs: Dict[str, Any], schedd_name: str
+) -> str:
+    """
+    Number of submitted jobs > MAX_JOBS_PER_SUBMISSION, so generate an error message for that
+    """
+    try:
+        limit = __schedd_ads[schedd_name].eval("Jobsub_Max_Jobs_Per_Submission")
+    except (AttributeError, KeyError):
+        # For whatever reason, get_schedd_list was never called before calling submit
+        get_schedd_list(vargs, refresh_schedd_ads=True)
+        limit = __schedd_ads[schedd_name].eval("Jobsub_Max_Jobs_Per_Submission")
+
+    try:
+        msg = (
+            "MAX_JOBS_PER_SUBMISSION limits the number of jobs allowed in a submission. "
+            f"The limit is {limit}.\n"
+            f"Please break up your submission into clusters with at most {limit} jobs each."
+        )
+    except NameError:
+        msg = (
+            "There was an error obtaining the MAX_JOBS_PER_SUBMISSION from the schedd. "
+            "Please try breaking up your submission into clusters with fewer jobs."
+        )
+    return msg

@@ -140,6 +140,26 @@ class TestCondorUnit:
         assert res
 
     @pytest.mark.unit
+    def test_submit_too_many_procs(self, get_submit_file, needs_credentials, capsys):
+        """Submit a job with too many procs being submitted.  Note that this test takes
+        a long time since we're trying to submit TOO_MANY_PROCS jobs"""
+        TOO_MANY_PROCS = 50000
+        submit_file = get_submit_file
+        # Need to swap out the queue value
+        with open(submit_file, "r+") as f:
+            lines = (line for line in f.readlines())
+            edited_lines = [
+                f"queue {TOO_MANY_PROCS}" if "queue" in line else line for line in lines
+            ]
+            f.writelines([edited_line + "\n" for edited_line in edited_lines])
+        condor.submit(submit_file, TestUnit.test_vargs, TestUnit.test_schedd)
+        captured = capsys.readouterr()
+        assert (
+            "MAX_JOBS_PER_SUBMISSION limits the number of jobs allowed in a submission"
+            in captured.err
+        )
+
+    @pytest.mark.unit
     def test_submit_dag_1(self, get_dag_file, needs_credentials):
         """actually submit a dag with condor_submit_dag"""
         # XXX fix me
