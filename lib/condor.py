@@ -490,12 +490,19 @@ def generate_error_message_for_too_many_procs(
     """
     Number of submitted jobs > MAX_JOBS_PER_SUBMISSION, so generate an error message for that
     """
+    default_msg = (
+        "There was an error obtaining the MAX_JOBS_PER_SUBMISSION from the schedd. "
+        "Please try breaking up your submission into clusters with fewer jobs."
+    )
     try:
         limit = __schedd_ads[schedd_name].eval("Jobsub_Max_Jobs_Per_Submission")
     except (AttributeError, KeyError):
         # For whatever reason, get_schedd_list was never called before calling submit
         get_schedd_list(vargs, refresh_schedd_ads=True)
         limit = __schedd_ads[schedd_name].eval("Jobsub_Max_Jobs_Per_Submission")
+    except ValueError:
+        # The classad exists but doesn't have this attribute at all.  Fall back to default
+        return default_msg
 
     try:
         msg = (
@@ -504,8 +511,6 @@ def generate_error_message_for_too_many_procs(
             f"Please break up your submission into clusters with at most {limit} jobs each."
         )
     except NameError:
-        msg = (
-            "There was an error obtaining the MAX_JOBS_PER_SUBMISSION from the schedd. "
-            "Please try breaking up your submission into clusters with fewer jobs."
-        )
+        return default_msg
+
     return msg
