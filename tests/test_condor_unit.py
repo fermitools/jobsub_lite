@@ -133,8 +133,9 @@ class TestCondorUnit:
         vargs = TestUnit.test_vargs
         vargs["verbose"] = 2
 
-        # First time:  We should query collector
-        condor.get_schedd_list(vargs)
+        # First time:  We should query collector , but if other tests have
+        # run before us that call, we wouldn't, so pass the refresh flag
+        condor.get_schedd_list(vargs, refresh_schedd_ads=True)
         captured = capsys.readouterr()
         assert "Querying condor collector" in captured.out
 
