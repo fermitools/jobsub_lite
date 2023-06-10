@@ -61,7 +61,8 @@ class TestJobsubSubmitUnit:
                 os.path.dirname(os.path.dirname(__file__)) + "/templates/dataset_dag"
             )
         dest = "/tmp/out{0}".format(os.getpid())
-        os.mkdir(dest)
+        if not os.path.exists(dest):
+            os.mkdir(dest)
         args = {**TestUnit.test_vargs, **TestUnit.test_extra_template_args}
         args["outdir"] = dest
         args["proxy"] = "/fake/proxy/path"
@@ -78,7 +79,8 @@ class TestJobsubSubmitUnit:
                 os.path.dirname(os.path.dirname(__file__)) + "/templates/dataset_dag"
             )
         dest = "/tmp/out{0}".format(os.getpid())
-        os.mkdir(dest)
+        if not os.path.exists(dest):
+            os.mkdir(dest)
         args = {**TestUnit.test_vargs, **TestUnit.test_extra_template_args}
         args["outdir"] = dest
         args["proxy"] = "/fake/proxy/path"
@@ -106,6 +108,8 @@ class TestJobsubSubmitUnit:
         else:
             srcdir = os.path.dirname(os.path.dirname(__file__)) + "/templates/simple"
         dest = tmp_path
+        if not os.path.exists(dest):
+            os.mkdir(dest)
         args = {**TestUnit.test_vargs, **TestUnit.test_extra_template_args}
         with pytest.raises(exceptions.UndefinedError, match="is undefined"):
             jobsub_submit.render_files(srcdir, args, dest)

@@ -41,6 +41,7 @@ class TestUnit:
         "job_info": [],
         "generate_email_summary": False,
         "dd_percentage": 100,
+        "dd_extra_dataset": [],
     }
     test_extra_template_args = {
         "role": test_role,
