@@ -25,6 +25,7 @@ import shutil
 from typing import Optional
 import requests  # type: ignore
 from pprint import pprint
+from tracing import as_span, add_event
 
 if os.environ.get("LD_LIBRARY_PATH", ""):
     del os.environ["LD_LIBRARY_PATH"]

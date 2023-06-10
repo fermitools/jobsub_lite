@@ -28,6 +28,7 @@ import subprocess
 import sys
 import time
 from typing import Union, Optional, List, Dict, Any
+from typing import Union, Optional, List
 from tracing import as_span, add_event
 
 import htcondor  # type: ignore
@@ -111,7 +112,7 @@ def checkToken(tokenfile: str) -> bool:
 
 
 @as_span("getToken")
-def getToken(role: str = DEFAULT_ROLE, debug: int = 0) -> str:
+def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
     """get path to token file"""
     pid = os.getuid()
     tmp = getTmp()

@@ -102,6 +102,8 @@ def submit_vt(
                 print("vault tokens after post-submit renaming:")
                 os.system(f"ls -l {tmp}/vt_u{uid}*")
 
+        return None
+
 
 # pylint: disable-next=no-member
 @as_span("get_schedd_list")

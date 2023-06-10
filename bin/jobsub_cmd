@@ -263,10 +263,6 @@ def main() -> None:
     if default_formatting:
         os.close(1)
         totalsf.close()
-    execargs.insert(0, f"/usr/bin/{cmd}")
-
-    # now run the command with those arguments
-    os.system(" ".join(execargs))
 
 
 if __name__ == "__main__":
