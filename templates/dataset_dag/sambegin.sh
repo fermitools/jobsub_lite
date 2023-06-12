@@ -214,7 +214,7 @@ done
 for PRJ_NAME in $extra_projects
 do
     CPURL=`${JSB_TMP}/ifdh.sh findProject $PRJ_NAME ''`
-    try ${JSB_TMP}/ifdh.sh  endProject $CPURL
+    try ${JSB_TMP}/ifdh.sh  endProject $CPURL && echo success!
 done
 
 exit 0
