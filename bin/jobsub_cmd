@@ -258,7 +258,7 @@ def main() -> None:
         else:
             os.execvp("/usr/bin/" + cmd, these_args)
 
-    if default_formatting:
+    if cmd == "jobsub_q" and default_formatting:
         os.close(1)
         totalsf.close()
 
