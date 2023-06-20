@@ -1,5 +1,5 @@
 NAME = jobsub_lite
-VERSION = v1.3.4
+VERSION = v1.3.5
 ROOTDIR = $(shell pwd)
 rpmVersion := $(subst v,,$(VERSION))
 BUILD_DIR = $(NAME)-$(rpmVersion)
