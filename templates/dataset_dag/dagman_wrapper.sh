@@ -6,7 +6,7 @@
 # touch our transfer files so condor will copy them back
 (sleep 1; touch {%for f in transfer_files%}{{f}} {%endfor%}) &
 
-ls -l .condor_creds
+ls -laR .
 
 {% if role is defined and role and role != 'Analysis' %}
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}_{{oauth_handle}}.use
