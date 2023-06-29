@@ -139,8 +139,8 @@ def all_test_args():
     return [
         "--append-condor-requirements",
         "xxappend-condor-requirementsxx",
-        "--blacklist",
-        "xxblacklistxx",
+        "--blocklist",
+        "xxblocklistxx",
         "--cmtconfig",
         "xxcmtconfigxx",
         "--constraint",
