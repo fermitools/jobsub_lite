@@ -274,7 +274,7 @@ def main():
 
     varg = vars(args)
 
-    if args.maxConcurrent and int(args.maxConcurrent) > args.N:
+    if args.maxConcurrent and int(args.maxConcurrent) >= args.N and not args.dag:
         if args.verbose:
             sys.stderr.write(
                 f"Note: ignoring --maxConcurrent {args.maxConcurrent} for {args.N} jobs\n"
