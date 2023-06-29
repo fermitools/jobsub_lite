@@ -274,6 +274,13 @@ def main():
 
     varg = vars(args)
 
+    if args.maxConcurrent and int(args.maxConcurrent) > args.N:
+        if args.verbose:
+            sys.stderr.write(
+                f"Note: ignoring --maxConcurrent {args.maxConcurrent} for {args.N} jobs\n"
+            )
+        args.maxConcurrent = None
+
     proxy, token = get_creds(varg)
 
     if args.verbose:
