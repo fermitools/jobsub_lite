@@ -9,7 +9,7 @@ output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
 
-{%if not (( dag is defined and dag ) or (dataset_definition is defined and dataset_definition)) %}
+{%if not ( is_dag is defined and is_dag ) %}
 JOBSUBJOBSECTION=$(Process)
 {%endif%}
 
