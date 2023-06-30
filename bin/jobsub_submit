@@ -272,14 +272,14 @@ def main():
 
     do_tarballs(args)
 
-    varg = vars(args)
-
     if args.maxConcurrent and int(args.maxConcurrent) >= args.N and not args.dag:
         if args.verbose:
             sys.stderr.write(
                 f"Note: ignoring --maxConcurrent {args.maxConcurrent} for {args.N} jobs\n"
             )
         args.maxConcurrent = None
+
+    varg = vars(args)
 
     proxy, token = get_creds(varg)
 
