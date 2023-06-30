@@ -12,7 +12,7 @@ umask 002
 # clear out variables that sometimes bleed into containers
 # causing problems.  See for example INC000001136681...
 #
-for env_var in CPATH LIBRARY_PATH
+for env_var in {{clean_env_vars}}
 do
    eval unset $env_var
 done
