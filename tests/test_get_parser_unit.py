@@ -319,7 +319,8 @@ class TestGetParserUnit:
             else:
                 arg = "-" + arg
 
-            if arg == "--dataset":
+            if arg in ["--dataset", "--blacklist"]:
+                # backwards compat args, ignore
                 continue
 
             assert arg in all_test_args
@@ -404,6 +405,8 @@ class TestGetParserUnit:
                 assert vres["verbose"] == 1
             elif arg == "dataset":
                 assert vres["dataset_definition"] == "xxdataset-definitionxx"
+            elif arg == "blacklist":
+                assert vres["blocklist"] == "xxblocklistxx"
             elif arg == "global-pool":
                 assert vres["global_pool"] == "dune"
             elif arg == "dd-percentage":

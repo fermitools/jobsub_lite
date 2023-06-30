@@ -226,6 +226,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--blocklist",
         "--blacklist",
+        dest="blocklist",
         help="ensure that jobs do not land at these (comma-separated) sites",
         default="",
     )
