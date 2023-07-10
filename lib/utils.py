@@ -327,12 +327,9 @@ def set_extras_n_fix_units(
     # build list of environment variables for wrapper script to clear:
     # -- this is our default list, below, minus anything passed in a -e/--environment argument
     #
-    full_clean_env_list = ["LC_CTYPE", "CPATH", "LIBRARY_PATH"]
-    clean_env_list = []
-    for ev in full_clean_env_list:
-        if ev not in envnames:
-            clean_env_list.append(ev)
-    args["clean_env_vars"] = " ".join(clean_env_list)
+    full_clean_env_list = set(["LC_CTYPE", "CPATH", "LIBRARY_PATH"])
+    args["clean_env_vars"] = " ".join(full_clean_env_list.difference(envnames))
+    args["not_clean_env_vars"] = " ".join(full_clean_env_list.intersection(envnames))
 
     if args["verbose"] > 1:
         sys.stderr.write(f"leaving set_extras... args: {repr(args)}\n")
