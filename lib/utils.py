@@ -642,7 +642,7 @@ def resolve_singularity_image(
 
 def check_site_and_blocklist(site: str, blocklist: str) -> None:
     """Check list of sites and blocklist to make sure there are no
-    conflicting options.  If there are conflicts, raise a SiteAndBlacklistConflictError.
+    conflicting options.  If there are conflicts, raise a SiteAndBlocklistConflictError.
     Otherwise, return None.
     """
     # If we have empty --site and --blocklist, this is fine.
@@ -652,7 +652,7 @@ def check_site_and_blocklist(site: str, blocklist: str) -> None:
     blocklist_set = set(blocklist.split(","))
     common_sites = site_set.intersection(blocklist_set)
     if common_sites:
-        raise SiteAndBlacklistConflictError(list(common_sites))
+        raise SiteAndBlocklistConflictError(list(common_sites))
     return None
 
 
@@ -672,7 +672,7 @@ class SiteAndUsageModelConflictError(Exception):
         super().__init__(self.message)
 
 
-class SiteAndBlacklistConflictError(Exception):
+class SiteAndBlocklistConflictError(Exception):
     """Exception to raise if any of the sites the user passed in are also in the user-passed
     blocklist"""
 

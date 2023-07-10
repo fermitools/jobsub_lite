@@ -114,15 +114,15 @@ def singularity_test_data():
 def site_blocklist_test_data(good=True):
     """Pull in site/blocklist test data from data file and return a list of
     test cases"""
-    SiteAndBlacklistTestData = namedtuple(
-        "SiteAndBlacklistTestData", ["helptext", "site_arg", "blocklist_arg"]
+    SiteAndBlocklistTestData = namedtuple(
+        "SiteAndBlocklistTestData", ["helptext", "site_arg", "blocklist_arg"]
     )
     good_or_bad = "good" if good else "bad"
     DATA_FILENAME = f"site_blocklist_{good_or_bad}.json"
     with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
         tests_json = json.load(datafile)
 
-    return [SiteAndBlacklistTestData(**test_json) for test_json in tests_json]
+    return [SiteAndBlocklistTestData(**test_json) for test_json in tests_json]
 
 
 def create_id_for_test_case(value) -> str:
@@ -323,7 +323,7 @@ class TestUtilsUnit:
     def test_check_site_and_blocklist_bad(self, site_blocklist_test_case):
         """Test to make sure that a given comma-separated site list string
         and blocklist string are handled correctly"""
-        with pytest.raises(utils.SiteAndBlacklistConflictError):
+        with pytest.raises(utils.SiteAndBlocklistConflictError):
             utils.check_site_and_blocklist(
                 site_blocklist_test_case.site_arg,
                 site_blocklist_test_case.blocklist_arg,
