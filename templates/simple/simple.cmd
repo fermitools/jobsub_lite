@@ -12,7 +12,7 @@ log                = {{filebase}}.log
 {%if not (( dag is defined and dag ) or (dataset_definition is defined and dataset_definition)) %}
 JOBSUBJOBSECTION=$(Process)
 {%endif%}
-+TRACEPARENT="{{traceparent}}"
+TRACEPARENT="{{traceparent}}"
 
 environment        = CM1=$(CM1);CM2=$(CM2);CLUSTER=$(Cluster);PROCESS=$(Process);JOBSUBJOBSECTION=$(JOBSUBJOBSECTION);CONDOR_TMP={{outdir}};BEARER_TOKEN_FILE=.condor_creds/{% if role is defined and role and role != 'Analysis' %}{{group}}_{{role | lower}}_{{oauth_handle}}.use{%else%}{{group}}_{{oauth_handle}}.use{%endif%};CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};TRACEPARENT=$(TRACEPARENT);{{environment|join(';')}}
 rank               = Mips / 2 + Memory
