@@ -25,7 +25,7 @@ import sys
 import tarfile as tarfile_mod
 import time
 import traceback as tb
-from typing import Union, Dict, Tuple, Callable, List, Any, Iterator, Optional
+from typing import Union, Dict, Tuple, Callable, List, Any, Iterator, Optional, BinaryIO
 from urllib.parse import quote as _quote
 import http.client
 import requests  # type: ignore
@@ -124,19 +124,17 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     return tarfile
 
 
-def slurp_file(fname: str) -> Tuple[str, bytes]:
+def slurp_file(fname: str) -> Tuple[str, BinaryIO]:
     """pull in a tarfile while computing its hash"""
     h = hashlib.sha256()
-    tfl = []
     with open(fname, "rb") as f:
         tff = f.read(4096)
         h.update(tff)
-        tfl.append(tff)
         while tff:
             tff = f.read(4096)
             h.update(tff)
-            tfl.append(tff)
-    return h.hexdigest(), bytes().join(tfl)
+    tf = open(fname, "rb")
+    return h.hexdigest(), tf
 
 
 def dcache_persistent_path(exp: str, filename: str) -> str:
@@ -496,11 +494,11 @@ class TarfilePublisherHandler:
 
     @cid_operation
     @pubapi_operation
-    def publish(self, tarfile: str) -> requests.Response:
+    def publish(self, tarfile: BinaryIO) -> requests.Response:
         """Make PubAPI publish call to upload this tarfile
 
         Args:
-            tarfile (bytes): Byte-string of tarfile #TODO CHECK THIS
+            tarfile (open file): open stream to tarfile
 
         Returns:
             requests.Response: Response from PubAPI call indicating if tarball
@@ -510,8 +508,12 @@ class TarfilePublisherHandler:
         if self.verbose:
             print(f"Calling URL {url}")
         if self.token:
-            return requests.post(url, auth=TokenAuth(self.token), data=tarfile)
-        return requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
+            res = requests.post(url, auth=TokenAuth(self.token), data=tarfile)
+            tarfile.close()
+            return res
+        res = requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
+        tarfile.close()
+        return res
 
     @cid_operation
     @pubapi_operation
