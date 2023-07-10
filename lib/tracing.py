@@ -70,7 +70,6 @@ try:
     def get_propagator_carrier() -> Dict[str, str]:
         carrier: Dict[str, str] = {}
         TraceContextTextMapPropagator().inject(carrier)
-        print(f"traceparent: {repr(carrier)}\n")
         return carrier
 
 except:
