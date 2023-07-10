@@ -44,6 +44,7 @@ try:
     from opentelemetry.sdk.trace.export import BatchSpanProcessor  # type: ignore
     from opentelemetry import trace  # type: ignore
     from opentelemetry.context import Context  # type: ignore
+    from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator  # type: ignore
 
     resource = Resource(attributes={"service.name": "fife"})
 
@@ -65,6 +66,12 @@ try:
 
     def get_current_span():  # type: ignore
         return trace.get_current_span()
+
+    def get_propagator_carrier() -> Dict[str, str]:
+        carrier: Dict[str, str] = {}
+        TraceContextTextMapPropagator().inject(carrier)
+        print(f"traceparent: {repr(carrier)}\n")
+        return carrier
 
 except:
     # if we can't import the stuff, here's a little mock so we don't crash
@@ -94,6 +101,9 @@ except:
         return Tracer()
 
     tracer = Tracer()
+
+    def get_propagator_carrier() -> Dict[str, str]:
+        return {"traceparent": ""}
 
 
 F = TypeVar("F", bound=Callable[..., Any])

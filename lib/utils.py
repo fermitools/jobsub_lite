@@ -27,6 +27,7 @@ import uuid
 import shutil
 import time
 from typing import Union, Dict, Any, NamedTuple, Tuple, List, Optional
+from tracing import get_propagator_carrier
 
 import version
 
@@ -110,6 +111,12 @@ def set_extras_n_fix_units(
     Note: this has gotten excessively long, probably should be split up?
     """
     # pylint: disable=too-many-branches,too-many-statements
+
+    #
+    # get tracing propagator traceparent id so we can use it in templates, etc.
+    #
+    carrier = get_propagator_carrier()
+    args["traceparent"] = carrier["traceparent"]
 
     #
     # outbase needs to be an area shared with schedd servers.
