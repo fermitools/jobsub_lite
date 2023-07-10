@@ -204,7 +204,7 @@ def main():
     elif args.maxConcurrent:
         jobsub_submit_maxconcurrent(varg, schedd_name)
     else:
-        jobsub_submit_simple(varg)
+        jobsub_submit_simple(varg, schedd_name)
 
     if args.verbose:
         # remind folks where transferred data goes.
