@@ -1,0 +1,22 @@
+[
+    {
+        "helptext": "Non-intersecting site/blocklist",
+        "site_arg": "site1,site2,site3",
+        "blocklist_arg": "site4,site5,site6"
+    },
+    {
+        "helptext": "Empty site/blocklist",
+        "site_arg": "",
+        "blocklist_arg": ""
+    },
+    {
+        "helptext": "Non-empty site, empty blocklist",
+        "site_arg": "site1,site2,site3",
+        "blocklist_arg": ""
+    },
+    {
+        "helptext": "Empty site, non-empty blocklist",
+        "site_arg": "",
+        "blocklist_arg": "site1,site2,site3"
+    }
+]

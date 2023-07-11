@@ -179,8 +179,8 @@ def set_extras_n_fix_units(
     args["usage_model"] = site_and_usage_model.usage_models
     args["resource_provides_quoted"] = new_resource_provides
 
-    # Check site and blacklist to ensure there are no conflicts
-    check_site_and_blacklist(args.get("site", ""), args.get("blacklist", ""))
+    # Check site and blocklist to ensure there are no conflicts
+    check_site_and_blocklist(args.get("site", ""), args.get("blocklist", ""))
 
     if not "outurl" in args:
         args["outurl"] = ""
@@ -640,19 +640,19 @@ def resolve_singularity_image(
     return (DEFAULT_SINGULARITY_IMAGE, return_lines)
 
 
-def check_site_and_blacklist(site: str, blacklist: str) -> None:
-    """Check list of sites and blacklist to make sure there are no
-    conflicting options.  If there are conflicts, raise a SiteAndBlacklistConflictError.
+def check_site_and_blocklist(site: str, blocklist: str) -> None:
+    """Check list of sites and blocklist to make sure there are no
+    conflicting options.  If there are conflicts, raise a SiteAndBlocklistConflictError.
     Otherwise, return None.
     """
-    # If we have empty --site and --blacklist, this is fine.
-    if (not site) or (not blacklist):
+    # If we have empty --site and --blocklist, this is fine.
+    if (not site) or (not blocklist):
         return None
     site_set = set(site.split(","))
-    blacklist_set = set(blacklist.split(","))
-    common_sites = site_set.intersection(blacklist_set)
+    blocklist_set = set(blocklist.split(","))
+    common_sites = site_set.intersection(blocklist_set)
     if common_sites:
-        raise SiteAndBlacklistConflictError(list(common_sites))
+        raise SiteAndBlocklistConflictError(list(common_sites))
     return None
 
 
@@ -672,16 +672,16 @@ class SiteAndUsageModelConflictError(Exception):
         super().__init__(self.message)
 
 
-class SiteAndBlacklistConflictError(Exception):
+class SiteAndBlocklistConflictError(Exception):
     """Exception to raise if any of the sites the user passed in are also in the user-passed
-    blacklist"""
+    blocklist"""
 
     def __init__(self, common_sites: List[str]):
         self.common_sites = common_sites
         self.message = (
-            "The following site(s) are both in the --site and --blacklist "
+            "The following site(s) are both in the --site and --blocklist "
             f"argument: {self.common_sites}. If your job tries to "
             "run at one of these sites, it will never start.  Please adjust "
-            "either the --site list or the --blacklist list."
+            "either the --site list or the --blocklist list."
         )
         super().__init__(self.message)
