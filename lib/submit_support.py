@@ -25,6 +25,8 @@ from fake_ifdh import mkdir_p, cp
 import pool
 import skip_checks
 
+""" Code factored out of jobsub_submit """
+
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -161,6 +163,7 @@ def get_env_list(name: str) -> List[str]:
 
 
 def jobsub_submit_dag(varg: Dict[str, Any], schedd_name: str) -> None:
+    """do a submission to schedd with --dag using the dagnabbit parser"""
     submitdir = varg["outdir"]
     varg["is_dag"] = True
     d1 = os.path.join(PREFIX, "templates", "simple")
@@ -175,6 +178,7 @@ def jobsub_submit_dag(varg: Dict[str, Any], schedd_name: str) -> None:
 
 
 def jobsub_submit_dataset_definition(varg: Dict[str, Any], schedd_name: str) -> None:
+    """do a submission to schedd with --dataset-definition  and a 3-stage dag"""
     submitdir = varg["outdir"]
     varg["is_dag"] = True
     do_dataset_defaults(varg)
@@ -196,6 +200,7 @@ def jobsub_submit_dataset_definition(varg: Dict[str, Any], schedd_name: str) -> 
 
 
 def jobsub_submit_maxconcurrent(varg: Dict[str, Any], schedd_name: str) -> None:
+    """do a --maxConcurrent dag job submission to schedd"""
     submitdir = varg["outdir"]
     varg["is_dag"] = True
     d1 = os.path.join(PREFIX, "templates", "maxconcurrent_dag")
@@ -214,6 +219,7 @@ def jobsub_submit_maxconcurrent(varg: Dict[str, Any], schedd_name: str) -> None:
 
 
 def jobsub_submit_simple(varg: Dict[str, Any], schedd_name: str) -> None:
+    """a  simple (non-DAG) submission"""
     submitdir = varg["outdir"]
     varg["is_dag"] = False
     d = f"{PREFIX}/templates/simple"
