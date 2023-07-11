@@ -506,12 +506,11 @@ class TarfilePublisherHandler:
         url = self.pubapi_cid_url_formatter.format(endpoint="publish")
         if self.verbose:
             print(f"Calling URL {url}")
-        if self.token:
-            with open(tarfilename, "rb") as tarfile:
+
+        with open(tarfilename, "rb") as tarfile:
+            if self.token:
                 return requests.post(url, auth=TokenAuth(self.token), data=tarfile)
-        res = requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
-        tarfile.close()
-        return res
+            return requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
 
     @cid_operation
     @pubapi_operation
