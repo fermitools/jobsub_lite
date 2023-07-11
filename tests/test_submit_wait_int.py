@@ -213,8 +213,13 @@ def lookaround_launch(extra, verify_files=""):
     )
 
 
-@pytest.mark.integration
+@pytest.mark.smoke
 def test_launch_lookaround_samdev(samdev):
+    lookaround_launch("")
+
+
+@pytest.mark.integration
+def test_launch_lookaround_samdev_dev(samdev):
     lookaround_launch("--devserver")
 
 
@@ -507,6 +512,7 @@ def xx_test_jobsub_q_repetitions(samdev):
     assert count == 5
 
 
+@pytest.mark.smoke
 @pytest.mark.integration
 def test_wait_for_jobs():
     """Not really a test, but we have to wait for jobs to complete..."""
@@ -553,6 +559,7 @@ def test_wait_for_jobs():
     assert True
 
 
+@pytest.mark.smoke
 @pytest.mark.integration
 def test_fetch_output():
     for jid in joblist:
@@ -565,6 +572,7 @@ def test_fetch_output():
         )
 
 
+@pytest.mark.smoke
 @pytest.mark.integration
 def test_check_job_output():
     res = True

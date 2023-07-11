@@ -305,17 +305,32 @@ def set_extras_n_fix_units(
     fix_unit(args, "expected_lifetime", timtable, -1, "smhd", -1)
     fix_unit(args, "timeout", timtable, -1, "smhd", -1)
     newe = []
+    envnames = set()  # set of environment variable names with -e for below
     for e in args["environment"]:
         pos = e.find("=")
         if pos < 0:
+            envnames.add(e)
             v = os.environ.get(e, None)
             if not v:
                 raise RuntimeError(
                     f"--environment {e} was given but no value was in the environment"
                 )
             e = f"{e}={v}"
+        else:
+            envnames.add(e[0:pos])
+
         newe.append(e)
+
     args["environment"] = newe
+
+    #
+    # build list of environment variables for wrapper script to clear:
+    # -- this is our default list, below, minus anything passed in a -e/--environment argument
+    #
+    full_clean_env_list = set(["LC_CTYPE", "CPATH", "LIBRARY_PATH"])
+    args["clean_env_vars"] = " ".join(full_clean_env_list.difference(envnames))
+    args["not_clean_env_vars"] = " ".join(full_clean_env_list.intersection(envnames))
+
     if args["verbose"] > 1:
         sys.stderr.write(f"leaving set_extras... args: {repr(args)}\n")
     args["jobsub_command"] = " ".join(sys.argv)
