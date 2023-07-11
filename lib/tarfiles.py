@@ -124,7 +124,7 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     return tarfile
 
 
-def slurp_file(fname: str) -> Tuple[str, BinaryIO]:
+def checksum_file(fname: str) -> str:
     """pull in a tarfile while computing its hash"""
     h = hashlib.sha256()
     with open(fname, "rb") as f:
@@ -133,8 +133,7 @@ def slurp_file(fname: str) -> Tuple[str, BinaryIO]:
         while tff:
             tff = f.read(4096)
             h.update(tff)
-    tf = open(fname, "rb")
-    return h.hexdigest(), tf
+    return h.hexdigest()
 
 
 def dcache_persistent_path(exp: str, filename: str) -> str:
@@ -296,7 +295,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
 
     location: Optional[str] = ""
     if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
-        digest, tf = slurp_file(tfn)
+        digest = checksum_file(tfn)
         proxy, token = get_creds(vars(args))
 
         if not args.group:
@@ -310,7 +309,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
         if location is None:
             if args.verbose:
                 print(f"\n\nUsing RCDS to publish tarball\ncid: {cid}")
-            publisher.publish(tf)
+            publisher.publish(tfn)
             if not getattr(args, "skip_check_rcds", False):
                 msg = "Checking to see if uploaded file is published on RCDS"
                 if args.verbose:
@@ -494,11 +493,11 @@ class TarfilePublisherHandler:
 
     @cid_operation
     @pubapi_operation
-    def publish(self, tarfile: BinaryIO) -> requests.Response:
+    def publish(self, tarfilename: str) -> requests.Response:
         """Make PubAPI publish call to upload this tarfile
 
         Args:
-            tarfile (open file): open stream to tarfile
+            tarfilename: filename to open for tarfile
 
         Returns:
             requests.Response: Response from PubAPI call indicating if tarball
@@ -508,9 +507,8 @@ class TarfilePublisherHandler:
         if self.verbose:
             print(f"Calling URL {url}")
         if self.token:
-            res = requests.post(url, auth=TokenAuth(self.token), data=tarfile)
-            tarfile.close()
-            return res
+            with open(tarfilename, "rb") as tarfile:
+                return requests.post(url, auth=TokenAuth(self.token), data=tarfile)
         res = requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
         tarfile.close()
         return res
