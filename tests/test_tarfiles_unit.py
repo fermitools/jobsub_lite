@@ -68,9 +68,9 @@ class TestTarfilesUnit:
         os.unlink(tarfile)
 
     @pytest.mark.unit
-    def test_slurp_file_1(self):
-        """make sure tar slurp_file makes a digest"""
-        digest, tf = tarfiles.slurp_file(__file__)
+    def test_checksum_file_1(self):
+        """make sure tar checksum_file makes a digest"""
+        digest = tarfiles.checksum_file(__file__)
         assert len(digest) == 64
 
     @pytest.mark.unit
@@ -80,7 +80,7 @@ class TestTarfilesUnit:
         t1 = tarfiles.tar_up(
             os.path.dirname(__file__), "/dev/null", os.path.basename(__file__)
         )
-        h1, _ = tarfiles.slurp_file(t1)
+        h1 = tarfiles.checksum_file(t1)
         print(f"h1: {h1}")
         os.system(f"md5sum {t1}")
         os.unlink(t1)
@@ -89,7 +89,7 @@ class TestTarfilesUnit:
         t2 = tarfiles.tar_up(
             os.path.dirname(__file__), "/dev/null", os.path.basename(__file__)
         )
-        h2, _ = tarfiles.slurp_file(t2)
+        h2 = tarfiles.checksum_file(t2)
         print(f"h2: {h2}")
         os.system(f"md5sum {t2}")
         os.unlink(t2)
@@ -107,7 +107,7 @@ class TestTarfilesUnit:
         proxy, token = needs_credentials
         # need something to publish...
         tarfile = tarfiles.tar_up(self.dir_to_tar.name, None)
-        digest, tf = tarfiles.slurp_file(tarfile)
+        digest = tarfiles.checksum_file(tarfile)
         cid = f"{TestUnit.test_group}/{digest}"
 
         publisher = tarfiles.TarfilePublisherHandler(cid, proxy, token)
@@ -118,7 +118,7 @@ class TestTarfilesUnit:
         # probably be a callable method..
         #
         if location is None:
-            publisher.publish(tf)
+            publisher.publish(tarfile)
             for i in range(20):
                 time.sleep(30)
                 location = publisher.cid_exists()
