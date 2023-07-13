@@ -25,7 +25,7 @@ import sys
 import tarfile as tarfile_mod
 import time
 import traceback as tb
-from typing import Union, Dict, Tuple, Callable, List, Any, Iterator, Optional
+from typing import Union, Dict, Tuple, Callable, List, Any, Iterator, Optional, BinaryIO
 from urllib.parse import quote as _quote
 import http.client
 import requests  # type: ignore
@@ -124,19 +124,16 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     return tarfile
 
 
-def slurp_file(fname: str) -> Tuple[str, bytes]:
+def checksum_file(fname: str) -> str:
     """pull in a tarfile while computing its hash"""
     h = hashlib.sha256()
-    tfl = []
     with open(fname, "rb") as f:
         tff = f.read(4096)
         h.update(tff)
-        tfl.append(tff)
         while tff:
             tff = f.read(4096)
             h.update(tff)
-            tfl.append(tff)
-    return h.hexdigest(), bytes().join(tfl)
+    return h.hexdigest()
 
 
 def dcache_persistent_path(exp: str, filename: str) -> str:
@@ -298,7 +295,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
 
     location: Optional[str] = ""
     if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
-        digest, tf = slurp_file(tfn)
+        digest = checksum_file(tfn)
         proxy, token = get_creds(vars(args))
 
         if not args.group:
@@ -312,7 +309,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
         if location is None:
             if args.verbose:
                 print(f"\n\nUsing RCDS to publish tarball\ncid: {cid}")
-            publisher.publish(tf)
+            publisher.publish(tfn)
             if not getattr(args, "skip_check_rcds", False):
                 msg = "Checking to see if uploaded file is published on RCDS"
                 if args.verbose:
@@ -496,11 +493,11 @@ class TarfilePublisherHandler:
 
     @cid_operation
     @pubapi_operation
-    def publish(self, tarfile: str) -> requests.Response:
+    def publish(self, tarfilename: str) -> requests.Response:
         """Make PubAPI publish call to upload this tarfile
 
         Args:
-            tarfile (bytes): Byte-string of tarfile #TODO CHECK THIS
+            tarfilename: filename to open for tarfile
 
         Returns:
             requests.Response: Response from PubAPI call indicating if tarball
@@ -509,9 +506,11 @@ class TarfilePublisherHandler:
         url = self.pubapi_cid_url_formatter.format(endpoint="publish")
         if self.verbose:
             print(f"Calling URL {url}")
-        if self.token:
-            return requests.post(url, auth=TokenAuth(self.token), data=tarfile)
-        return requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
+
+        with open(tarfilename, "rb") as tarfile:
+            if self.token:
+                return requests.post(url, auth=TokenAuth(self.token), data=tarfile)
+            return requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
 
     @cid_operation
     @pubapi_operation
