@@ -15,15 +15,18 @@
 # limitations under the License.
 """ credential related routines """
 import argparse
-from collections import namedtuple
 import os
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Union
 
 import fake_ifdh
 
 
-DEFAULT_AUTH_METHOD = "token"
-SUPPORTED_AUTH_METHODS = ["token", "proxy"]
+DEFAULT_AUTH_METHODS = "token,proxy"
+SUPPORTED_AUTH_METHOD_ENV_MAPPING = {
+    "token": "BEARER_TOKEN_FILE",
+    "proxy": "X509_USER_PROXY",
+}
+SUPPORTED_AUTH_METHODS = list(SUPPORTED_AUTH_METHOD_ENV_MAPPING.keys())
 
 
 class CredentialSet(object):
@@ -34,13 +37,16 @@ class CredentialSet(object):
         for cred_type in SUPPORTED_AUTH_METHODS:
             setattr(self, cred_type, None)
 
-    def __setattr__(self, __name: str, __value: Any) -> None:
-        if not hasattr(self, __name):
+    def __setattr__(self, cred_type: str, cred_path: Any) -> None:
+        """Make sure we can't set a value here for an unsupported auth method,
+        and also set the correct environment variable"""
+        if not hasattr(self, cred_type):
             print(
-                f"Invalid credential type.  Not setting {__name} to {__value} for this CredentialSet"
+                f"Invalid credential type.  Not setting {cred_type} to {cred_path} for this CredentialSet"
             )
             return
-        setattr(self, __name, __value)
+        os.environ[SUPPORTED_AUTH_METHOD_ENV_MAPPING[cred_type]] = cred_path
+        setattr(self, cred_type, cred_path)
 
     def get_all_credentials(self) -> Dict[str, str]:
         """Get the stored credentials in the CredentialSet that are not None"""
@@ -59,21 +65,18 @@ def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
     auth_methods = args.get("auth_methods", SUPPORTED_AUTH_METHODS)
 
     obtained_creds = CredentialSet()
-    # TODO Enum to map from proxy to getProxy, token to getToken?
     # TODO Callers should support either of token or proxy or both being returned
     # TODO Templates should also support token or proxy not existing
     if "token" in auth_methods:
         t = fake_ifdh.getToken(role, args.get("verbose", 0))
         t = t.strip()
         obtained_creds.token = t
-        os.environ["BEARER_TOKEN_FILE"] = t
     if "proxy" in auth_methods:
         p = fake_ifdh.getProxy(
             role, args.get("verbose", 0), args.get("force_proxy", False)
         )
         p = p.strip()
         obtained_creds.proxy = p
-        os.environ["X509_USER_PROXY"] = p
 
     return obtained_creds
 
