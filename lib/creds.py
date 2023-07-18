@@ -15,6 +15,7 @@
 # limitations under the License.
 """ credential related routines """
 import argparse
+from collections import namedtuple
 import os
 from typing import Any, Dict, Tuple, Union
 
@@ -24,8 +25,30 @@ import fake_ifdh
 DEFAULT_AUTH_METHOD = "token"
 SUPPORTED_AUTH_METHODS = ["token", "proxy"]
 
+
+class CredentialSet(object):
+    """Class that holds the paths to the supported credential types given in
+    SUPPORTED_AUTH_METHODS"""
+
+    def __init__(self) -> None:
+        for cred_type in SUPPORTED_AUTH_METHODS:
+            setattr(self, cred_type, None)
+
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        if not hasattr(self, __name):
+            print(
+                f"Invalid credential type.  Not setting {__name} to {__value} for this CredentialSet"
+            )
+            return
+        setattr(self, __name, __value)
+
+    def get_all_credentials(self) -> Dict[str, str]:
+        """Get the stored credentials in the CredentialSet that are not None"""
+        return {key: value for key, value in vars(self).items() if value is not None}
+
+
 # pylint: disable-next=dangerous-default-value
-def get_creds(args: Dict[str, Any] = {}) -> Tuple[str, ...]:
+def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
     """get credentials -- Note this does not currently push to
     myproxy, nor does it yet deal with tokens, but those should
     be done here as needed.
@@ -35,27 +58,28 @@ def get_creds(args: Dict[str, Any] = {}) -> Tuple[str, ...]:
 
     auth_methods = args.get("auth_methods", SUPPORTED_AUTH_METHODS)
 
-    obtained_creds = []
+    obtained_creds = CredentialSet()
     # TODO Enum to map from proxy to getProxy, token to getToken?
     # TODO Callers should support either of token or proxy or both being returned
+    # TODO Templates should also support token or proxy not existing
     if "token" in auth_methods:
         t = fake_ifdh.getToken(role, args.get("verbose", 0))
         t = t.strip()
-        obtained_creds.append(t)
+        obtained_creds.token = t
         os.environ["BEARER_TOKEN_FILE"] = t
     if "proxy" in auth_methods:
         p = fake_ifdh.getProxy(
             role, args.get("verbose", 0), args.get("force_proxy", False)
         )
         p = p.strip()
-        obtained_creds.append(p)
+        obtained_creds.proxy = p
         os.environ["X509_USER_PROXY"] = p
 
-    return tuple(obtained_creds)
+    return obtained_creds
 
 
 class CheckIfValidAuthMethod(argparse.Action):
-    """Action to check if the caller has requested a valid auth method"""
+    """Argparse Action to check if the caller has requested a valid auth method"""
 
     def __call__(
         self,
