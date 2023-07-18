@@ -22,6 +22,7 @@ import sys
 from typing import Union, Any, List
 
 import pool
+from creds import CheckIfValidAuthMethod, SUPPORTED_AUTH_METHODS
 from skip_checks import SupportedSkipChecks
 from utils import DEFAULT_USAGE_MODELS, DEFAULT_SINGULARITY_IMAGE
 from condor import get_schedd_names
@@ -130,6 +131,18 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     if os.environ.get("JOBSUB_GROUP", ""):
         os.environ["GROUP"] = os.environ["JOBSUB_GROUP"]
 
+    group.add_argument(
+        "--auth-methods",
+        help=(
+            "Authorization method to use for job management. "
+            "Multiple values should be given in a comma-separated list, "
+            'e.g. "token,proxy".'
+            f"Currently supported methods are {SUPPORTED_AUTH_METHODS}"
+        ),
+        action=CheckIfValidAuthMethod,
+        required=False,
+        default=os.environ.get("JOBSUB_AUTH_METHODS", ",".join(SUPPORTED_AUTH_METHODS)),
+    )
     group.add_argument(
         "-G",
         "--group",
