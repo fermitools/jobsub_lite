@@ -33,11 +33,11 @@ class TestCredUnit:
         """get credentials, make sure the credentials files returned
         exist"""
         os.environ["GROUP"] = TestUnit.test_group
-        proxy, token = creds.get_creds()
+        cred_set = creds.get_creds()
         assert os.path.exists(os.environ["X509_USER_PROXY"])
         assert os.path.exists(os.environ["BEARER_TOKEN_FILE"])
-        assert os.path.exists(proxy)
-        assert os.path.exists(token)
+        assert os.path.exists(cred_set.proxy)
+        assert os.path.exists(cred_set.token)
 
     @pytest.mark.unit
     def test_get_creds_default_role(self):
@@ -45,5 +45,8 @@ class TestCredUnit:
         exist"""
         args = {}
         os.environ["GROUP"] = TestUnit.test_group
-        _, _ = creds.get_creds(args)
+        _ = creds.get_creds(args)
         assert args["role"] == "Analysis"
+
+
+# TODO:  Tests for 1) proxy only, 2) token only

@@ -137,6 +137,7 @@ def find_all_arguments(paired_arguments):
 @pytest.fixture
 def all_test_args():
     return [
+        "--auth-methods",
         "--append-condor-requirements",
         "xxappend-condor-requirementsxx",
         "--blocklist",
@@ -347,6 +348,7 @@ class TestGetParserUnit:
         # e.g. For the mutually exclusive group (--singularity-image,
         # --no-singularity), we pick one and enter it into args_exclude_list
         args_exclude_list = [
+            "--auth-methods",  # We do a special test for this
             "--no-singularity",
             "--apptainer-image",
             "--no-apptainer",
@@ -522,3 +524,6 @@ class TestGetParserUnit:
             schedd_for_testing_arg_parser.parse_args(
                 ["--schedd-for-testing", "this_is_an_invalid_schedd.domain"]
             )
+
+
+# TODO Need tests for --auth-methods flag

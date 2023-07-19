@@ -44,7 +44,7 @@ class CredentialSet:
         for cred_type, cred_path in vars(self).items():
             if not cred_path:
                 continue
-            self_key = f"{cred_type.upper}_ENV"
+            self_key = f"{cred_type.upper()}_ENV"
             environ_key = getattr(self, self_key, None)
             if environ_key:
                 os.environ[environ_key] = cred_path

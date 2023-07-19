@@ -175,9 +175,11 @@ class TestUtilsUnit:
     def test_set_extras_1(self, needs_credentials):
         """call set_extras_n_fix_units, verify one thing from environment
         and one unit conversion..."""
-        proxy, token = needs_credentials
+        cred_set = needs_credentials
         args = TestUnit.test_vargs.copy()
-        utils.set_extras_n_fix_units(args, TestUnit.test_schedd, proxy, token)
+        utils.set_extras_n_fix_units(
+            args, TestUnit.test_schedd, cred_set.proxy, cred_set.token
+        )
         assert args["user"] == os.environ["USER"]
         assert args["memory"] == 64 * 1024
 
@@ -186,21 +188,21 @@ class TestUtilsUnit:
         self, needs_credentials, clear_x509_user_proxy
     ):
         """Call get_client_dn with proxy specified"""
-        _proxy, _ = needs_credentials
+        cred_set = needs_credentials
         clear_x509_user_proxy
-        client_dn = utils.get_client_dn(proxy=_proxy)
+        client_dn = utils.get_client_dn(proxy=cred_set.proxy)
         assert os.environ["USER"] in client_dn
 
     @pytest.mark.unit
     def test_get_client_dn_env_plus_proxy_provided(self, needs_credentials):
         """Call get_client_dn with proxy specified, env set.  Should grab
         proxy from passed-in arg"""
-        _proxy, _ = needs_credentials
+        cred_set = needs_credentials
         old_x509_user_proxy_value = os.environ.pop("X509_USER_PROXY", None)
         os.environ[
             "X509_USER_PROXY"
         ] = "foobar"  # Break the environment so that this test won't accidentally pass
-        client_dn = utils.get_client_dn(proxy=_proxy)
+        client_dn = utils.get_client_dn(proxy=cred_set.proxy)
         assert os.environ["USER"] in client_dn
         os.environ["X509_USER_PROXY"] = old_x509_user_proxy_value
 
@@ -208,7 +210,6 @@ class TestUtilsUnit:
     def test_get_client_dn_no_proxy_provided(self, needs_credentials):
         """Call get_client_dn with no proxy specified.  Should grab proxy from
         env"""
-        _proxy, _ = needs_credentials  # Sets $X509_USER_PROXY
         client_dn = utils.get_client_dn()
         assert os.environ["USER"] in client_dn
 
@@ -218,7 +219,6 @@ class TestUtilsUnit:
     ):
         """Call get_client_dn with no proxy specified, environment not set.
         Should get proxy from standard grid location"""
-        _proxy, _ = needs_credentials
         clear_x509_user_proxy
         client_dn = utils.get_client_dn()
         assert os.environ["USER"] in client_dn
