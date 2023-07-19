@@ -41,7 +41,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 # import our local parts
 #
 from condor import get_schedd, submit
-from creds import get_creds
+from creds import get_creds, print_cred_paths_from_credset
 import get_parser
 
 # pylint: disable-next=no-member
@@ -123,10 +123,9 @@ def main():
         )
         return
 
-    proxy, token = get_creds(vars(args))
+    cred_set = get_creds(vars(args))
     if args.verbose:
-        print(f"proxy is : {proxy}")
-        print(f"token is : {token}")
+        print_cred_paths_from_credset(cred_set)
 
     #   SUBMIT
 

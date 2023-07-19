@@ -260,11 +260,9 @@ def main():
             "%s needs -G group or $GROUP in the environment." % sys.argv[0]
         )
 
-    proxy, token = creds.get_creds(vars(args))
-
+    cred_set = creds.get_creds(vars(args))
     if args.verbose:
-        print("proxy is : %s" % proxy)
-        print("token is : %s" % token)
+        creds.print_cred_paths_from_credset(cred_set)
 
     fetcher = fetch_from_condor if args.condor else fetch_from_landscape
     fetcher(args.jobid, args.destdir, args.archive_format, args.partial)

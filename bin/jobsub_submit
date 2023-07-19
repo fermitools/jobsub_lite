@@ -60,7 +60,7 @@ from utils import (
     backslash_escape_layer,
     sanitize_lines,
 )
-from creds import get_creds
+from creds import get_creds, print_cred_paths_from_credset
 from token_mods import get_job_scopes, use_token_copy
 from version import print_version, print_support_email
 from fake_ifdh import mkdir_p, cp
@@ -159,11 +159,9 @@ def main():
 
     varg = vars(args)
 
-    proxy, token = get_creds(varg)
-
+    cred_set = get_creds(varg)
     if args.verbose:
-        print(f"proxy is : {proxy}")
-        print(f"token is : {token}")
+        print_cred_paths_from_credset(cred_set)
 
     if args.verbose:
         sys.stderr.write(f"varg: {repr(varg)}\n")
@@ -187,15 +185,16 @@ def main():
     # token filename the conor_vault_credmon will only refresh it once for both (or all
     # three, etc.) submissions, and push that token to all the jobs with that same handle.
     #
-    token = use_token_copy(token)
-    varg["job_scope"] = " ".join(
-        get_job_scopes(token, args.need_storage_modify, args.need_scope)
-    )
-    m = hashlib.sha256()
-    m.update(varg["job_scope"].encode())
-    varg["oauth_handle"] = m.hexdigest()[:10]
+    if cred_set.token:
+        cred_set.token = use_token_copy(cred_set.token)
+        varg["job_scope"] = " ".join(
+            get_job_scopes(cred_set.token, args.need_storage_modify, args.need_scope)
+        )
+        m = hashlib.sha256()
+        m.update(varg["job_scope"].encode())
+        varg["oauth_handle"] = m.hexdigest()[:10]
 
-    set_extras_n_fix_units(varg, schedd_name, proxy, token)
+    set_extras_n_fix_units(varg, schedd_name, cred_set.proxy, cred_set.token)
 
     if args.dag:
         jobsub_submit_dag(varg, schedd_name)
