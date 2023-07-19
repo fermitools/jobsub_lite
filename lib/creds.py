@@ -16,69 +16,73 @@
 """ credential related routines """
 import argparse
 import os
-from typing import Any, Dict, Union
+from enum import Enum
+from typing import Any, Dict, Union, Optional, List
+from collections import namedtuple
 
 import fake_ifdh
 
 
 DEFAULT_AUTH_METHODS = "token,proxy"
-SUPPORTED_AUTH_METHOD_ENV_MAPPING = {
-    "token": "BEARER_TOKEN_FILE",
-    "proxy": "X509_USER_PROXY",
-}
-SUPPORTED_AUTH_METHODS = list(SUPPORTED_AUTH_METHOD_ENV_MAPPING.keys())
 
 
-class CredentialSet(object):
-    """Class that holds the paths to the supported credential types given in
-    SUPPORTED_AUTH_METHODS"""
+class CredentialEnvMapping(Enum):
+    """All supported authorization methods and the corresponding environment variables
+    pointing to their credential's location"""
 
-    def __init__(self) -> None:
-        for cred_type in SUPPORTED_AUTH_METHODS:
-            setattr(self, cred_type, None)
+    TOKEN = "BEARER_TOKEN_FILE"
+    PROXY = "X509_USER_PROXY"
 
-    def __setattr__(self, cred_type: str, cred_path: Any) -> None:
-        """Make sure we can't set a value here for an unsupported auth method,
-        and also set the correct environment variable"""
-        if not hasattr(self, cred_type):
-            print(
-                f"Invalid credential type.  Not setting {cred_type} to {cred_path} for this CredentialSet"
-            )
-            return
-        os.environ[SUPPORTED_AUTH_METHOD_ENV_MAPPING[cred_type]] = cred_path
-        setattr(self, cred_type, cred_path)
 
-    def get_all_credentials(self) -> Dict[str, str]:
-        """Get the stored credentials in the CredentialSet that are not None"""
-        return {key: value for key, value in vars(self).items() if value is not None}
-
+SUPPORTED_AUTH_METHODS = [mapping.name.lower() for mapping in CredentialEnvMapping]
+CredentialSet = namedtuple("CredentialSet", SUPPORTED_AUTH_METHODS)  # type: ignore
 
 # pylint: disable-next=dangerous-default-value
 def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
-    """get credentials -- Note this does not currently push to
-    myproxy, nor does it yet deal with tokens, but those should
-    be done here as needed.
-    """
+    """get credentials for job operations"""
     role = fake_ifdh.getRole(args.get("role", None))
     args["role"] = role
 
-    auth_methods = args.get("auth_methods", SUPPORTED_AUTH_METHODS)
+    auth_methods: List[str] = SUPPORTED_AUTH_METHODS
+    if args.get("auth_methods", None):
+        auth_methods = str(args.get("auth_methods")).split(",")
 
-    obtained_creds = CredentialSet()
-    # TODO Callers should support either of token or proxy or both being returned
+    creds_to_return: Dict[str, Optional[str]] = {
+        cred_type: None for cred_type in SUPPORTED_AUTH_METHODS
+    }
     # TODO Templates should also support token or proxy not existing
     if "token" in auth_methods:
         t = fake_ifdh.getToken(role, args.get("verbose", 0))
         t = t.strip()
-        obtained_creds.token = t
+        creds_to_return["token"] = t
     if "proxy" in auth_methods:
         p = fake_ifdh.getProxy(
             role, args.get("verbose", 0), args.get("force_proxy", False)
         )
         p = p.strip()
-        obtained_creds.proxy = p
-
+        creds_to_return["proxy"] = p
+    obtained_creds = CredentialSet(**creds_to_return)
+    set_environment_for_credentials(obtained_creds)
     return obtained_creds
+
+
+def set_environment_for_credentials(cred_set: CredentialSet) -> None:
+    """Set environment variables for a CredentialSet according to the
+    SUPPORTED_AUTH_METHOD_ENV_MAPPING"""
+    for cred_type, cred_path in cred_set._asdict().items():
+        try:
+            cred_env = getattr(CredentialEnvMapping, cred_type.upper()).value
+            os.environ[cred_env] = cred_path
+        except AttributeError:
+            print(
+                f"Unsupported auth method {cred_type}.  Supported auth methods are {','.join(SUPPORTED_AUTH_METHODS)}"
+            )
+
+
+def print_cred_paths_from_credset(cred_set: CredentialSet) -> None:
+    """Print out the locations of the various credentials in the credential set"""
+    for cred_type, cred_path in cred_set._asdict().items():
+        print(f"{cred_type} location: {cred_path}")
 
 
 class CheckIfValidAuthMethod(argparse.Action):
