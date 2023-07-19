@@ -17,7 +17,7 @@
 import argparse
 import os
 from enum import Enum
-from typing import Any, Dict, Union, Optional, List
+from typing import Any, Dict, Union, Optional, List, NamedTuple
 from collections import namedtuple
 
 import fake_ifdh
@@ -26,16 +26,33 @@ import fake_ifdh
 DEFAULT_AUTH_METHODS = "token,proxy"
 
 
-class CredentialEnvMapping(Enum):
-    """All supported authorization methods and the corresponding environment variables
-    pointing to their credential's location"""
+class CredentialSet:
+    """Class to hold credential paths for supported auth methods.  The __init__ method
+    here defines what credentials we support"""
 
-    TOKEN = "BEARER_TOKEN_FILE"
-    PROXY = "X509_USER_PROXY"
+    # Environment Variables corresponding to each supported auth method
+    TOKEN_ENV = "BEARER_TOKEN_FILE"
+    PROXY_ENV = "X509_USER_PROXY"
+
+    def __init__(self, token: Optional[str] = None, proxy: Optional[str] = None):
+        self.token: Optional[str] = token
+        self.proxy: Optional[str] = proxy
+        self._set_environment_for_credentials()
+
+    def _set_environment_for_credentials(self) -> None:
+        """Set environment variables for credentials"""
+        for cred_type, cred_path in vars(self).items():
+            if not cred_path:
+                continue
+            self_key = f"{cred_type.upper}_ENV"
+            environ_key = getattr(self, self_key, None)
+            if environ_key:
+                os.environ[environ_key] = cred_path
 
 
-SUPPORTED_AUTH_METHODS = [mapping.name.lower() for mapping in CredentialEnvMapping]
-CredentialSet = namedtuple("CredentialSet", SUPPORTED_AUTH_METHODS)  # type: ignore
+SUPPORTED_AUTH_METHODS = [
+    cred_type for cred_type in vars(CredentialSet())
+]  # Dynamically populate our SUPPORTED_AUTH_METHODS
 
 # pylint: disable-next=dangerous-default-value
 def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
@@ -62,26 +79,12 @@ def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
         p = p.strip()
         creds_to_return["proxy"] = p
     obtained_creds = CredentialSet(**creds_to_return)
-    set_environment_for_credentials(obtained_creds)
     return obtained_creds
-
-
-def set_environment_for_credentials(cred_set: CredentialSet) -> None:
-    """Set environment variables for a CredentialSet according to the
-    SUPPORTED_AUTH_METHOD_ENV_MAPPING"""
-    for cred_type, cred_path in cred_set._asdict().items():
-        try:
-            cred_env = getattr(CredentialEnvMapping, cred_type.upper()).value
-            os.environ[cred_env] = cred_path
-        except AttributeError:
-            print(
-                f"Unsupported auth method {cred_type}.  Supported auth methods are {','.join(SUPPORTED_AUTH_METHODS)}"
-            )
 
 
 def print_cred_paths_from_credset(cred_set: CredentialSet) -> None:
     """Print out the locations of the various credentials in the credential set"""
-    for cred_type, cred_path in cred_set._asdict().items():
+    for cred_type, cred_path in vars(cred_set).items():
         print(f"{cred_type} location: {cred_path}")
 
 
