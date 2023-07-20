@@ -35,7 +35,7 @@ if os.environ.get("LD_LIBRARY_PATH", ""):
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
 
-import fake_ifdh
+import creds
 import get_parser
 import condor
 from version import print_version, print_support_email
@@ -160,9 +160,7 @@ def main() -> None:
         execargs.append(i)
 
     # also make sure we have suitable credentials...
-    role = fake_ifdh.getRole(arglist.role)
-    os.environ["X509_USER_PROXY"] = fake_ifdh.getProxy(role)
-    os.environ["BEARER_TOKEN_FILE"] = fake_ifdh.getToken(role)
+    _ = creds.get_creds(arglist)
 
     # and find the wrapped command name
     cmd = os.path.basename(sys.argv[0])

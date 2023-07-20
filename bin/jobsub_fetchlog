@@ -241,6 +241,12 @@ def main():
     if args.support_email:
         print_support_email()
 
+    # jobsub_fetchlog only supports tokens
+    if "tokens" not in args.auth_methods:
+        raise SystemExit(
+            "jobsub_fetchlog only supports token authentication.  Please either omit the --auth-methods flag or make sure tokens is included in the value of that flag"
+        )
+
     if not args.jobid and not args.job_id:
         raise SystemExit("jobid is required.")
 

@@ -375,7 +375,8 @@ def submit_dag(
             f' "use_oauth_services = {vargs["group"]}" -no_submit {f} {qargs}'
         )
 
-        cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
+        if vargs["token"] is not None:
+            cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
         if vargs.get("verbose", 0) > 0:
             print(f"Running: {cmd}")
 
