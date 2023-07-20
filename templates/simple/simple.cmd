@@ -105,7 +105,7 @@ use_oauth_services = {{group}}
 {% else %}
 +x509userproxy = "{{proxy}}"
 {% endif %}
-delegate_job_GSI_credentials_lifetime = 0   # Do not delegate proxy and curtail its lifetime - use whatever proxy was submitted with the job
+delegate_job_GSI_credentials_lifetime = 0
 {% endif %}
 
 queue {{N}}
