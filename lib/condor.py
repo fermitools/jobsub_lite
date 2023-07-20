@@ -273,7 +273,7 @@ def submit(
 
     qargs = " ".join([f"'{x}'" for x in cmd_args])
     cmd = f"/usr/bin/condor_submit -pool {COLLECTOR_HOST} {schedd_args} {qargs}"
-    if vargs["token"] is not None:
+    if vargs.get("token", None) is not None:
         cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
     cmd = f"_condor_CREDD_HOST={schedd_name} {cmd}"
     #
@@ -375,7 +375,7 @@ def submit_dag(
             f' "use_oauth_services = {vargs["group"]}" -no_submit {f} {qargs}'
         )
 
-        if vargs["token"] is not None:
+        if vargs.get("token", None) is not None:
             cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
         if vargs.get("verbose", 0) > 0:
             print(f"Running: {cmd}")
