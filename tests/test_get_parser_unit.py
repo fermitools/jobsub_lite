@@ -524,6 +524,3 @@ class TestGetParserUnit:
             schedd_for_testing_arg_parser.parse_args(
                 ["--schedd-for-testing", "this_is_an_invalid_schedd.domain"]
             )
-
-
-# TODO Need tests for --auth-methods flag

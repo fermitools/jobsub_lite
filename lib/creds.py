@@ -67,7 +67,6 @@ def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
     creds_to_return: Dict[str, Optional[str]] = {
         cred_type: None for cred_type in SUPPORTED_AUTH_METHODS
     }
-    # TODO Templates should also support token or proxy not existing
     if "token" in auth_methods:
         t = fake_ifdh.getToken(role, args.get("verbose", 0))
         t = t.strip()
@@ -98,7 +97,10 @@ class CheckIfValidAuthMethod(argparse.Action):
         values: Any,
         option_string: Union[None, str] = None,
     ) -> None:
-        check_values = [value.strip() for value in values.split()]
+        check_values = [value.strip() for value in values.split(",")]
+        check_values = list(
+            filter(lambda val: val != "", check_values)
+        )  # Clear out empty string
         if len(check_values) == 0:
             setattr(namespace, self.dest, ",".join(SUPPORTED_AUTH_METHODS))
             return
