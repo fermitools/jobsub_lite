@@ -99,6 +99,9 @@ class CheckIfValidAuthMethod(argparse.Action):
         option_string: Union[None, str] = None,
     ) -> None:
         check_values = [value.strip() for value in values.split()]
+        if len(check_values) == 0:
+            setattr(namespace, self.dest, ",".join(SUPPORTED_AUTH_METHODS))
+            return
         for value in check_values:
             if value not in SUPPORTED_AUTH_METHODS:
                 raise TypeError(
