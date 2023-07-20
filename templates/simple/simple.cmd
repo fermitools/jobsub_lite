@@ -13,7 +13,7 @@ log                = {{filebase}}.log
 JOBSUBJOBSECTION=$(Process)
 {%endif%}
 
-environment        = CM1=$(CM1);CM2=$(CM2);CLUSTER=$(Cluster);PROCESS=$(Process);JOBSUBJOBSECTION=$(JOBSUBJOBSECTION);CONDOR_TMP={{outdir}};BEARER_TOKEN_FILE=.condor_creds/{% if role is defined and role and role != 'Analysis' %}{{group}}_{{role | lower}}_{{oauth_handle}}.use{%else%}{{group}}_{{oauth_handle}}.use{%endif%};CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
+environment        = CM1=$(CM1);CM2=$(CM2);CLUSTER=$(Cluster);PROCESS=$(Process);JOBSUBJOBSECTION=$(JOBSUBJOBSECTION);CONDOR_TMP={{outdir}};{% if token is defined and token %}BEARER_TOKEN_FILE=.condor_creds/{% if role is defined and role and role != 'Analysis' %}{{group}}_{{role | lower}}_{{oauth_handle}}.use{%else%}{{group}}_{{oauth_handle}}.use{%endif%}{% endif %};CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
 rank               = Mips / 2 + Memory
 job_lease_duration = 3600
 transfer_output    = True
@@ -86,6 +86,7 @@ requirements  = {%if overwrite_requirements is defined and overwrite_requirement
 #
 
 # Credentials
+{% if token is defined and token %}
 {% if role is defined and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role | lower}}
 {% if job_scope is defined and job_scope %}
@@ -97,13 +98,14 @@ use_oauth_services = {{group}}
 {{group}}_oauth_permissions_{{oauth_handle}} = " {{job_scope}} "
 {% endif %}
 {% endif %}
-{% if role is defined %}
+{% endif %}
+{% if role is defined and proxy is defined and proxy %}
 {% if is_dag|default(False) %}
 +x509userproxy = "{{proxy|basename}}"
 {% else %}
 +x509userproxy = "{{proxy}}"
 {% endif %}
-delegate_job_GSI_credentials_lifetime = 0
+delegate_job_GSI_credentials_lifetime = 0   # Do not delegate proxy and curtail its lifetime - use whatever proxy was submitted with the job
 {% endif %}
 
 queue {{N}}

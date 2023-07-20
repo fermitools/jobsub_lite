@@ -24,7 +24,9 @@ environment	=  _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address
 +JobsubServerVersion="{{jobsub_version}}"
 +JobsubClientVersion="{{jobsub_version}}"
 +JobsubClientKerberosPrincipal="{{kerberos_principal}}"
+{% if proxy is defined and proxy %}
 x509userproxy = {{proxy}}
+{% endif %}
 delegate_job_GSI_credentials_lifetime = 0
 {%if skip_check is defined and skip_check%}
 +JobsubSkipChecks = "{{skip_check|join(",")}}"
@@ -47,12 +49,14 @@ notification = Always
 +JobsubOutputURL="{{outurl}}"
 +JobsubUUID="{{uuid}}"
 
+{% if token is defined and token %}
 {% if role is defined and role and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role | lower}}
 {{group}}_{{role | lower}}_oauth_permissions_{{oauth_handle}} = " {{job_scope}} "
 {% else %}
 use_oauth_services = {{group}}
 {{group}}_oauth_permissions_{{oauth_handle}} = " {{job_scope}} "
+{% endif %}
 {% endif %}
 
 queue
