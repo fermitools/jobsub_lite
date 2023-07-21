@@ -65,12 +65,8 @@ class TestCredUnit:
         """Get only a proxy"""
         args = {"auth_methods": "proxy"}
         os.environ["GROUP"] = TestUnit.test_group
-        cred_set = creds.get_creds(args)
-        # Make sure we have a proxy and the env is set
-        assert os.path.exists(os.environ["X509_USER_PROXY"])
-        assert os.path.exists(cred_set.proxy)
-        # Make sure the BEARER_TOKEN_FILE is not set
-        assert os.environ.get("BEARER_TOKEN_FILE", None) is None
+        with pytest.raises(TypeError, match="Missing required authorization method"):
+            creds.get_creds(args)
 
     @pytest.mark.unit
     def test_get_creds_invalid_auth(
@@ -80,12 +76,8 @@ class TestCredUnit:
         raise an Exception, but just in case we get past it"""
         args = {"auth_methods": "fakeauth"}
         os.environ["GROUP"] = TestUnit.test_group
-        cred_set = creds.get_creds(args)
-        assert cred_set.token is None
-        assert cred_set.proxy is None
-        # Make sure BEARER_TOKEN_FILE, X509_USER_PROXY are not set
-        assert os.environ.get("BEARER_TOKEN_FILE", None) is None
-        assert os.environ.get("X509_USER_PROXY", None) is None
+        with pytest.raises(TypeError, match="Missing required authorization method"):
+            creds.get_creds(args)
 
     @pytest.mark.unit
     def test_print_cred_paths_from_credset(self, capsys):

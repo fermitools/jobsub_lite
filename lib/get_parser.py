@@ -133,7 +133,7 @@ class CheckIfValidAuthMethod(argparse.Action):
             return
 
         # Check that the requested auth methods include the required auth methods
-        required_auth_methods = set(REQUIRED_AUTH_METHODS.split(","))
+        required_auth_methods = set(REQUIRED_AUTH_METHODS)
         if len(required_auth_methods.intersection(set(check_values))) == 0:
             raise TypeError(
                 "The jobsub_lite infrastructure requires that the following "
@@ -175,7 +175,7 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
             "Authorization method to use for job management. "
             "Multiple values should be given in a comma-separated list, "
             'e.g. "token,proxy".'
-            f"Currently supported methods are {SUPPORTED_AUTH_METHODS}."
+            f"Currently supported methods are {SUPPORTED_AUTH_METHODS}. "
             f"The current infrastructure requires the following auth methods: {REQUIRED_AUTH_METHODS}"
         ),
         action=CheckIfValidAuthMethod,

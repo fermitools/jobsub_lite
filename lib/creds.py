@@ -20,8 +20,11 @@ from typing import Any, Dict, Optional, List
 import fake_ifdh
 
 
-DEFAULT_AUTH_METHODS = "token,proxy"
-REQUIRED_AUTH_METHODS = os.environ.get("JOBSUB_REQUIRED_AUTH_METHODS", "token")
+DEFAULT_AUTH_METHODS = ["token", "proxy"]
+REQUIRED_AUTH_METHODS = [
+    value.strip()
+    for value in os.environ.get("JOBSUB_REQUIRED_AUTH_METHODS", "token").split(",")
+]
 
 
 class CredentialSet:
@@ -49,10 +52,7 @@ class CredentialSet:
 
 
 SUPPORTED_AUTH_METHODS = list(
-    set(
-        [cred_type for cred_type in vars(CredentialSet())]
-        + [value.strip() for value in REQUIRED_AUTH_METHODS.split(",")]
-    )
+    set([cred_type for cred_type in vars(CredentialSet())] + REQUIRED_AUTH_METHODS)
 )  # Dynamically populate our SUPPORTED_AUTH_METHODS, and make sure it includes REQUIRED_AUTH_METHODS
 
 # pylint: disable-next=dangerous-default-value
@@ -64,6 +64,13 @@ def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
     auth_methods: List[str] = SUPPORTED_AUTH_METHODS
     if args.get("auth_methods", None):
         auth_methods = str(args.get("auth_methods")).split(",")
+
+    # One last check to make sure we have the required auth methods
+    if len(set(REQUIRED_AUTH_METHODS).intersection(set(auth_methods))) == 0:
+        raise TypeError(
+            f"Missing required authorization method(s) {list(set(REQUIRED_AUTH_METHODS).difference(set(auth_methods)))} "
+            f"in requested authorization methods {auth_methods}"
+        )
 
     creds_to_return: Dict[str, Optional[str]] = {
         cred_type: None for cred_type in SUPPORTED_AUTH_METHODS

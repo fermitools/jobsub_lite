@@ -588,6 +588,8 @@ class TestGetParserUnit:
     def test_CheckIfValidAuthMethod_good(
         self, auth_methods_args_test_case, check_valid_auth_method_arg_parser
     ):
+        """For valid auth method combinations, make sure we get the right
+        auth methods stored by the parser"""
         args = check_valid_auth_method_arg_parser.parse_args(
             ["--auth-methods", auth_methods_args_test_case.cmdline_args]
         )
@@ -604,6 +606,9 @@ class TestGetParserUnit:
     def test_CheckIfValidAuthMethod_bad(
         self, auth_methods_args_test_case, check_valid_auth_method_arg_parser
     ):
+        """For invalid auth method argument values, make sure we get a TypeError
+        raised that either includes the invalid method, or tells us what the required
+        auth methods are"""
         from creds import REQUIRED_AUTH_METHODS
 
         with pytest.raises(
