@@ -72,6 +72,9 @@ def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
             f"in requested authorization methods {auth_methods}"
         )
 
+    if args.get("verbose", 0) > 0:
+        print(f"Requested auth methods are: {auth_methods}")
+
     creds_to_return: Dict[str, Optional[str]] = {
         cred_type: None for cred_type in SUPPORTED_AUTH_METHODS
     }
