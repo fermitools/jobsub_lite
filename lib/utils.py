@@ -28,6 +28,7 @@ import shutil
 import time
 from typing import Union, Dict, Any, NamedTuple, Tuple, List, Optional
 
+from creds import CredentialSet
 import version
 
 ONSITE_SITE_NAME = "FermiGrid"
@@ -101,8 +102,7 @@ def backslash_escape_layer(argv: List[str]) -> None:
 def set_extras_n_fix_units(
     args: Dict[str, Any],
     schedd_name: str,
-    proxy: Union[None, str],
-    token: Union[None, str],
+    cred_set: CredentialSet,
 ) -> None:
     """
     add items to our args dictionary that are not given on the
@@ -126,13 +126,13 @@ def set_extras_n_fix_units(
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
     ai = socket.getaddrinfo(socket.gethostname(), 80)
-    args["clientdn"] = get_client_dn(proxy)
+    args["clientdn"] = get_client_dn(cred_set.proxy)
     if ai:
         args["ipaddr"] = ai[-1][-1][0]
     else:
         args["ipaddr"] = "unknown"
-    args["proxy"] = proxy
-    args["token"] = token
+    args["proxy"] = cred_set.proxy
+    args["token"] = cred_set.token
     args["jobsub_version"] = f"{version.__title__}-v{version.__version__}"
     args["kerberos_principal"] = get_principal()
     args["uid"] = str(os.getuid())
