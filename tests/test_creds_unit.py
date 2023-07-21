@@ -38,6 +38,7 @@ class TestCredUnit:
         assert os.path.exists(os.environ["BEARER_TOKEN_FILE"])
         assert os.path.exists(cred_set.proxy)
         assert os.path.exists(cred_set.token)
+        del os.environ["X509_USER_PROXY"]
 
     @pytest.mark.unit
     def test_get_creds_default_role(self):
@@ -87,3 +88,4 @@ class TestCredUnit:
         assert out == (
             "token location: tokenlocation\n" "proxy location: proxylocation\n"
         )
+        del os.environ["X509_USER_PROXY"]

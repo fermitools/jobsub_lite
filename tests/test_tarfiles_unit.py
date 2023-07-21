@@ -251,6 +251,7 @@ class TestTarfilesUnit:
         f = FakePublisherHandler(cid=fake_cid, cred_set=fake_creds)
         assert f.fail_function() is None
         assert f.present_function() == str(fake_location)
+        del os.environ["BEARER_TOKEN_FILE"]
 
     @pytest.mark.unit
     def test_tarchmod_not_tarfile(self, tmp_path):
