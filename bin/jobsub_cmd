@@ -160,7 +160,7 @@ def main() -> None:
         execargs.append(i)
 
     # also make sure we have suitable credentials...
-    _ = creds.get_creds(arglist)
+    _ = creds.get_creds(vars(arglist))
 
     # and find the wrapped command name
     cmd = os.path.basename(sys.argv[0])
