@@ -22,7 +22,7 @@ import sys
 from typing import Union, Any, List
 
 import pool
-from creds import CheckIfValidAuthMethod, SUPPORTED_AUTH_METHODS
+from creds import SUPPORTED_AUTH_METHODS, REQUIRED_AUTH_METHODS
 from skip_checks import SupportedSkipChecks
 from utils import DEFAULT_USAGE_MODELS, DEFAULT_SINGULARITY_IMAGE
 from condor import get_schedd_names
@@ -38,6 +38,7 @@ def verify_executable_starts_with_file_colon(s: str) -> str:
     raise TypeError("executable must start with file://")
 
 
+# Custom actions for parsers
 class StoreGroupinEnvironment(argparse.Action):
     """Action to store the given group in the GROUP environment variable"""
 
@@ -113,6 +114,43 @@ class CheckIfValidSchedd(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
+class CheckIfValidAuthMethod(argparse.Action):
+    """Argparse Action to check if the caller has requested a valid auth method"""
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: Any,
+        option_string: Union[None, str] = None,
+    ) -> None:
+        check_values = [value.strip() for value in values.split(",")]
+        check_values = list(
+            filter(lambda val: val != "", check_values)
+        )  # Clear out empty string
+        if len(check_values) == 0:
+            setattr(namespace, self.dest, ",".join(SUPPORTED_AUTH_METHODS))
+            return
+
+        # Check that the requested auth methods include the required auth methods
+        required_auth_methods = set(REQUIRED_AUTH_METHODS.split(","))
+        if len(required_auth_methods.intersection(set(check_values))) == 0:
+            raise TypeError(
+                "The jobsub_lite infrastructure requires that the following "
+                f"authorization methods be present: {REQUIRED_AUTH_METHODS}"
+            )
+
+        for value in check_values:
+            if value not in SUPPORTED_AUTH_METHODS:
+                raise TypeError(
+                    f"Invalid auth method {value}.  Supported auth methods are {SUPPORTED_AUTH_METHODS}"
+                )
+        setattr(namespace, self.dest, ",".join(check_values))
+
+
+# Parsers
+
+
 def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     """build the general jobsub command argument parser and return it"""
 
@@ -137,7 +175,8 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
             "Authorization method to use for job management. "
             "Multiple values should be given in a comma-separated list, "
             'e.g. "token,proxy".'
-            f"Currently supported methods are {SUPPORTED_AUTH_METHODS}"
+            f"Currently supported methods are {SUPPORTED_AUTH_METHODS}."
+            f"The current infrastructure requires the following auth methods: {REQUIRED_AUTH_METHODS}"
         ),
         action=CheckIfValidAuthMethod,
         required=False,

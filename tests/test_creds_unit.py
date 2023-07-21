@@ -1,5 +1,3 @@
-from collections import namedtuple
-import json
 import os
 import sys
 import pytest
@@ -21,54 +19,6 @@ else:
     sys.path.append("../lib")
 import creds
 from test_unit import TestUnit
-
-DATADIR = f"{os.path.abspath(os.path.dirname(__file__))}/data"
-
-
-@pytest.fixture
-def check_valid_auth_method_arg_parser():
-    """This fixture sets up a lightweight ArgumentParser to test the --auth-methods flag"""
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--auth-methods",
-        action=creds.CheckIfValidAuthMethod,
-        default=os.environ.get(
-            "JOBSUB_AUTH_METHODS", ",".join(creds.SUPPORTED_AUTH_METHODS)
-        ),
-    )
-    return parser
-
-
-def get_auth_methods_test_data_good():
-    """Pull in test data from data file and return a list of
-    test cases"""
-    AuthMethodsArgsTestCase = namedtuple(
-        "AuthMethodsArgsTestCase",
-        ["cmdline_args", "auth_methods_result"],
-    )
-
-    DATA_FILENAME = "auth_methods_args_good.json"
-    with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
-        tests_json = json.load(datafile)
-
-    return [AuthMethodsArgsTestCase(**test_json) for test_json in tests_json]
-
-
-def get_auth_methods_test_data_bad():
-    """Pull in test data from data file and return a list of
-    test cases"""
-    AuthMethodsArgsTestCase = namedtuple(
-        "AuthMethodsArgsTestCase",
-        ["cmdline_args", "bad_auth_method"],
-    )
-
-    DATA_FILENAME = "auth_methods_args_bad.json"
-    with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
-        tests_json = json.load(datafile)
-
-    return [AuthMethodsArgsTestCase(**test_json) for test_json in tests_json]
 
 
 class TestCredUnit:
@@ -145,31 +95,3 @@ class TestCredUnit:
         assert out == (
             "token location: tokenlocation\n" "proxy location: proxylocation\n"
         )
-
-    @pytest.mark.unit
-    @pytest.mark.parametrize(
-        "auth_methods_args_test_case",
-        get_auth_methods_test_data_good(),
-    )
-    def test_CheckIfValidAuthMethod_good(
-        self, auth_methods_args_test_case, check_valid_auth_method_arg_parser
-    ):
-        args = check_valid_auth_method_arg_parser.parse_args(
-            ["--auth-methods", auth_methods_args_test_case.cmdline_args]
-        )
-        assert args.auth_methods == auth_methods_args_test_case.auth_methods_result
-
-    @pytest.mark.unit
-    @pytest.mark.parametrize(
-        "auth_methods_args_test_case",
-        get_auth_methods_test_data_bad(),
-    )
-    def test_CheckIfValidAuthMethod_bad(
-        self, auth_methods_args_test_case, check_valid_auth_method_arg_parser
-    ):
-        with pytest.raises(
-            TypeError, match=auth_methods_args_test_case.bad_auth_method
-        ):
-            args = check_valid_auth_method_arg_parser.parse_args(
-                ["--auth-methods", auth_methods_args_test_case.cmdline_args]
-            )

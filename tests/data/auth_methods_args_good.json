@@ -4,10 +4,6 @@
         "auth_methods_result": "token,proxy"
     },
     {
-        "cmdline_args": "proxy",
-        "auth_methods_result": "proxy"
-    },
-    {
         "cmdline_args": "token",
         "auth_methods_result": "token"
     },

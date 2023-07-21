@@ -14,16 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ credential related routines """
-import argparse
 import os
-from enum import Enum
-from typing import Any, Dict, Union, Optional, List, NamedTuple
-from collections import namedtuple
+from typing import Any, Dict, Optional, List
 
 import fake_ifdh
 
 
 DEFAULT_AUTH_METHODS = "token,proxy"
+REQUIRED_AUTH_METHODS = os.environ.get("JOBSUB_REQUIRED_AUTH_METHODS", "token")
 
 
 class CredentialSet:
@@ -50,9 +48,12 @@ class CredentialSet:
                 os.environ[environ_key] = cred_path
 
 
-SUPPORTED_AUTH_METHODS = [
-    cred_type for cred_type in vars(CredentialSet())
-]  # Dynamically populate our SUPPORTED_AUTH_METHODS
+SUPPORTED_AUTH_METHODS = list(
+    set(
+        [cred_type for cred_type in vars(CredentialSet())]
+        + [value.strip() for value in REQUIRED_AUTH_METHODS.split(",")]
+    )
+)  # Dynamically populate our SUPPORTED_AUTH_METHODS, and make sure it includes REQUIRED_AUTH_METHODS
 
 # pylint: disable-next=dangerous-default-value
 def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
@@ -85,28 +86,3 @@ def print_cred_paths_from_credset(cred_set: CredentialSet) -> None:
     """Print out the locations of the various credentials in the credential set"""
     for cred_type, cred_path in vars(cred_set).items():
         print(f"{cred_type} location: {cred_path}")
-
-
-class CheckIfValidAuthMethod(argparse.Action):
-    """Argparse Action to check if the caller has requested a valid auth method"""
-
-    def __call__(
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: Any,
-        option_string: Union[None, str] = None,
-    ) -> None:
-        check_values = [value.strip() for value in values.split(",")]
-        check_values = list(
-            filter(lambda val: val != "", check_values)
-        )  # Clear out empty string
-        if len(check_values) == 0:
-            setattr(namespace, self.dest, ",".join(SUPPORTED_AUTH_METHODS))
-            return
-        for value in check_values:
-            if value not in SUPPORTED_AUTH_METHODS:
-                raise TypeError(
-                    f"Invalid auth method {value}.  Supported auth methods are {SUPPORTED_AUTH_METHODS}"
-                )
-        setattr(namespace, self.dest, ",".join(check_values))

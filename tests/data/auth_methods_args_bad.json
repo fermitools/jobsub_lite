@@ -1,5 +1,9 @@
 [
     {
+        "cmdline_args": "proxy",
+        "bad_auth_method": "proxy"
+    },
+    {
         "cmdline_args": "token,BADSTUFF",
         "bad_auth_method": "BADSTUFF"
     },

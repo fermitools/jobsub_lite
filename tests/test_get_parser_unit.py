@@ -1,3 +1,5 @@
+from collections import namedtuple
+import json
 import os
 import sys
 import pytest
@@ -24,6 +26,8 @@ import pool
 
 from test_unit import TestUnit
 from test_submit_wait_int import get_collector
+
+DATADIR = f"{os.path.abspath(os.path.dirname(__file__))}/data"
 
 
 def set_pool_map():
@@ -250,6 +254,51 @@ def clear_group_from_environment():
 
 
 @pytest.fixture
+def get_single_valid_check_to_skip():
+    """This fixture gets a valid check from the skip_checks module to set up for tests"""
+    from skip_checks import SupportedSkipChecks
+
+    valid_check: str = ""
+    valid_checks = SupportedSkipChecks.get_all_checks()
+    if len(valid_checks) > 0:
+        valid_check = valid_checks[0]
+    return valid_check
+
+
+def get_auth_methods_test_data_good():
+    """Pull in test data from data file and return a list of
+    test cases"""
+    AuthMethodsArgsTestCase = namedtuple(
+        "AuthMethodsArgsTestCase",
+        ["cmdline_args", "auth_methods_result"],
+    )
+
+    DATA_FILENAME = "auth_methods_args_good.json"
+    with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
+        tests_json = json.load(datafile)
+
+    return [AuthMethodsArgsTestCase(**test_json) for test_json in tests_json]
+
+
+def get_auth_methods_test_data_bad():
+    """Pull in test data from data file and return a list of
+    test cases"""
+    AuthMethodsArgsTestCase = namedtuple(
+        "AuthMethodsArgsTestCase",
+        ["cmdline_args", "bad_auth_method"],
+    )
+
+    DATA_FILENAME = "auth_methods_args_bad.json"
+    with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
+        tests_json = json.load(datafile)
+
+    return [AuthMethodsArgsTestCase(**test_json) for test_json in tests_json]
+
+
+# Custom Parser fixtures
+
+
+@pytest.fixture
 def skip_check_arg_parser():
     """This fixture sets up a lightweight ArgumentParser to test the --skip-check flag"""
     import argparse
@@ -262,18 +311,6 @@ def skip_check_arg_parser():
 
 
 @pytest.fixture
-def get_single_valid_check_to_skip():
-    """This fixture gets a valid check from the skip_checks module to set up for tests"""
-    from skip_checks import SupportedSkipChecks
-
-    valid_check: str = ""
-    valid_checks = SupportedSkipChecks.get_all_checks()
-    if len(valid_checks) > 0:
-        valid_check = valid_checks[0]
-    return valid_check
-
-
-@pytest.fixture
 def schedd_for_testing_arg_parser():
     """This fixture sets up a lightweight ArgumentParser to test the --schedd-for-testing flag"""
     import argparse
@@ -281,6 +318,24 @@ def schedd_for_testing_arg_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--schedd-for-testing", type=str, action=get_parser.CheckIfValidSchedd
+    )
+    return parser
+
+
+@pytest.fixture
+def check_valid_auth_method_arg_parser():
+    """This fixture sets up a lightweight ArgumentParser to test the --auth-methods flag"""
+    import argparse
+
+    import creds
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--auth-methods",
+        action=get_parser.CheckIfValidAuthMethod,
+        default=os.environ.get(
+            "JOBSUB_AUTH_METHODS", ",".join(creds.SUPPORTED_AUTH_METHODS)
+        ),
     )
     return parser
 
@@ -523,4 +578,38 @@ class TestGetParserUnit:
         with pytest.raises(TypeError, match="Invalid schedd specified"):
             schedd_for_testing_arg_parser.parse_args(
                 ["--schedd-for-testing", "this_is_an_invalid_schedd.domain"]
+            )
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "auth_methods_args_test_case",
+        get_auth_methods_test_data_good(),
+    )
+    def test_CheckIfValidAuthMethod_good(
+        self, auth_methods_args_test_case, check_valid_auth_method_arg_parser
+    ):
+        args = check_valid_auth_method_arg_parser.parse_args(
+            ["--auth-methods", auth_methods_args_test_case.cmdline_args]
+        )
+        assert (
+            args.auth_methods.split(",").sort()
+            == auth_methods_args_test_case.auth_methods_result.split(",").sort()
+        )
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "auth_methods_args_test_case",
+        get_auth_methods_test_data_bad(),
+    )
+    def test_CheckIfValidAuthMethod_bad(
+        self, auth_methods_args_test_case, check_valid_auth_method_arg_parser
+    ):
+        from creds import REQUIRED_AUTH_METHODS
+
+        with pytest.raises(
+            TypeError,
+            match=rf"({auth_methods_args_test_case.bad_auth_method}|{REQUIRED_AUTH_METHODS})",
+        ):
+            check_valid_auth_method_arg_parser.parse_args(
+                ["--auth-methods", auth_methods_args_test_case.cmdline_args]
             )
