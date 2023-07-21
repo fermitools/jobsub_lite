@@ -19,7 +19,7 @@ copy_to_spool	= False
 arguments       = "-p 0 -f -l . -Lockfile maxconcurrent.dag.lock -AutoRescue 1 -DoRescueFrom 0 -Dag maxconcurrent.dag -maxjobs {{maxConcurrent}} -Suppress_notification -CsdVersion $CondorVersion:' '9.0.13' 'May' '26' '2022' 'PackageID:' '9.0.13-1.1' '$ -Dagman /usr/bin/condor_dagman"
 environment	= _CONDOR_SCHEDD_ADDRESS_FILE=/var/lib/condor/spool/.schedd_address;_CONDOR_MAX_DAGMAN_LOG=0;_CONDOR_SCHEDD_DAEMON_AD_FILE=/var/lib/condor/spool/.schedd_classad;_CONDOR_DAGMAN_LOG=maxconcurrent.dagman.out;_condor_SEC_CLIENT_AUTHENTICATION_METHODS=FS;_condor_SEC_CREDENTIAL_STORER=/bin/true
 
-+JobsubClientDN="{{clientdn}}"
+{% if clientdn is defined and clientdn %}+JobsubClientDN="{{clientdn}}"{% endif %}
 +JobsubClientIpAddress="{{ipaddr}}"
 +JobsubServerVersion="{{jobsub_version}}"
 +JobsubClientVersion="{{jobsub_version}}"

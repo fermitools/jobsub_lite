@@ -177,9 +177,7 @@ class TestUtilsUnit:
         and one unit conversion..."""
         cred_set = needs_credentials
         args = TestUnit.test_vargs.copy()
-        utils.set_extras_n_fix_units(
-            args, TestUnit.test_schedd, cred_set.proxy, cred_set.token
-        )
+        utils.set_extras_n_fix_units(args, TestUnit.test_schedd, cred_set)
         assert args["user"] == os.environ["USER"]
         assert args["memory"] == 64 * 1024
 

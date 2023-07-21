@@ -207,9 +207,7 @@ def parse_dagnabbit(
                         else:
                             thesevalues[k] = update_with[k]
 
-                    set_extras_n_fix_units(
-                        thesevalues, schedd_name, cred_set.proxy, cred_set.token
-                    )
+                    set_extras_n_fix_units(thesevalues, schedd_name, cred_set)
                     thesevalues["script_name"] = f"{name}.sh"
                     thesevalues["cmd_name"] = f"{name}.cmd"
                     with open(
@@ -267,9 +265,7 @@ def parse_dagnabbit(
                 of.write(f"SCRIPT PRE {name} {prescript_base} {prescript_args}\n")
                 thesevalues["prescript"] = prescript
                 thesevalues.update(update_with)
-                set_extras_n_fix_units(
-                    thesevalues, schedd_name, cred_set.proxy, cred_set.token
-                )
+                set_extras_n_fix_units(thesevalues, schedd_name, cred_set)
 
             elif line.startswith("postscript "):
                 if debug_comments:
@@ -296,9 +292,7 @@ def parse_dagnabbit(
                 of.write(f"SCRIPT POST {name} {postscript_base} {postscript_args}\n")
                 thesevalues["postscript"] = postscript
                 thesevalues.update(update_with)
-                set_extras_n_fix_units(
-                    thesevalues, schedd_name, cred_set.proxy, cred_set.token
-                )
+                set_extras_n_fix_units(thesevalues, schedd_name, cred_set)
 
             elif not line.strip() or line.strip().startswith("#"):
                 # blank lines and comments are fine

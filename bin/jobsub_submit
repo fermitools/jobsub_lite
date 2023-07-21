@@ -194,7 +194,7 @@ def main():
         m.update(varg["job_scope"].encode())
         varg["oauth_handle"] = m.hexdigest()[:10]
 
-    set_extras_n_fix_units(varg, schedd_name, cred_set.proxy, cred_set.token)
+    set_extras_n_fix_units(varg, schedd_name, cred_set)
 
     if args.dag:
         jobsub_submit_dag(varg, schedd_name)
