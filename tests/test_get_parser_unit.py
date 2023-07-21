@@ -618,3 +618,28 @@ class TestGetParserUnit:
             check_valid_auth_method_arg_parser.parse_args(
                 ["--auth-methods", auth_methods_args_test_case.cmdline_args]
             )
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "auth_method_env_setting",
+        ["token,proxy", "token", "icansneakthisinbydesign,token"],
+    )
+    def test_set_auth_methods_environ(
+        self, auth_method_env_setting, check_valid_auth_method_arg_parser
+    ):
+        """Check that we can set the auth methods via the environment variable
+        JOBSUB_AUTH_METHODS.  Test both a valid case and invalid.  The latter
+        would be caught by the underlying library code, by design"""
+        old_auth_methods_env_value = os.environ.pop("JOBSUB_AUTH_METHODS", None)
+
+        # Valid case
+        os.environ["JOBSUB_AUTH_METHODS"] = auth_method_env_setting
+        args = check_valid_auth_method_arg_parser.parse_args([])
+        try:
+            assert (
+                args.auth_methods.split(",").sort()
+                == auth_method_env_setting.split(",").sort()
+            )
+        finally:
+            if old_auth_methods_env_value:
+                os.environ["JOBSUB_AUTH_METHODS"] = old_auth_methods_env_value
