@@ -31,6 +31,9 @@ class CredentialSet:
     """Class to hold credential paths for supported auth methods.  The __init__ method
     here defines what credentials we support"""
 
+    # TODO Add __iter__ method so that we can explicitly return the credentials in an iterator
+    # rather than relying on the magic of vars()?
+
     # Environment Variables corresponding to each supported auth method
     TOKEN_ENV = "BEARER_TOKEN_FILE"
     PROXY_ENV = "X509_USER_PROXY"
