@@ -241,6 +241,12 @@ def main():
     if args.support_email:
         print_support_email()
 
+    # jobsub_fetchlog only supports tokens
+    if "token" not in args.auth_methods:
+        raise SystemExit(
+            "jobsub_fetchlog only supports token authentication.  Please either omit the --auth-methods flag or make sure tokens is included in the value of that flag"
+        )
+
     if not args.jobid and not args.job_id:
         raise SystemExit("jobid is required.")
 
@@ -260,11 +266,9 @@ def main():
             "%s needs -G group or $GROUP in the environment." % sys.argv[0]
         )
 
-    proxy, token = creds.get_creds(vars(args))
-
+    cred_set = creds.get_creds(vars(args))
     if args.verbose:
-        print("proxy is : %s" % proxy)
-        print("token is : %s" % token)
+        creds.print_cred_paths_from_credset(cred_set)
 
     fetcher = fetch_from_condor if args.condor else fetch_from_landscape
     fetcher(args.jobid, args.destdir, args.archive_format, args.partial)

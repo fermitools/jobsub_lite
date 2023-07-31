@@ -28,6 +28,7 @@ import shutil
 import time
 from typing import Union, Dict, Any, NamedTuple, Tuple, List, Optional
 
+from creds import CredentialSet
 import version
 
 ONSITE_SITE_NAME = "FermiGrid"
@@ -101,8 +102,7 @@ def backslash_escape_layer(argv: List[str]) -> None:
 def set_extras_n_fix_units(
     args: Dict[str, Any],
     schedd_name: str,
-    proxy: Union[None, str],
-    token: Union[None, str],
+    cred_set: CredentialSet,
 ) -> None:
     """
     add items to our args dictionary that are not given on the
@@ -126,13 +126,17 @@ def set_extras_n_fix_units(
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
     ai = socket.getaddrinfo(socket.gethostname(), 80)
-    args["clientdn"] = get_client_dn(proxy)
     if ai:
         args["ipaddr"] = ai[-1][-1][0]
     else:
         args["ipaddr"] = "unknown"
-    args["proxy"] = proxy
-    args["token"] = token
+
+    # Read in credentials
+    for cred_type, cred_path in vars(cred_set).items():
+        args[cred_type] = cred_path
+    if getattr(cred_set, "proxy", None) is not None:
+        args["clientdn"] = get_client_dn(cred_set.proxy)
+
     args["jobsub_version"] = f"{version.__title__}-v{version.__version__}"
     args["kerberos_principal"] = get_principal()
     args["uid"] = str(os.getuid())
@@ -425,9 +429,7 @@ def get_client_dn(proxy: Union[None, str] = None) -> Union[str, Any]:
             except Exception as e:
                 print(
                     "Warning:  There was an issue getting the client DN from"
-                    " the user proxy.  Please open a"
-                    " ticket to the Service Desk and paste the entire error"
-                    " message in the ticket."
+                    f" the user proxy using {executable}."
                 )
                 print(e)
                 continue
@@ -438,6 +440,12 @@ def get_client_dn(proxy: Union[None, str] = None) -> Union[str, Any]:
             if out_match is not None:
                 return out_match.group(1)
 
+    print(
+        "Warning:  There was an issue getting the client DN from the user "
+        "proxy.  Please open a ticket to the Service Desk if your requested proxy "
+        "as an auth method and paste the entire error "
+        "message in the ticket."
+    )
     return ""
 
 

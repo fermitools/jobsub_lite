@@ -37,6 +37,16 @@ def clear_x509_user_proxy():
 
 
 @pytest.fixture
+def clear_bearer_token_file():
+    """Clear environment variable BEARER_TOKEN_FILE to test credentials overrides"""
+    old_bearer_token_file_value = os.environ.pop("BEARER_TOKEN_FILE", None)
+    yield
+
+    if old_bearer_token_file_value is not None:
+        os.environ["BEARER_TOKEN_FILE"] = old_bearer_token_file_value
+
+
+@pytest.fixture
 def check_user_kerberos_creds():
     """Make sure we have kerberos credentials before starting the test"""
     proc = subprocess.run(

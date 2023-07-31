@@ -23,6 +23,7 @@ import utils
 
 from test_unit import TestUnit
 
+from creds import CredentialSet
 import submit_support
 
 
@@ -109,7 +110,7 @@ class TestJobsubSubmitUnit:
         """make sure do_dataset_defaults sets arguments its supposed to"""
         varg = TestUnit.test_vargs.copy()
         varg["dataset_definition"] = "mwmtest"
-        utils.set_extras_n_fix_units(varg, TestUnit.test_schedd, "", "")
+        utils.set_extras_n_fix_units(varg, TestUnit.test_schedd, CredentialSet())
         submit_support.do_dataset_defaults(varg)
         for var in ["PROJECT", "DATASET", "USER", "GROUP", "STATION"]:
             assert repr(varg["environment"]).find("SAM_%s" % var) > 0

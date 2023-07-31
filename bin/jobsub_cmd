@@ -35,7 +35,7 @@ if os.environ.get("LD_LIBRARY_PATH", ""):
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
 
-import fake_ifdh
+import creds
 import get_parser
 import condor
 from version import print_version, print_support_email
@@ -160,15 +160,19 @@ def main() -> None:
         execargs.append(i)
 
     # also make sure we have suitable credentials...
-    role = fake_ifdh.getRole(arglist.role)
-    os.environ["X509_USER_PROXY"] = fake_ifdh.getProxy(role)
-    os.environ["BEARER_TOKEN_FILE"] = fake_ifdh.getToken(role)
+    _ = creds.get_creds(vars(arglist))
 
     # and find the wrapped command name
     cmd = os.path.basename(sys.argv[0])
 
+    # TODO:  This patch is to fix a small bug when condor_q is used directly.
+    # We're trying to combine totals because of the clause at the end of this
+    # function that calculates totals.  So this is a patch until we can figure
+    # out how we want to handle it properly
+    cmd_jobsub_q = False
     # combine jobsub_q as well
     if cmd == "jobsub_q":
+        cmd_jobsub_q = True
 
         # add -global -schedd-constraint IsJobsubLite==True
         execargs.insert(0, "IsJobsubLite==True")
@@ -258,7 +262,7 @@ def main() -> None:
         else:
             os.execvp("/usr/bin/" + cmd, these_args)
 
-    if cmd == "condor_q" and default_formatting:
+    if cmd == "condor_q" and default_formatting and cmd_jobsub_q:
         os.close(1)
         totalsf.close()
 

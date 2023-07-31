@@ -1,11 +1,13 @@
 #!/bin/sh -x
 
+{% if token is defined and token %}
 {% if role and role != 'Analysis' %}
 #export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}.use
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}_{{oauth_handle}}.use
 {% else %}
 #export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}.use
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{oauth_handle}}.use
+{% endif %}
 {% endif %}
 
 redirect_output_start(){

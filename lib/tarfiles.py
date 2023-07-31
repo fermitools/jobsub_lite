@@ -32,7 +32,7 @@ import requests  # type: ignore
 from requests.auth import AuthBase  # type: ignore
 
 import fake_ifdh
-from creds import get_creds
+from creds import get_creds, CredentialSet
 
 try:
     _NUM_RETRIES_ENV = os.getenv("JOBSUB_UPLOAD_NUM_RETRIES", "20")
@@ -296,7 +296,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
     location: Optional[str] = ""
     if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
         digest = checksum_file(tfn)
-        proxy, token = get_creds(vars(args))
+        cred_set = get_creds(vars(args))
 
         if not args.group:
             raise ValueError("No --group specified!")
@@ -304,7 +304,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
         # cid looks something like dune/bf6a15b4238b72f82...(long hash)
         cid = f"{args.group}/{digest}"
 
-        publisher = TarfilePublisherHandler(cid, proxy, token, args.verbose)
+        publisher = TarfilePublisherHandler(cid, cred_set, args.verbose)
         location = publisher.cid_exists()
         if location is None:
             if args.verbose:
@@ -376,8 +376,8 @@ class TarfilePublisherHandler:
     Args:
         object (_type_): _description_
         cid (str): unique group/hash combination that RCDS uses to locate tarballs
-        proxy (str): Location of X509 Proxy file to authenticate to RCDS
-        token (str): Location of JWT/Sci-token to authenticate to RCDS
+        cred_set (CredentialSet): Paths to various supported credentials to authenticate to RCDS
+        verbose (int): Verbosity level
     """
 
     dropbox_server_string = os.getenv("JOBSUB_DROPBOX_SERVER_LIST", "")
@@ -388,20 +388,26 @@ class TarfilePublisherHandler:
     def __init__(
         self,
         cid: str,
-        proxy: Union[None, str] = None,
-        token: Union[None, str] = None,
+        cred_set: CredentialSet,
         verbose: int = 0,
     ):
         self.cid = cid
         self.cid_url = _quote(cid, safe="")  # Encode CID for passing to URL
-        self.proxy = proxy
-        self.token = token
         self.verbose = verbose
 
-        if token is not None:
-            print(f"Using bearer token located at {self.token} to authenticate to RCDS")
+        self.__auth_kwargs: Dict[str, Any]
+        if cred_set.token is not None:
+            print(
+                f"Using bearer token located at {cred_set.token} to authenticate to RCDS"
+            )
+            self.__auth_kwargs = {"auth": TokenAuth(cred_set.token)}
+        elif cred_set.proxy is not None:
+            print(
+                f"Using X509 proxy located at {cred_set.proxy} to authenticate to RCDS"
+            )
+            self.__auth_kwargs = {"cert": (cred_set.proxy, cred_set.proxy)}
         else:
-            print(f"Using X509 proxy located at {self.proxy} to authenticate to RCDS")
+            raise ValueError("No proxy or token provided to authenticate to RCDS.")
 
         self.pubapi_base_url_formatter_full = (
             f"https://{{dropbox_server}}/pubapi/{{endpoint}}"
@@ -487,9 +493,7 @@ class TarfilePublisherHandler:
         url = self.pubapi_cid_url_formatter.format(endpoint="update")
         if self.verbose:
             print(f"Calling URL {url}")
-        if self.token:
-            return requests.get(url, auth=TokenAuth(self.token))
-        return requests.get(url, cert=(self.proxy, self.proxy))
+        return requests.get(url, **self.__auth_kwargs)
 
     @cid_operation
     @pubapi_operation
@@ -508,9 +512,7 @@ class TarfilePublisherHandler:
             print(f"Calling URL {url}")
 
         with open(tarfilename, "rb") as tarfile:
-            if self.token:
-                return requests.post(url, auth=TokenAuth(self.token), data=tarfile)
-            return requests.post(url, cert=(self.proxy, self.proxy), data=tarfile)
+            return requests.post(url, data=tarfile, **self.__auth_kwargs)
 
     @cid_operation
     @pubapi_operation
@@ -524,9 +526,7 @@ class TarfilePublisherHandler:
         url = self.pubapi_cid_url_formatter.format(endpoint="exists")
         if self.verbose:
             print(f"Calling URL {url}")
-        if self.token:
-            return requests.get(url, auth=TokenAuth(self.token))
-        return requests.get(url, cert=(self.proxy, self.proxy))
+        return requests.get(url, **self.__auth_kwargs)
 
     def get_glob_path_for_cid(self) -> Optional[str]:
         """Return a glob path where a tarball given by self.cid can be found"""
@@ -539,9 +539,7 @@ class TarfilePublisherHandler:
     @pubapi_operation
     def _get_configured_pubapi_repos(self) -> requests.Response:
         url = self.pubapi_base_url_formatter.format(endpoint="config")
-        if self.token:
-            return requests.get(url, auth=TokenAuth(self.token))
-        return requests.get(url, cert=(self.proxy, self.proxy))
+        return requests.get(url, **self.__auth_kwargs)
 
     def __setup_dropbox_server_selector(self) -> Iterator[str]:
         """Return an infinite iterator of dropbox servers for client to upload tarball to"""

@@ -1,0 +1,22 @@
+[
+    {
+        "cmdline_args": "proxy",
+        "bad_auth_method": "proxy"
+    },
+    {
+        "cmdline_args": "token,BADSTUFF",
+        "bad_auth_method": "BADSTUFF"
+    },
+    {
+        "cmdline_args": "proxy,BADSTUFF",
+        "bad_auth_method": "BADSTUFF"
+    },
+    {
+        "cmdline_args": "token,proxy,BADSTUFF",
+        "bad_auth_method": "BADSTUFF"
+    },
+    {
+        "cmdline_args": "BADSTUFF",
+        "bad_auth_method": "BADSTUFF"
+    }
+]

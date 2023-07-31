@@ -8,7 +8,7 @@ arguments          =
 output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
-environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP={{outdir}};BEARER_TOKEN_FILE=.condor_creds/{{group}}.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
+environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP={{outdir}};{% if token is defined and token %}BEARER_TOKEN_FILE=.condor_creds/{{group}}.use{% endif %};CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
 rank                  = Mips / 2 + Memory
 notification  = Error
 +RUN_ON_HEADNODE= True
@@ -21,7 +21,7 @@ transfer_output_files=.empty_file
 when_to_transfer_output = ON_EXIT_OR_EVICT
 request_memory = 100mb
 {%if     OS is defined and OS %}+DesiredOS="{{OS}}"{%endif%}
-+JobsubClientDN="{{clientdn}}"
+{% if clientdn is defined and clientdn %}+JobsubClientDN="{{clientdn}}"{% endif %}
 +JobsubClientIpAddress="{{ipaddr}}"
 +JobsubServerVersion="{{jobsub_version}}"
 +JobsubClientVersion="{{jobsub_version}}"
@@ -59,6 +59,7 @@ requirements = target.machine =!= MachineAttrMachine1 && target.machine =!= Mach
 {% endif %}
 
 # Credentials
+{% if token is defined and token %}
 {% if role is defined and role and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role | lower}}
 {{group}}_{{role | lower}}_oauth_permissions_{{oauth_handle}}  = " {{job_scope}} "
@@ -66,7 +67,8 @@ use_oauth_services = {{group}}_{{role | lower}}
 use_oauth_services = {{group}}
 {{group}}_oauth_permissions_{{oauth_handle}}  = " {{job_scope}} "
 {% endif %}
-{% if role is defined %}
+{% endif %}
+{% if role is defined and proxy is defined and proxy %}
 +x509userproxy = "{{proxy|basename}}"
 delegate_job_GSI_credentials_lifetime = 0
 {% endif %}
