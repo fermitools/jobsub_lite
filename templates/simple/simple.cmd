@@ -70,8 +70,7 @@ notification = {{mail}}
 +DESIRED_{{resource_provides_quoted|join("\n+DESIRED_")}}
 {% endif %}
 {{lines|join("\n")}}
-requirements  = {%if overwrite_requirements is defined and overwrite_requirements %}{{overwrite_requirements}}{%else%}target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2 && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))){%if site is defined and site != '' %} && ((isUndefined(target.GLIDEIN_Site) == FALSE) && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites))){%endif%}{%if blocklist is defined and blocklist != '' %} && ((isUndefined(target.GLIDEIN_Site) == FALSE) && (!stringListIMember(target.GLIDEIN_Site,my.Blacklist_Sites))){%endif%}{%endif%}{%if append_condor_requirements is defined and append_condor_requirements %} && {{append_condor_requirements}}{%endif%}
-
+requirements = {%if overwrite_requirements is defined and overwrite_requirements %}{{overwrite_requirements}}{%else%}target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2 && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))){%if site is defined and site != '' %} && ((isUndefined(target.GLIDEIN_Site) == FALSE) && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites))){%endif%}{%if blocklist is defined and blocklist != '' %} && ((isUndefined(target.GLIDEIN_Site) == FALSE) && (!stringListIMember(target.GLIDEIN_Site,my.Blacklist_Sites))){%endif%}{%endif%}{% if append_condor_requirements is defined and append_condor_requirements != [] %} && {{append_condor_requirements|join(" && ")}}{%endif%}
 
 {% if no_singularity is false %}
 +SingularityImage="{{singularity_image}}"

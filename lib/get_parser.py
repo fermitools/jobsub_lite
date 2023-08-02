@@ -271,8 +271,10 @@ def get_parser() -> argparse.ArgumentParser:
     parser = get_submit_parser()
     parser.add_argument(
         "-c",
-        "--append-condor-requirements",
         "--append_condor_requirements",
+        "--append-condor-requirements",
+        action="append",
+        default=[],
         help="append condor requirements",
     )
     parser.add_argument(
