@@ -18,6 +18,7 @@ import os
 from typing import Any, Dict, Optional, List
 
 import fake_ifdh
+from tracing import as_span
 
 
 DEFAULT_AUTH_METHODS = ["token", "proxy"]
@@ -59,6 +60,7 @@ SUPPORTED_AUTH_METHODS = list(
 )  # Dynamically populate our SUPPORTED_AUTH_METHODS, and make sure it includes REQUIRED_AUTH_METHODS
 
 # pylint: disable-next=dangerous-default-value
+@as_span("get_creds")
 def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
     """get credentials for job operations"""
     role = fake_ifdh.getRole(args.get("role", None))

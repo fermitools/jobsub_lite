@@ -33,6 +33,7 @@ from requests.auth import AuthBase  # type: ignore
 
 import fake_ifdh
 from creds import get_creds, CredentialSet
+from tracing import as_span, add_event
 
 try:
     _NUM_RETRIES_ENV = os.getenv("JOBSUB_UPLOAD_NUM_RETRIES", "20")
@@ -99,6 +100,7 @@ def tarchmod(tfn: str) -> str:
     return ofn
 
 
+@as_span("tar_up", arg_attrs=["*"])
 def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     """build directory.tar from path/to/directory"""
     if not directory:
@@ -124,6 +126,7 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
     return tarfile
 
 
+@as_span("checksum_file", arg_attrs=["*"], return_attr=False)
 def checksum_file(fname: str) -> str:
     """pull in a tarfile while computing its hash"""
     h = hashlib.sha256()
@@ -133,9 +136,11 @@ def checksum_file(fname: str) -> str:
         while tff:
             tff = f.read(4096)
             h.update(tff)
+    add_event("computed digest", {"digest": h.hexdigest()})
     return h.hexdigest()
 
 
+@as_span("dcache_persistent_path", arg_attrs=["*"])
 def dcache_persistent_path(exp: str, filename: str) -> str:
     """pick the reslient dcache path for a tarfile"""
     bf = os.path.basename(filename)
@@ -158,6 +163,7 @@ def dcache_persistent_path(exp: str, filename: str) -> str:
     return res
 
 
+@as_span("do_tarballs", arg_attrs=["*"])
 def do_tarballs(args: argparse.Namespace) -> None:
     """handle tarfile argument;  we could have:
        a directory with tardir: or tardir:// prefix to tar up and upload
@@ -496,6 +502,7 @@ class TarfilePublisherHandler:
         return requests.get(url, **self.__auth_kwargs)
 
     @cid_operation
+    @as_span("publish", arg_attrs=["*"])
     @pubapi_operation
     def publish(self, tarfilename: str) -> requests.Response:
         """Make PubAPI publish call to upload this tarfile
@@ -515,6 +522,7 @@ class TarfilePublisherHandler:
             return requests.post(url, data=tarfile, **self.__auth_kwargs)
 
     @cid_operation
+    @as_span("cid_exists")
     @pubapi_operation
     def cid_exists(self) -> requests.Response:
         """Make PubAPI update call to check if we already have this tarfile

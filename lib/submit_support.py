@@ -12,6 +12,7 @@ from get_parser import get_parser
 from condor import get_schedd, submit, submit_dag
 from dagnabbit import parse_dagnabbit
 from tarfiles import do_tarballs
+from tracing import as_span
 from utils import (
     set_extras_n_fix_units,
     cleanup,
@@ -40,6 +41,7 @@ def get_basefiles(dlist: List[str]) -> List[str]:
     return res
 
 
+@as_span(name="render_files", arg_attrs=["*"])
 def render_files(
     srcdir: str, values: Dict[str, Any], dest: str, dlist: Union[None, List[str]] = None
 ) -> None:
@@ -134,6 +136,7 @@ def do_dataset_defaults(varg: Dict[str, Any]) -> None:
         varg["environment"].append(f"SAM_GROUP={experiment}")
 
 
+@as_span("transfer_sandbox")
 def transfer_sandbox(src_dir: str, dest_url: str) -> None:
     """Transfer files from src_dir to sandbox with fake_ifdh (gfal-copy).
     Nothing failing here is considered fatal, since it doesn't affect the job

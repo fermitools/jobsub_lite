@@ -27,6 +27,7 @@ import uuid
 import shutil
 import time
 from typing import Union, Dict, Any, NamedTuple, Tuple, List, Optional
+from tracing import get_propagator_carrier
 
 from creds import CredentialSet
 import version
@@ -113,12 +114,24 @@ def set_extras_n_fix_units(
     """
     # pylint: disable=too-many-branches,too-many-statements
 
-    #
-    # outbase needs to be an area shared with schedd servers.
-    #
     if args["verbose"] > 1:
         sys.stderr.write(f"entering set_extras... args: {repr(args)}\n")
 
+    #
+    # get tracing propagator traceparent id so we can use it in templates, etc.
+    #
+    carrier = get_propagator_carrier()
+    if carrier and "traceparent" in carrier:
+        args["traceparent"] = carrier["traceparent"]
+    else:
+        args["traceparent"] = ""
+
+    if args["verbose"] > 0:
+        sys.stderr.write(f"Setting traceparent: {args['traceparent']}\n")
+
+    #
+    # outbase needs to be an area shared with schedd servers.
+    #
     args["outbase"] = (
         os.environ.get("XDG_CACHE_HOME", f"{os.environ.get('HOME')}/.cache")
         + "/jobsub_lite"

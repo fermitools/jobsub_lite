@@ -43,6 +43,7 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #
 sys.path.append(os.path.join(PREFIX, "lib"))
 from packages import pkg_find
+from tracing import as_span
 
 pkg_find("jinja")  # type: ignore
 import jinja2 as jinja
@@ -81,6 +82,7 @@ from submit_support import (
 verbose = 0
 
 
+@as_span("jobsub_submit", is_main=True)
 def main():
     """script mainline:
     - parse args

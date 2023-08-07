@@ -28,6 +28,8 @@ import subprocess
 import sys
 import time
 from typing import Union, Optional, List, Dict, Any
+from typing import Union, Optional, List
+from tracing import as_span, add_event
 
 import htcondor  # type: ignore
 
@@ -40,6 +42,7 @@ def getTmp() -> str:
     return os.environ.get("TMPDIR", "/tmp")
 
 
+@as_span("getExp")
 def getExp() -> Union[str, None]:
     """return current experiment name"""
     if os.environ.get("GROUP", None):
@@ -51,6 +54,7 @@ def getExp() -> Union[str, None]:
     return exp
 
 
+@as_span("getRole")
 def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     """get current role"""
 
@@ -85,6 +89,7 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     return DEFAULT_ROLE
 
 
+@as_span("checkToken", arg_attrs=["*"])
 def checkToken(tokenfile: str) -> bool:
     """check if token is (almost) expired"""
     if not os.path.exists(tokenfile):
@@ -94,6 +99,7 @@ def checkToken(tokenfile: str) -> bool:
     with os.popen(cmd, "r") as f:
         exp_time = f.read()
     try:
+        add_event(f"expiration: {exp_time}")
         return int(exp_time) - time.time() > 60
     except ValueError as e:
         print(
@@ -105,6 +111,7 @@ def checkToken(tokenfile: str) -> bool:
         raise
 
 
+@as_span("getToken")
 def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
     """get path to token file"""
     pid = os.getuid()
@@ -142,6 +149,7 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
     return tokenfile
 
 
+@as_span("getProxy")
 def getProxy(
     role: str = DEFAULT_ROLE, verbose: int = 0, force_proxy: bool = False
 ) -> str:
@@ -276,6 +284,7 @@ def ls(dest: str) -> List[str]:
     return files
 
 
+@as_span("cp", arg_attrs=["*"])
 def cp(src: str, dest: str) -> None:
     """copy a (remote) file with gfal-copy"""
     src = fix_pnfs(src)

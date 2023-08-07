@@ -50,6 +50,7 @@ from get_parser import get_jobid_parser
 from condor import Job
 from utils import cleanup
 from version import print_version, print_support_email
+from tracing import as_span, add_event
 
 
 verbose = 0
@@ -194,6 +195,17 @@ def fetch_from_landscape(
             os.unlink(of)
 
 
+@as_span("transfer_data")
+def traced_transfer_data(j: Job) -> None:
+    j.transfer_data()
+
+
+@as_span("archive")
+def traced_wait_archive(p: subprocess.Popen) -> int:
+    return p.wait()
+
+
+@as_span("jobsub_fetchlog", is_main=True)
 def main():
     """script mainline:
     - parse args

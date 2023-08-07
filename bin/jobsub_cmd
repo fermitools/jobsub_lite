@@ -39,6 +39,7 @@ import creds
 import get_parser
 import condor
 from version import print_version, print_support_email
+from tracing import as_span
 
 
 class StoreGroupinEnvironment(argparse.Action):
@@ -54,6 +55,7 @@ class StoreGroupinEnvironment(argparse.Action):
 verbose = 0
 
 
+@as_span(os.path.basename(sys.argv[0]), is_main=True)
 def main() -> None:
     """main line of code, proces args, etc."""
     global verbose

@@ -30,6 +30,7 @@ import classad  # type: ignore
 
 import packages
 import fake_ifdh
+from tracing import as_span
 
 random.seed()
 
@@ -101,8 +102,11 @@ def submit_vt(
                 print("vault tokens after post-submit renaming:")
                 os.system(f"ls -l {tmp}/vt_u{uid}*")
 
+        return None
+
 
 # pylint: disable-next=no-member
+@as_span("get_schedd_list")
 def get_schedd_list(
     vargs: Dict[str, Any], refresh_schedd_ads: bool = False
 ) -> List[classad.ClassAd]:
@@ -248,6 +252,7 @@ def load_submit_file(filename: str) -> Tuple[Any, Optional[int]]:
 
 
 # pylint: disable-next=dangerous-default-value
+@as_span("submit", arg_attrs=["*"])
 def submit(
     f: str, vargs: Dict[str, Any], schedd_name: str, cmd_args: List[str] = []
 ) -> Union[Any, bool]:
