@@ -118,7 +118,10 @@ def set_extras_n_fix_units(
     # get tracing propagator traceparent id so we can use it in templates, etc.
     #
     carrier = get_propagator_carrier()
-    args["traceparent"] = carrier["traceparent"]
+    if carrier and "traceparent" in carrier:
+        args["traceparent"] = carrier["traceparent"]
+    else:
+        args["traceparent"] = ""
 
     #
     # outbase needs to be an area shared with schedd servers.

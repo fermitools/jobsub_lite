@@ -44,6 +44,7 @@ class TestUnit:
         "dd_extra_dataset": [],
         "token": "faketokenpathtomaketestwork",
         "proxy": "fakeproxypathtomaketestwork",
+        "traceparent": "",
     }
     test_extra_template_args = {
         "role": test_role,
