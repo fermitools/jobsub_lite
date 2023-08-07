@@ -76,6 +76,8 @@ except:
     # if we can't import the stuff, here's a little mock so we don't crash
     print("Note: tracing not available here.")
     logging.exception("importing tracing")
+    print("")
+    print("Continuing without tracing...")
 
     class Context:  # type: ignore
         def __init__(self):  # type: ignore
