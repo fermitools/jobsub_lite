@@ -114,6 +114,9 @@ def set_extras_n_fix_units(
     """
     # pylint: disable=too-many-branches,too-many-statements
 
+    if args["verbose"] > 1:
+        sys.stderr.write(f"entering set_extras... args: {repr(args)}\n")
+
     #
     # get tracing propagator traceparent id so we can use it in templates, etc.
     #
@@ -123,12 +126,12 @@ def set_extras_n_fix_units(
     else:
         args["traceparent"] = ""
 
+    if args["verbose"] > 0:
+        sys.stderr.write(f"Setting traceparent: {args['traceparent']}\n")
+
     #
     # outbase needs to be an area shared with schedd servers.
     #
-    if args["verbose"] > 1:
-        sys.stderr.write(f"entering set_extras... args: {repr(args)}\n")
-
     args["outbase"] = (
         os.environ.get("XDG_CACHE_HOME", f"{os.environ.get('HOME')}/.cache")
         + "/jobsub_lite"
