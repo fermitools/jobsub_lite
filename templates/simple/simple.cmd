@@ -9,12 +9,12 @@ output             = {{filebase}}.out
 error              = {{filebase}}.err
 log                = {{filebase}}.log
 
-{%if not (( dag is defined and dag ) or (dataset_definition is defined and dataset_definition)) %}
+{%if not ( is_dag is defined and is_dag ) %}
 JOBSUBJOBSECTION=$(Process)
 {%endif%}
 TRACEPARENT="{{traceparent}}"
 
-environment        = CM1=$(CM1);CM2=$(CM2);CLUSTER=$(Cluster);PROCESS=$(Process);JOBSUBJOBSECTION=$(JOBSUBJOBSECTION);CONDOR_TMP={{outdir}};BEARER_TOKEN_FILE=.condor_creds/{% if role is defined and role and role != 'Analysis' %}{{group}}_{{role | lower}}_{{oauth_handle}}.use{%else%}{{group}}_{{oauth_handle}}.use{%endif%};CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};TRACEPARENT=$(TRACEPARENT);{{environment|join(';')}}
+environment        = CM1=$(CM1);CM2=$(CM2);CLUSTER=$(Cluster);PROCESS=$(Process);JOBSUBJOBSECTION=$(JOBSUBJOBSECTION);CONDOR_TMP={{outdir}};{% if token is defined and token %}BEARER_TOKEN_FILE=.condor_creds/{% if role is defined and role and role != 'Analysis' %}{{group}}_{{role | lower}}_{{oauth_handle}}.use{%else%}{{group}}_{{oauth_handle}}.use{%endif%}{% endif %};CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER={{user}};JOBSUBJOBID=$(CLUSTER).$(PROCESS)@{{schedd}};EXPERIMENT={{group}};{{environment|join(';')}}
 rank               = Mips / 2 + Memory
 job_lease_duration = 3600
 transfer_output    = True
@@ -28,7 +28,7 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 {%if memory is defined and memory %}request_memory = {{memory}}{%endif%}
 {%if   disk is defined and disk %}request_disk = {{disk}}KB{%endif%}
 {%if     OS is defined and OS %}+DesiredOS="{{OS}}"{%endif%}
-+JobsubClientDN="{{clientdn}}"
+{% if clientdn is defined and clientdn %}+JobsubClientDN="{{clientdn}}"{% endif %}
 +JobsubClientIpAddress="{{ipaddr}}"
 +JobsubServerVersion="{{jobsub_version}}"
 +JobsubClientVersion="{{jobsub_version}}"
@@ -57,8 +57,8 @@ notification = {{mail}}
 {% if site is defined and site != 'LOCAL' %}
 +DESIRED_SITES = "{{site}}"
 {% endif %}
-{%if blacklist is defined and blacklist  %}
-+Blacklist_Sites = "{{blacklist}}"
+{%if blocklist is defined and blocklist  %}
++Blacklist_Sites = "{{blocklist}}"
 {% endif %}
 +GeneratedBy ="{{jobsub_version}} {{schedd}}"
 {%if usage_model is defined and usage_model  %}
@@ -71,7 +71,7 @@ notification = {{mail}}
 +DESIRED_{{resource_provides_quoted|join("\n+DESIRED_")}}
 {% endif %}
 {{lines|join("\n")}}
-requirements  = {%if overwrite_requirements is defined and overwrite_requirements %}{{overwrite_requirements}}{%else%}target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2 && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))){%if site is defined and site != '' %} && ((isUndefined(target.GLIDEIN_Site) == FALSE) && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites))){%endif%}{%if blacklist is defined and blacklist != '' %} && ((isUndefined(target.GLIDEIN_Site) == FALSE) && (!stringListIMember(target.GLIDEIN_Site,my.Blacklist_Sites))){%endif%}{%endif%}{%if append_condor_requirements is defined and append_condor_requirements %} && {{append_condor_requirements}}{%endif%}
+requirements  = {%if overwrite_requirements is defined and overwrite_requirements %}{{overwrite_requirements}}{%else%}target.machine =!= MachineAttrMachine1 && target.machine =!= MachineAttrMachine2 && (isUndefined(DesiredOS) || stringListsIntersect(toUpper(DesiredOS),IFOS_installed)) && (stringListsIntersect(toUpper(target.HAS_usage_model), toUpper(my.DESIRED_usage_model))){%if site is defined and site != '' %} && ((isUndefined(target.GLIDEIN_Site) == FALSE) && (stringListIMember(target.GLIDEIN_Site,my.DESIRED_Sites))){%endif%}{%if blocklist is defined and blocklist != '' %} && ((isUndefined(target.GLIDEIN_Site) == FALSE) && (!stringListIMember(target.GLIDEIN_Site,my.Blacklist_Sites))){%endif%}{%endif%}{%if append_condor_requirements is defined and append_condor_requirements %} && {{append_condor_requirements}}{%endif%}
 
 
 {% if no_singularity is false %}
@@ -87,6 +87,7 @@ requirements  = {%if overwrite_requirements is defined and overwrite_requirement
 #
 
 # Credentials
+{% if token is defined and token %}
 {% if role is defined and role != 'Analysis' %}
 use_oauth_services = {{group}}_{{role | lower}}
 {% if job_scope is defined and job_scope %}
@@ -98,7 +99,8 @@ use_oauth_services = {{group}}
 {{group}}_oauth_permissions_{{oauth_handle}} = " {{job_scope}} "
 {% endif %}
 {% endif %}
-{% if role is defined %}
+{% endif %}
+{% if role is defined and proxy is defined and proxy %}
 {% if is_dag|default(False) %}
 +x509userproxy = "{{proxy|basename}}"
 {% else %}

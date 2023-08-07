@@ -23,17 +23,8 @@ import utils
 
 from test_unit import TestUnit
 
-try:
-    os.unlink("jobsub_submit.py")
-except:
-    pass
-if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
-    if not os.path.exists("jobsub_submit.py"):
-        os.symlink("/opt/jobsub_lite/bin/jobsub_submit", "jobsub_submit.py")
-else:
-    if not os.path.exists("jobsub_submit.py"):
-        os.symlink("../bin/jobsub_submit", "jobsub_submit.py")
-import jobsub_submit
+from creds import CredentialSet
+import submit_support
 
 
 class TestJobsubSubmitUnit:
@@ -48,7 +39,7 @@ class TestJobsubSubmitUnit:
         """test the get_basefiles routine on our source directory,
         we should be in it"""
         dlist = [os.path.dirname(__file__)]
-        fl = jobsub_submit.get_basefiles(dlist)
+        fl = submit_support.get_basefiles(dlist)
         assert os.path.basename(__file__) in fl
 
     @pytest.mark.unit
@@ -66,7 +57,7 @@ class TestJobsubSubmitUnit:
         args = {**TestUnit.test_vargs, **TestUnit.test_extra_template_args}
         args["outdir"] = dest
         args["proxy"] = "/fake/proxy/path"
-        jobsub_submit.render_files(srcdir, args, dest)
+        submit_support.render_files(srcdir, args, dest)
         assert os.path.exists("%s/dagbegin.cmd" % dest)
 
     @pytest.mark.unit
@@ -86,7 +77,7 @@ class TestJobsubSubmitUnit:
         args["proxy"] = "/fake/proxy/path"
         args["dd_percentage"] = 33
         args["dd_extra_dataset"] = ["dataset1", "dataset2"]
-        jobsub_submit.render_files(srcdir, args, dest)
+        submit_support.render_files(srcdir, args, dest)
         found_percent = False
         found_extra_dataset = False
         with open("%s/sambegin.sh" % dest, "r") as fin:
@@ -112,14 +103,14 @@ class TestJobsubSubmitUnit:
             os.mkdir(dest)
         args = {**TestUnit.test_vargs, **TestUnit.test_extra_template_args}
         with pytest.raises(exceptions.UndefinedError, match="is undefined"):
-            jobsub_submit.render_files(srcdir, args, dest)
+            submit_support.render_files(srcdir, args, dest)
 
     @pytest.mark.unit
     def test_do_dataset_defaults_1(self):
         """make sure do_dataset_defaults sets arguments its supposed to"""
         varg = TestUnit.test_vargs.copy()
         varg["dataset_definition"] = "mwmtest"
-        utils.set_extras_n_fix_units(varg, TestUnit.test_schedd, "", "")
-        jobsub_submit.do_dataset_defaults(varg)
+        utils.set_extras_n_fix_units(varg, TestUnit.test_schedd, CredentialSet())
+        submit_support.do_dataset_defaults(varg)
         for var in ["PROJECT", "DATASET", "USER", "GROUP", "STATION"]:
             assert repr(varg["environment"]).find("SAM_%s" % var) > 0

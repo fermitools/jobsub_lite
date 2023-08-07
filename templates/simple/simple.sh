@@ -11,8 +11,9 @@ umask 002
 #
 # clear out variables that sometimes bleed into containers
 # causing problems.  See for example INC000001136681...
+# {% if not_clean_env_vars %}NOT clearing {{not_clean_env_vars}} because of -e arguments {% endif %}
 #
-for env_var in CPATH LIBRARY_PATH
+for env_var in {{clean_env_vars}}
 do
    eval unset $env_var
 done
@@ -24,12 +25,14 @@ then
     unset BEARER_TOKEN_FILE
 else
 
+{% if token is defined and token %}
 {% if role is defined and role and role != 'Analysis' %}
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}_{{oauth_handle}}.use
 #export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{role | lower}}.use
 {% else %}
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{oauth_handle}}.use
 #export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}.use
+{% endif %}
 {% endif %}
 
 fi

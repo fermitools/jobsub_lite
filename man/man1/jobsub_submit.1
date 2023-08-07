@@ -5,7 +5,7 @@ jobsub_submit
 .SH USAGE
  jobsub_submit [-h] [-G GROUP] [--role ROLE] [--subgroup SUBGROUP]
                      [--verbose] [-c APPEND_CONDOR_REQUIREMENTS]
-                     [--blacklist BLACKLIST] [-r R] [-i I] [-t T]
+                     [--blocklist BLOCKLIST] [-r R] [-i I] [-t T]
                      [--cmtconfig CMTCONFIG] [--cpu CPU] [--dag DAG]
                      [--dataset-definition DATASET_DEFINITION]
                      [--dd-percentage DD_PERCENTAGE]
@@ -56,7 +56,7 @@ optional arguments:
 -c APPEND_CONDOR_REQUIREMENTS, --append-condor-requirements APPEND_CONDOR_REQUIREMENTS, --append_condor_requirements APPEND_CONDOR_REQUIREMENTS
 append condor requirements
 .HP
---blacklist BLACKLIST
+--blocklist BLOCKLIST
 enusure that jobs do not land at these sites
 .HP
 -r R                  Experiment release version

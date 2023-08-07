@@ -213,8 +213,13 @@ def lookaround_launch(extra, verify_files=""):
     )
 
 
-@pytest.mark.integration
+@pytest.mark.smoke
 def test_launch_lookaround_samdev(samdev):
+    lookaround_launch("")
+
+
+@pytest.mark.integration
+def test_launch_lookaround_samdev_dev(samdev):
     lookaround_launch("--devserver")
 
 
@@ -507,6 +512,7 @@ def xx_test_jobsub_q_repetitions(samdev):
     assert count == 5
 
 
+@pytest.mark.smoke
 @pytest.mark.integration
 def test_wait_for_jobs():
     """Not really a test, but we have to wait for jobs to complete..."""
@@ -553,6 +559,7 @@ def test_wait_for_jobs():
     assert True
 
 
+@pytest.mark.smoke
 @pytest.mark.integration
 def test_fetch_output():
     for jid in joblist:
@@ -565,6 +572,7 @@ def test_fetch_output():
         )
 
 
+@pytest.mark.smoke
 @pytest.mark.integration
 def test_check_job_output():
     res = True
@@ -622,48 +630,34 @@ def test_check_job_output():
 
 
 @pytest.mark.integration
-def test_valid_constraint_space(samdev):
+@pytest.mark.parametrize(
+    "constraint_flag_and_arg",
+    ["--constraint 'Owner==\"{user}\"'", "--constraint='Owner==\"{user}\"'"],
+)
+def test_valid_constraint(samdev, constraint_flag_and_arg):
     lookaround_launch("--devserver")
     if len(joblist) == 0:
         raise AssertionError("No jobs submitted")
     jid = joblist[-1]
     group = group_for_job(jid)
     user = os.environ["USER"]
-    cmd = f"jobsub_q -G {group} --constraint 'Owner==\"{user}\"'  --jobid={jid} -format '%s' ClusterId"
+    cmd = f"jobsub_q -G {group} {constraint_flag_and_arg} --jobid={jid} -format '%s' ClusterId"
+    cmd = cmd.format(user=user)
     with os.popen(cmd) as query:
         output = query.readlines()
         assert len(output) == 1 and output[0] in jid
 
 
 @pytest.mark.integration
-def test_valid_constraint_equal(samdev):
-    lookaround_launch("--devserver")
-    if len(joblist) == 0:
-        raise AssertionError("No jobs submitted")
-    jid = joblist[-1]
-    group = group_for_job(jid)
-    user = os.environ["USER"]
-    cmd = f"jobsub_q -G {group} --constraint='Owner==\"{user}\"'  --jobid={jid} -format '%s' ClusterId"
-    with os.popen(cmd) as query:
-        output = query.readlines()
-        assert len(output) == 1 and output[0] in jid
-
-
-@pytest.mark.integration
-def test_invalid_constraint_space(samdev):
-    cmd = f"jobsub_q -G fermilab --constraint 'thisisabadconstraintbutwillparse==true' -autoformat ClusterId"
-    query = os.popen(cmd)
-    output = query.readlines()
-    assert len(output) == 0
-    rc = query.close()
-    assert (
-        rc is None
-    )  # We got a 0 return code from the query even if it returned nothing
-
-
-@pytest.mark.integration
-def test_invalid_constraint_equal(samdev):
-    cmd = f"jobsub_q -G fermilab --constraint='thisisabadconstraintbutwillparse==true' -autoformat ClusterId"
+@pytest.mark.parametrize(
+    "constraint_flag_and_arg",
+    [
+        "--constraint 'thisisabadconstraintbutwillparse==true'",
+        "--constraint='thisisabadconstraintbutwillparse==true'",
+    ],
+)
+def test_invalid_constraint(samdev, constraint_flag_and_arg):
+    cmd = f"jobsub_q -G fermilab {constraint_flag_and_arg} -autoformat ClusterId"
     query = os.popen(cmd)
     output = query.readlines()
     assert len(output) == 0

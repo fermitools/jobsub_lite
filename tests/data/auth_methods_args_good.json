@@ -1,0 +1,14 @@
+[
+    {
+        "cmdline_args": "token,proxy",
+        "auth_methods_result": "token,proxy"
+    },
+    {
+        "cmdline_args": "token",
+        "auth_methods_result": "token"
+    },
+    {
+        "cmdline_args": "",
+        "auth_methods_result": "token,proxy"
+    }
+]

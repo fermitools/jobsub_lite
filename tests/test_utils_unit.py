@@ -111,18 +111,18 @@ def singularity_test_data():
     return [SingularityTestCase(**test_json) for test_json in tests_json]
 
 
-def site_blacklist_test_data(good=True):
-    """Pull in site/blacklist test data from data file and return a list of
+def site_blocklist_test_data(good=True):
+    """Pull in site/blocklist test data from data file and return a list of
     test cases"""
-    SiteAndBlacklistTestData = namedtuple(
-        "SiteAndBlacklistTestData", ["helptext", "site_arg", "blacklist_arg"]
+    SiteAndBlocklistTestData = namedtuple(
+        "SiteAndBlocklistTestData", ["helptext", "site_arg", "blocklist_arg"]
     )
     good_or_bad = "good" if good else "bad"
-    DATA_FILENAME = f"site_blacklist_{good_or_bad}.json"
+    DATA_FILENAME = f"site_blocklist_{good_or_bad}.json"
     with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
         tests_json = json.load(datafile)
 
-    return [SiteAndBlacklistTestData(**test_json) for test_json in tests_json]
+    return [SiteAndBlocklistTestData(**test_json) for test_json in tests_json]
 
 
 def create_id_for_test_case(value) -> str:
@@ -175,9 +175,9 @@ class TestUtilsUnit:
     def test_set_extras_1(self, needs_credentials):
         """call set_extras_n_fix_units, verify one thing from environment
         and one unit conversion..."""
-        proxy, token = needs_credentials
+        cred_set = needs_credentials
         args = TestUnit.test_vargs.copy()
-        utils.set_extras_n_fix_units(args, TestUnit.test_schedd, proxy, token)
+        utils.set_extras_n_fix_units(args, TestUnit.test_schedd, cred_set)
         assert args["user"] == os.environ["USER"]
         assert args["memory"] == 64 * 1024
 
@@ -186,21 +186,21 @@ class TestUtilsUnit:
         self, needs_credentials, clear_x509_user_proxy
     ):
         """Call get_client_dn with proxy specified"""
-        _proxy, _ = needs_credentials
+        cred_set = needs_credentials
         clear_x509_user_proxy
-        client_dn = utils.get_client_dn(proxy=_proxy)
+        client_dn = utils.get_client_dn(proxy=cred_set.proxy)
         assert os.environ["USER"] in client_dn
 
     @pytest.mark.unit
     def test_get_client_dn_env_plus_proxy_provided(self, needs_credentials):
         """Call get_client_dn with proxy specified, env set.  Should grab
         proxy from passed-in arg"""
-        _proxy, _ = needs_credentials
+        cred_set = needs_credentials
         old_x509_user_proxy_value = os.environ.pop("X509_USER_PROXY", None)
         os.environ[
             "X509_USER_PROXY"
         ] = "foobar"  # Break the environment so that this test won't accidentally pass
-        client_dn = utils.get_client_dn(proxy=_proxy)
+        client_dn = utils.get_client_dn(proxy=cred_set.proxy)
         assert os.environ["USER"] in client_dn
         os.environ["X509_USER_PROXY"] = old_x509_user_proxy_value
 
@@ -208,7 +208,6 @@ class TestUtilsUnit:
     def test_get_client_dn_no_proxy_provided(self, needs_credentials):
         """Call get_client_dn with no proxy specified.  Should grab proxy from
         env"""
-        _proxy, _ = needs_credentials  # Sets $X509_USER_PROXY
         client_dn = utils.get_client_dn()
         assert os.environ["USER"] in client_dn
 
@@ -218,7 +217,6 @@ class TestUtilsUnit:
     ):
         """Call get_client_dn with no proxy specified, environment not set.
         Should get proxy from standard grid location"""
-        _proxy, _ = needs_credentials
         clear_x509_user_proxy
         client_dn = utils.get_client_dn()
         assert os.environ["USER"] in client_dn
@@ -299,32 +297,32 @@ class TestUtilsUnit:
 
     @pytest.mark.unit
     @pytest.mark.parametrize(
-        "site_blacklist_test_case",
-        site_blacklist_test_data(good=True),
+        "site_blocklist_test_case",
+        site_blocklist_test_data(good=True),
         ids=create_id_for_test_case,
     )
-    def test_check_site_and_blacklist_good(self, site_blacklist_test_case):
+    def test_check_site_and_blocklist_good(self, site_blocklist_test_case):
         """Test to make sure that a given comma-separated site list string
-        and blacklist string are handled correctly"""
+        and blocklist string are handled correctly"""
         assert (
-            utils.check_site_and_blacklist(
-                site_blacklist_test_case.site_arg,
-                site_blacklist_test_case.blacklist_arg,
+            utils.check_site_and_blocklist(
+                site_blocklist_test_case.site_arg,
+                site_blocklist_test_case.blocklist_arg,
             )
             is None
         )
 
     @pytest.mark.unit
     @pytest.mark.parametrize(
-        "site_blacklist_test_case",
-        site_blacklist_test_data(good=False),
+        "site_blocklist_test_case",
+        site_blocklist_test_data(good=False),
         ids=create_id_for_test_case,
     )
-    def test_check_site_and_blacklist_bad(self, site_blacklist_test_case):
+    def test_check_site_and_blocklist_bad(self, site_blocklist_test_case):
         """Test to make sure that a given comma-separated site list string
-        and blacklist string are handled correctly"""
-        with pytest.raises(utils.SiteAndBlacklistConflictError):
-            utils.check_site_and_blacklist(
-                site_blacklist_test_case.site_arg,
-                site_blacklist_test_case.blacklist_arg,
+        and blocklist string are handled correctly"""
+        with pytest.raises(utils.SiteAndBlocklistConflictError):
+            utils.check_site_and_blocklist(
+                site_blocklist_test_case.site_arg,
+                site_blocklist_test_case.blocklist_arg,
             )

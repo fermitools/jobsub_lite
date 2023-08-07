@@ -1,3 +1,5 @@
+from collections import namedtuple
+import json
 import os
 import sys
 import pytest
@@ -24,6 +26,8 @@ import pool
 
 from test_unit import TestUnit
 from test_submit_wait_int import get_collector
+
+DATADIR = f"{os.path.abspath(os.path.dirname(__file__))}/data"
 
 
 def set_pool_map():
@@ -137,10 +141,11 @@ def find_all_arguments(paired_arguments):
 @pytest.fixture
 def all_test_args():
     return [
+        "--auth-methods",
         "--append-condor-requirements",
         "xxappend-condor-requirementsxx",
-        "--blacklist",
-        "xxblacklistxx",
+        "--blocklist",
+        "xxblocklistxx",
         "--cmtconfig",
         "xxcmtconfigxx",
         "--constraint",
@@ -249,6 +254,51 @@ def clear_group_from_environment():
 
 
 @pytest.fixture
+def get_single_valid_check_to_skip():
+    """This fixture gets a valid check from the skip_checks module to set up for tests"""
+    from skip_checks import SupportedSkipChecks
+
+    valid_check: str = ""
+    valid_checks = SupportedSkipChecks.get_all_checks()
+    if len(valid_checks) > 0:
+        valid_check = valid_checks[0]
+    return valid_check
+
+
+def get_auth_methods_test_data_good():
+    """Pull in test data from data file and return a list of
+    test cases"""
+    AuthMethodsArgsTestCase = namedtuple(
+        "AuthMethodsArgsTestCase",
+        ["cmdline_args", "auth_methods_result"],
+    )
+
+    DATA_FILENAME = "auth_methods_args_good.json"
+    with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
+        tests_json = json.load(datafile)
+
+    return [AuthMethodsArgsTestCase(**test_json) for test_json in tests_json]
+
+
+def get_auth_methods_test_data_bad():
+    """Pull in test data from data file and return a list of
+    test cases"""
+    AuthMethodsArgsTestCase = namedtuple(
+        "AuthMethodsArgsTestCase",
+        ["cmdline_args", "bad_auth_method"],
+    )
+
+    DATA_FILENAME = "auth_methods_args_bad.json"
+    with open(f"{DATADIR}/{DATA_FILENAME}", "r") as datafile:
+        tests_json = json.load(datafile)
+
+    return [AuthMethodsArgsTestCase(**test_json) for test_json in tests_json]
+
+
+# Custom Parser fixtures
+
+
+@pytest.fixture
 def skip_check_arg_parser():
     """This fixture sets up a lightweight ArgumentParser to test the --skip-check flag"""
     import argparse
@@ -261,18 +311,6 @@ def skip_check_arg_parser():
 
 
 @pytest.fixture
-def get_single_valid_check_to_skip():
-    """This fixture gets a valid check from the skip_checks module to set up for tests"""
-    from skip_checks import SupportedSkipChecks
-
-    valid_check: str = ""
-    valid_checks = SupportedSkipChecks.get_all_checks()
-    if len(valid_checks) > 0:
-        valid_check = valid_checks[0]
-    return valid_check
-
-
-@pytest.fixture
 def schedd_for_testing_arg_parser():
     """This fixture sets up a lightweight ArgumentParser to test the --schedd-for-testing flag"""
     import argparse
@@ -280,6 +318,24 @@ def schedd_for_testing_arg_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--schedd-for-testing", type=str, action=get_parser.CheckIfValidSchedd
+    )
+    return parser
+
+
+@pytest.fixture
+def check_valid_auth_method_arg_parser():
+    """This fixture sets up a lightweight ArgumentParser to test the --auth-methods flag"""
+    import argparse
+
+    import creds
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--auth-methods",
+        action=get_parser.CheckIfValidAuthMethod,
+        default=os.environ.get(
+            "JOBSUB_AUTH_METHODS", ",".join(creds.SUPPORTED_AUTH_METHODS)
+        ),
     )
     return parser
 
@@ -319,7 +375,8 @@ class TestGetParserUnit:
             else:
                 arg = "-" + arg
 
-            if arg == "--dataset":
+            if arg in ["--dataset", "--blacklist"]:
+                # backwards compat args, ignore
                 continue
 
             assert arg in all_test_args
@@ -346,6 +403,7 @@ class TestGetParserUnit:
         # e.g. For the mutually exclusive group (--singularity-image,
         # --no-singularity), we pick one and enter it into args_exclude_list
         args_exclude_list = [
+            "--auth-methods",  # We do a special test for this
             "--no-singularity",
             "--apptainer-image",
             "--no-apptainer",
@@ -404,6 +462,8 @@ class TestGetParserUnit:
                 assert vres["verbose"] == 1
             elif arg == "dataset":
                 assert vres["dataset_definition"] == "xxdataset-definitionxx"
+            elif arg == "blacklist":
+                assert vres["blocklist"] == "xxblocklistxx"
             elif arg == "global-pool":
                 assert vres["global_pool"] == "dune"
             elif arg == "dd-percentage":
@@ -519,3 +579,67 @@ class TestGetParserUnit:
             schedd_for_testing_arg_parser.parse_args(
                 ["--schedd-for-testing", "this_is_an_invalid_schedd.domain"]
             )
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "auth_methods_args_test_case",
+        get_auth_methods_test_data_good(),
+    )
+    def test_CheckIfValidAuthMethod_good(
+        self, auth_methods_args_test_case, check_valid_auth_method_arg_parser
+    ):
+        """For valid auth method combinations, make sure we get the right
+        auth methods stored by the parser"""
+        args = check_valid_auth_method_arg_parser.parse_args(
+            ["--auth-methods", auth_methods_args_test_case.cmdline_args]
+        )
+        assert (
+            args.auth_methods.split(",").sort()
+            == auth_methods_args_test_case.auth_methods_result.split(",").sort()
+        )
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "auth_methods_args_test_case",
+        get_auth_methods_test_data_bad(),
+    )
+    def test_CheckIfValidAuthMethod_bad(
+        self, auth_methods_args_test_case, check_valid_auth_method_arg_parser
+    ):
+        """For invalid auth method argument values, make sure we get a TypeError
+        raised that either includes the invalid method, or tells us what the required
+        auth methods are"""
+        from creds import REQUIRED_AUTH_METHODS
+
+        with pytest.raises(
+            TypeError,
+            match=rf"({auth_methods_args_test_case.bad_auth_method}|{REQUIRED_AUTH_METHODS})",
+        ):
+            check_valid_auth_method_arg_parser.parse_args(
+                ["--auth-methods", auth_methods_args_test_case.cmdline_args]
+            )
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "auth_method_env_setting",
+        ["token,proxy", "token", "icansneakthisinbydesign,token"],
+    )
+    def test_set_auth_methods_environ(
+        self, auth_method_env_setting, check_valid_auth_method_arg_parser
+    ):
+        """Check that we can set the auth methods via the environment variable
+        JOBSUB_AUTH_METHODS.  Test both a valid case and invalid.  The latter
+        would be caught by the underlying library code, by design"""
+        old_auth_methods_env_value = os.environ.pop("JOBSUB_AUTH_METHODS", None)
+
+        # Valid case
+        os.environ["JOBSUB_AUTH_METHODS"] = auth_method_env_setting
+        args = check_valid_auth_method_arg_parser.parse_args([])
+        try:
+            assert (
+                args.auth_methods.split(",").sort()
+                == auth_method_env_setting.split(",").sort()
+            )
+        finally:
+            if old_auth_methods_env_value:
+                os.environ["JOBSUB_AUTH_METHODS"] = old_auth_methods_env_value

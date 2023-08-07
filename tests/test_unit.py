@@ -42,6 +42,8 @@ class TestUnit:
         "generate_email_summary": False,
         "dd_percentage": 100,
         "dd_extra_dataset": [],
+        "token": "faketokenpathtomaketestwork",
+        "proxy": "fakeproxypathtomaketestwork",
     }
     test_extra_template_args = {
         "role": test_role,

@@ -37,7 +37,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 # import our local parts
 #
 from condor import get_schedd, submit_dag
-from creds import get_creds
+from creds import get_creds, print_cred_paths_from_credset
 import get_parser
 
 
@@ -66,11 +66,9 @@ def main():
     if arglist.verbose:
         cmd_args.append("-debug")
 
-    proxy, token = get_creds(arglist)
-
-    # put in environment for condor libs to use
-    os.environ["X509_USER_PROXY"] = proxy
-    os.environ["BEARER_TOKEN_FILE"] = token
+    cred_set = get_creds(vars(arglist))
+    if arglist.verbose:
+        print_cred_paths_from_credset(cred_set)
 
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")

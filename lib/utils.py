@@ -29,6 +29,7 @@ import time
 from typing import Union, Dict, Any, NamedTuple, Tuple, List, Optional
 from tracing import get_propagator_carrier
 
+from creds import CredentialSet
 import version
 
 ONSITE_SITE_NAME = "FermiGrid"
@@ -39,6 +40,8 @@ DEFAULT_SINGULARITY_IMAGE = (
 
 
 def cleandir(d: str) -> None:
+    if not os.path.exists(d):
+        return
     with os.scandir(d) as it:
         for entry in it:
             os.unlink(f"{d}/{entry.name}")
@@ -47,7 +50,7 @@ def cleandir(d: str) -> None:
 
 def cleanup(varg: Dict[str, Any]) -> None:
     """cleanup submit directory etc."""
-    os.chdir(f'{varg["submitdir"]}/..')
+    os.chdir(os.path.dirname(f'{varg["submitdir"]}'))
     cleandir(varg["submitdir"])
     # now clean up old submit directories that weren't
     # cleaned up by jobsub_submit at the time
@@ -100,8 +103,7 @@ def backslash_escape_layer(argv: List[str]) -> None:
 def set_extras_n_fix_units(
     args: Dict[str, Any],
     schedd_name: str,
-    proxy: Union[None, str],
-    token: Union[None, str],
+    cred_set: CredentialSet,
 ) -> None:
     """
     add items to our args dictionary that are not given on the
@@ -131,13 +133,17 @@ def set_extras_n_fix_units(
     args["user"] = os.environ["USER"]
     args["schedd"] = schedd_name
     ai = socket.getaddrinfo(socket.gethostname(), 80)
-    args["clientdn"] = get_client_dn(proxy)
     if ai:
         args["ipaddr"] = ai[-1][-1][0]
     else:
         args["ipaddr"] = "unknown"
-    args["proxy"] = proxy
-    args["token"] = token
+
+    # Read in credentials
+    for cred_type, cred_path in vars(cred_set).items():
+        args[cred_type] = cred_path
+    if getattr(cred_set, "proxy", None) is not None:
+        args["clientdn"] = get_client_dn(cred_set.proxy)
+
     args["jobsub_version"] = f"{version.__title__}-v{version.__version__}"
     args["kerberos_principal"] = get_principal()
     args["uid"] = str(os.getuid())
@@ -184,8 +190,8 @@ def set_extras_n_fix_units(
     args["usage_model"] = site_and_usage_model.usage_models
     args["resource_provides_quoted"] = new_resource_provides
 
-    # Check site and blacklist to ensure there are no conflicts
-    check_site_and_blacklist(args.get("site", ""), args.get("blacklist", ""))
+    # Check site and blocklist to ensure there are no conflicts
+    check_site_and_blocklist(args.get("site", ""), args.get("blocklist", ""))
 
     if not "outurl" in args:
         args["outurl"] = ""
@@ -310,17 +316,32 @@ def set_extras_n_fix_units(
     fix_unit(args, "expected_lifetime", timtable, -1, "smhd", -1)
     fix_unit(args, "timeout", timtable, -1, "smhd", -1)
     newe = []
+    envnames = set()  # set of environment variable names with -e for below
     for e in args["environment"]:
         pos = e.find("=")
         if pos < 0:
+            envnames.add(e)
             v = os.environ.get(e, None)
             if not v:
                 raise RuntimeError(
                     f"--environment {e} was given but no value was in the environment"
                 )
             e = f"{e}={v}"
+        else:
+            envnames.add(e[0:pos])
+
         newe.append(e)
+
     args["environment"] = newe
+
+    #
+    # build list of environment variables for wrapper script to clear:
+    # -- this is our default list, below, minus anything passed in a -e/--environment argument
+    #
+    full_clean_env_list = set(["LC_CTYPE", "CPATH", "LIBRARY_PATH"])
+    args["clean_env_vars"] = " ".join(full_clean_env_list.difference(envnames))
+    args["not_clean_env_vars"] = " ".join(full_clean_env_list.intersection(envnames))
+
     if args["verbose"] > 1:
         sys.stderr.write(f"leaving set_extras... args: {repr(args)}\n")
     args["jobsub_command"] = " ".join(sys.argv)
@@ -415,9 +436,7 @@ def get_client_dn(proxy: Union[None, str] = None) -> Union[str, Any]:
             except Exception as e:
                 print(
                     "Warning:  There was an issue getting the client DN from"
-                    " the user proxy.  Please open a"
-                    " ticket to the Service Desk and paste the entire error"
-                    " message in the ticket."
+                    f" the user proxy using {executable}."
                 )
                 print(e)
                 continue
@@ -428,6 +447,12 @@ def get_client_dn(proxy: Union[None, str] = None) -> Union[str, Any]:
             if out_match is not None:
                 return out_match.group(1)
 
+    print(
+        "Warning:  There was an issue getting the client DN from the user "
+        "proxy.  Please open a ticket to the Service Desk if your requested proxy "
+        "as an auth method and paste the entire error "
+        "message in the ticket."
+    )
     return ""
 
 
@@ -645,19 +670,19 @@ def resolve_singularity_image(
     return (DEFAULT_SINGULARITY_IMAGE, return_lines)
 
 
-def check_site_and_blacklist(site: str, blacklist: str) -> None:
-    """Check list of sites and blacklist to make sure there are no
-    conflicting options.  If there are conflicts, raise a SiteAndBlacklistConflictError.
+def check_site_and_blocklist(site: str, blocklist: str) -> None:
+    """Check list of sites and blocklist to make sure there are no
+    conflicting options.  If there are conflicts, raise a SiteAndBlocklistConflictError.
     Otherwise, return None.
     """
-    # If we have empty --site and --blacklist, this is fine.
-    if (not site) or (not blacklist):
+    # If we have empty --site and --blocklist, this is fine.
+    if (not site) or (not blocklist):
         return None
     site_set = set(site.split(","))
-    blacklist_set = set(blacklist.split(","))
-    common_sites = site_set.intersection(blacklist_set)
+    blocklist_set = set(blocklist.split(","))
+    common_sites = site_set.intersection(blocklist_set)
     if common_sites:
-        raise SiteAndBlacklistConflictError(list(common_sites))
+        raise SiteAndBlocklistConflictError(list(common_sites))
     return None
 
 
@@ -677,16 +702,16 @@ class SiteAndUsageModelConflictError(Exception):
         super().__init__(self.message)
 
 
-class SiteAndBlacklistConflictError(Exception):
+class SiteAndBlocklistConflictError(Exception):
     """Exception to raise if any of the sites the user passed in are also in the user-passed
-    blacklist"""
+    blocklist"""
 
     def __init__(self, common_sites: List[str]):
         self.common_sites = common_sites
         self.message = (
-            "The following site(s) are both in the --site and --blacklist "
+            "The following site(s) are both in the --site and --blocklist "
             f"argument: {self.common_sites}. If your job tries to "
             "run at one of these sites, it will never start.  Please adjust "
-            "either the --site list or the --blacklist list."
+            "either the --site list or the --blocklist list."
         )
         super().__init__(self.message)

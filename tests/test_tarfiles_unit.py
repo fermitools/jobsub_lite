@@ -22,6 +22,7 @@ if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
 else:
     sys.path.append("../lib")
 
+from creds import CredentialSet
 import tarfiles
 import get_parser
 
@@ -68,9 +69,9 @@ class TestTarfilesUnit:
         os.unlink(tarfile)
 
     @pytest.mark.unit
-    def test_slurp_file_1(self):
-        """make sure tar slurp_file makes a digest"""
-        digest, tf = tarfiles.slurp_file(__file__)
+    def test_checksum_file_1(self):
+        """make sure tar checksum_file makes a digest"""
+        digest = tarfiles.checksum_file(__file__)
         assert len(digest) == 64
 
     @pytest.mark.unit
@@ -80,7 +81,7 @@ class TestTarfilesUnit:
         t1 = tarfiles.tar_up(
             os.path.dirname(__file__), "/dev/null", os.path.basename(__file__)
         )
-        h1, _ = tarfiles.slurp_file(t1)
+        h1 = tarfiles.checksum_file(t1)
         print(f"h1: {h1}")
         os.system(f"md5sum {t1}")
         os.unlink(t1)
@@ -89,7 +90,7 @@ class TestTarfilesUnit:
         t2 = tarfiles.tar_up(
             os.path.dirname(__file__), "/dev/null", os.path.basename(__file__)
         )
-        h2, _ = tarfiles.slurp_file(t2)
+        h2 = tarfiles.checksum_file(t2)
         print(f"h2: {h2}")
         os.system(f"md5sum {t2}")
         os.unlink(t2)
@@ -104,13 +105,13 @@ class TestTarfilesUnit:
     @pytest.mark.unit
     def test_tarfile_publisher_1(self, needs_credentials):
         """test the tarfile publisher object"""
-        proxy, token = needs_credentials
+        cred_set = needs_credentials
         # need something to publish...
         tarfile = tarfiles.tar_up(self.dir_to_tar.name, None)
-        digest, tf = tarfiles.slurp_file(tarfile)
+        digest = tarfiles.checksum_file(tarfile)
         cid = f"{TestUnit.test_group}/{digest}"
 
-        publisher = tarfiles.TarfilePublisherHandler(cid, proxy, token)
+        publisher = tarfiles.TarfilePublisherHandler(cid, cred_set)
         location = publisher.cid_exists()
 
         #
@@ -118,7 +119,7 @@ class TestTarfilesUnit:
         # probably be a callable method..
         #
         if location is None:
-            publisher.publish(tf)
+            publisher.publish(tarfile)
             for i in range(20):
                 time.sleep(30)
                 location = publisher.cid_exists()
@@ -212,19 +213,21 @@ class TestTarfilesUnit:
         returns the expected glob for the CID given"""
         import re
 
-        proxy, token = needs_credentials
+        cred_set = needs_credentials
         fake_cid = f"{TestUnit.test_group}/12345abcde"
-        tfh = tarfiles.TarfilePublisherHandler(fake_cid, proxy, token)
+        tfh = tarfiles.TarfilePublisherHandler(fake_cid, cred_set)
         expected_pattern = r"/cvmfs/{(.+)}/sw/" + fake_cid
         assert re.match(expected_pattern, tfh.get_glob_path_for_cid())
 
     @pytest.mark.unit
-    def test_tarfile_publisher_cid_operation(self):
+    def test_tarfile_publisher_cid_operation(self, tmp_path):
         """Test the cid_operation decorator of the TarfilePublisherHandler."""
         from collections import namedtuple
 
         fake_cid = f"{TestUnit.test_group}/12345abcde"
-        fake_location = "thisisthepath"
+        fake_location = tmp_path / "fake_location"
+        fake_location.touch()
+        fake_creds = CredentialSet(token=str(fake_location))
 
         # We have to use this fake object to mimic a requests.Response's structure:
         # specifically, we need to return an object which has a "text"
@@ -245,9 +248,10 @@ class TestTarfilesUnit:
             def present_function(self):
                 return FakeTextContainer(f"PRESENT:{fake_location}")
 
-        f = FakePublisherHandler(cid=fake_cid)
+        f = FakePublisherHandler(cid=fake_cid, cred_set=fake_creds)
         assert f.fail_function() is None
-        assert f.present_function() == fake_location
+        assert f.present_function() == str(fake_location)
+        del os.environ["BEARER_TOKEN_FILE"]
 
     @pytest.mark.unit
     def test_tarchmod_not_tarfile(self, tmp_path):

@@ -1,7 +1,7 @@
 
 options_with_values="
     --append_condor_requirements
-    --blacklist
+    --blocklist
     --cpu
     --dataset_definition
     --disk

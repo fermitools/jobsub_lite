@@ -6,8 +6,8 @@ echo > /tmp/stuff/b
 
 jobsub_submit  \
                  --append_condor_requirements "xyz==1" \
-                 --blacklist FZU \
-                 --blacklist Cornell \
+                 --blocklist FZU \
+                 --blocklist Cornell \
                  --cpu 123 \
                  --verbose 4 \
                  --disk 100M  \
