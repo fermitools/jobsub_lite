@@ -389,7 +389,9 @@ def get_parser() -> argparse.ArgumentParser:
         " submission time instead of run time, use -f dropbox://INPUT_FILE"
         " to copy the file.  If -f is used without the dropbox:// URI, for"
         " example -f /path/to/myfile, then the file (/path/to/myfile in this"
-        " example) MUST be grid-accessible via ifdh.",
+        " example) MUST be grid-accessible via ifdh."
+        ""
+        " For more information, please see https://github.com/fermitools/jobsub_lite/wiki/File-Transfers-in-jobsub-lite",
     )
     parser.add_argument(
         "--generate-email-summary",
@@ -553,7 +555,9 @@ def get_parser() -> argparse.ArgumentParser:
         " $INPUT_TAR_FILE_1, $INPUT_TAR_FILE_2, etc."
         ""
         " We note here that with this flag, it is recommended to use the"
-        " $INPUT_TAR_DIR_LOCAL environment variable, rather than $INPUT_TAR_FILE",
+        " $INPUT_TAR_DIR_LOCAL environment variable, rather than $INPUT_TAR_FILE"
+        ""
+        " For more information, please see https://github.com/fermitools/jobsub_lite/wiki/File-Transfers-in-jobsub-lite",
     )
 
     parser.add_argument(
