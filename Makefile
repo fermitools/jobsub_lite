@@ -9,12 +9,24 @@ specfile := $(ROOTDIR)/config/spec/$(NAME).spec
 versionfile := ${ROOTDIR}/lib/version.py
 tarball_dirs = bin lib etc man templates config # Dirs we need for the tarball
 
-all: tarball set-version rpm clean
+tracing-name := $(NAME)_tracing_deps
+tracing-specfile := $(ROOTDIR)/config/spec/$(tracing-name).spec
+
+all: tarball set-version tracing-rpm rpm clean
 .PHONY: all clean tarball set-version rpm clean-all
+
+tracing-rpm: NOWFILE := $(shell mktemp)
+tracing-rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPECS
+tracing-rpm:
+	cp $(tracing-specfile) $(rpmSpecsDir)/
+	cd $(rpmSpecsDir); \
+	rpmbuild -ba $(tracing-name).spec
+	find $(RPMBUILD_DIR)/RPMS -type f -name "$(tracing-name)*.rpm" -newer $(NOWFILE) -exec cp {} $(ROOTDIR) \;
+	echo "Created RPM and copied it to current working directory"
+	((test -e $(NOWFILE)) && (rm $(NOWFILE)) && echo "Cleaned up tempfile") || echo "$(NOWFILE) does not exist.  Continuing anyway"
 
 rpm: rpmSourcesDir := $(RPMBUILD_DIR)/SOURCES
 rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPECS
-rpm: rpmDir := ${RPMBUILD}/RPMS/x86_64/
 rpm: set-version tarball
 	cp $(specfile) $(rpmSpecsDir)/
 	cp $(BUILD_TAR) $(rpmSourcesDir)/
