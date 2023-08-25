@@ -73,7 +73,11 @@ def check_we_can_write() -> None:
 
 
 def tarchmod(tfn: str) -> str:
-    """copy a tarfile to a compressed tarfile changing modes of contents to 755"""
+    """
+    copy a tarfile to a compressed tarfile, while:
+    * changing modes of contents to 755
+    * bailing if tarfile has files too large for RCDS
+    """
     ofn = os.path.basename(f"{tfn}{os.getpid()}.tbz2")
     check_we_can_write()
     try:
@@ -88,6 +92,11 @@ def tarchmod(tfn: str) -> str:
                 else:
                     st = fin.extractfile(ti)
                 ti.mode = ti.mode | 0o755
+                if ti.size > 1073741824:
+                    raise ValueError(
+                        f"file '{ti.name}' in your tarfile {tfn}\n"
+                        f"  size {ti.size/1024}k is over RCDS 1G limit\n"
+                    )
                 fout.addfile(ti, st)
                 ti = fin.next()
     except tarfile_mod.TarError:
