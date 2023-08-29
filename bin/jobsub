@@ -1,0 +1,24 @@
+#!/usr/bin/python3 -I
+
+print(
+    """
+Available jobsub_lite commands are:
+
+    jobsub_fetchlog         jobsub_q                jobsub_submit
+    jobsub_history          jobsub_release          decode_token.sh
+    jobsub_hold             jobsub_rm
+
+    All josub_lite commands will print usage with --help, and
+    "man jobsub_..." will give a manual page
+
+jobsub_lite also wraps the following condor commands to accept '-G group':
+
+    condor_q                condor_submit_dag
+    condor_release          condor_vault_storer
+    condor_rm               condor_wait
+    condor_submit           condor_transfer_data
+
+    All condor commands will print usage with -help and
+    "man condor_..." will give a manual page
+"""
+)
