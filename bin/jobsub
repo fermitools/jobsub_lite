@@ -9,7 +9,9 @@ Available jobsub_lite commands are:
     jobsub_hold             jobsub_rm
 
     All josub_lite commands will print usage with --help, and
-    "man jobsub_..." will give a manual page
+    "man jobsub_..." will give a manual page, or see:
+    https://fifewiki.fnal.gov/wiki/Jobsub_Lite#User_Documentation
+
 
 jobsub_lite also wraps the following condor commands to accept '-G group':
 
