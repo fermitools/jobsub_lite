@@ -47,6 +47,8 @@ except ValueError:
     )
     raise
 
+RCDS_MAX_FILE_SIZE = 1073741824
+
 
 class TokenAuth(AuthBase):  # type: ignore
     # auth class for token authentication
@@ -92,7 +94,7 @@ def tarchmod(tfn: str) -> str:
                 else:
                     st = fin.extractfile(ti)
                 ti.mode = ti.mode | 0o755
-                if ti.size > 1073741824:
+                if ti.size > RCDS_MAX_FILE_SIZE:
                     raise ValueError(
                         f"file '{ti.name}' in your tarfile {tfn}\n"
                         f"  size {ti.size/1024}k is over RCDS 1G limit\n"
