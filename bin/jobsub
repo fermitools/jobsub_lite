@@ -1,26 +1,23 @@
 #!/usr/bin/python3 -I
+import os
 
-print(
-    """
+with os.popen(os.environ.get("PAGER", "less"), "w") as f:
+    print(
+        """
 Available jobsub_lite commands are:
 
     jobsub_submit [-G experiment] [options] script-url [script arguments]
         submit jobs/dags to the Grid
-
     jobsub_q [-G experiment] [options]
         show queued/running jobs
-
     jobsub_fetchlog [-G experiment] [options] jobid ...
          fetch job output logs
-
     jobsub_history
          show completed jobs
-
     jobsub_hold
     jobsub_release
     jobsub_rm
          Mangage job queue/abort jobs
-
     decode_token.sh
          Print JSON dump of token files
 
@@ -62,5 +59,6 @@ jobsub_lite commands are affected by many environment variables, particularly:
 
     Numerous other environment variables starting with _condor_... or
     JOBSUB_...  can affect job submission, specify default options, etc.
-"""
-)
+""",
+        file=f,
+    )
