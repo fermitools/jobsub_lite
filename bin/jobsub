@@ -4,14 +4,29 @@ print(
     """
 Available jobsub_lite commands are:
 
-    jobsub_fetchlog         jobsub_q                jobsub_submit
-    jobsub_history          jobsub_release          decode_token.sh
-    jobsub_hold             jobsub_rm
+    jobsub_submit [-G experiment] [options] script-url [script arguments]
+        submit jobs/dags to the Grid
+
+    jobsub_q [-G experiment] [options]
+        show queued/running jobs
+
+    jobsub_fetchlog [-G experiment] [options] jobid ...
+         fetch job output logs
+
+    jobsub_history
+         show completed jobs
+
+    jobsub_hold
+    jobsub_release
+    jobsub_rm
+         Mangage job queue/abort jobs
+
+    decode_token.sh
+         Print JSON dump of token files
 
     All josub_lite commands will print usage with --help, and
     "man jobsub_..." will give a manual page, or see:
     https://fifewiki.fnal.gov/wiki/Jobsub_Lite#User_Documentation
-
 
 jobsub_lite also wraps the following condor commands to accept '-G group':
 
@@ -21,6 +36,7 @@ jobsub_lite also wraps the following condor commands to accept '-G group':
     condor_submit           condor_transfer_data
 
     All condor commands will print usage with -help and
-    "man condor_..." will give a manual page
+    "man condor_..." will give a manual page, or see:
+    https://htcondor.readthedocs.io/en/latest/man-pages/index.html
 """
 )
