@@ -38,5 +38,29 @@ jobsub_lite also wraps the following condor commands to accept '-G group':
     All condor commands will print usage with -help and
     "man condor_..." will give a manual page, or see:
     https://htcondor.readthedocs.io/en/latest/man-pages/index.html
+
+jobsub_lite commands are affected by many environment variables, particularly:
+
+    BEARER_TOKEN_FILE
+       location of authentication token (SciToken)
+    CMTCONFIG
+       directory used for job submission sandboxes (default $HOME/.config)
+    GROUP
+       (or JOBSUB_GROUP) default value for -G flag
+    HOME
+       home directory
+    LD_LIBRARY_PATH
+       Generally ignored, but can crash /usr/bin/python3 in rare cases
+    OTEL_EXPORTER_JAEGER_ENDPOINT
+       Where to send debug traces
+    TMPDIR
+       Where to make temporary files
+    USER
+       Username
+    X509_USER_PROXY
+       Location of old globus grid proxy
+
+    Numerous other environment variables starting with _condor_... or
+    JOBSUB_...  can affect job submission, specify default options, etc.
 """
 )
