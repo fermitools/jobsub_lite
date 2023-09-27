@@ -128,11 +128,12 @@ def get_schedd_list(
 
     # Constraint setup
     constraint = (
+        '{% if schedd_for_testing is defined and schedd_for_testing %} Name == "{{schedd_for_testing}}"{% else %}'
         "IsJobsubLite=?=true"
         '{% if group is defined and group %} && STRINGLISTIMEMBER("{{group}}", SupportedVOList){% endif %}'
-        '{% if schedd_for_testing is defined and schedd_for_testing %} && Name == "{{schedd_for_testing}}"{% endif %}'
         ' && {% if devserver is defined and devserver %}{% else %}!{%endif%}regexp(".*dev.*", Machine)'
         " && InDownTime != true"
+        "{% endif %}"
     )
 
     jinja_env = jinja2.Environment()

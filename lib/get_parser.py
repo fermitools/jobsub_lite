@@ -237,7 +237,7 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     parser.add_argument(
         "--schedd-for-testing",  # Non-advertised option for testers to direct jobs to certain schedds
         type=str,
-        action=CheckIfValidSchedd,
+        # action=CheckIfValidSchedd,
         help=argparse.SUPPRESS,
     )
     return parser
