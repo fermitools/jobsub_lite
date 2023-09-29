@@ -209,7 +209,7 @@ def run_launch(cmd, expected_out=1, get_dir=False):
 def lookaround_launch(extra, verify_files=""):
     """Simple submit of our lookaround script"""
     assert run_launch(
-        f"jobsub_submit --mail-never --verbose=1 -e SAM_EXPERIMENT {extra} file://`pwd`/job_scripts/lookaround.sh {verify_files}"
+        f"jobsub_submit --mail-never --verbose=2 -e SAM_EXPERIMENT {extra} file://`pwd`/job_scripts/lookaround.sh {verify_files}"
     )
 
 
@@ -374,7 +374,7 @@ def fife_launch(extra):
         """
         jobsub_submit \
           --mail-never \
-          --verbose=1 \
+          --verbose=2 \
           -e EXPERIMENT \
           -e IFDH_DEBUG \
           -e IFDH_FORCE \

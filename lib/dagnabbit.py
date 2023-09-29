@@ -174,6 +174,16 @@ def parse_dagnabbit(
                         raise
                     # print(f"vars(res): {repr(vars(res))}")
                     # handle -f drobpox: etc. in dag stages
+
+                    if res.need_storage_modify:
+                        sys.stderr.write(f"Warning at file {dagfile} line {linenum}\n")
+                        sys.stderr.write(f"flag --need-storage-modify ignored in DAG\n")
+                        sys.stderr.flush()
+                    if res.need_scope:
+                        sys.stderr.write(f"Warning at file {dagfile} line {linenum}\n")
+                        sys.stderr.write(f"flag --need-scope ignored in DAG\n")
+                        sys.stderr.flush()
+
                     do_tarballs(res)
                     thesevalues = values.copy()
                     thesevalues["mail"] = "never"

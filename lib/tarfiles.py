@@ -367,6 +367,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
             publisher.update_cid()
 
     elif args.use_dropbox == "pnfs":
+        cred_set = get_creds(vars(args))
         location = dcache_persistent_path(args.group, tfn)
         existing = fake_ifdh.ls(location)
         if existing:
@@ -411,8 +412,8 @@ class TarfilePublisherHandler:
         self.cid = cid
         self.cid_url = _quote(cid, safe="")  # Encode CID for passing to URL
         self.verbose = verbose
-
         self.__auth_kwargs: Dict[str, Any]
+        print(f"Publishing hash {cid} to RCDS:")
         if cred_set.token is not None:
             print(
                 f"Using bearer token located at {cred_set.token} to authenticate to RCDS"

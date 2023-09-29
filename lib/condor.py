@@ -311,6 +311,7 @@ def submit(
                 check=False,
             )
             sys.stdout.write(output.stdout)
+            sys.stderr.write(output.stderr)
 
         hl = f"\n{'=-'*30}\n\n"  # highlight line to make result stand out
 

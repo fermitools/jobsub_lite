@@ -176,10 +176,9 @@ def main() -> None:
     if cmd == "jobsub_q":
         cmd_jobsub_q = True
 
-        # add -global -schedd-constraint IsJobsubLite==True
+        # add -schedd-constraint IsJobsubLite==True
         execargs.insert(0, "IsJobsubLite==True")
         execargs.insert(0, "-schedd-constraint")
-        execargs.insert(0, "-global")
 
         if default_constraint:
             execargs.extend(
