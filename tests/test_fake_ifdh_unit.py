@@ -1,6 +1,7 @@
 import os
 import sys
 import pytest
+import scitokens
 
 #
 # we assume everwhere our current directory is in the package
@@ -59,6 +60,8 @@ def test_getRole_override():
 @pytest.fixture
 def clear_token():
     if os.environ.get("BEARER_TOKEN_FILE", None):
+        if os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
+            os.unlink(os.environ["BEARER_TOKEN_FILE"])
         del os.environ["BEARER_TOKEN_FILE"]
 
 
@@ -71,8 +74,8 @@ def fermilab_token(clear_token):
 @pytest.mark.unit
 def test_checkToken_fail():
     tokenfile = "/dev/null"
-    with pytest.raises(ValueError):
-        res = fake_ifdh.checkToken(tokenfile)
+    res = fake_ifdh.checkToken(tokenfile)
+    assert not res
 
 
 @pytest.mark.unit

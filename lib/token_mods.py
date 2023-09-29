@@ -58,7 +58,9 @@ def get_token_scope(tokenfilename: str) -> List[str]:
 
     with open(tokenfilename) as f:
         token_encoded = f.read(4096).strip()
-        token = dict(scitokens.SciToken.deserialize(token_encoded).claims())
+        token = dict(
+            scitokens.SciToken.deserialize(token_encoded, insecure=True).claims()
+        )
         scopelist = str(token["scope"]).split(" ")
 
     return scopelist

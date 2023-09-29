@@ -30,8 +30,11 @@ import sys
 import time
 from typing import Union, Optional, List, Dict, Any
 from typing import Union, Optional, List
-from tracing import as_span, add_event
 
+PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(PREFIX, "lib"))
+
+from tracing import as_span, add_event
 import htcondor  # type: ignore
 
 VAULT_OPTS = htcondor.param.get("SEC_CREDENTIAL_GETTOKEN_OPTS", "")
@@ -76,10 +79,14 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
             return role
 
     # if there's a role in the wlcg.groups of the token, pick that
-    if os.environ.get("BEARER_TOKEN_FILE", False):
+    if os.environ.get("BEARER_TOKEN_FILE", False) and os.path.exists(
+        os.environ["BEARER_TOKEN_FILE"]
+    ):
         with open(os.environ["BEARER_TOKEN_FILE"]) as f:
             token_encoded = f.read(4096).strip()
-            token = scitokens.SciToken.deserialize(token_encoded).claims()
+            token = dict(
+                scitokens.SciToken.deserialize(token_encoded, insecure=True).claims()
+            )
             groups: List[str] = token.get("wlcg.groups", [])
             for g in groups:
                 m = re.match(r"/.*/(.*)", g)
@@ -95,22 +102,19 @@ def checkToken(tokenfile: str) -> bool:
     """check if token is (almost) expired"""
     if not os.path.exists(tokenfile):
         return False
-    exp_time = None
-    with open(tokenfile) as f:
-        token_encoded = f.read(4096).strip()
-        token = scitokens.SciToken.deserialize(token_encoded).claims()
-        exp_time = token["exp"]
     try:
-        add_event(f"expiration: {exp_time}")
-        return int(exp_time) - time.time() > 60
-    except ValueError as e:
-        print(
-            "jobsub_submit could not successfully extract the "
-            f"expiration time from token file {tokenfile}. Please open "
-            "a ticket to Distributed Computing Support if you need further "
-            "assistance."
-        )
-        raise
+        exp_time = None
+        with open(tokenfile) as f:
+            token_encoded = f.read(4096).strip()
+            token = dict(
+                scitokens.SciToken.deserialize(token_encoded, insecure=True).claims()
+            )
+            exp_time = token["exp"]
+            add_event(f"expiration: {exp_time}")
+            return int(exp_time) - time.time() > 60
+    except Exception:
+        # anything else, just say its bad
+        return False
 
 
 @as_span("getToken")
@@ -299,6 +303,7 @@ if __name__ == "__main__":
     commands = {
         "getProxy": getProxy,
         "getToken": getToken,
+        "checkToken": checkToken,
         "cp": cp,
         "ls": ls,
         "mkdir_p": mkdir_p,
@@ -318,7 +323,7 @@ if __name__ == "__main__":
     myrole = getRole(opts.role)
 
     try:
-        if opts.command[0] in ("cp", "ls", "mkdir_p"):
+        if opts.command[0] in ("cp", "ls", "mkdir_p", "checkToken"):
             print(commands[opts.command[0]](*opts.cpargs[0]))  # type: ignore
         else:
             result = commands[opts.command[0]](myrole, verbose=1)  # type: ignore
