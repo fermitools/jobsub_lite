@@ -83,7 +83,7 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
         os.environ["BEARER_TOKEN_FILE"]
     ):
         with open(os.environ["BEARER_TOKEN_FILE"]) as f:
-            token_encoded = f.read(4096).strip()
+            token_encoded = f.read().strip()
             token = dict(
                 scitokens.SciToken.deserialize(token_encoded, insecure=True).claims()
             )
@@ -105,7 +105,7 @@ def checkToken(tokenfile: str) -> bool:
     try:
         exp_time = None
         with open(tokenfile) as f:
-            token_encoded = f.read(4096).strip()
+            token_encoded = f.read().strip()
             token = dict(
                 scitokens.SciToken.deserialize(token_encoded, insecure=True).claims()
             )
