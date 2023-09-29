@@ -53,17 +53,12 @@ def use_token_copy(tokenfile: str) -> str:
     return copyto
 
 
-def deserialize_claims(token_encoded: str) -> Dict[Any, Any]:
-    d = dict(scitokens.SciToken.deserialize(token_encoded).claims())
-    return d
-
-
 def get_token_scope(tokenfilename: str) -> List[str]:
     """get the list of scopes from our token file"""
 
     with open(tokenfilename) as f:
         token_encoded = f.read(4096).strip()
-        token = deserialize_claims(token_encoded)
+        token = dict(scitokens.SciToken.deserialize(token_encoded).claims())
         scopelist = str(token["scope"]).split(" ")
 
     return scopelist
