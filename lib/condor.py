@@ -108,7 +108,7 @@ def submit_vt(
 # pylint: disable-next=no-member
 @as_span("get_schedd_list")
 def get_schedd_list(
-    vargs: Dict[str, Any], refresh_schedd_ads: bool = False
+    vargs: Dict[str, Any], refresh_schedd_ads: bool = False, available_only: bool = True
 ) -> List[classad.ClassAd]:
     """
     Get jobsub* schedd classads from collector.  Also, populate the in-memory store of the schedd
@@ -117,7 +117,7 @@ def get_schedd_list(
     global __schedd_ads
 
     # First, try to load schedd ads from memory
-    if __schedd_ads and not refresh_schedd_ads:
+    if __schedd_ads and not refresh_schedd_ads and available_only:
         if vargs.get("verbose", 0) > 1:
             print("\nUsing cached schedd ads - NOT querying condor collector\n")
         return [ad for ad in __schedd_ads.values()]
@@ -128,12 +128,15 @@ def get_schedd_list(
 
     # Constraint setup
     constraint = (
+        '{% if schedd_for_testing is defined and schedd_for_testing %} Name == "{{schedd_for_testing}}"{% else %}'
         "IsJobsubLite=?=true"
         '{% if group is defined and group %} && STRINGLISTIMEMBER("{{group}}", SupportedVOList){% endif %}'
-        '{% if schedd_for_testing is defined and schedd_for_testing %} && Name == "{{schedd_for_testing}}"{% endif %}'
         ' && {% if devserver is defined and devserver %}{% else %}!{%endif%}regexp(".*dev.*", Machine)'
         " && InDownTime != true"
+        "{% endif %}"
     )
+    if not available_only:
+        constraint = ""
 
     jinja_env = jinja2.Environment()
     constraint_template = jinja_env.from_string(constraint)
@@ -156,7 +159,10 @@ def get_schedd_list(
         htcondor.htcondor.AdTypes.Schedd,
         constraint=schedd_constraint,
     )
-    __schedd_ads = {ad.eval("Name"): ad for ad in schedds}
+
+    # only cache if we're getting the usual list
+    if available_only:
+        __schedd_ads = {ad.eval("Name"): ad for ad in schedds}
 
     if vargs.get("verbose", 0) > 1:
         print(f"post-query schedd classads: {schedds} ")
@@ -164,9 +170,9 @@ def get_schedd_list(
     return schedds
 
 
-def get_schedd_names(vargs: Dict[str, Any]) -> List[str]:
+def get_schedd_names(vargs: Dict[str, Any], available_only: bool = True) -> List[str]:
     """get jobsub* schedd names from collector"""
-    schedds = get_schedd_list(vargs)
+    schedds = get_schedd_list(vargs, available_only=available_only)
     res = []
     for s in schedds:
         name = s.eval("Name")

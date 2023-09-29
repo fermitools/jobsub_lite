@@ -106,7 +106,7 @@ class CheckIfValidSchedd(argparse.Action):
     ) -> None:
         group = os.environ.get("JOBSUB_GROUP", os.environ.get("GROUP", None))
         vargs = {"group": group} if group is not None else {}
-        valid_schedds = get_schedd_names(vargs)
+        valid_schedds = get_schedd_names(vargs, available_only=False)
         if values not in valid_schedds:
             raise TypeError(
                 f"Invalid schedd specified: {values}.  Valid choices are {valid_schedds}"
