@@ -23,6 +23,7 @@ import argparse
 import json
 import os
 import re
+import scitokens  # type: ignore
 import shlex
 import subprocess
 import sys
@@ -76,9 +77,9 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
 
     # if there's a role in the wlcg.groups of the token, pick that
     if os.environ.get("BEARER_TOKEN_FILE", False):
-        with os.popen("decode_token.sh $BEARER_TOKEN_FILE", "r") as f:
-            token_s = f.read()
-            token = json.loads(token_s)
+        with open(os.environ["BEARER_TOKEN_FILE"]) as f:
+            token_encoded = f.read(4096).strip()
+            token = scitokens.SciToken.deserialize(token_encoded).claims()
             groups: List[str] = token.get("wlcg.groups", [])
             for g in groups:
                 m = re.match(r"/.*/(.*)", g)
@@ -95,15 +96,16 @@ def checkToken(tokenfile: str) -> bool:
     if not os.path.exists(tokenfile):
         return False
     exp_time = None
-    cmd = f"decode_token.sh -e exp {tokenfile} 2>/dev/null"
-    with os.popen(cmd, "r") as f:
-        exp_time = f.read()
+    with open(tokenfile) as f:
+        token_encoded = f.read(4096).strip()
+        token = scitokens.SciToken.deserialize(token_encoded).claims()
+        exp_time = token["exp"]
     try:
         add_event(f"expiration: {exp_time}")
         return int(exp_time) - time.time() > 60
     except ValueError as e:
         print(
-            "decode_token.sh could not successfully extract the "
+            "jobsub_submit could not successfully extract the "
             f"expiration time from token file {tokenfile}. Please open "
             "a ticket to Distributed Computing Support if you need further "
             "assistance."
