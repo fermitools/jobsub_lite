@@ -98,7 +98,7 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
 
 
 @as_span("checkToken", arg_attrs=["*"])
-def checkToken(tokenfile: str) -> bool:
+def checkToken(tokenfile: str, reraise: bool = False) -> bool:
     """check if token is (almost) expired"""
     if not os.path.exists(tokenfile):
         return False
@@ -113,8 +113,10 @@ def checkToken(tokenfile: str) -> bool:
             add_event(f"expiration: {exp_time}")
             return int(exp_time) - time.time() > 60
     except Exception:
-        # anything else, just say its bad
-        return False
+        if reraise:
+            raise
+        else:
+            return False
 
 
 @as_span("getToken")
@@ -149,7 +151,7 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
         res = os.system(cmd)
         if res != 0:
             raise PermissionError(f"Failed attempting '{cmd}'")
-        if checkToken(tokenfile):
+        if checkToken(tokenfile, reraise=True):
             return tokenfile
         raise PermissionError(f"Failed validating token from '{cmd}'")
     return tokenfile
