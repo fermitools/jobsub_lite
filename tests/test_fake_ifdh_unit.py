@@ -74,7 +74,10 @@ def fermilab_token(clear_token):
 @pytest.mark.unit
 def test_checkToken_fail():
     tokenfile = "/dev/null"
-    res = fake_ifdh.checkToken(tokenfile)
+    try:
+        res = fake_ifdh.checkToken(tokenfile)
+    except:
+        res = False
     assert not res
 
 

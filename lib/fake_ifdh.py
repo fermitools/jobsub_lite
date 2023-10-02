@@ -98,25 +98,19 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
 
 
 @as_span("checkToken", arg_attrs=["*"])
-def checkToken(tokenfile: str, reraise: bool = False) -> bool:
+def checkToken(tokenfile: str) -> bool:
     """check if token is (almost) expired"""
     if not os.path.exists(tokenfile):
         return False
-    try:
-        exp_time = None
-        with open(tokenfile) as f:
-            token_encoded = f.read().strip()
-            token = dict(
-                scitokens.SciToken.deserialize(token_encoded, insecure=True).claims()
-            )
-            exp_time = token["exp"]
-            add_event(f"expiration: {exp_time}")
-            return int(exp_time) - time.time() > 60
-    except Exception:
-        if reraise:
-            raise
-        else:
-            return False
+    exp_time = None
+    with open(tokenfile) as f:
+        token_encoded = f.read().strip()
+        token = dict(
+            scitokens.SciToken.deserialize(token_encoded, insecure=True).claims()
+        )
+        exp_time = token["exp"]
+        add_event(f"expiration: {exp_time}")
+        return int(exp_time) - time.time() > 60
 
 
 @as_span("getToken")
@@ -139,7 +133,13 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
         tokenfile = f"{tmp}/bt_token_{issuer}_{role}_{pid}"
         os.environ["BEARER_TOKEN_FILE"] = tokenfile
 
-    if not checkToken(tokenfile):
+    try:
+        token_ok = checkToken(tokenfile)
+    except:
+        # if anything goes wrong checking, its not okay, get a fresh one
+        token_ok = False
+
+    if not token_ok:
         cmd = f"htgettoken {VAULT_OPTS} -i {issuer}"
 
         if role != DEFAULT_ROLE:
@@ -151,7 +151,7 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
         res = os.system(cmd)
         if res != 0:
             raise PermissionError(f"Failed attempting '{cmd}'")
-        if checkToken(tokenfile, reraise=True):
+        if checkToken(tokenfile):
             return tokenfile
         raise PermissionError(f"Failed validating token from '{cmd}'")
     return tokenfile
