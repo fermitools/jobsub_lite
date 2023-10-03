@@ -82,31 +82,27 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     if os.environ.get("BEARER_TOKEN_FILE", False) and os.path.exists(
         os.environ["BEARER_TOKEN_FILE"]
     ):
-        with open(os.environ["BEARER_TOKEN_FILE"]) as f:
-            token_encoded = f.read().strip()
-            token = scitokens.SciToken.deserialize(token_encoded, insecure=True)
-            groups: List[str] = token.get("wlcg.groups", [])
-            for g in groups:
-                m = re.match(r"/.*/(.*)", g)
-                if m:
-                    role = m.group(1)
-                    return role.capitalize()
+        token = scitokens.SciToken.discover(insecure=True)
+        groups: List[str] = token.get("wlcg.groups", [])
+        for g in groups:
+            m = re.match(r"/.*/(.*)", g)
+            if m:
+                role = m.group(1)
+                return role.capitalize()
 
     return DEFAULT_ROLE
 
 
 @as_span("checkToken", arg_attrs=["*"])
-def checkToken(tokenfile: str) -> bool:
-    """check if token is (almost) expired"""
-    if not os.path.exists(tokenfile):
+def checkToken() -> bool:
+    """check if token in $BEARER_TOKEN_FILE is (almost) expired"""
+    if not os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
         return False
     exp_time = None
-    with open(tokenfile) as f:
-        token_encoded = f.read().strip()
-        token = scitokens.SciToken.deserialize(token_encoded, insecure=True)
-        exp_time = str(token.get("exp"))
-        add_event(f"expiration: {exp_time}")
-        return int(exp_time) - time.time() > 60
+    token = scitokens.SciToken.discover(insecure=True)
+    exp_time = str(token.get("exp"))
+    add_event(f"expiration: {exp_time}")
+    return int(exp_time) - time.time() > 60
 
 
 @as_span("getToken")
@@ -130,7 +126,7 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
         os.environ["BEARER_TOKEN_FILE"] = tokenfile
 
     try:
-        token_ok = checkToken(tokenfile)
+        token_ok = checkToken()
     except:
         # if anything goes wrong checking, its not okay, get a fresh one
         token_ok = False
@@ -149,7 +145,7 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
         if res != 0:
             raise PermissionError(f"Failed attempting '{cmd}'")
 
-        if not checkToken(tokenfile):
+        if not checkToken():
             raise PermissionError(f"Failed validating token from '{cmd}'")
 
     return tokenfile
