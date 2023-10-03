@@ -84,9 +84,7 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     ):
         with open(os.environ["BEARER_TOKEN_FILE"]) as f:
             token_encoded = f.read().strip()
-            token = dict(
-                scitokens.SciToken.deserialize(token_encoded, insecure=True).claims()
-            )
+            token = scitokens.SciToken.deserialize(token_encoded, insecure=True)
             groups: List[str] = token.get("wlcg.groups", [])
             for g in groups:
                 m = re.match(r"/.*/(.*)", g)
@@ -105,10 +103,8 @@ def checkToken(tokenfile: str) -> bool:
     exp_time = None
     with open(tokenfile) as f:
         token_encoded = f.read().strip()
-        token = dict(
-            scitokens.SciToken.deserialize(token_encoded, insecure=True).claims()
-        )
-        exp_time = token["exp"]
+        token = scitokens.SciToken.deserialize(token_encoded, insecure=True)
+        exp_time = str(token.get("exp"))
         add_event(f"expiration: {exp_time}")
         return int(exp_time) - time.time() > 60
 
