@@ -149,11 +149,13 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
             sys.stderr.write(f"Running: {cmd}")
 
         res = os.system(cmd)
+
         if res != 0:
             raise PermissionError(f"Failed attempting '{cmd}'")
-        if checkToken(tokenfile):
-            return tokenfile
-        raise PermissionError(f"Failed validating token from '{cmd}'")
+
+        if not checkToken(tokenfile):
+            raise PermissionError(f"Failed validating token from '{cmd}'")
+
     return tokenfile
 
 
