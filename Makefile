@@ -15,14 +15,15 @@ OSR=$(shell /bin/sh -c ' . /etc/os-release; echo $$VERSION_ID | sed -e s/\..*//'
 
 .PHONY: all clean tarball set-version rpm clean-all
 
-ifeq($OSR,7)
+ifeq ($(OSR), 7)
+
 # we only need the tracing-rpm on SL7/EL7
 
 all: tarball set-version tracing-rpm rpm clean
 tracing-name := $(NAME)_tracing_deps
 tracing-specfile := $(ROOTDIR)/config/spec/$(tracing-name).spec
 tracing-rpm: NOWFILE := $(shell mktemp)
-tracing-rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPECS
+tracing-rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPEC
 tracing-rpm:
 	cp $(tracing-specfile) $(rpmSpecsDir)/
 	cd $(rpmSpecsDir); \
@@ -37,7 +38,7 @@ all: tarball set-version rpm clean
 endif
 
 rpm: rpmSourcesDir := $(RPMBUILD_DIR)/SOURCES
-rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPECS
+rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPEC
 rpm: set-version tarball
 	cp $(specfile) $(rpmSpecsDir)/
 	cp $(BUILD_TAR) $(rpmSourcesDir)/
