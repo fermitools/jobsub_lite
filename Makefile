@@ -23,7 +23,7 @@ all: tarball set-version tracing-rpm rpm clean
 tracing-name := $(NAME)_tracing_deps
 tracing-specfile := $(ROOTDIR)/config/spec/$(tracing-name).spec
 tracing-rpm: NOWFILE := $(shell mktemp)
-tracing-rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPEC
+tracing-rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPECS
 tracing-rpm:
 	cp $(tracing-specfile) $(rpmSpecsDir)/
 	cd $(rpmSpecsDir); \
@@ -38,7 +38,7 @@ all: tarball set-version rpm clean
 endif
 
 rpm: rpmSourcesDir := $(RPMBUILD_DIR)/SOURCES
-rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPEC
+rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPECS
 rpm: set-version tarball
 	cp $(specfile) $(rpmSpecsDir)/
 	cp $(BUILD_TAR) $(rpmSourcesDir)/
