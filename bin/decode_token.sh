@@ -44,7 +44,7 @@ usage() {
 
 case x$1 in
 x-e) extractfilt="get_field $2"; shift; shift;;
-x-h) usage; exit 0;;
+x-h|x--help) usage; exit 0;;
 x)   usage; exit 1;;
 *)   extractfilt="cat";;
 esac

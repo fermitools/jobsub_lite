@@ -1,0 +1,64 @@
+#!/usr/bin/python3 -I
+import os
+
+with os.popen(os.environ.get("PAGER", "less"), "w") as f:
+    print(
+        """
+Available jobsub_lite commands are:
+
+    jobsub_submit [-G experiment] [options] script-url [script arguments]
+        submit jobs/dags to the Grid
+    jobsub_q [-G experiment] [options]
+        show queued/running jobs
+    jobsub_fetchlog [-G experiment] [options] jobid ...
+         fetch job output logs
+    jobsub_history
+         show completed jobs
+    jobsub_hold
+    jobsub_release
+    jobsub_rm
+         Mangage job queue/abort jobs
+    decode_token.sh
+         Print JSON dump of token files
+
+    All josub_lite commands will print usage with --help, and
+    "man jobsub_..." will give a manual page, or see:
+    https://fifewiki.fnal.gov/wiki/Jobsub_Lite#User_Documentation
+
+jobsub_lite also wraps the following condor commands to accept '-G group':
+
+    condor_q                condor_submit_dag
+    condor_release          condor_vault_storer
+    condor_rm               condor_wait
+    condor_submit           condor_transfer_data
+
+    All condor commands will print usage with -help and
+    "man condor_..." will give a manual page, or see:
+    https://htcondor.readthedocs.io/en/latest/man-pages/index.html
+
+jobsub_lite commands are affected by many environment variables, particularly:
+
+    BEARER_TOKEN_FILE
+       location of authentication token (SciToken)
+    CMTCONFIG
+       directory used for job submission sandboxes (default $HOME/.config)
+    GROUP
+       (or JOBSUB_GROUP) default value for -G flag
+    HOME
+       home directory
+    LD_LIBRARY_PATH
+       Generally ignored, but can crash /usr/bin/python3 in rare cases
+    OTEL_EXPORTER_JAEGER_ENDPOINT
+       Where to send debug traces
+    TMPDIR
+       Where to make temporary files
+    USER
+       Username
+    X509_USER_PROXY
+       Location of old globus grid proxy
+
+    Numerous other environment variables starting with _condor_... or
+    JOBSUB_...  can affect job submission, specify default options, etc.
+""",
+        file=f,
+    )
