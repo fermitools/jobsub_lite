@@ -1,0 +1,115 @@
+#!/usr/bin/python3 -I
+
+#
+# jobsub_cleanup_cred -- utility to cleanup tokens, etc. on condor_credd's
+#
+# COPYRIGHT 2022 FERMI NATIONAL ACCELERATOR LABORATORY
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+#
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""
+    utility to cleanup tokens, etc. on condor_credd's
+"""
+# pylint: disable=wrong-import-position,wrong-import-order,import-error
+
+import argparse
+from collections import defaultdict
+import os
+import sys
+import re
+
+if os.environ.get("LD_LIBRARY_PATH", ""):
+    del os.environ["LD_LIBRARY_PATH"]
+    os.execv(sys.argv[0], sys.argv)
+
+PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(PREFIX, "lib"))
+
+import fake_ifdh
+from creds import get_creds, CredentialSet
+import get_parser
+from condor import get_schedd_names
+
+notes = """
+
+BEARER_TOKEN_FILE=/tmp/bt_token... _condor_COLLECTOR_HOST=dunegpcoll02.fnal.gov _condor_CREDD_HOST=dunegpschedd02.fnal.gov condor_store_cred qery-oauth
+
+will list your tokens on that host, something like:
+Account: <current> (mengel)
+CredType: oauth
+
+A credential was stored and is valid.
+
+Credential info:
+dune.top = 1681431891
+dune.use = 1682976510
+dune_ab0f4c39c0.top = 1682090936
+dune_ab0f4c39c0.use = 1682976330
+and:
+BEARER_TOKEN_FILE=/tmp/bt_token... _condor_COLLECTOR_HOST=dunegpcoll02.fnal.gov _condor_CREDD_HOST=dunegpschedd02.fnal.gov condor_store_cred delete-oauth -s credname
+will delete the one named 'credname' (i.e. either 'dune' or 'dune_ab0f4c39c0' in my example above).
+"""
+
+
+def query_creds(schedd):
+    res: List[str] = []
+    os.environ["_condor_CREDD_HOST"] = schedd
+    parsing = False
+    cmd = "condor_store_cred query-oauth"
+    print(f"credentials on {schedd}:")
+    with os.popen(cmd) as scf:
+        for line in scf.readlines():
+            line = line.strip()
+            if line == "Credential info:":
+                parsing = True
+                continue
+            if line and parsing:
+                print(line)
+                tname, time = line.split("=")
+                tname = tname.strip().replace(".top", "").replace(".use", "")
+                time = time.strip()
+                res.append(tname)
+    return res
+
+
+def del_cred(schedd, tname):
+    os.environ["_condor_CREDD_HOST"] = schedd
+    if tname.find("_") > 0:
+        tname, handle = tname.split("_")
+        cmd = f"condor_store_cred delete-oauth -s {tname} -H {handle}"
+    else:
+        cmd = f"condor_store_cred delete-oauth -s {tname}"
+    print(f"Running: '{cmd}' against {schedd}:")
+    os.system(cmd)
+
+
+def main():
+    parser = get_parser.get_jobid_parser(add_condor_epilog=True)
+    parser.add_argument("-name", help="Set schedd name", default=None)
+    args = parser.parse_args()
+    varg = vars(args)
+
+    cs = get_creds(varg)
+    schedd_list = get_schedd_names(varg)
+    print(f"Schedds to clean: {schedd_list}")
+    for schedd_host in schedd_list:
+        for tname in query_creds(schedd_host):
+            del_cred(schedd_host, tname)
+    print("After:")
+    for schedd_host in schedd_list:
+        query_creds(schedd_host)
+    print("Done.")
+
+
+if __name__ == "__main__":
+    main()
