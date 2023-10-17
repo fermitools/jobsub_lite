@@ -101,6 +101,11 @@ def main():
 
     cs = get_creds(varg)
     schedd_list = get_schedd_names(varg)
+    if args.name and args.name not in schedd_list:
+        print(f"invalid schedd {args.name}")
+        exit(1)
+    if args.name and args.name in schedd_list:
+        schedd_list = [args.name]
     print(f"Schedds to clean: {schedd_list}")
     for schedd_host in schedd_list:
         for tname in query_creds(schedd_host):
