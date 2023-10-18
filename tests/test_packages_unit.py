@@ -61,7 +61,10 @@ def setup_ups(monkeypatch):
     # The tester may have Spack, or the applicable package installed directly via RPM
     yield
     for env_key in env_to_add.keys():
-        monkeypatch.delenv(env_key)
+        try:
+            monkeypatch.delenv(env_key)
+        except:
+            pass
 
 
 class TestPackagesUnit:

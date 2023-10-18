@@ -15,7 +15,8 @@ OSR=$(shell /bin/sh -c ' . /etc/os-release; echo $$VERSION_ID | sed -e s/\..*//'
 
 .PHONY: all clean tarball set-version rpm clean-all
 
-ifeq($OSR,7)
+ifeq ($(OSR), 7)
+
 # we only need the tracing-rpm on SL7/EL7
 
 all: tarball set-version tracing-rpm rpm clean
