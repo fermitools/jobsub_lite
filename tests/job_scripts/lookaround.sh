@@ -39,7 +39,7 @@ echo "Token: direct"
 echo "============"
 echo .condor_creds/*.use
 cat  .condor_creds/*.use
-decode_token.sh .condor_creds/*.use
+httokendecode .condor_creds/*.use
 echo "============"
 echo "ifdh ls"
 echo "============"

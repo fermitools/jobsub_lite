@@ -15,7 +15,6 @@ else:
 
 import token_mods
 
-# change path to get our decode_token.sh
 if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
     os.environ["PATH"] = "/opt/jobsub_lite/bin:" + os.environ["PATH"]
 else:

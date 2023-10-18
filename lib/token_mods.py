@@ -1,8 +1,9 @@
 import os
 import os.path
+import scitokens  # type: ignore
 import shutil
 import sys
-from typing import List, Set
+from typing import List, Set, Dict, Any
 
 """
     Routines to deal with token scopes (permissions) which
@@ -55,9 +56,10 @@ def use_token_copy(tokenfile: str) -> str:
 def get_token_scope(tokenfilename: str) -> List[str]:
     """get the list of scopes from our token file"""
 
-    with os.popen(f"decode_token.sh -e scope {tokenfilename}", "r") as sf:
-        data = sf.read()
-        scopelist = data.strip().strip('"').split(" ")
+    with open(tokenfilename) as f:
+        token_encoded = f.read().strip()
+        token = scitokens.SciToken.deserialize(token_encoded, insecure=True)
+        scopelist = str(token.get("scope")).split(" ")
 
     return scopelist
 

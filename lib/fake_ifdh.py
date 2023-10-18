@@ -23,14 +23,18 @@ import argparse
 import json
 import os
 import re
+import scitokens  # type: ignore
 import shlex
 import subprocess
 import sys
 import time
 from typing import Union, Optional, List, Dict, Any
 from typing import Union, Optional, List
-from tracing import as_span, add_event
 
+PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(PREFIX, "lib"))
+
+from tracing import as_span, add_event
 import htcondor  # type: ignore
 
 VAULT_OPTS = htcondor.param.get("SEC_CREDENTIAL_GETTOKEN_OPTS", "")
@@ -75,40 +79,30 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
             return role
 
     # if there's a role in the wlcg.groups of the token, pick that
-    if os.environ.get("BEARER_TOKEN_FILE", False):
-        with os.popen("decode_token.sh $BEARER_TOKEN_FILE", "r") as f:
-            token_s = f.read()
-            token = json.loads(token_s)
-            groups: List[str] = token.get("wlcg.groups", [])
-            for g in groups:
-                m = re.match(r"/.*/(.*)", g)
-                if m:
-                    role = m.group(1)
-                    return role.capitalize()
+    if os.environ.get("BEARER_TOKEN_FILE", False) and os.path.exists(
+        os.environ["BEARER_TOKEN_FILE"]
+    ):
+        token = scitokens.SciToken.discover(insecure=True)
+        groups: List[str] = token.get("wlcg.groups", [])
+        for g in groups:
+            m = re.match(r"/.*/(.*)", g)
+            if m:
+                role = m.group(1)
+                return role.capitalize()
 
     return DEFAULT_ROLE
 
 
 @as_span("checkToken", arg_attrs=["*"])
-def checkToken(tokenfile: str) -> bool:
-    """check if token is (almost) expired"""
-    if not os.path.exists(tokenfile):
+def checkToken() -> bool:
+    """check if token in $BEARER_TOKEN_FILE is (almost) expired"""
+    if not os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
         return False
     exp_time = None
-    cmd = f"decode_token.sh -e exp {tokenfile} 2>/dev/null"
-    with os.popen(cmd, "r") as f:
-        exp_time = f.read()
-    try:
-        add_event(f"expiration: {exp_time}")
-        return int(exp_time) - time.time() > 60
-    except ValueError as e:
-        print(
-            "decode_token.sh could not successfully extract the "
-            f"expiration time from token file {tokenfile}. Please open "
-            "a ticket to Distributed Computing Support if you need further "
-            "assistance."
-        )
-        raise
+    token = scitokens.SciToken.discover(insecure=True)
+    exp_time = str(token.get("exp"))
+    add_event(f"expiration: {exp_time}")
+    return int(exp_time) - time.time() > 60
 
 
 @as_span("getToken")
@@ -131,7 +125,13 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
         tokenfile = f"{tmp}/bt_token_{issuer}_{role}_{pid}"
         os.environ["BEARER_TOKEN_FILE"] = tokenfile
 
-    if not checkToken(tokenfile):
+    try:
+        token_ok = checkToken()
+    except:
+        # if anything goes wrong checking, its not okay, get a fresh one
+        token_ok = False
+
+    if not token_ok:
         cmd = f"htgettoken {VAULT_OPTS} -i {issuer}"
 
         if role != DEFAULT_ROLE:
@@ -141,11 +141,13 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
             sys.stderr.write(f"Running: {cmd}")
 
         res = os.system(cmd)
+
         if res != 0:
             raise PermissionError(f"Failed attempting '{cmd}'")
-        if checkToken(tokenfile):
-            return tokenfile
-        raise PermissionError(f"Failed validating token from '{cmd}'")
+
+        if not checkToken():
+            raise PermissionError(f"Failed validating token from '{cmd}'")
+
     return tokenfile
 
 
@@ -297,6 +299,7 @@ if __name__ == "__main__":
     commands = {
         "getProxy": getProxy,
         "getToken": getToken,
+        "checkToken": checkToken,
         "cp": cp,
         "ls": ls,
         "mkdir_p": mkdir_p,
@@ -316,7 +319,7 @@ if __name__ == "__main__":
     myrole = getRole(opts.role)
 
     try:
-        if opts.command[0] in ("cp", "ls", "mkdir_p"):
+        if opts.command[0] in ("cp", "ls", "mkdir_p", "checkToken"):
             print(commands[opts.command[0]](*opts.cpargs[0]))  # type: ignore
         else:
             result = commands[opts.command[0]](myrole, verbose=1)  # type: ignore

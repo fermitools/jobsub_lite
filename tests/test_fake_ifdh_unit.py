@@ -1,6 +1,7 @@
 import os
 import sys
 import pytest
+import scitokens
 
 #
 # we assume everwhere our current directory is in the package
@@ -59,6 +60,11 @@ def test_getRole_override():
 @pytest.fixture
 def clear_token():
     if os.environ.get("BEARER_TOKEN_FILE", None):
+        if os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
+            try:
+                os.unlink(os.environ["BEARER_TOKEN_FILE"])
+            except:
+                pass
         del os.environ["BEARER_TOKEN_FILE"]
 
 
@@ -70,14 +76,18 @@ def fermilab_token(clear_token):
 
 @pytest.mark.unit
 def test_checkToken_fail():
-    tokenfile = "/dev/null"
-    with pytest.raises(ValueError):
-        res = fake_ifdh.checkToken(tokenfile)
+    os.environ["BEARER_TOKEN_FILE"] = "/dev/null"
+    try:
+        res = fake_ifdh.checkToken()
+    except:
+        res = False
+    assert not res
 
 
 @pytest.mark.unit
 def test_checkToken_success(fermilab_token):
-    res = fake_ifdh.checkToken(fermilab_token)
+    os.environ["BEARER_TOKEN_FILE"] = fermilab_token
+    res = fake_ifdh.checkToken()
     assert res
 
 
@@ -117,7 +127,10 @@ def test_getProxy_fail(
 ):
     fake_path = tmp_path / "test_proxy"
     if os.path.exists(fake_path):
-        os.unlink(fake_path)
+        try:
+            os.unlink(fake_path)
+        except:
+            pass
     os.environ["X509_USER_PROXY"] = str(fake_path)
     os.environ["GROUP"] = "bozo"
     with pytest.raises(PermissionError):
