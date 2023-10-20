@@ -42,10 +42,10 @@ from condor import get_schedd_names
 
 notes = """
 
-BEARER_TOKEN_FILE=/tmp/bt_token... _condor_COLLECTOR_HOST=dunegpcoll02.fnal.gov _condor_CREDD_HOST=dunegpschedd02.fnal.gov condor_store_cred qery-oauth
+BEARER_TOKEN_FILE=/tmp/bt_token... _condor_COLLECTOR_HOST=xxx _condor_CREDD_HOST=yyy condor_store_cred query-oauth
 
 will list your tokens on that host, something like:
-Account: <current> (mengel)
+Account: <current> (username)
 CredType: oauth
 
 A credential was stored and is valid.
@@ -56,7 +56,7 @@ dune.use = 1682976510
 dune_ab0f4c39c0.top = 1682090936
 dune_ab0f4c39c0.use = 1682976330
 and:
-BEARER_TOKEN_FILE=/tmp/bt_token... _condor_COLLECTOR_HOST=dunegpcoll02.fnal.gov _condor_CREDD_HOST=dunegpschedd02.fnal.gov condor_store_cred delete-oauth -s credname
+BEARER_TOKEN_FILE=/tmp/bt_token... _condor_COLLECTOR_HOST=xxx _condor_CREDD_HOST=yyy condor_store_cred delete-oauth -s credname
 will delete the one named 'credname' (i.e. either 'dune' or 'dune_ab0f4c39c0' in my example above).
 """
 
