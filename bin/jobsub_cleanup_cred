@@ -66,6 +66,7 @@ def query_creds(schedd):
     os.environ["_condor_CREDD_HOST"] = schedd
     parsing = False
     cmd = "condor_store_cred query-oauth"
+    last_tname = "xx"
     print(f"credentials on {schedd}:")
     with os.popen(cmd) as scf:
         for line in scf.readlines():
@@ -78,26 +79,38 @@ def query_creds(schedd):
                 tname, time = line.split("=")
                 tname = tname.strip().replace(".top", "").replace(".use", "")
                 time = time.strip()
-                res.append(tname)
+                if tname != last_tname:
+                    res.append(tname)
+                last_tname = tname
     return res
 
 
-def del_cred(schedd, tname):
+def del_cred(schedd, tname, no_delete=False):
     os.environ["_condor_CREDD_HOST"] = schedd
     if tname.find("_") > 0:
         tname, handle = tname.split("_")
         cmd = f"condor_store_cred delete-oauth -s {tname} -H {handle}"
     else:
         cmd = f"condor_store_cred delete-oauth -s {tname}"
-    print(f"Running: '{cmd}' against {schedd}:")
-    os.system(cmd)
+    act = "I would run: " if no_delete else "Running:"
+    print(f"{act} _condor_CREDD_HOST={schedd} {cmd}")
+    if not no_delete:
+        os.system(cmd)
 
 
 def main():
     parser = get_parser.get_jobid_parser(add_condor_epilog=True)
     parser.add_argument("-name", help="Set schedd name", default=None)
+    parser.add_argument(
+        "-n",
+        "--no-delete",
+        default=False,
+        action="store_true",
+        help="List commands but don't do them",
+    )
     args = parser.parse_args()
     varg = vars(args)
+    nflag = args.no_delete
 
     cs = get_creds(varg)
     schedd_list = get_schedd_names(varg)
@@ -109,7 +122,7 @@ def main():
     print(f"Schedds to clean: {schedd_list}")
     for schedd_host in schedd_list:
         for tname in query_creds(schedd_host):
-            del_cred(schedd_host, tname)
+            del_cred(schedd_host, tname, nflag)
     print("After:")
     for schedd_host in schedd_list:
         query_creds(schedd_host)
