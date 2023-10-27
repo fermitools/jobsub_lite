@@ -441,4 +441,8 @@ ${JSB_TMP}/ifdh.sh cp -D $CONDOR_DIR_{{pair[0]}}/* {{pair[1]}}
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS 1>&2
 ${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID {{user}}:{{executable|basename}} COMPLETED with return code $JOB_RET_STATUS"
+
+# log cvmfs info, in case of problems -- 50 lines is an unlikely high limit.
+attr -g logbuffer /cvmfs/{{group}}.opensciencegrid.org/ | tail -50 | while read line; do ${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID cvmfs: $line"; done
+
 exit $JOB_RET_STATUS
