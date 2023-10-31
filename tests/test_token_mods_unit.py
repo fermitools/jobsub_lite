@@ -41,7 +41,7 @@ def sample_sl():
 def test_get_job_scopes(sample_sl):
     """layer jobsub_submit calls to get desired job scope..."""
 
-    tokenf = "decode_token_tests/mp1"  # sample mu2e token with modify
+    tokenf = "decode_token_tests/mp1"  # sample mu2e token with modify generated from https://demo.scitokens.org/
     need_modify = [
         "/mu2e/scratch/users/username/out1/d1",
         "/mu2e/scratch/users/username/out2/d2",

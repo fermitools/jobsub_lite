@@ -250,7 +250,8 @@ def clear_group_from_environment():
     if old_group:
         del os.environ["GROUP"]
     yield
-    os.environ["GROUP"] = old_group
+    if old_group:
+        os.environ["GROUP"] = old_group
 
 
 @pytest.fixture
