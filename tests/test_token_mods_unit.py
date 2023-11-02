@@ -25,6 +25,10 @@ else:
     )
 
 
+""" Note:  The test tokens in the decode_token_tests dir are set to expire at 2222-02-22 22:22 GMT.  Presumably there'll be a new auth
+technology well before then"""
+
+
 @pytest.fixture
 def sample_sl():
     """scope that should be in decode_token_tests/da1"""
