@@ -438,26 +438,49 @@ ${JSB_TMP}/ifdh.sh cp _joblogfile {{log_file}}
 ${JSB_TMP}/ifdh.sh cp -D $CONDOR_DIR_{{pair[0]}}/* {{pair[1]}}
 {%endfor%}
 
-echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS
-echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS 1>&2
-${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID {{user}}:{{executable|basename}} COMPLETED with return code $JOB_RET_STATUS"
-
 # log cvmfs info, in case of problems
-# on job failure: max 50 lines
+# on job failure: everything after second-to-last "switched to catalog revision x"
 # on job success: last 'catalog revision n' line
-if [ $JOB_RET_STATUS = 0 ]
-then
-    line=`attr -g logbuffer /cvmfs/{{group}}.opensciencegrid.org/ |
-        grep catalog.revision |
-        tail -1`
-    ${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID cvmfs: $line"
-else
+cvmfs_info() {
+    echo "cvmfs info:" >&2
+    # pick filter based on job status, whether we have multiple "switched to catalog revision" lines
+    if [ $JOB_RET_STATUS = 0 ]
+    then
+        filter="grep to.catalog.revision | tail -1"
+    else
+        dummyline="__dummy__to_catalog_revision"
+        second_latest_rev_re=$( echo "$dummyline"; attr -g logbuffer /cvmfs/dune.opensciencegrid.org/ |
+                               grep to.catalog.revision |
+                               tail -2 | head -1 |
+                               sed -e 's/[][\/\\]/\\&/g'  # backslash escape square brackets and slashes
+                           )
+
+        if [ "$second_latest_rev_re" = "$dummyline" ]
+        then
+            # there were zero or one "switched to catalog revision x" lines, send them all
+            filter=cat
+        else
+            # delete everything up to that second latest one
+            filter="sed -e '1,/$second_latest_rev_re/d'"
+        fi
+    fi
+
+    # now log filtered messages to ifdh, and into stderr
+
     attr -g logbuffer /cvmfs/{{group}}.opensciencegrid.org/ |
-        tail -50 |
+        grep -v '^$' |
+        eval "$filter" |
         while read line
         do
             ${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID cvmfs: $line"
+            echo $line >&2
         done
-fi
+}
+
+cvmfs_info
+
+echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS
+echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS 1>&2
+${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID {{user}}:{{executable|basename}} COMPLETED with return code $JOB_RET_STATUS"
 
 exit $JOB_RET_STATUS
