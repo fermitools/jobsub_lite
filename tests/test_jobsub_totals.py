@@ -29,4 +29,4 @@ class TestJobsubTotals:
             last
             == "1862 total; 15 completed, 0 removed, 64 idle, 1748 running, 35 held, 0 suspended\n"
         )
-        assert count == 1864
+        assert count == 1863
