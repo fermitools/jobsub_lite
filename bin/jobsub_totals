@@ -19,7 +19,7 @@ type_map = OrderedDict(
 )
 
 totals = defaultdict(lambda: 0)
-totals["T"] = -1  # offset for jobsub_q heading line
+totals["T"] = 0
 
 for line in sys.stdin.readlines():
     print(line, end="")
