@@ -39,7 +39,7 @@ import creds
 import get_parser
 import condor
 from version import print_version, print_support_email
-from tracing import as_span
+from tracing import as_span, log_host_time
 
 
 class StoreGroupinEnvironment(argparse.Action):
@@ -74,6 +74,8 @@ def main() -> None:
 
     arglist, passthru = parser.parse_known_args()
     verbose = arglist.verbose
+
+    log_host_time(verbose)
 
     if arglist.version:
         print_version()

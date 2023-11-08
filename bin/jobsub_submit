@@ -43,7 +43,7 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #
 sys.path.append(os.path.join(PREFIX, "lib"))
 from packages import pkg_find
-from tracing import as_span
+from tracing import as_span, log_host_time
 
 pkg_find("jinja")  # type: ignore
 import jinja2 as jinja
@@ -115,6 +115,8 @@ def main():
     sanitize_lines(args.lines)
 
     verbose = args.verbose
+
+    log_host_time(verbose)
 
     # if they were trying to pass LD_LIBRARY_PATH to the job, get it from HIDE_LD_LIBRARY_PATH
     if "LD_LIBRARY_PATH" in args.environment and os.environ.get(
