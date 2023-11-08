@@ -1,0 +1,159 @@
+#!/bin/sh
+
+. /grid/fermiapp/products/common/etc/setups.sh
+
+setup hypotcode
+
+export xDATA_DISPATCHER_URL=https://metacat.fnal.gov:9443/hypot_dd/data
+export xMETACAT_SERVER_URL=https://metacat.fnal.gov:9443/hypot_meta_dev/app
+export xMETACAT_AUTH_SERVER_URL=https://metacat.fnal.gov:8143/auth/hypot_dev
+export xDATA_DISPATCHER_AUTH_URL=https://metacat.fnal.gov:8143/auth/hypot_dev
+
+
+. /scratch/mengel/packages/setup-env.sh
+spack load r-m-dd-config experiment=hypot
+
+if [ "$xDATA_DISPATCHER_URL" != "$DATA_DISPATCHER_URL" ]
+then
+    echo DATA_DISPATCHER_URL fail
+    exit 1
+fi
+if [ "$xMETACAT_SERVER_URL" != "$METACAT_SERVER_URL" ]
+then
+    echo METACAT_SERVER_URL fail
+    exit 1
+fi
+if [ "$xMETACAT_AUTH_SERVER_URL" != "$METACAT_AUTH_SERVER_URL" ]
+then
+    echo METACAT_AUTH_SERVER_URL fail
+    exit 1
+fi
+if [ "$xDATA_DISPATCHER_AUTH_URL" != "$DATA_DISPATCHER_AUTH_URL" ]
+then
+    echo DATA_DISPATCHER_AUTH_URL fail
+    exit 1
+fi
+
+metacat dataset create  $USER:gen_cfg "job configs for hypotcode tests"
+
+srcf=$HYPOTCODE_DIR/fcl/gen_nova.fcl
+ddir=/pnfs/fermilab/volatile/$USER/poms_test/gen_cfg
+flist="
+$USER:a.fcl
+$USER:b.fcl
+$USER:c.fcl
+$USER:d.fcl
+$USER:e.fcl
+"
+
+export IFDH_TOKEN_ENABLE=1
+export EXPERIMENT=hypot
+BEARER_TOKEN_FILE=$( ifdh getToken )
+
+filesize=`cat $srcf | wc -c`
+
+cat > a.json <<EOF
+{
+ "name": "a.fcl",
+ "namespace": "$USER",
+ "create_date": "2016-10-11T15:49:15+00:00",
+ "user": "$USER",
+ "update_date": "2018-09-11T15:30:42+00:00",
+ "file_size": $filesize,
+ "content_status": "good",
+ "file_type": "unknown",
+ "file_format": "unknown",
+ "end_time": "2016-10-01T00:00:00+00:00",
+ "Dataset.Tag": "gen_cfg"
+}
+EOF
+cat > b.json <<EOF
+{
+ "name": "b.fcl",
+ "namespace": "$USER",
+ "create_date": "2016-10-11T15:49:15+00:00",
+ "user": "$USER",
+ "update_date": "2018-09-11T15:30:42+00:00",
+ "update_user": "$USER",
+ "file_size": $filesize,
+ "content_status": "good",
+ "file_type": "unknown",
+ "file_format": "unknown",
+ "end_time": "2016-10-02T00:00:00+00:00",
+ "Dataset.Tag": "gen_cfg"
+}
+EOF
+cat > c.json <<EOF
+{
+ "name": "c.fcl",
+ "namespace": "$USER",
+ "create_date": "2016-10-11T15:49:15+00:00",
+ "user": "$USER",
+ "update_date": "2018-09-11T15:30:42+00:00",
+ "update_user": "$USER",
+ "file_size": $filesize,
+ "content_status": "good",
+ "file_type": "unknown",
+ "file_format": "unknown",
+ "end_time": "2016-10-03T00:00:00+00:00",
+ "Dataset.Tag": "gen_cfg"
+}
+EOF
+cat > d.json <<EOF
+{
+ "name": "d.fcl",
+ "namespace": "$USER",
+ "create_date": "2016-10-11T15:49:15+00:00",
+ "user": "$USER",
+ "update_date": "2018-09-11T15:30:42+00:00",
+ "update_user": "$USER",
+ "file_size": $filesize,
+ "content_status": "good",
+ "file_type": "unknown",
+ "file_format": "unknown",
+ "end_time": "2016-10-04T00:00:00+00:00",
+ "Dataset.Tag": "gen_cfg"
+}
+EOF
+cat > e.json <<EOF
+{
+ "name": "e.fcl",
+ "namespace": "$USER",
+ "create_date": "2016-10-11T15:49:15+00:00",
+ "user": "$USER",
+ "update_date": "2017-11-30T22:41:54+00:00",
+ "update_user": "$USER",
+ "file_size": $filesize,
+ "content_status": "good",
+ "file_type": "unknown",
+ "file_format": "unknown",
+ "end_time": "2016-10-05T00:00:00+00:00",
+ "Dataset.Tag": "gen_cfg"
+}
+EOF
+
+for i in a b c d e
+do
+   metacat file declare -f $i.json $USER:gen_cfg
+done
+
+export IFDH_CP_MAXRETRIES=0
+
+kx509
+
+echo RSEs are:
+rucio list-rses
+
+rucio-admin  scope add --account $USER  --scope $USER
+
+for f in $flist
+do
+   bf=`echo $f| sed -e "s/$USER://"`
+   rucio upload --rse FNAL_DCACHE --scope $USER --name $bf $srcf
+done
+
+rucio list-dids --filter type=all $USER:*
+
+rucio list-file-replicas $flist
+
+rm -rf /tmp/dat$$
