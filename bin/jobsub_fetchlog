@@ -50,7 +50,7 @@ from get_parser import get_jobid_parser
 from condor import Job
 from utils import cleanup
 from version import print_version, print_support_email
-from tracing import as_span, add_event
+from tracing import as_span, add_event, log_host_time
 
 
 verbose = 0
@@ -246,6 +246,7 @@ def main():
     args = parser.parse_args()
 
     verbose = args.verbose
+    log_host_time(verbose)
 
     if args.version:
         print_version()

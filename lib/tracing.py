@@ -18,8 +18,10 @@
 """
 
 from functools import wraps
+import datetime
 import os
 import sys
+import socket
 import logging
 from typing import Dict, Any, Callable, TypeVar, Optional, List
 
@@ -168,3 +170,19 @@ def as_span(
         return wrapper  # type: ignore
 
     return as_span_inner
+
+
+#
+# log the current time and hostname in a way that also shows up in the
+# Jaeger trace...
+#
+
+
+@as_span("log_host_time")
+def log_host_time(verbose: int) -> None:
+    datestr = str(datetime.datetime.now())
+    fqdn = socket.getfqdn()
+    msg = f"running on hostname {fqdn} at {datestr}\n"
+    add_event("log_host_time", {"host": fqdn, "date": datestr})
+    if verbose != 0:
+        sys.stderr.write(msg)
