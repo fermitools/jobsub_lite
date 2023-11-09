@@ -179,10 +179,10 @@ def as_span(
 
 
 @as_span("log_host_time")
-def log_host_time(verbose: bool) -> None:
+def log_host_time(verbose: int) -> None:
     datestr = str(datetime.datetime.now())
     fqdn = socket.getfqdn()
     msg = f"running on hostname {fqdn} at {datestr}\n"
     add_event("log_host_time", {"host": fqdn, "date": datestr})
-    if verbose:
+    if verbose != 0:
         sys.stderr.write(msg)
