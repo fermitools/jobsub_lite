@@ -41,6 +41,20 @@ VAULT_OPTS = htcondor.param.get("SEC_CREDENTIAL_GETTOKEN_OPTS", "")
 DEFAULT_ROLE = "Analysis"
 
 
+def init_scitokens() -> None:
+    cfgfile = f'{os.environ.get("HOME", "/tmp")}/.jobsub_scitokens.cfg'
+    uid = os.getuid()
+    if not os.access(cfgfile, os.R_OK):
+        with open(cfgfile, "w") as cff:
+            cff.write(
+                f"[scitokens]\ncache_location: /var/run/user/{uid}/jobsub_scitokens.cache"
+            )
+    scitokens.set_config(cfgfile)
+
+
+init_scitokens()
+
+
 def getTmp() -> str:
     """return temp directory path"""
     return os.environ.get("TMPDIR", "/tmp")
