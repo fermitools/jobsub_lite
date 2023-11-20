@@ -70,6 +70,14 @@ def init_scitokens() -> None:
         with open(cfgfile, "w") as cff:
             cff.write(f"[scitokens]\ncache_location: {jstmpdir}\n")
 
+    # in case moving it to /tmp doesn't fix the bug, check for zero length cache file
+    # and remove it if zero length
+    cachefile = f"{jstmpdir}/scitokens/scitokens_keycache.sqllite"
+    if os.access(cachefile, os.R_OK):
+        si = os.stat(f"{jstmpdir}/scitokens/scitokens_keycache.sqllite")
+        if si.st_size == 0:
+            os.unlink(cachefile)
+
     scitokens.set_config(cfgfile)
 
 
