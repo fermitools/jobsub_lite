@@ -42,13 +42,34 @@ DEFAULT_ROLE = "Analysis"
 
 
 def init_scitokens() -> None:
-    cfgfile = f'{os.environ.get("HOME", "/tmp")}/.jobsub_scitokens.cfg'
+    """
+    So the scitokens library by default puts a sqlite database
+    in $HOME/.cache/scitokens; which is a problem when your
+    home area is in NFS, as sqlite doesn't like sharing files
+    over NFS.  So to tell it to use something different
+    we have to make a config file which points the cache area
+    somewhere local.
+    So we make a subdirectory in /tmp (or $TMPDIR)
+    and put the config file in there, which tells scitokens
+    to put the cache file in there as well.
+    """
     uid = os.getuid()
-    if not os.access(cfgfile, os.R_OK):
+    tdir = os.environ.get("TMPDIR", "/tmp")
+    jstmpdir = f"{tdir}/js_scitok_{uid}"
+    cfgfile = f"{jstmpdir}/.scitokens.cfg"
+
+    # make sure we have the directory
+    if not os.access(jstmpdir, os.W_OK):
+        os.makedirs(jstmpdir)
+
+    # always update the config file, so /tmp scrubbers do not delete it
+    # out from under us
+    if os.access(cfgfile, os.W_OK):
+        os.utime(cfgfile)
+    else:
         with open(cfgfile, "w") as cff:
-            cff.write(
-                f"[scitokens]\ncache_location: /var/run/user/{uid}/jobsub_scitokens.cache"
-            )
+            cff.write(f"[scitokens]\ncache_location: {jstmpdir}\n")
+
     scitokens.set_config(cfgfile)
 
 
