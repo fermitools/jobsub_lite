@@ -200,34 +200,35 @@ def main():
 
     set_extras_n_fix_units(varg, schedd_name, cred_set)
 
-    if args.dag:
-        jobsub_submit_dag(varg, schedd_name)
-    elif args.dataset_definition:
-        jobsub_submit_dataset_definition(varg, schedd_name)
-    elif args.maxConcurrent:
-        jobsub_submit_maxconcurrent(varg, schedd_name)
-    else:
-        jobsub_submit_simple(varg, schedd_name)
+    try:
+        if args.dag:
+            jobsub_submit_dag(varg, schedd_name)
+        elif args.dataset_definition:
+            jobsub_submit_dataset_definition(varg, schedd_name)
+        elif args.maxConcurrent:
+            jobsub_submit_maxconcurrent(varg, schedd_name)
+        else:
+            jobsub_submit_simple(varg, schedd_name)
 
-    if args.verbose:
-        # remind folks where transferred data goes.
-        for f in args.orig_input_file:
-            print(
-                f"File {f}\n ... will be available as: $CONDOR_DIR_INPUT/{os.path.basename(f)}"
-            )
-        i = 0
-        for f in args.orig_tar_file_name:
-            print(
-                f"Contents of {f}\n ... will be available in $INPUT_TAR_DIR_LOCAL{'_'+str(i) if i else ''}"
-            )
-            i = i + 1
-        if args.orig_input_file or args.orig_tar_file_name:
-            print("in your job.")
-
-    if varg.get("no_submit", False):
-        print(f"Submission files are in: {varg['submitdir']}")
-    else:
-        cleanup(varg)
+        if args.verbose:
+            # remind folks where transferred data goes.
+            for f in args.orig_input_file:
+                print(
+                    f"File {f}\n ... will be available as: $CONDOR_DIR_INPUT/{os.path.basename(f)}"
+                )
+            i = 0
+            for f in args.orig_tar_file_name:
+                print(
+                    f"Contents of {f}\n ... will be available in $INPUT_TAR_DIR_LOCAL{'_'+str(i) if i else ''}"
+                )
+                i = i + 1
+            if args.orig_input_file or args.orig_tar_file_name:
+                print("in your job.")
+    finally:
+        if varg.get("no_submit", False):
+            print(f"Submission files are in: {varg['submitdir']}")
+        else:
+            cleanup(varg)
 
 
 if __name__ == "__main__":
