@@ -191,108 +191,110 @@ def do_tarballs(args: argparse.Namespace) -> None:
     args.orig_tar_file_name = args.tar_file_name.copy()
 
     pnfs_classad_line: List[str] = []
-    for fn in args.input_file:
 
-        if fn.startswith("dropbox:"):
+    try:
+        for fn in args.input_file:
 
-            if fn.startswith("dropbox://"):
-                fn = fn.replace("//", "", 1)
+            if fn.startswith("dropbox:"):
 
-            pfn = fn.replace("dropbox:", "", 1)
+                if fn.startswith("dropbox://"):
+                    fn = fn.replace("//", "", 1)
 
-            # backwards incompatability warning
-            if tarfile_mod.is_tarfile(pfn):
-                sys.stderr.write(
-                    "Notice: with jobsub_lite, -f dropbox:... "
-                    "does not unpack tarfiles, use --tar_file_name instead\n"
-                )
+                pfn = fn.replace("dropbox:", "", 1)
 
-            if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
-                # make sure they'll be able to read it, etc.
-                savemode = os.stat(pfn).st_mode
-                try:
-                    os.chmod(pfn, 0o755)
-                except OSError:
-                    pass
-                tarfile = tar_up(
-                    os.path.dirname(pfn), "/dev/null", os.path.basename(pfn)
-                )
-                try:
-                    os.chmod(pfn, savemode)
-                except OSError:
-                    pass
-                clean_up.append(tarfile)
-                path = tarfile_in_dropbox(args, tarfile)
-                if path:
-                    res.append(os.path.join(path, os.path.basename(pfn)))
-                else:
-                    res.append(pfn)
+                # backwards incompatability warning
+                if tarfile_mod.is_tarfile(pfn):
+                    sys.stderr.write(
+                        "Notice: with jobsub_lite, -f dropbox:... "
+                        "does not unpack tarfiles, use --tar_file_name instead\n"
+                    )
 
-            elif args.use_dropbox == "pnfs":
-                location = dcache_persistent_path(args.group, pfn)
-                existing = fake_ifdh.ls(location)
-                if existing:
-                    print(f"file {pfn} already copied to resilient area")
-                else:
-                    fake_ifdh.mkdir_p(os.path.dirname(location))
-                    fake_ifdh.chmod(os.path.dirname(location), 0o775)
-                    fake_ifdh.cp(pfn, location)
-                    fake_ifdh.chmod(location, 0o775)
+                if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
+                    # make sure they'll be able to read it, etc.
+                    savemode = os.stat(pfn).st_mode
+                    try:
+                        os.chmod(pfn, 0o755)
+                    except OSError:
+                        pass
+                    tarfile = tar_up(
+                        os.path.dirname(pfn), "/dev/null", os.path.basename(pfn)
+                    )
+                    try:
+                        os.chmod(pfn, savemode)
+                    except OSError:
+                        pass
+                    clean_up.append(tarfile)
+                    path = tarfile_in_dropbox(args, tarfile)
+                    if path:
+                        res.append(os.path.join(path, os.path.basename(pfn)))
+                    else:
+                        res.append(pfn)
+
+                elif args.use_dropbox == "pnfs":
+                    location = dcache_persistent_path(args.group, pfn)
                     existing = fake_ifdh.ls(location)
-                    if not existing:
-                        raise PermissionError(f"Error: Unable to create {location}")
-                res.append(location)
-                pnfs_classad_line.append(location)
+                    if existing:
+                        print(f"file {pfn} already copied to resilient area")
+                    else:
+                        fake_ifdh.mkdir_p(os.path.dirname(location))
+                        fake_ifdh.chmod(os.path.dirname(location), 0o775)
+                        fake_ifdh.cp(pfn, location)
+                        fake_ifdh.chmod(location, 0o775)
+                        existing = fake_ifdh.ls(location)
+                        if not existing:
+                            raise PermissionError(f"Error: Unable to create {location}")
+                    res.append(location)
+                    pnfs_classad_line.append(location)
+                else:
+
+                    res.append(pfn)
             else:
+                res.append(fn)
 
-                res.append(pfn)
-        else:
-            res.append(fn)
+        args.input_file = res
 
-    args.input_file = res
+        res = []
+        orig_basenames = []
+        for tfn in args.tar_file_name:
+            orig_basenames.append(
+                os.path.basename(tfn)
+                .replace(".tbz2", "")
+                .replace(".tar", "")
+                .replace(".tgz", "")
+            )
 
-    res = []
-    orig_basenames = []
-    for tfn in args.tar_file_name:
-        orig_basenames.append(
-            os.path.basename(tfn)
-            .replace(".tbz2", "")
-            .replace(".tar", "")
-            .replace(".tgz", "")
-        )
-
-        if tfn.startswith("tardir://"):
-            tfn = tfn.replace("//", "", 1)
-
-        if tfn.startswith("tardir:"):
-            # tar it up, pretend they gave us dropbox:
-            tarfile = tar_up(tfn[7:], args.tarball_exclusion_file)
-            tfn = f"dropbox:{tarfile}"
-            clean_up.append(tarfile)
-
-        if tfn.startswith("dropbox:"):
-            # move it to dropbox area, pretend they gave us plain path
-            if tfn.startswith("dropbox://"):
+            if tfn.startswith("tardir://"):
                 tfn = tfn.replace("//", "", 1)
-            path = tarfile_in_dropbox(args, tfn[8:])
-            if path:
-                tfn = path
-            else:
-                tfn = tfn.replace("dropbox:", "", 1)
 
-            if args.use_dropbox == "pnfs":
-                pnfs_classad_line.append(tfn)
+            if tfn.startswith("tardir:"):
+                # tar it up, pretend they gave us dropbox:
+                tarfile = tar_up(tfn[7:], args.tarball_exclusion_file)
+                tfn = f"dropbox:{tarfile}"
+                clean_up.append(tarfile)
 
-        res.append(tfn)
-    args.tar_file_name = res
-    args.tar_file_orig_basenames = orig_basenames
+            if tfn.startswith("dropbox:"):
+                # move it to dropbox area, pretend they gave us plain path
+                if tfn.startswith("dropbox://"):
+                    tfn = tfn.replace("//", "", 1)
+                path = tarfile_in_dropbox(args, tfn[8:])
+                if path:
+                    tfn = path
+                else:
+                    tfn = tfn.replace("dropbox:", "", 1)
 
-    # clean up tarfiles we made...
-    for tarfile in clean_up:
-        try:
-            os.unlink(tarfile)
-        except:  # pylint: disable=bare-except
-            print(f"Notice: unable to remove generated tarfile {tarfile}")
+                if args.use_dropbox == "pnfs":
+                    pnfs_classad_line.append(tfn)
+
+            res.append(tfn)
+        args.tar_file_name = res
+        args.tar_file_orig_basenames = orig_basenames
+    finally:
+        # clean up any tarfiles we made...
+        for tarfile in clean_up:
+            try:
+                os.unlink(tarfile)
+            except:  # pylint: disable=bare-except
+                print(f"Notice: unable to remove generated tarfile {tarfile}")
 
     if pnfs_classad_line:
         args.lines.append(f'+PNFS_INPUT_FILES="{",".join(pnfs_classad_line)}"')
