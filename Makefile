@@ -1,7 +1,23 @@
 NAME = jobsub_lite
+
+# In most cases, these two lines should be ALL that need to be changed
+# Warning:  Make sure there is NO trailing whitespace in either of these lines!!
+# Set RC to 0 for final release
 VERSION = v1.5
+RC = 0
+### End expected changes
+
 ROOTDIR = $(shell pwd)
+
 rpmVersion := $(subst v,,$(VERSION))
+ifeq ($(RC), 0)
+rpmReleasePrefix = 1
+libraryVersionSuffix =
+else
+rpmReleasePrefix := 0rc$(RC)
+libraryVersionSuffix := -rc$(RC)
+endif
+
 BUILD_DIR = $(NAME)-$(rpmVersion)
 BUILD_TAR = $(rpmVersion).tar.gz
 RPMBUILD_DIR=${HOME}/rpmbuild
@@ -55,9 +71,10 @@ tarball: set-version
 
 set-version:
 	sed -Ei 's/Version\:[ ]*.+/Version:        $(rpmVersion)/' $(specfile)
-	echo "Set version in spec file to $(rpmVersion)"
-	sed -Ei 's/__version__ = \".+\"/__version__ = "$(rpmVersion)"/' $(versionfile)
-	echo "Set version in version file to $(rpmVersion)"
+	sed -Ei 's/Release\:[ ]*.+/Release:        $(rpmReleasePrefix)%{?dist}/' $(specfile)
+	echo "Set version in spec file to $(rpmVersion), Release $(rpmReleasePrefix)"
+	sed -Ei 's/__version__ = \".+\"/__version__ = "$(rpmVersion)$(libraryVersionSuffix)"/' $(versionfile)
+	echo "Set version in version file to $(rpmVersion)$(libraryVersionSuffix)"
 
 clean:
 	(test -e $(BUILD_DIR)) && (rm -Rf $(BUILD_DIR)) || echo "$(BUILD_DIR) does not exist"
