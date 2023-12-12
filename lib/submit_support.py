@@ -25,7 +25,7 @@ from version import print_version, print_support_email
 from fake_ifdh import mkdir_p, cp
 import pool
 import skip_checks
-from render_files import render_files
+from render_files import render_files, get_basefiles
 
 """ Code factored out of jobsub_submit """
 

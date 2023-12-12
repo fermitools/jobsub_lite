@@ -72,6 +72,7 @@ def find_all_arguments(paired_arguments):
     if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
         f = open("/opt/jobsub_lite/lib/get_parser.py", "r")
     else:
+        os.chdir(os.path.dirname(__file__))
         f = open("../lib/get_parser.py", "r")
     flagargs = set()
     listargs = set()

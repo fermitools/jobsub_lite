@@ -25,7 +25,10 @@ from test_unit import TestUnit
 
 @pytest.fixture
 def get_submit_file():
-    filename = "/tmp/tst{0}.sub".format(os.getpid())
+    tdir=f"/tmp/tst{os.getpid()}"
+    if (not os.path.exists(tdir)):
+        os.mkdir(tdir)
+    filename = f"{tdir}/tst.sub"
     f = open(filename, "w")
     f.write(
         """
@@ -86,7 +89,10 @@ queue 1
 
 @pytest.fixture
 def get_dag_file(get_submit_file):
-    filename = "/tmp/tst{0}.dag".format(os.getpid())
+    tdir=f"/tmp/tst{os.getpid()}"
+    filename = f"{tdir}/tst.dag"
+    if (not os.path.exists(tdir)):
+        os.mkdir(tdir)
     f = open(filename, "w")
     f.write(
         """
@@ -187,10 +193,13 @@ class TestCondorUnit:
     def test_submit_dag_1(self, get_dag_file, needs_credentials):
         """actually submit a dag with condor_submit_dag"""
         # XXX fix me
+        x = TestUnit.test_vargs.copy()
+        x["no_submit"] = True
         res = condor.submit_dag(
-            get_dag_file, TestUnit.test_vargs, TestUnit.test_schedd, cmd_args=[]
+            get_dag_file, x, TestUnit.test_schedd, cmd_args=[]
         )
-        assert res
+        # submit returns False with no_submit on...
+        assert not res
 
 
 class TestJob:
