@@ -99,6 +99,59 @@ def backslash_escape_layer(argv: List[str]) -> None:
         argv[i] = re.sub(r"(?!\\)'(.*[^\\])'", "\\1", argv[i])
         argv[i] = re.sub(r"\\(.)", "\\1", argv[i])
 
+def set_some_extras(
+    args: Dict[str, Any],
+    schedd_name: str,
+    cred_set: CredentialSet,
+) -> None:
+    """ common items needed for condor_submit_dag to make the dagman file"""
+    #
+    # outbase needs to be where we make scratch files
+    #
+    args["outbase"] = (
+        os.environ.get("XDG_CACHE_HOME", f"{os.environ.get('HOME')}/.cache")
+        + "/jobsub_lite"
+    )
+    args["user"] = os.environ["USER"]
+    args["schedd"] = schedd_name
+    ai = socket.getaddrinfo(socket.gethostname(), 80)
+    if ai:
+        args["ipaddr"] = ai[-1][-1][0]
+    else:
+        args["ipaddr"] = "unknown"
+
+    if not "uuid" in args:
+        args["uuid"] = str(uuid.uuid4())
+    if not "date" in args:
+        now = datetime.datetime.now()
+        args["date"] = now.strftime("%Y_%m_%d")
+        args["datetime"] = now.strftime("%Y_%m_%d_%H%M%S")
+
+    if not "outdir" in args:
+        args["outdir"] = f"{args['outbase']}/js_{args['datetime']}_{args['uuid']}"
+        args["submitdir"] = args["outdir"]
+
+    if not os.path.exists(args["outdir"]):
+        os.makedirs(args["outdir"])
+
+    args["jobsub_version"] = f"{version.__title__}-v{version.__version__}"
+    args["kerberos_principal"] = get_principal()
+
+    if not "outurl" in args:
+        args["outurl"] = ""
+        if "JOBSUB_OUTPUT_URL" in os.environ:
+            # the path included in the output url needs to be included in users'
+            # tokens with storage.create scope (only!)
+            base = os.environ["JOBSUB_OUTPUT_URL"]
+            # this path is sanity-checked when fetching logs, so we can't change
+            # it here without also changing the check in jobview (or whatever
+            # comes after it).
+            args["outurl"] = "/".join((base, args["date"], args["uuid"]))
+        else:
+            sys.stderr.write(
+                "warning: JOBSUB_OUTPUT_URL not defined, web logs will not be available for this submission\n"
+            )
+
 
 def set_extras_n_fix_units(
     args: Dict[str, Any],
@@ -117,6 +170,8 @@ def set_extras_n_fix_units(
     if args["verbose"] > 1:
         sys.stderr.write(f"entering set_extras... args: {repr(args)}\n")
 
+    set_some_extras(args, schedd_name, cred_set)
+
     #
     # get tracing propagator traceparent id so we can use it in templates, etc.
     #
@@ -129,20 +184,6 @@ def set_extras_n_fix_units(
     if args["verbose"] > 0:
         sys.stderr.write(f"Setting traceparent: {args['traceparent']}\n")
 
-    #
-    # outbase needs to be an area shared with schedd servers.
-    #
-    args["outbase"] = (
-        os.environ.get("XDG_CACHE_HOME", f"{os.environ.get('HOME')}/.cache")
-        + "/jobsub_lite"
-    )
-    args["user"] = os.environ["USER"]
-    args["schedd"] = schedd_name
-    ai = socket.getaddrinfo(socket.gethostname(), 80)
-    if ai:
-        args["ipaddr"] = ai[-1][-1][0]
-    else:
-        args["ipaddr"] = "unknown"
 
     # Read in credentials
     for cred_type, cred_path in vars(cred_set).items():
@@ -154,12 +195,6 @@ def set_extras_n_fix_units(
     args["kerberos_principal"] = get_principal()
     args["uid"] = str(os.getuid())
 
-    if not "uuid" in args:
-        args["uuid"] = str(uuid.uuid4())
-    if not "date" in args:
-        now = datetime.datetime.now()
-        args["date"] = now.strftime("%Y_%m_%d")
-        args["datetime"] = now.strftime("%Y_%m_%d_%H%M%S")
     if args["verbose"] > 1:
         sys.stderr.write(
             f"checking args[executable]: {repr(args.get('executable', None))}\n"
@@ -198,28 +233,6 @@ def set_extras_n_fix_units(
 
     # Check site and blocklist to ensure there are no conflicts
     check_site_and_blocklist(args.get("site", ""), args.get("blocklist", ""))
-
-    if not "outurl" in args:
-        args["outurl"] = ""
-        if "JOBSUB_OUTPUT_URL" in os.environ:
-            # the path included in the output url needs to be included in users'
-            # tokens with storage.create scope (only!)
-            base = os.environ["JOBSUB_OUTPUT_URL"]
-            # this path is sanity-checked when fetching logs, so we can't change
-            # it here without also changing the check in jobview (or whatever
-            # comes after it).
-            args["outurl"] = "/".join((base, args["date"], args["uuid"]))
-        else:
-            sys.stderr.write(
-                "warning: JOBSUB_OUTPUT_URL not defined, web logs will not be available for this submission\n"
-            )
-
-    if not "outdir" in args:
-        args["outdir"] = f"{args['outbase']}/js_{args['datetime']}_{args['uuid']}"
-        args["submitdir"] = args["outdir"]
-
-    if not os.path.exists(args["outdir"]):
-        os.makedirs(args["outdir"])
 
     # copy executable to submit dir so schedd can see it
     if args["verbose"] > 1:

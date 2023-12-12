@@ -110,7 +110,9 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
 
     # if we have a default role pushed with a vault token, or $HOME/.jobsub_default... use that
     uid = os.getuid()
-    group = os.environ["GROUP"]
+    # sometimes we're called before parsing args, so GROUP may not be
+    # set yet...
+    group = os.environ.get("GROUP","unknown")
 
     for prefix in ["/tmp/", f"{os.environ['HOME']}/.config/"]:
 

@@ -30,7 +30,10 @@ import classad  # type: ignore
 
 import packages
 import fake_ifdh
+from render_files import render_files
 from tracing import as_span
+
+PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 random.seed()
 
@@ -382,9 +385,13 @@ def submit_dag(
     subfile = f"{f}.condor.sub"
     if not os.path.exists(subfile):
         qargs = " ".join([f"'{x}'" for x in cmd_args])
+
+        d1 = os.path.join(PREFIX, "templates", "condor_submit_dag")
+        render_files(d1, vargs, vargs["outdir"])
+
         cmd = (
-            f"/usr/bin/condor_submit_dag -append"
-            f' "use_oauth_services = {vargs["group"]}" -no_submit {f} {qargs}'
+            f"/usr/bin/condor_submit_dag -insert_sub_file {vargs['outdir']}/sub_file "
+            f"-no_submit {qargs} {f} "
         )
 
         if vargs.get("token", None) is not None:
@@ -401,7 +408,7 @@ def submit_dag(
         except OSError as e:
             print("Execution failed: ", e)
 
-    return submit(subfile, vargs, schedd_name)
+    return submit(subfile, vargs, schedd_name = schedd_name)
 
 
 class JobIdError(Exception):
