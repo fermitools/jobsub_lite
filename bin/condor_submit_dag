@@ -43,7 +43,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 from condor import get_schedd, submit_dag
 from creds import get_creds, print_cred_paths_from_credset
 from token_mods import get_job_scopes, use_token_copy
-from utils import set_some_extras
+from utils import set_some_extras, cleanup
 import version
 
 import get_parser
@@ -96,6 +96,7 @@ def main():
 
     submit_dag(f, varg, schedd_name, cmd_args)
 
+    cleanup()
 
 if __name__ == "__main__":
     main()
