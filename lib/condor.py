@@ -385,9 +385,9 @@ def get_transfer_file_list(f):
     for f in cmdlist:
         with open(f,"r") as inf:
             for l in inf.readlines():
-                m = re.match(r"executable *= *(\S+)*$",l) 
-                if m and not m.group(1) in res:
-                    res.append(m.group(1))
+                m = re.match(r"(executable|transfer_input_files) *= *(\S+)*$",l) 
+                if m and not m.group(2) in res:
+                    res.append(m.group(2))
     return res
 
 # pylint: disable-next=dangerous-default-value

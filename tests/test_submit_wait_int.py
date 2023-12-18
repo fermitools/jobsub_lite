@@ -205,6 +205,24 @@ def run_launch(cmd, expected_out=1, get_dir=False):
 
     return res == None
 
+class dircontext:
+    def __init__(self, dirname):
+        self.dirname = dirname
+        self.returnto = os.getcwd()
+
+    def __enter__(self):
+        os.chdir(self.dirname)
+
+    def __exit__(self,a,b,c):
+        os.chdir(self.returnto)
+
+def condor_dag_launch(dagfile):
+    with dircontext(os.path.dirname(__file__)+"/data/condor_submit_dag"):
+        assert run_launch(f"condor_submit_dag --verbose 1 {dagfile}")
+
+@pytest.mark.integration
+def test_condor_submit_dag1(samdev):
+    condor_dag_launch("dataset.dag")
 
 def lookaround_launch(extra, verify_files=""):
     """Simple submit of our lookaround script"""
