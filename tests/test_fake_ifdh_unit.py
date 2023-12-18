@@ -22,6 +22,23 @@ else:
 import fake_ifdh
 
 
+@pytest.fixture
+def clear_token():
+    if os.environ.get("BEARER_TOKEN_FILE", None):
+        if os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
+            try:
+                os.unlink(os.environ["BEARER_TOKEN_FILE"])
+            except:
+                pass
+        del os.environ["BEARER_TOKEN_FILE"]
+
+
+@pytest.fixture
+def fermilab_token(clear_token):
+    os.environ["GROUP"] = "fermilab"
+    return fake_ifdh.getToken("Analysis")
+
+
 @pytest.mark.unit
 def test_getTmp():
     if os.environ.get("TMPDIR", None):
@@ -57,38 +74,19 @@ def test_getRole_override():
     assert res == override_role
 
 
-@pytest.fixture
-def clear_token():
-    if os.environ.get("BEARER_TOKEN_FILE", None):
-        if os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
-            try:
-                os.unlink(os.environ["BEARER_TOKEN_FILE"])
-            except:
-                pass
-        del os.environ["BEARER_TOKEN_FILE"]
-
-
-@pytest.fixture
-def fermilab_token(clear_token):
-    os.environ["GROUP"] = "fermilab"
-    return fake_ifdh.getToken("Analysis")
+@pytest.mark.unit
+def test_checkToken_not_expired_fail(clear_bearer_token_file, monkeypatch):
+    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/expired.token")
+    token = scitokens.SciToken.discover(insecure=True)
+    print(token.get("exp"))
+    assert not fake_ifdh.checkToken_not_expired(token)
 
 
 @pytest.mark.unit
-def test_checkToken_fail():
-    os.environ["BEARER_TOKEN_FILE"] = "/dev/null"
-    try:
-        res = fake_ifdh.checkToken()
-    except:
-        res = False
-    assert not res
-
-
-@pytest.mark.unit
-def test_checkToken_success(fermilab_token):
-    os.environ["BEARER_TOKEN_FILE"] = fermilab_token
-    res = fake_ifdh.checkToken()
-    assert res
+def test_checkToken_not_expired_success(clear_bearer_token_file, monkeypatch):
+    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
+    token = scitokens.SciToken.discover(insecure=True)
+    assert fake_ifdh.checkToken_not_expired(token)
 
 
 @pytest.mark.unit
@@ -143,3 +141,76 @@ def test_cp():
     fake_ifdh.cp(__file__, dest)
     assert os.path.exists(dest)
     os.unlink(dest)
+
+
+@pytest.mark.unit
+def test_checkToken_right_group_and_role_analysis(clear_bearer_token_file, monkeypatch):
+    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
+    group = "fermilab"
+    token = scitokens.SciToken.discover(insecure=True)
+    assert fake_ifdh.checkToken_right_group_and_role(token, group)
+
+
+@pytest.mark.unit
+def test_checkToken_right_group_and_role_no_groups(
+    clear_bearer_token_file, monkeypatch
+):
+    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/no_groups.token")
+    group = "fermilab"
+    token = scitokens.SciToken.discover(insecure=True)
+    with pytest.raises(TypeError, match="wlcg\.groups"):
+        fake_ifdh.checkToken_right_group_and_role(token, group)
+
+
+@pytest.mark.unit
+def test_checkToken_right_group_and_role_malformed_groups(
+    clear_bearer_token_file, monkeypatch
+):
+    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/malformed.token")
+    group = "fermilab"
+    token = scitokens.SciToken.discover(insecure=True)
+    with pytest.raises(TypeError, match="malformed.*list"):
+        fake_ifdh.checkToken_right_group_and_role(token, group)
+
+
+@pytest.mark.unit
+def test_checkToken_right_group_and_role_analysis_bad_group(
+    clear_bearer_token_file, monkeypatch
+):
+    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
+    group = "badgroup"
+    token = scitokens.SciToken.discover(insecure=True)
+    with pytest.raises(ValueError, match="wrong group"):
+        fake_ifdh.checkToken_right_group_and_role(token, group)
+
+
+@pytest.mark.unit
+def test_checkToken_right_group_and_role_analysis_bad_role(
+    clear_bearer_token_file, monkeypatch
+):
+    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
+    group = "fermilab"
+    role = "newrole"
+    token = scitokens.SciToken.discover(insecure=True)
+    with pytest.raises(ValueError, match="wrong group or role"):
+        fake_ifdh.checkToken_right_group_and_role(token, group, role)
+
+
+@pytest.mark.parametrize(
+    "input, expected",
+    [
+        (["/fermilab"], ("fermilab", "Analysis")),
+        (["/fermilab/production", "/fermilab"], ("fermilab", "production")),
+        (["/hypot"], ("hypot", "Analysis")),
+    ],
+)
+@pytest.mark.unit
+def test_get_group_and_role_from_token_claim(input, expected):
+    assert fake_ifdh.get_group_and_role_from_token_claim(input) == expected
+
+
+@pytest.mark.unit
+def test_get_group_and_role_from_token_claim_malformed():
+    input = ["hypot"]
+    with pytest.raises(ValueError, match="wlcg\.groups.*token.*malformed"):
+        fake_ifdh.get_group_and_role_from_token_claim(input)

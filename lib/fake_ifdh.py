@@ -28,8 +28,7 @@ import shlex
 import subprocess
 import sys
 import time
-from typing import Union, Optional, List, Dict, Any
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Dict, Tuple, Any
 
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
@@ -89,6 +88,29 @@ def getTmp() -> str:
     return os.environ.get("TMPDIR", "/tmp")
 
 
+def get_group_and_role_from_token_claim(wlcg_groups: List[str]) -> Tuple[str, str]:
+    """Get the group and role from a token's wlcg.groups claim"""
+    group_role_pat = re.compile("\/(.+)\/(.+)")
+    group_pat = re.compile("\/(.+)")
+
+    # Token convention currently is that any role gets added on as the FIRST value of a wlcg.groups claim.  e.g. we should see
+    # ["/fermilab/production", "/fermilab"], not ["fermilab", "/fermilab/production"].  If this convention changes, we will
+    # need to revisit this code
+    to_parse = wlcg_groups[0]
+
+    group_role_match = group_role_pat.match(to_parse)
+    if group_role_match:
+        return group_role_match.group(1, 2)
+
+    group_match = group_pat.match(to_parse)
+    if group_match:
+        return (group_match.group(1), DEFAULT_ROLE)
+
+    raise ValueError(
+        "wlcg.groups in token are malformed.  Please inspect token with httokendecode command"
+    )
+
+
 @as_span("getExp")
 def getExp() -> Union[str, None]:
     """return current experiment name"""
@@ -113,7 +135,6 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     group = os.environ["GROUP"]
 
     for prefix in ["/tmp/", f"{os.environ['HOME']}/.config/"]:
-
         fname = f"{prefix}jobsub_default_role_{group}_{uid}"
 
         if os.path.exists(fname) and os.stat(fname).st_uid == uid:
@@ -137,12 +158,45 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
 
 
 @as_span("checkToken", arg_attrs=["*"])
-def checkToken() -> bool:
+def checkToken(group: str, role: str) -> bool:
     """check if token in $BEARER_TOKEN_FILE is (almost) expired"""
     if not os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
         return False
-    exp_time = None
     token = scitokens.SciToken.discover(insecure=True)
+    if not checkToken_not_expired(token):
+        pass  # TODO Errror message
+    if not checkToken_right_group_and_role(token, group, role):
+        pass  # TODO Error message
+    return True
+
+
+@as_span("checkToken_right_group_and_role", arg_attrs=["*"])
+def checkToken_right_group_and_role(
+    token: scitokens.SciToken, group: str, role: str = DEFAULT_ROLE
+) -> bool:
+    """Check if token in $BEARER_TOKEN_FILE is for right experiment"""
+    token_groups_roles = token.get("wlcg.groups")
+    if not token_groups_roles:
+        raise TypeError(
+            "Token does not have a list of wlcg.groups, as is expected.  Please inspect bearer token with the httokendecode command"
+        )
+    if not isinstance(token_groups_roles, list):
+        raise TypeError(
+            "Token is malformed:  wlcg.groups should be a list.  Please rerun htgettoken or allow jobsub to fetch a token for you."
+        )
+    token_group, token_role = get_group_and_role_from_token_claim(token_groups_roles)
+    if token_group != group or token_role != role:
+        raise ValueError(
+            "BEARER_TOKEN_FILE contains a token with the wrong group or role. "
+            f"jobsub expects a token with group {group} and role {role}. "
+            f"Instead, BEARER_TOKEN_FILE contains a token with group {token_group} and role {token_role}."
+        )
+    return True
+
+
+@as_span("checkToken_not_expired", arg_attrs=["*"])
+def checkToken_not_expired(token: scitokens.SciToken) -> bool:
+    """Make sure token in $BEARER_TOKEN_FILE is not (almost) expired"""
     exp_time = str(token.get("exp"))
     add_event(f"expiration: {exp_time}")
     return int(exp_time) - time.time() > 60
@@ -287,7 +341,6 @@ gfal_clean_env = (
 
 
 def fix_pnfs(path: str) -> str:
-
     if path[0] == "/":
         path = os.path.realpath(path)
 
