@@ -404,9 +404,9 @@ def submit_dag(
     if not os.path.exists(subfile):
         qargs = " ".join([f"'{x}'" for x in cmd_args])
 
-        vargs["transfer_files"] = get_transfer_file_list(f)
+        vargs["transfer_files"] = vargs.get("transfer_files", []) + get_transfer_file_list(f)
         d1 = os.path.join(PREFIX, "templates", "condor_submit_dag")
-        render_files(d1, vargs, vargs["outdir"])
+        render_files(d1, vargs, vargs["outdir"],xfer=False)
 
         cmd = (
             f"/usr/bin/condor_submit_dag -insert_sub_file {vargs['outdir']}/sub_file "
