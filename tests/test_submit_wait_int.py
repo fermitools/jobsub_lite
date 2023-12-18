@@ -206,6 +206,9 @@ def run_launch(cmd, expected_out=1, get_dir=False):
     return res == None
 
 class dircontext:
+    """ class to change directories for a test using 
+        with dircontext(dir):
+    """
     def __init__(self, dirname):
         self.dirname = dirname
         self.returnto = os.getcwd()
@@ -217,6 +220,9 @@ class dircontext:
         os.chdir(self.returnto)
 
 def condor_dag_launch(dagfile):
+    """ launch a dag from our dag test area"""
+    if os.path.exists(f"{dagfile}.condor.sub"):
+        os.unlink(f"{dagfile}.condor.sub")
     with dircontext(os.path.dirname(__file__)+"/data/condor_submit_dag"):
         assert run_launch(f"condor_submit_dag --verbose 1 {dagfile}")
 

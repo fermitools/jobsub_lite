@@ -56,7 +56,8 @@ class TestUnit:
         "outurl": "http://nowhere.org",
         "user": "nobody",
         "uuid": "1234-uuid56-789",
-        "schedd": "fakeschedd.example.org"
+        "schedd": "fakeschedd.example.org",
+        "prefix": os.path.dirname(os.path.dirname(__file__)),
     }
     test_extra_template_args = {
         "role": test_role,
