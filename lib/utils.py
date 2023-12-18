@@ -108,6 +108,7 @@ def set_some_extras(
     #
     # outbase needs to be where we make scratch files
     #
+    args["prefix"] = os.path.dirname(os.path.dirname(__file__))
     args["outbase"] = (
         os.environ.get("XDG_CACHE_HOME", f"{os.environ.get('HOME')}/.cache")
         + "/jobsub_lite"

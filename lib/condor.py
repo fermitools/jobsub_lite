@@ -371,6 +371,24 @@ def submit(
     #        print(f"jobid: {cluster}@{schedd_name}")
     #        return True
 
+def get_transfer_file_list(f):
+    """ read submit file, look for needed SCRIPT or JOB files """
+    res = [f]
+    cmdlist = []
+    with open(f,"r") as inf:
+        for l in inf.readlines():
+            m = re.match(r"(JOB|SCRIPT).* (\S+) *$",l) 
+            if m:
+                res.append(m.group(2))
+                if m.group(1) == "JOB":
+                    cmdlist.append(m.group(2))
+    for f in cmdlist:
+        with open(f,"r") as inf:
+            for l in inf.readlines():
+                m = re.match(r"executable *= *(\S+)*$",l) 
+                if m and not m.group(1) in res:
+                    res.append(m.group(1))
+    return res
 
 # pylint: disable-next=dangerous-default-value
 def submit_dag(
@@ -386,6 +404,7 @@ def submit_dag(
     if not os.path.exists(subfile):
         qargs = " ".join([f"'{x}'" for x in cmd_args])
 
+        vargs["transfer_files"] = get_transfer_file_list(f)
         d1 = os.path.join(PREFIX, "templates", "condor_submit_dag")
         render_files(d1, vargs, vargs["outdir"])
 

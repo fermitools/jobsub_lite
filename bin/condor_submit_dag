@@ -68,14 +68,14 @@ def main():
 
     arglist, cmd_args = parser.parse_known_args()
 
-    cred_set = get_creds(vars(arglist))
+    varg = vars(arglist)
+    cred_set = get_creds(varg)
     if arglist.verbose:
         print_cred_paths_from_credset(cred_set)
 
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
-    varg = vars(arglist)
     schedd_add = get_schedd(varg)
     schedd_name = schedd_add.eval("Machine")
 
@@ -88,15 +88,18 @@ def main():
         m = hashlib.sha256()
         m.update(varg["job_scope"].encode())
         varg["oauth_handle"] = m.hexdigest()[:10]
+    if cred_set.proxy:
+        varg["proxy"] = cred_set.proxy
 
 
     set_some_extras(varg, schedd_name, cred_set)
 
     print("ready to submit dag, varg: ", repr(varg))
 
+    varg["is_dag"] = True
     submit_dag(f, varg, schedd_name, cmd_args)
 
-    cleanup()
+    cleanup(varg)
 
 if __name__ == "__main__":
     main()
