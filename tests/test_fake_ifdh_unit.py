@@ -1,6 +1,8 @@
 import os
 import sys
+
 import pytest
+import jwt
 import scitokens
 
 #
@@ -74,19 +76,94 @@ def test_getRole_override():
     assert res == override_role
 
 
-@pytest.mark.unit
-def test_checkToken_not_expired_fail(clear_bearer_token_file, monkeypatch):
-    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/expired.token")
-    token = scitokens.SciToken.discover(insecure=True)
-    print(token.get("exp"))
-    assert not fake_ifdh.checkToken_not_expired(token)
+class TestCheckToken:
+    @pytest.mark.unit
+    def test_bad_bearer_token_file(clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv("BEARER_TOKEN_FILE", "thispathdoesnotexist")
+        group = "fermilab"
+        assert not fake_ifdh.checkToken(group)
+
+    @pytest.mark.unit
+    def test_good(clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
+        group = "fermilab"
+        assert fake_ifdh.checkToken(group)
+
+    @pytest.mark.unit
+    def test_wrong_group(clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
+        group = "fakegroup"
+        with pytest.raises(ValueError, match="wrong group"):
+            fake_ifdh.checkToken(group)
+
+    @pytest.mark.unit
+    def test_expired_token(clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/expired.token")
+        group = "fermilab"
+        try:
+            with pytest.raises(ValueError, match="expired"):
+                fake_ifdh.checkToken(group)
+        except jwt.ExpiredSignatureError:
+            pass
 
 
-@pytest.mark.unit
-def test_checkToken_not_expired_success(clear_bearer_token_file, monkeypatch):
-    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
-    token = scitokens.SciToken.discover(insecure=True)
-    assert fake_ifdh.checkToken_not_expired(token)
+class TestCheckTokenNotExpired:
+    @pytest.mark.unit
+    def test_fail(clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/expired.token")
+        try:
+            token = scitokens.SciToken.discover(insecure=True)
+            assert not fake_ifdh.checkToken_not_expired(token)
+        except jwt.ExpiredSignatureError:
+            pass
+
+    @pytest.mark.unit
+    def test_success(clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
+        token = scitokens.SciToken.discover(insecure=True)
+        assert fake_ifdh.checkToken_not_expired(token)
+
+
+class TestCheckTokenRightGroupAndRole:
+    @pytest.mark.unit
+    def test_good(clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
+        group = "fermilab"
+        token = scitokens.SciToken.discover(insecure=True)
+        fake_ifdh.checkToken_right_group_and_role(token, group)
+
+    @pytest.mark.unit
+    def test_no_groups(clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/no_groups.token")
+        group = "fermilab"
+        token = scitokens.SciToken.discover(insecure=True)
+        with pytest.raises(TypeError, match="wlcg\.groups"):
+            fake_ifdh.checkToken_right_group_and_role(token, group)
+
+    @pytest.mark.unit
+    def test_malformed_groups(clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/malformed.token")
+        group = "fermilab"
+        token = scitokens.SciToken.discover(insecure=True)
+        with pytest.raises(TypeError, match="malformed.*list"):
+            fake_ifdh.checkToken_right_group_and_role(token, group)
+
+    @pytest.mark.unit
+    def test_bad_group(clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
+        group = "badgroup"
+        token = scitokens.SciToken.discover(insecure=True)
+        with pytest.raises(ValueError, match="wrong group"):
+            fake_ifdh.checkToken_right_group_and_role(token, group)
+
+    @pytest.mark.unit
+    def test_bad_role(clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
+        group = "fermilab"
+        role = "newrole"
+        token = scitokens.SciToken.discover(insecure=True)
+        with pytest.raises(ValueError, match="wrong group or role"):
+            fake_ifdh.checkToken_right_group_and_role(token, group, role)
 
 
 @pytest.mark.unit
@@ -99,6 +176,13 @@ def test_getToken_fail(clear_token):
     with pytest.raises(PermissionError):
         os.environ["GROUP"] = "bozo"
         fake_ifdh.getToken("Analysis")
+
+
+# TODO tests to add for getToken
+# BEARER_TOKEN_FILE is set to good token
+# BEARER_TOKEN_FILE is set to bad token (fails because it's expired) - raise correct ValueError
+# BEARER_TOKEN_FILE is set to bad token (fails because it's for wrong group) - raise correct ValueError
+# BEARER_TOKEN_FILE is set to token that doesn't exist - We should generate a new token - make sure it's there
 
 
 @pytest.mark.unit
@@ -143,59 +227,6 @@ def test_cp():
     os.unlink(dest)
 
 
-@pytest.mark.unit
-def test_checkToken_right_group_and_role_analysis(clear_bearer_token_file, monkeypatch):
-    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
-    group = "fermilab"
-    token = scitokens.SciToken.discover(insecure=True)
-    assert fake_ifdh.checkToken_right_group_and_role(token, group)
-
-
-@pytest.mark.unit
-def test_checkToken_right_group_and_role_no_groups(
-    clear_bearer_token_file, monkeypatch
-):
-    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/no_groups.token")
-    group = "fermilab"
-    token = scitokens.SciToken.discover(insecure=True)
-    with pytest.raises(TypeError, match="wlcg\.groups"):
-        fake_ifdh.checkToken_right_group_and_role(token, group)
-
-
-@pytest.mark.unit
-def test_checkToken_right_group_and_role_malformed_groups(
-    clear_bearer_token_file, monkeypatch
-):
-    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/malformed.token")
-    group = "fermilab"
-    token = scitokens.SciToken.discover(insecure=True)
-    with pytest.raises(TypeError, match="malformed.*list"):
-        fake_ifdh.checkToken_right_group_and_role(token, group)
-
-
-@pytest.mark.unit
-def test_checkToken_right_group_and_role_analysis_bad_group(
-    clear_bearer_token_file, monkeypatch
-):
-    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
-    group = "badgroup"
-    token = scitokens.SciToken.discover(insecure=True)
-    with pytest.raises(ValueError, match="wrong group"):
-        fake_ifdh.checkToken_right_group_and_role(token, group)
-
-
-@pytest.mark.unit
-def test_checkToken_right_group_and_role_analysis_bad_role(
-    clear_bearer_token_file, monkeypatch
-):
-    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
-    group = "fermilab"
-    role = "newrole"
-    token = scitokens.SciToken.discover(insecure=True)
-    with pytest.raises(ValueError, match="wrong group or role"):
-        fake_ifdh.checkToken_right_group_and_role(token, group, role)
-
-
 @pytest.mark.parametrize(
     "input, expected",
     [
@@ -205,7 +236,7 @@ def test_checkToken_right_group_and_role_analysis_bad_role(
     ],
 )
 @pytest.mark.unit
-def test_get_group_and_role_from_token_claim(input, expected):
+def test_get_group_and_role_from_token_claim_good(input, expected):
     assert fake_ifdh.get_group_and_role_from_token_claim(input) == expected
 
 

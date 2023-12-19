@@ -88,7 +88,9 @@ def getTmp() -> str:
     return os.environ.get("TMPDIR", "/tmp")
 
 
-def get_group_and_role_from_token_claim(wlcg_groups: List[str]) -> Tuple[str, str]:
+def get_group_and_role_from_token_claim(
+    wlcg_groups: List[str],
+) -> Tuple[Union[str, Any], ...]:
     """Get the group and role from a token's wlcg.groups claim"""
     group_role_pat = re.compile("\/(.+)\/(.+)")
     group_pat = re.compile("\/(.+)")
@@ -112,12 +114,12 @@ def get_group_and_role_from_token_claim(wlcg_groups: List[str]) -> Tuple[str, st
 
 
 @as_span("getExp")
-def getExp() -> Union[str, None]:
+def getExp() -> str:
     """return current experiment name"""
     if os.environ.get("GROUP", None):
-        return os.environ.get("GROUP")
+        return str(os.environ.get("GROUP"))
     # otherwise guess primary group...
-    exp = None
+    exp: str
     with os.popen("id -gn", "r") as f:
         exp = f.read()
     return exp
@@ -158,22 +160,26 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
 
 
 @as_span("checkToken", arg_attrs=["*"])
-def checkToken(group: str, role: str) -> bool:
-    """check if token in $BEARER_TOKEN_FILE is (almost) expired"""
+def checkToken(group: str, role: str = DEFAULT_ROLE) -> bool:
+    """check if token in $BEARER_TOKEN_FILE is (almost) expired or is for the wrong group/role.
+    If the file doesn't exist, checkToken will return false.  If the file exists but the token is
+    invalid somehow, this function will raise a ValueError or TypeError"""
     if not os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
         return False
     token = scitokens.SciToken.discover(insecure=True)
+    checkToken_right_group_and_role(token, group, role)
     if not checkToken_not_expired(token):
-        pass  # TODO Errror message
-    if not checkToken_right_group_and_role(token, group, role):
-        pass  # TODO Error message
+        raise ValueError(
+            "Token at $BEARER_TOKEN_FILE is expired or near expiration. "
+            "Please inspect the token or unset $BEARER_TOKEN_FILE to let jobsub generate a new token."
+        )
     return True
 
 
 @as_span("checkToken_right_group_and_role", arg_attrs=["*"])
 def checkToken_right_group_and_role(
     token: scitokens.SciToken, group: str, role: str = DEFAULT_ROLE
-) -> bool:
+) -> None:
     """Check if token in $BEARER_TOKEN_FILE is for right experiment"""
     token_groups_roles = token.get("wlcg.groups")
     if not token_groups_roles:
@@ -191,7 +197,6 @@ def checkToken_right_group_and_role(
             f"jobsub expects a token with group {group} and role {role}. "
             f"Instead, BEARER_TOKEN_FILE contains a token with group {token_group} and role {token_role}."
         )
-    return True
 
 
 @as_span("checkToken_not_expired", arg_attrs=["*"])
@@ -223,9 +228,12 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
         os.environ["BEARER_TOKEN_FILE"] = tokenfile
 
     try:
-        token_ok = checkToken()
-    except:
-        # if anything goes wrong checking, its not okay, get a fresh one
+        token_ok = checkToken(exp, role)
+    except (TypeError, ValueError):
+        # These are invalid token errors.  User asked to use this file specifically, so user should fix the token
+        raise
+    except Exception:
+        # Something else is wrong with the token or it doesn't exist.  We should make a fresh one
         token_ok = False
 
     if not token_ok:
@@ -242,7 +250,7 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
         if res != 0:
             raise PermissionError(f"Failed attempting '{cmd}'")
 
-        if not checkToken():
+        if not checkToken(exp, role):
             raise PermissionError(f"Failed validating token from '{cmd}'")
 
     return tokenfile
