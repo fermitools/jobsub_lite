@@ -77,31 +77,30 @@ def test_getRole_override():
     assert res == override_role
 
 
-class TestCheckToken:
-    @pytest.mark.unit
-    def test_bad_bearer_token_file(self, clear_bearer_token_file, monkeypatch):
-        monkeypatch.setenv("BEARER_TOKEN_FILE", "thispathdoesnotexist")
-        group = "fermilab"
-        assert not fake_ifdh.checkToken(group)
+@pytest.mark.parametrize(
+    "token_location, preserve_or_reverse_func",
+    [
+        ("fake_ifdh_tokens/fermilab.token", lambda x: x),
+        ("thispathdoesntexist", lambda x: not x),
+        ("fake_ifdh_tokens/expired.token", lambda x: not x),
+    ],
+)
+@pytest.mark.unit
+def test_checkToken_bool(
+    token_location, preserve_or_reverse_func, monkeypatch, clear_bearer_token_file
+):
+    monkeypatch.setenv("BEARER_TOKEN_FILE", token_location)
+    group = "fermilab"
+    # If we want to assert False in one of these cases, flip the result using preserve_or_reverse_func
+    assert preserve_or_reverse_func(fake_ifdh.checkToken(group))
 
-    @pytest.mark.unit
-    def test_good(self, clear_bearer_token_file, monkeypatch):
-        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
-        group = "fermilab"
-        assert fake_ifdh.checkToken(group)
 
-    @pytest.mark.unit
-    def test_wrong_group(self, clear_bearer_token_file, monkeypatch):
-        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
-        group = "fakegroup"
-        with pytest.raises(ValueError, match="wrong group"):
-            fake_ifdh.checkToken(group)
-
-    @pytest.mark.unit
-    def test_expired_token(self, clear_bearer_token_file, monkeypatch):
-        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/expired.token")
-        group = "fermilab"
-        assert not fake_ifdh.checkToken(group)
+@pytest.mark.unit
+def test_checkToken_wrong_group_raises(monkeypatch, clear_bearer_token_file):
+    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
+    group = "fakegroup"
+    with pytest.raises(ValueError, match="wrong group"):
+        fake_ifdh.checkToken(group)
 
 
 class TestCheckTokenNotExpired:
