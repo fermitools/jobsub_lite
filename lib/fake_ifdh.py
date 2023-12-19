@@ -148,7 +148,13 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     if os.environ.get("BEARER_TOKEN_FILE", False) and os.path.exists(
         os.environ["BEARER_TOKEN_FILE"]
     ):
-        token = scitokens.SciToken.discover(insecure=True)
+        try:
+            token = scitokens.SciToken.discover(insecure=True)
+        except scitokens.utils.errors.InvalidTokenFormat:
+            raise scitokens.utils.errors.InvalidTokenFormat(
+                "Token stored in $BEARER_TOKEN_FILE is not in a readable format. "
+                "Please inspect the token with httokendecode or unset $BEARER_TOKEN_FILE and allow jobsub to create a new token."
+            )
         token_groups_roles = get_and_verify_wlcg_groups_from_token(token)
         _, token_role = get_group_and_role_from_token_claim(token_groups_roles)
         return token_role.capitalize()
