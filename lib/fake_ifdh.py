@@ -96,18 +96,17 @@ def get_group_and_role_from_token_claim(
     group_role_pat = re.compile("\/(.+)\/(.+)")
     group_pat = re.compile("\/(.+)")
 
-    # Token convention currently is that any role gets added on as the FIRST value of a wlcg.groups claim.  e.g. we should see
-    # ["/fermilab/production", "/fermilab"], not ["fermilab", "/fermilab/production"].  If this convention changes, we will
-    # need to revisit this code
-    to_parse = wlcg_groups[0]
+    # See if we have any claim values that have group and role
+    for wlcg_group in wlcg_groups:
+        group_role_match = group_role_pat.match(wlcg_group)
+        if group_role_match:
+            return group_role_match.group(1, 2)
 
-    group_role_match = group_role_pat.match(to_parse)
-    if group_role_match:
-        return group_role_match.group(1, 2)
-
-    group_match = group_pat.match(to_parse)
-    if group_match:
-        return (group_match.group(1), DEFAULT_ROLE)
+    # We didn't find any, so look claims with just the group
+    for wlcg_group in wlcg_groups:
+        group_match = group_pat.match(wlcg_group)
+        if group_match:
+            return (group_match.group(1), DEFAULT_ROLE)
 
     raise ValueError(
         "wlcg.groups in token are malformed.  Please inspect token with httokendecode command"
@@ -150,12 +149,9 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
         os.environ["BEARER_TOKEN_FILE"]
     ):
         token = scitokens.SciToken.discover(insecure=True)
-        groups: List[str] = token.get("wlcg.groups", [])
-        for g in groups:
-            m = re.match(r"/.*/(.*)", g)
-            if m:
-                role = m.group(1)
-                return role.capitalize()
+        token_groups_roles = get_and_verify_wlcg_groups_from_token(token)
+        _, token_role = get_group_and_role_from_token_claim(token_groups_roles)
+        return token_role.capitalize()
 
     return DEFAULT_ROLE
 
@@ -189,6 +185,19 @@ def checkToken_right_group_and_role(
     token: scitokens.SciToken, group: str, role: str = DEFAULT_ROLE
 ) -> None:
     """Check if token in $BEARER_TOKEN_FILE is for right experiment"""
+    token_groups_roles = get_and_verify_wlcg_groups_from_token(token)
+    token_group, token_role = get_group_and_role_from_token_claim(token_groups_roles)
+    if token_group != group or token_role != role:
+        raise ValueError(
+            "BEARER_TOKEN_FILE contains a token with the wrong group or role. "
+            f"jobsub expects a token with group {group} and role {role}. "
+            f"Instead, BEARER_TOKEN_FILE contains a token with group {token_group} and role {token_role}."
+        )
+
+
+@as_span("get_and_verify_wlcg_groups_from_token", arg_attrs=["*"])
+def get_and_verify_wlcg_groups_from_token(token: scitokens.SciToken) -> List[str]:
+    """Inspect the wlcg.groups claim of a token, and check that it is of the correct format/type before returning the elements"""
     token_groups_roles = token.get("wlcg.groups")
     if not token_groups_roles:
         raise TypeError(
@@ -198,13 +207,7 @@ def checkToken_right_group_and_role(
         raise TypeError(
             "Token is malformed:  wlcg.groups should be a list.  Please rerun htgettoken or allow jobsub to fetch a token for you."
         )
-    token_group, token_role = get_group_and_role_from_token_claim(token_groups_roles)
-    if token_group != group or token_role != role:
-        raise ValueError(
-            "BEARER_TOKEN_FILE contains a token with the wrong group or role. "
-            f"jobsub expects a token with group {group} and role {role}. "
-            f"Instead, BEARER_TOKEN_FILE contains a token with group {token_group} and role {token_role}."
-        )
+    return list(token_groups_roles)
 
 
 @as_span("checkToken_not_expired", arg_attrs=["*"])
