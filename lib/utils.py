@@ -39,9 +39,14 @@ DEFAULT_SINGULARITY_IMAGE = (
 )
 
 
-def cleandir(d: str) -> None:
+def cleandir(d: str, verbose: int) -> None:
+
     if not os.path.exists(d):
         return
+
+    if verbose > 0:
+        sys.stderr.write(f"cleaning directory:{d}\n")
+
     with os.scandir(d) as it:
         for entry in it:
             os.unlink(f"{d}/{entry.name}")
@@ -51,14 +56,14 @@ def cleandir(d: str) -> None:
 def cleanup(varg: Dict[str, Any]) -> None:
     """cleanup submit directory etc."""
     os.chdir(os.path.dirname(f'{varg["submitdir"]}'))
-    cleandir(varg["submitdir"])
+    cleandir(varg["submitdir"], verbose=varg["verbose"])
     # now clean up old submit directories that weren't
     # cleaned up by jobsub_submit at the time
     with os.scandir(".") as it:
         for entry in it:
             sb = os.stat(entry.name)
             if entry.name.startswith("js_") and time.time() - sb.st_mtime > 604800:
-                cleandir(entry.name)
+                cleandir(entry.name, verbose=varg["verbose"])
 
 
 def sanitize_lines(linelist: List[str]) -> None:

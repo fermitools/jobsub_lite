@@ -219,16 +219,18 @@ class dircontext:
     def __exit__(self,a,b,c):
         os.chdir(self.returnto)
 
-def condor_dag_launch(dagfile):
+def condor_dag_launch(dagfile, extra=""):
     """ launch a dag from our dag test area"""
     if os.path.exists(f"{dagfile}.condor.sub"):
         os.unlink(f"{dagfile}.condor.sub")
     with dircontext(os.path.dirname(__file__)+"/data/condor_submit_dag"):
-        assert run_launch(f"condor_submit_dag --verbose 1 {dagfile}")
+        assert run_launch(f"condor_submit_dag --verbose 1 {extra} {dagfile}")
 
 @pytest.mark.integration
 def test_condor_submit_dag1(samdev):
-    condor_dag_launch("dataset.dag")
+    os.environ["SAM_PROJECT"] = f"proj_{time.time()}"
+    condor_dag_launch("dataset.dag","-append 'getenv=SAM_PROJECT'")
+    del os.environ["SAM_PROJECT"]
 
 def lookaround_launch(extra, verify_files=""):
     """Simple submit of our lookaround script"""
