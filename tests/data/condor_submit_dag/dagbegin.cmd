@@ -8,7 +8,8 @@ arguments          =
 output             = sambegin.$(Cluster).$(Process).out
 error              = sambegin.$(Cluster).$(Process).err
 log                = sambegin.$(Cluster).$(Process).log
-environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP=/home/mengel/.cache/jobsub_lite/js_2023_12_18_112255_71a1aea7-4417-446c-920c-d3042a8f2b4b;BEARER_TOKEN_FILE=.condor_creds/fermilab.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER=mengel;JOBSUBJOBID=$(CLUSTER).$(PROCESS)@jobsubdevgpvm01.fnal.gov;EXPERIMENT=fermilab;EXPERIMENT=samdev;IFDH_DEBUG=1;IFDH_VERSION=v2_6_10;IFDH_TOKEN_ENABLE=1;IFDH_PROXY_ENABLE=0;SAM_EXPERIMENT=samdev;SAM_GROUP=samdev;SAM_STATION=samdev;IFDH_CP_MAXRETRIES=2;VERSION=v1_1;SAM_PROJECT=gen_cfg_mengel_71a1aea7-4417-446c-920c-d3042a8f2b4b;SAM_PROJECT_NAME=gen_cfg_mengel_71a1aea7-4417-446c-920c-d3042a8f2b4b;SAM_DATASET=gen_cfg;SAM_USER=mengel
+getenv = SAM_PROJECT
+environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP=/home/mengel/.cache/jobsub_lite/js_2023_12_18_112255_71a1aea7-4417-446c-920c-d3042a8f2b4b;BEARER_TOKEN_FILE=.condor_creds/fermilab.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER=mengel;JOBSUBJOBID=$(CLUSTER).$(PROCESS)@jobsubdevgpvm01.fnal.gov;EXPERIMENT=fermilab;EXPERIMENT=samdev;IFDH_DEBUG=1;IFDH_VERSION=v2_6_10;IFDH_TOKEN_ENABLE=1;IFDH_PROXY_ENABLE=0;SAM_EXPERIMENT=samdev;SAM_GROUP=samdev;SAM_STATION=samdev;IFDH_CP_MAXRETRIES=2;VERSION=v1_1;SAM_DATASET=gen_cfg;SAM_USER=mengel
 rank                  = Mips / 2 + Memory
 notification  = Error
 +RUN_ON_HEADNODE= True
