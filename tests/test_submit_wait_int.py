@@ -592,10 +592,14 @@ def test_fetch_output():
         group = group_for_job(jid)
         owd = tempfile.mkdtemp()
         outdirs[jid] = owd
-        subprocess.run(
-            ["jobsub_fetchlog", "--group", group, "--jobid", jid, "--destdir", owd],
-            check=True,
-        )
+        try:
+            subprocess.run(
+                ["jobsub_fetchlog", "--group", group, "--jobid", jid, "--destdir", owd],
+                check=True,
+            )
+        except:
+            print(f"Failed doing test {jid2test[jid]}'s jobsub_fetchlog {jid}:")
+            raise
 
 
 @pytest.mark.smoke
