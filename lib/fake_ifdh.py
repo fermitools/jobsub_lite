@@ -20,16 +20,16 @@
 """ifdh replacemnents to remove dependency"""
 
 import argparse
-import json
 import os
 import re
-import scitokens  # type: ignore
 import shlex
 import subprocess
 import sys
 import time
-from typing import Union, Optional, List, Dict, Any
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Dict, Tuple, Any
+
+import jwt  # type: ignore
+import scitokens  # type: ignore
 
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
@@ -89,13 +89,37 @@ def getTmp() -> str:
     return os.environ.get("TMPDIR", "/tmp")
 
 
+def get_group_and_role_from_token_claim(
+    wlcg_groups: List[str],
+) -> Tuple[Union[str, Any], ...]:
+    """Get the group and role from a token's wlcg.groups claim"""
+    group_role_pat = re.compile("\/(.+)\/(.+)")
+    group_pat = re.compile("\/(.+)")
+
+    # See if we have any claim values that have group and role
+    for wlcg_group in wlcg_groups:
+        group_role_match = group_role_pat.match(wlcg_group)
+        if group_role_match:
+            return group_role_match.group(1, 2)
+
+    # We didn't find any, so look claims with just the group
+    for wlcg_group in wlcg_groups:
+        group_match = group_pat.match(wlcg_group)
+        if group_match:
+            return (group_match.group(1), DEFAULT_ROLE)
+
+    raise ValueError(
+        "wlcg.groups in token are malformed.  Please inspect token with httokendecode command"
+    )
+
+
 @as_span("getExp")
-def getExp() -> Union[str, None]:
+def getExp() -> str:
     """return current experiment name"""
     if os.environ.get("GROUP", None):
-        return os.environ.get("GROUP")
+        return str(os.environ.get("GROUP"))
     # otherwise guess primary group...
-    exp = None
+    exp: str
     with os.popen("id -gn", "r") as f:
         exp = f.read()
     return exp
@@ -113,7 +137,6 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     group = os.environ["GROUP"]
 
     for prefix in ["/tmp/", f"{os.environ['HOME']}/.config/"]:
-
         fname = f"{prefix}jobsub_default_role_{group}_{uid}"
 
         if os.path.exists(fname) and os.stat(fname).st_uid == uid:
@@ -125,24 +148,74 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     if os.environ.get("BEARER_TOKEN_FILE", False) and os.path.exists(
         os.environ["BEARER_TOKEN_FILE"]
     ):
-        token = scitokens.SciToken.discover(insecure=True)
-        groups: List[str] = token.get("wlcg.groups", [])
-        for g in groups:
-            m = re.match(r"/.*/(.*)", g)
-            if m:
-                role = m.group(1)
-                return role.capitalize()
+        try:
+            token = scitokens.SciToken.discover(insecure=True)
+        except scitokens.utils.errors.InvalidTokenFormat:
+            raise scitokens.utils.errors.InvalidTokenFormat(
+                "Token stored in $BEARER_TOKEN_FILE is not in a readable format. "
+                "Please inspect the token with httokendecode or unset $BEARER_TOKEN_FILE and allow jobsub to create a new token."
+            )
+        token_groups_roles = get_and_verify_wlcg_groups_from_token(token)
+        _, token_role = get_group_and_role_from_token_claim(token_groups_roles)
+        return token_role.capitalize()
 
     return DEFAULT_ROLE
 
 
 @as_span("checkToken", arg_attrs=["*"])
-def checkToken() -> bool:
-    """check if token in $BEARER_TOKEN_FILE is (almost) expired"""
+def checkToken(group: str, role: str = DEFAULT_ROLE) -> bool:
+    """check if token in $BEARER_TOKEN_FILE is (almost) expired or is for the wrong group/role.
+    If the file doesn't exist, or if the token is expired, checkToken will return false.
+    If the file exists but the token is invalid somehow, this function will raise a ValueError or TypeError
+    """
     if not os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
         return False
-    exp_time = None
-    token = scitokens.SciToken.discover(insecure=True)
+
+    try:
+        token = scitokens.SciToken.discover(insecure=True)
+    except jwt.ExpiredSignatureError:
+        # Token has already expired
+        return False
+    if not checkToken_not_expired(token):
+        # Token is close enough to expiration or has expired
+        return False
+    checkToken_right_group_and_role(token, group, role)
+    return True
+
+
+@as_span("checkToken_right_group_and_role", arg_attrs=["*"])
+def checkToken_right_group_and_role(
+    token: scitokens.SciToken, group: str, role: str = DEFAULT_ROLE
+) -> None:
+    """Check if token in $BEARER_TOKEN_FILE is for right experiment"""
+    token_groups_roles = get_and_verify_wlcg_groups_from_token(token)
+    token_group, token_role = get_group_and_role_from_token_claim(token_groups_roles)
+    if token_group != group or token_role != role:
+        raise ValueError(
+            "BEARER_TOKEN_FILE contains a token with the wrong group or role. "
+            f"jobsub expects a token with group {group} and role {role}. "
+            f"Instead, BEARER_TOKEN_FILE contains a token with group {token_group} and role {token_role}."
+        )
+
+
+@as_span("get_and_verify_wlcg_groups_from_token", arg_attrs=["*"])
+def get_and_verify_wlcg_groups_from_token(token: scitokens.SciToken) -> List[str]:
+    """Inspect the wlcg.groups claim of a token, and check that it is of the correct format/type before returning the elements"""
+    token_groups_roles = token.get("wlcg.groups")
+    if not token_groups_roles:
+        raise TypeError(
+            "Token does not have a list of wlcg.groups, as is expected.  Please inspect bearer token with the httokendecode command"
+        )
+    if not isinstance(token_groups_roles, list):
+        raise TypeError(
+            "Token is malformed:  wlcg.groups should be a list.  Please rerun htgettoken or allow jobsub to fetch a token for you."
+        )
+    return list(token_groups_roles)
+
+
+@as_span("checkToken_not_expired", arg_attrs=["*"])
+def checkToken_not_expired(token: scitokens.SciToken) -> bool:
+    """Make sure token in $BEARER_TOKEN_FILE is not (almost) expired"""
     exp_time = str(token.get("exp"))
     add_event(f"expiration: {exp_time}")
     return int(exp_time) - time.time() > 60
@@ -169,9 +242,12 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
         os.environ["BEARER_TOKEN_FILE"] = tokenfile
 
     try:
-        token_ok = checkToken()
-    except:
-        # if anything goes wrong checking, its not okay, get a fresh one
+        token_ok = checkToken(exp, role)
+    except (ValueError, TypeError):
+        # These are invalid token errors.  User asked to use this file specifically, so user should fix the token
+        raise
+    except Exception:
+        # Something else is wrong with the token or it doesn't exist.  We should make a fresh one
         token_ok = False
 
     if not token_ok:
@@ -188,7 +264,7 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
         if res != 0:
             raise PermissionError(f"Failed attempting '{cmd}'")
 
-        if not checkToken():
+        if not checkToken(exp, role):
             raise PermissionError(f"Failed validating token from '{cmd}'")
 
     return tokenfile
@@ -287,7 +363,6 @@ gfal_clean_env = (
 
 
 def fix_pnfs(path: str) -> str:
-
     if path[0] == "/":
         path = os.path.realpath(path)
 
