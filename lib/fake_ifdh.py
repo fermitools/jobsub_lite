@@ -165,23 +165,20 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
 @as_span("checkToken", arg_attrs=["*"])
 def checkToken(group: str, role: str = DEFAULT_ROLE) -> bool:
     """check if token in $BEARER_TOKEN_FILE is (almost) expired or is for the wrong group/role.
-    If the file doesn't exist, checkToken will return false.  If the file exists but the token is
-    invalid somehow, this function will raise a ValueError or TypeError"""
+    If the file doesn't exist, or if the token is expired, checkToken will return false.
+    If the file exists but the token is invalid somehow, this function will raise a ValueError or TypeError
+    """
     if not os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
         return False
 
-    expiration_msg = (
-        "Token at $BEARER_TOKEN_FILE is expired or near expiration. "
-        "Please inspect the token or unset $BEARER_TOKEN_FILE to let jobsub generate a new token."
-    )
     try:
         token = scitokens.SciToken.discover(insecure=True)
     except jwt.ExpiredSignatureError:
         # Token has already expired
-        raise ValueError(expiration_msg)
+        return False
     if not checkToken_not_expired(token):
         # Token is close enough to expiration or has expired
-        raise ValueError(expiration_msg)
+        return False
     checkToken_right_group_and_role(token, group, role)
     return True
 

@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 
 import pytest
@@ -100,8 +101,7 @@ class TestCheckToken:
     def test_expired_token(self, clear_bearer_token_file, monkeypatch):
         monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/expired.token")
         group = "fermilab"
-        with pytest.raises(ValueError, match="expired"):
-            fake_ifdh.checkToken(group)
+        assert not fake_ifdh.checkToken(group)
 
 
 class TestCheckTokenNotExpired:
@@ -180,11 +180,15 @@ class TestGetToken:
         assert fake_ifdh.getToken() == os.environ["BEARER_TOKEN_FILE"]
 
     @pytest.mark.unit
-    def test_bearer_token_file_expired(self, monkeypatch, clear_bearer_token_file):
-        monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/expired.token")
+    def test_bearer_token_file_expired(
+        self, monkeypatch, tmp_path, clear_bearer_token_file
+    ):
+        # Since the token is expired, a new, valid token should show up at BEARER_TOKEN_FILE
+        token_path = tmp_path / "expired.token"
+        shutil.copy("fake_ifdh_tokens/expired.token", token_path)
+        monkeypatch.setenv("BEARER_TOKEN_FILE", str(token_path))
         monkeypatch.setenv("GROUP", "fermilab")
-        with pytest.raises(ValueError, match="expired"):
-            fake_ifdh.getToken()
+        assert fake_ifdh.getToken()
 
     @pytest.mark.unit
     def test_bearer_token_file_wrong_group(self, monkeypatch, clear_bearer_token_file):
