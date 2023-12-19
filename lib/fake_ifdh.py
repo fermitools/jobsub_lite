@@ -20,15 +20,16 @@
 """ifdh replacemnents to remove dependency"""
 
 import argparse
-import json
 import os
 import re
-import scitokens  # type: ignore
 import shlex
 import subprocess
 import sys
 import time
 from typing import Union, Optional, List, Dict, Tuple, Any
+
+import jwt  # type: ignore
+import scitokens  # type: ignore
 
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
@@ -166,13 +167,20 @@ def checkToken(group: str, role: str = DEFAULT_ROLE) -> bool:
     invalid somehow, this function will raise a ValueError or TypeError"""
     if not os.path.exists(os.environ["BEARER_TOKEN_FILE"]):
         return False
-    token = scitokens.SciToken.discover(insecure=True)
-    checkToken_right_group_and_role(token, group, role)
+
+    expiration_msg = (
+        "Token at $BEARER_TOKEN_FILE is expired or near expiration. "
+        "Please inspect the token or unset $BEARER_TOKEN_FILE to let jobsub generate a new token."
+    )
+    try:
+        token = scitokens.SciToken.discover(insecure=True)
+    except jwt.ExpiredSignatureError:
+        # Token has already expired
+        raise ValueError(expiration_msg)
     if not checkToken_not_expired(token):
-        raise ValueError(
-            "Token at $BEARER_TOKEN_FILE is expired or near expiration. "
-            "Please inspect the token or unset $BEARER_TOKEN_FILE to let jobsub generate a new token."
-        )
+        # Token is close enough to expiration or has expired
+        raise ValueError(expiration_msg)
+    checkToken_right_group_and_role(token, group, role)
     return True
 
 
@@ -229,7 +237,7 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
 
     try:
         token_ok = checkToken(exp, role)
-    except (TypeError, ValueError):
+    except (ValueError, TypeError):
         # These are invalid token errors.  User asked to use this file specifically, so user should fix the token
         raise
     except Exception:
