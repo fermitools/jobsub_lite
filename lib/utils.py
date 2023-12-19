@@ -104,12 +104,13 @@ def backslash_escape_layer(argv: List[str]) -> None:
         argv[i] = re.sub(r"(?!\\)'(.*[^\\])'", "\\1", argv[i])
         argv[i] = re.sub(r"\\(.)", "\\1", argv[i])
 
+
 def set_some_extras(
     args: Dict[str, Any],
     schedd_name: str,
     cred_set: CredentialSet,
 ) -> None:
-    """ common items needed for condor_submit_dag to make the dagman file"""
+    """common items needed for condor_submit_dag to make the dagman file"""
     #
     # outbase needs to be where we make scratch files
     #
@@ -189,7 +190,6 @@ def set_extras_n_fix_units(
 
     if args["verbose"] > 0:
         sys.stderr.write(f"Setting traceparent: {args['traceparent']}\n")
-
 
     # Read in credentials
     for cred_type, cred_path in vars(cred_set).items():

@@ -19,11 +19,11 @@ redirect_output_finish(){
     exec 2>&8 8>&-
     cat ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2
     cat ${JSB_TMP}/JOBSUB_LOG_FILE
-    
-    
+
+
     IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_ERR_FILE https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2023_12_18/71a1aea7-4417-446c-920c-d3042a8f2b4b/sambegin.$CLUSTER.$PROCESS.err
     IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_LOG_FILE https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2023_12_18/71a1aea7-4417-446c-920c-d3042a8f2b4b/sambegin.$CLUSTER.$PROCESS.out
-    
+
 }
 
 normal_exit(){
@@ -131,7 +131,7 @@ fi
 extra_projects=""
 suffix=""
 first=true
-for SAM_DATASET in $SAM_DATASET 
+for SAM_DATASET in $SAM_DATASET
 do
 
     SAM_PROJECT=$SAM_PROJECT$suffix

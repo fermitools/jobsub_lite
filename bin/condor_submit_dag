@@ -83,14 +83,15 @@ def main():
         cred_set.token = use_token_copy(cred_set.token)
         varg["token"] = cred_set.token
         varg["job_scope"] = " ".join(
-            get_job_scopes(cred_set.token, arglist.need_storage_modify, arglist.need_scope)
+            get_job_scopes(
+                cred_set.token, arglist.need_storage_modify, arglist.need_scope
+            )
         )
         m = hashlib.sha256()
         m.update(varg["job_scope"].encode())
         varg["oauth_handle"] = m.hexdigest()[:10]
     if cred_set.proxy:
         varg["proxy"] = cred_set.proxy
-
 
     set_some_extras(varg, schedd_name, cred_set)
 
@@ -100,6 +101,7 @@ def main():
     submit_dag(f, varg, schedd_name, cmd_args)
 
     cleanup(varg)
+
 
 if __name__ == "__main__":
     main()

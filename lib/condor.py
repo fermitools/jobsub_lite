@@ -371,24 +371,26 @@ def submit(
     #        print(f"jobid: {cluster}@{schedd_name}")
     #        return True
 
-def get_transfer_file_list(f):
-    """ read submit file, look for needed SCRIPT or JOB files """
+
+def get_transfer_file_list(f: str) -> List[str]:
+    """read submit file, look for needed SCRIPT or JOB files"""
     res = [f]
     cmdlist = []
-    with open(f,"r") as inf:
+    with open(f, "r") as inf:
         for l in inf.readlines():
-            m = re.match(r"(JOB|SCRIPT).* (\S+) *$",l) 
+            m = re.match(r"(JOB|SCRIPT).* (\S+) *$", l)
             if m:
                 res.append(m.group(2))
                 if m.group(1) == "JOB":
                     cmdlist.append(m.group(2))
     for f in cmdlist:
-        with open(f,"r") as inf:
+        with open(f, "r") as inf:
             for l in inf.readlines():
-                m = re.match(r"(executable|transfer_input_files) *= *(\S+) *$",l) 
+                m = re.match(r"(executable|transfer_input_files) *= *(\S+) *$", l)
                 if m and not m.group(2) in res:
                     res.append(m.group(2))
     return res
+
 
 # pylint: disable-next=dangerous-default-value
 def submit_dag(
@@ -404,9 +406,11 @@ def submit_dag(
     if not os.path.exists(subfile):
         qargs = " ".join([f"'{x}'" for x in cmd_args])
 
-        vargs["transfer_files"] = vargs.get("transfer_files", []) + get_transfer_file_list(f)
+        vargs["transfer_files"] = vargs.get(
+            "transfer_files", []
+        ) + get_transfer_file_list(f)
         d1 = os.path.join(PREFIX, "templates", "condor_submit_dag")
-        render_files(d1, vargs, vargs["outdir"],xfer=False)
+        render_files(d1, vargs, vargs["outdir"], xfer=False)
 
         cmd = (
             f"/usr/bin/condor_submit_dag -insert_sub_file {vargs['outdir']}/sub_file "
@@ -427,7 +431,7 @@ def submit_dag(
         except OSError as e:
             print("Execution failed: ", e)
 
-    return submit(subfile, vargs, schedd_name = schedd_name)
+    return submit(subfile, vargs, schedd_name=schedd_name)
 
 
 class JobIdError(Exception):

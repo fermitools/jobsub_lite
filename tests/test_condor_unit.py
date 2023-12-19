@@ -25,8 +25,8 @@ from test_unit import TestUnit
 
 @pytest.fixture
 def get_submit_file():
-    tdir=f"/tmp/tst{os.getpid()}"
-    if (not os.path.exists(tdir)):
+    tdir = f"/tmp/tst{os.getpid()}"
+    if not os.path.exists(tdir):
         os.mkdir(tdir)
     filename = f"{tdir}/tst.sub"
     f = open(filename, "w")
@@ -89,9 +89,9 @@ queue 1
 
 @pytest.fixture
 def get_dag_file(get_submit_file):
-    tdir=f"/tmp/tst{os.getpid()}"
+    tdir = f"/tmp/tst{os.getpid()}"
     filename = f"{tdir}/tst.dag"
-    if (not os.path.exists(tdir)):
+    if not os.path.exists(tdir):
         os.mkdir(tdir)
     f = open(filename, "w")
     f.write(
@@ -195,9 +195,7 @@ class TestCondorUnit:
         # XXX fix me
         x = TestUnit.test_vargs.copy()
         x["no_submit"] = True
-        res = condor.submit_dag(
-            get_dag_file, x, TestUnit.test_schedd, cmd_args=[]
-        )
+        res = condor.submit_dag(get_dag_file, x, TestUnit.test_schedd, cmd_args=[])
         # submit returns False with no_submit on...
         assert not res
 

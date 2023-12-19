@@ -356,7 +356,7 @@ class Wrapper:
         for i in range(30):
             suffix = str(i)
             parser.add_option(
-                "--exe_stdout%s" % suffix, 
+                "--exe_stdout%s" % suffix,
                 default=None,
                 help="Specify output redirect for executable",
             )
@@ -967,7 +967,7 @@ exit
     def find_ifdhc(self):
         """
            We need ifdhc, and general setups haven't been done yet,
-           so get the python path addition for the current version 
+           so get the python path addition for the current version
            in the common products area and shove it in sys.path
         """
         pf = os.popen(
@@ -1362,7 +1362,7 @@ exit
             rt = self.file_stats(f)
             metadata = (
                 """{
-"file_name": "%s", 
+"file_name": "%s",
 "create_date": "%s",
 "user": "%s",
 "file_size": %d,
@@ -2020,7 +2020,7 @@ if __name__ == "__main__":
         w.pre_file_loop()
         w.file_loop()
         if not w.options.multifile and not w.options.getconfig:
-            # multifile now does userscripts and copies out after each input 
+            # multifile now does userscripts and copies out after each input
             # so if we're not doing that, we need to do them now.
             w.userscripts()
             w.copy_back()

@@ -12,6 +12,7 @@ import jinja2 as jinja  # type: ignore
 
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+
 def get_basefiles(dlist: List[str]) -> List[str]:
     """get basename of files in directory"""
     res = []
@@ -21,13 +22,14 @@ def get_basefiles(dlist: List[str]) -> List[str]:
             res.append(os.path.basename(f))
     return res
 
+
 @as_span(name="render_files", arg_attrs=["*"])
 def render_files(
-        srcdir: str, 
-        values: Dict[str, Any], 
-        dest: str, 
-        dlist: Union[None, List[str]] = None, 
-        xfer:bool = True
+    srcdir: str,
+    values: Dict[str, Any],
+    dest: str,
+    dlist: Union[None, List[str]] = None,
+    xfer: bool = True,
 ) -> None:
     """use jinja to render the templates from srcdir into the dest directory
     using values dict for substitutions
@@ -39,7 +41,9 @@ def render_files(
         dlist = [srcdir]
 
     if xfer:
-        values["transfer_files"] = get_basefiles(dlist) + values.get("transfer_files",[])
+        values["transfer_files"] = get_basefiles(dlist) + values.get(
+            "transfer_files", []
+        )
 
     jinja_env = jinja.Environment(
         loader=jinja.FileSystemLoader(srcdir), undefined=jinja.StrictUndefined
@@ -71,4 +75,3 @@ in its entirety.
         else:
             if values.get("verbose", 0) > 0:
                 print(f"Created file {rendered_file}")
-

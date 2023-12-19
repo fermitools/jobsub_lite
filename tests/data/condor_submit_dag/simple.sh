@@ -11,7 +11,7 @@ umask 002
 #
 # clear out variables that sometimes bleed into containers
 # causing problems.  See for example INC000001136681...
-# 
+#
 #
 for env_var in CPATH LIBRARY_PATH LC_CTYPE
 do
@@ -118,11 +118,11 @@ redirect_output_finish(){
     exec 2>&8 8>&-
     jobsub_truncate ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2
     jobsub_truncate ${JSB_TMP}/JOBSUB_LOG_FILE
-    
-    
+
+
     IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_ERR_FILE.truncated https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2023_12_18/71a1aea7-4417-446c-920c-d3042a8f2b4b/fife_wrap2023_12_18_11225571a1aea7-4417-446c-920c-d3042a8f2b4bcluster.$CLUSTER.$PROCESS.err
     IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_LOG_FILE.truncated https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2023_12_18/71a1aea7-4417-446c-920c-d3042a8f2b4b/fife_wrap2023_12_18_11225571a1aea7-4417-446c-920c-d3042a8f2b4bcluster.$CLUSTER.$PROCESS.out
-    
+
 }
 
 
@@ -228,9 +228,9 @@ export PATH="${PATH}:."
 # ==========
 
   # Generic Preamble
-  
-  
-  
+
+
+
 
 
 # ==========
@@ -252,7 +252,7 @@ ${JSB_TMP}/ifdh.sh log poms_data=$poms_data
 echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT --find_setups --prescript-unquote echo%20JOBSUBJOBSECTION%20is%20%24%7BJOBSUBJOBSECTION%7D --setup-unquote hypotcode%20v1_1 --setup-unquote ifdhc%20v2_6_10%2C%20ifdhc_config%20v2_6_15 --self_destruct_timer 700 --debug --getconfig --limit 1 --appvers v1_1 --metadata_extractor hypot_metadata_extractor --addoutput gen.troot --rename unique --dest /pnfs/fermilab/users/mengel/dropbox --add_location --declare_metadata --addoutput1 hist_gen.troot --rename1 unique --dest1 /pnfs/fermilab/users/mengel/dropbox --add_location1 --declare_metadata1 --exe hypot.exe -- -o gen.troot -c hist_gen.troot >&2
 echo `date` $JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT --find_setups --prescript-unquote echo%20JOBSUBJOBSECTION%20is%20%24%7BJOBSUBJOBSECTION%7D --setup-unquote hypotcode%20v1_1 --setup-unquote ifdhc%20v2_6_10%2C%20ifdhc_config%20v2_6_15 --self_destruct_timer 700 --debug --getconfig --limit 1 --appvers v1_1 --metadata_extractor hypot_metadata_extractor --addoutput gen.troot --rename unique --dest /pnfs/fermilab/users/mengel/dropbox --add_location --declare_metadata --addoutput1 hist_gen.troot --rename1 unique --dest1 /pnfs/fermilab/users/mengel/dropbox --add_location1 --declare_metadata1 --exe hypot.exe -- -o gen.troot -c hist_gen.troot
 
- $JOBSUB_EXE_SCRIPT --find_setups --prescript-unquote echo%20JOBSUBJOBSECTION%20is%20%24%7BJOBSUBJOBSECTION%7D --setup-unquote hypotcode%20v1_1 --setup-unquote ifdhc%20v2_6_10%2C%20ifdhc_config%20v2_6_15 --self_destruct_timer 700 --debug --getconfig --limit 1 --appvers v1_1 --metadata_extractor hypot_metadata_extractor --addoutput gen.troot --rename unique --dest /pnfs/fermilab/users/mengel/dropbox --add_location --declare_metadata --addoutput1 hist_gen.troot --rename1 unique --dest1 /pnfs/fermilab/users/mengel/dropbox --add_location1 --declare_metadata1 --exe hypot.exe -- -o gen.troot -c hist_gen.troot 
+ $JOBSUB_EXE_SCRIPT --find_setups --prescript-unquote echo%20JOBSUBJOBSECTION%20is%20%24%7BJOBSUBJOBSECTION%7D --setup-unquote hypotcode%20v1_1 --setup-unquote ifdhc%20v2_6_10%2C%20ifdhc_config%20v2_6_15 --self_destruct_timer 700 --debug --getconfig --limit 1 --appvers v1_1 --metadata_extractor hypot_metadata_extractor --addoutput gen.troot --rename unique --dest /pnfs/fermilab/users/mengel/dropbox --add_location --declare_metadata --addoutput1 hist_gen.troot --rename1 unique --dest1 /pnfs/fermilab/users/mengel/dropbox --add_location1 --declare_metadata1 --exe hypot.exe -- -o gen.troot -c hist_gen.troot
 JOB_RET_STATUS=$?
 
 # copy out job log file

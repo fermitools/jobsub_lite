@@ -205,10 +205,12 @@ def run_launch(cmd, expected_out=1, get_dir=False):
 
     return res == None
 
+
 class dircontext:
-    """ class to change directories for a test using 
-        with dircontext(dir):
+    """class to change directories for a test using
+    with dircontext(dir):
     """
+
     def __init__(self, dirname):
         self.dirname = dirname
         self.returnto = os.getcwd()
@@ -216,21 +218,24 @@ class dircontext:
     def __enter__(self):
         os.chdir(self.dirname)
 
-    def __exit__(self,a,b,c):
+    def __exit__(self, a, b, c):
         os.chdir(self.returnto)
 
+
 def condor_dag_launch(dagfile, extra=""):
-    """ launch a dag from our dag test area"""
+    """launch a dag from our dag test area"""
     if os.path.exists(f"{dagfile}.condor.sub"):
         os.unlink(f"{dagfile}.condor.sub")
-    with dircontext(os.path.dirname(__file__)+"/data/condor_submit_dag"):
+    with dircontext(os.path.dirname(__file__) + "/data/condor_submit_dag"):
         assert run_launch(f"condor_submit_dag --verbose 1 {extra} {dagfile}")
+
 
 @pytest.mark.integration
 def test_condor_submit_dag1(samdev):
     os.environ["SAM_PROJECT"] = f"proj_{time.time()}"
-    condor_dag_launch("dataset.dag","-append 'getenv=SAM_PROJECT'")
+    condor_dag_launch("dataset.dag", "-append 'getenv=SAM_PROJECT'")
     del os.environ["SAM_PROJECT"]
+
 
 def lookaround_launch(extra, verify_files=""):
     """Simple submit of our lookaround script"""
