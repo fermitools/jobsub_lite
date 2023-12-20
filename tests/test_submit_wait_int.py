@@ -233,7 +233,7 @@ def condor_dag_launch(dagfile, extra=""):
 @pytest.mark.integration
 def test_condor_submit_dag1(samdev):
     os.environ["SAM_PROJECT"] = f"proj_{time.time()}"
-    condor_dag_launch("dataset.dag", "-append 'getenv=SAM_PROJECT'")
+    condor_dag_launch("dataset.dag")
     del os.environ["SAM_PROJECT"]
 
 

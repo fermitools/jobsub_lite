@@ -13,8 +13,8 @@ log                = fife_wrap2023_12_18_11225571a1aea7-4417-446c-920c-d3042a8f2
 TRACEPARENT="00-14999afacbfba68c7f37f4d7008b3ec7-4a5c72262efc091f-01"
 +TraceParent=$(TRACEPARENT)
 
-getenv = SAM_PROJECT
-environment        = CM1=$(CM1);CM2=$(CM2);CLUSTER=$(Cluster);PROCESS=$(Process);JOBSUBJOBSECTION=$(JOBSUBJOBSECTION);CONDOR_TMP=/home/mengel/.cache/jobsub_lite/js_2023_12_18_112255_71a1aea7-4417-446c-920c-d3042a8f2b4b;BEARER_TOKEN_FILE=.condor_creds/fermilab_b355f5a23c.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER=mengel;JOBSUBJOBID=$(CLUSTER).$(PROCESS)@jobsubdevgpvm01.fnal.gov;EXPERIMENT=fermilab;TRACEPARENT=00-14999afacbfba68c7f37f4d7008b3ec7-4a5c72262efc091f-01;EXPERIMENT=samdev;IFDH_DEBUG=1;IFDH_VERSION=v2_6_10;IFDH_TOKEN_ENABLE=1;IFDH_PROXY_ENABLE=0;SAM_EXPERIMENT=samdev;SAM_GROUP=samdev;SAM_STATION=samdev;IFDH_CP_MAXRETRIES=2;VERSION=v1_1;SAM_DATASET=gen_cfg;SAM_USER=mengel
+getenv = SAM_PROJECT,USER
+environment        = CM1=$(CM1);CM2=$(CM2);CLUSTER=$(Cluster);PROCESS=$(Process);JOBSUBJOBSECTION=$(JOBSUBJOBSECTION);CONDOR_TMP=/home/$(USER)/.cache/jobsub_lite/js_2023_12_18_112255_71a1aea7-4417-446c-920c-d3042a8f2b4b;BEARER_TOKEN_FILE=.condor_creds/fermilab_b355f5a23c.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER=$(USER);JOBSUBJOBID=$(CLUSTER).$(PROCESS)@jobsubdevgpvm01.fnal.gov;EXPERIMENT=fermilab;TRACEPARENT=00-14999afacbfba68c7f37f4d7008b3ec7-4a5c72262efc091f-01;EXPERIMENT=samdev;IFDH_DEBUG=1;IFDH_VERSION=v2_6_10;IFDH_TOKEN_ENABLE=1;IFDH_PROXY_ENABLE=0;SAM_EXPERIMENT=samdev;SAM_GROUP=samdev;SAM_STATION=samdev;IFDH_CP_MAXRETRIES=2;VERSION=v1_1;SAM_DATASET=gen_cfg;SAM_USER=$(USER)
 rank               = Mips / 2 + Memory
 job_lease_duration = 3600
 transfer_output    = True
@@ -28,20 +28,20 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 request_memory = 500.0
 request_disk = 102400.0KB
 
-+JobsubClientDN="/DC=org/DC=cilogon/C=US/O=Fermi National Accelerator Laboratory/OU=People/CN=Marc Mengel/CN=UID:mengel/CN=3752395701"
++JobsubClientDN="/DC=org/DC=cilogon/C=US/O=Fermi National Accelerator Laboratory/OU=People/CN=Marc Mengel/CN=UID:$(USER)/CN=3752395701"
 +JobsubClientIpAddress="131.225.60.169"
 +JobsubServerVersion="jobsub_lite-v1.5"
 +JobsubClientVersion="jobsub_lite-v1.5"
-+JobsubClientKerberosPrincipal="mengel@FNAL.GOV"
++JobsubClientKerberosPrincipal="$(USER)@FNAL.GOV"
 +JOB_EXPECTED_MAX_LIFETIME = 7200.0
-notify_user = "mengel@fnal.gov"
+notify_user = "$(USER)@fnal.gov"
 notification = Never
 
 # set command to user executable for jobsub_q
 +JobsubCmd = "fife_wrap"
 
 
-+AccountingGroup = "group_fermilab.mengel"
++AccountingGroup = "group_fermilab.$(USER)"
 
 
 +Jobsub_Group="fermilab"
@@ -82,7 +82,7 @@ requirements = target.machine =!= MachineAttrMachine1 && target.machine =!= Mach
 
 use_oauth_services = fermilab
 
-fermilab_oauth_permissions_b355f5a23c = " compute.read compute.create compute.cancel compute.modify storage.read:/fermilab/users/mengel storage.create:/fermilab/users/mengel storage.create:/fermigrid/jobsub/jobs "
+fermilab_oauth_permissions_b355f5a23c = " compute.read compute.create compute.cancel compute.modify storage.read:/fermilab/users/$(USER) storage.create:/fermilab/users/$(USER) storage.create:/fermigrid/jobsub/jobs "
 
 
 
