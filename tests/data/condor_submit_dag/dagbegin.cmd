@@ -8,7 +8,7 @@ arguments          =
 output             = sambegin.$(Cluster).$(Process).out
 error              = sambegin.$(Cluster).$(Process).err
 log                = sambegin.$(Cluster).$(Process).log
-environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP=/home/$ENV(USER)/.cache/jobsub_lite/js_2023_12_18_112255_71a1aea7-4417-446c-920c-d3042a8f2b4b;BEARER_TOKEN_FILE=.condor_creds/fermilab.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER=$(USER);JOBSUBJOBID=$(CLUSTER).$(PROCESS)@jobsubdevgpvm01.fnal.gov;EXPERIMENT=fermilab;EXPERIMENT=samdev;IFDH_DEBUG=1;IFDH_VERSION=v2_6_10;IFDH_TOKEN_ENABLE=1;IFDH_PROXY_ENABLE=0;SAM_EXPERIMENT=samdev;SAM_GROUP=samdev;SAM_STATION=samdev;IFDH_CP_MAXRETRIES=2;VERSION=v1_1;SAM_DATASET=gen_cfg;SAM_USER=$(USER);SAM_PROJECT=$ENV(SAM_PROJECT)
+environment        = CLUSTER=$(Cluster);PROCESS=$(Process);CONDOR_TMP=/home/$ENV(USER)/.cache/jobsub_lite/js_2023_12_18_112255_71a1aea7-4417-446c-920c-d3042a8f2b4b;BEARER_TOKEN_FILE=.condor_creds/fermilab.use;CONDOR_EXEC=/tmp;DAGMANJOBID=$(DAGManJobId);GRID_USER=$ENV(USER);JOBSUBJOBID=$(CLUSTER).$(PROCESS)@jobsubdevgpvm01.fnal.gov;EXPERIMENT=fermilab;EXPERIMENT=samdev;IFDH_DEBUG=1;IFDH_VERSION=v2_6_10;IFDH_TOKEN_ENABLE=1;IFDH_PROXY_ENABLE=0;SAM_EXPERIMENT=samdev;SAM_GROUP=samdev;SAM_STATION=samdev;IFDH_CP_MAXRETRIES=2;VERSION=v1_1;SAM_DATASET=gen_cfg;SAM_USER=$ENV(USER);SAM_PROJECT=$ENV(SAM_PROJECT)
 rank                  = Mips / 2 + Memory
 notification  = Error
 +RUN_ON_HEADNODE= True
@@ -55,7 +55,7 @@ requirements = target.machine =!= MachineAttrMachine1 && target.machine =!= Mach
 
 
 use_oauth_services = fermilab
-fermilab_oauth_permissions_b355f5a23c = " compute.read compute.create compute.cancel compute.modify storage.read:/fermilab/users/$ENV(USER) storage.create:/fermilab/users/$(USER) storage.create:/fermigrid/jobsub/jobs "
+fermilab_oauth_permissions_b355f5a23c = " compute.read compute.create compute.cancel compute.modify storage.read:/fermilab/users/$ENV(USER) storage.create:/fermilab/users/$ENV(USER) storage.create:/fermigrid/jobsub/jobs "
 
 
 
