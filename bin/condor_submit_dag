@@ -64,9 +64,12 @@ def main():
     os.environ["_condor_SEC_CREDENTIAL_STORER"] = f"{bindir}/condor_vault_storer"
 
     parser = get_parser.get_submit_parser(add_condor_epilog=True)
-    f = sys.argv[-1]
 
     arglist, cmd_args = parser.parse_known_args()
+
+    # pull dag file out of args
+    f = cmd_args[-1]
+    cmd_args = cmd_args[:-1]
 
     varg = vars(arglist)
     cred_set = get_creds(varg)

@@ -232,9 +232,9 @@ def condor_dag_launch(dagfile, extra=""):
 
 @pytest.mark.integration
 def test_condor_submit_dag1(samdev):
-    os.environ["SAM_PROJECT"] = f"proj_{time.time()}"
-    condor_dag_launch("dataset.dag")
-    del os.environ["SAM_PROJECT"]
+    condor_dag_launch(
+        "dataset.dag", f"-append 'environment=SAM_PROJECT=proj_{time.time()}'"
+    )
 
 
 def lookaround_launch(extra, verify_files=""):

@@ -1,6 +1,8 @@
 #!/bin/sh -x
 
-
+echo "=-=-=-=-=-= environment =-=-=-=-=-="
+printenv
+echo "=-=-=-=-=-=-=-=-=-=-=-="
 
 #export BEARER_TOKEN_FILE=$PWD/.condor_creds/fermilab.use
 export BEARER_TOKEN_FILE=$PWD/.condor_creds/fermilab_b355f5a23c.use
