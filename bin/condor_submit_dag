@@ -103,7 +103,7 @@ def main():
     varg["is_dag"] = True
     submit_dag(f, varg, schedd_name, cmd_args)
 
-    cleanup(varg)
+    # cleanup(varg)
 
 
 if __name__ == "__main__":

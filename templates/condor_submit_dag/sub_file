@@ -1,5 +1,4 @@
 
-executable={{prefix}}/templates/dag/dagman_wrapper.sh
 transfer_input_files = {{",".join(transfer_files)}}
 
 {% if clientdn is defined and clientdn %}+JobsubClientDN="{{clientdn}}"{% endif %}

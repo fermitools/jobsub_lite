@@ -404,21 +404,38 @@ def submit_dag(
     """
     subfile = f"{f}.condor.sub"
     if not os.path.exists(subfile):
-        qargs = " ".join([f"'{x}'" for x in cmd_args])
+        # qargs = " ".join([f"'{x}'" for x in cmd_args])
+        qargs = " ".join(cmd_args)
 
         vargs["transfer_files"] = vargs.get(
             "transfer_files", []
         ) + get_transfer_file_list(f)
+
         d1 = os.path.join(PREFIX, "templates", "condor_submit_dag")
         render_files(d1, vargs, vargs["outdir"], xfer=False)
 
+        for cf in vargs["transfer_files"] + [f]:
+            print(f"Copying file: {cf}")
+            shutil.copyfile(cf, f"{vargs['outdir']}/{cf}")
+
+        os.chdir(vargs["outdir"])
+
+        f = os.path.basename(f)
+        subfile = os.path.basename(subfile)
+
         cmd = (
-            f"/usr/bin/condor_submit_dag -insert_sub_file {vargs['outdir']}/sub_file "
-            f"-no_submit {qargs} {f} "
+            f"/usr/bin/condor_submit_dag -insert_sub_file sub_file "
+            f"-no_submit -dagman dagman_wrapper.sh {qargs} {f} "
         )
 
-        if vargs.get("token", None) is not None:
-            cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
+        # if vargs.get("token", None) is not None:
+        #    cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
+
+        if vargs["outurl"]:
+            from submit_support import transfer_sandbox
+
+            transfer_sandbox(vargs["outdir"], vargs["outurl"])
+
         if vargs.get("verbose", 0) > 0:
             print(f"Running: {cmd}")
 
