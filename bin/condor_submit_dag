@@ -68,8 +68,9 @@ def main():
     arglist, cmd_args = parser.parse_known_args()
 
     # pull dag file out of args
-    f = cmd_args[-1]
-    cmd_args = cmd_args[:-1]
+    if len(cmd_args):
+        f = cmd_args[-1]
+        cmd_args = cmd_args[:-1]
 
     varg = vars(arglist)
     cred_set = get_creds(varg)
