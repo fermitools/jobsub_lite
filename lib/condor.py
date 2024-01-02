@@ -416,7 +416,9 @@ def submit_dag(
 
         for cf in vargs["transfer_files"] + [f]:
             print(f"Copying file: {cf}")
-            shutil.copyfile(cf, f"{vargs['outdir']}/{cf}")
+            dst = f"{vargs['outdir']}/{os.path.basename(cf)}"
+            if dst != cf:
+                shutil.copyfile(cf, dst)
 
         os.chdir(vargs["outdir"])
 
