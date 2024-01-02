@@ -224,6 +224,7 @@ class dircontext:
 
 def condor_dag_launch(dagfile, extra=""):
     """launch a dag from our dag test area"""
+    os.environ["UID"] = str(os.getuid())
     if os.path.exists(f"{dagfile}.condor.sub"):
         os.unlink(f"{dagfile}.condor.sub")
     with dircontext(os.path.dirname(__file__) + "/data/condor_submit_dag"):
@@ -438,12 +439,12 @@ def fife_launch(extra):
             --metadata_extractor 'hypot_metadata_extractor' \
             --addoutput 'gen.troot' \
             --rename 'unique' \
-            --dest '/pnfs/%(exp)s/users/mengel/dropbox' \
+            --dest '/pnfs/%(exp)s/users/%(user)s/dropbox' \
             --add_location \
             --declare_metadata \
             --addoutput1 'hist_gen.troot' \
             --rename1 'unique' \
-            --dest1 '/pnfs/%(exp)s/users/mengel/dropbox' \
+            --dest1 '/pnfs/%(exp)s/users/%(user)s/dropbox' \
             --add_location1 \
             --declare_metadata1 \
             --exe  hypot.exe \
@@ -452,7 +453,7 @@ def fife_launch(extra):
               gen.troot \
               -c \
               hist_gen.troot """
-        % {"exp": os.environ["GROUP"], "extra": extra},
+        % {"exp": os.environ["GROUP"], "extra": extra, "user": os.environ["USER"]},
         expected_out=5,
     )
 

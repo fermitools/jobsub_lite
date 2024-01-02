@@ -12,7 +12,7 @@ jobsub_submit  \
                  --verbose 4 \
                  --disk 100M  \
                  -d D \
-                 --email-to mengel@fnal.gov \
+                 --email-to $USER@fnal.gov \
                  -e FRED \
                  -e JOE=5 \
                  --expected-lifetime 567 \

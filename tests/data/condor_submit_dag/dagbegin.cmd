@@ -59,7 +59,7 @@ fermilab_oauth_permissions_b355f5a23c = " compute.read compute.create compute.ca
 
 
 
-+x509userproxy = "x509up_fermilab_Analysis_1733"
++x509userproxy = "x509up_fermilab_Analysis_$ENV(UID)"
 delegate_job_GSI_credentials_lifetime = 0
 
 

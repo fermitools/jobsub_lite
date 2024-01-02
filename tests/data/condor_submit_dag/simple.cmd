@@ -3,7 +3,7 @@
 # debug
 universe           = vanilla
 executable         = simple.sh
-arguments          = --find_setups --prescript-unquote echo%20JOBSUBJOBSECTION%20is%20%24%7BJOBSUBJOBSECTION%7D --setup-unquote hypotcode%20v1_1 --setup-unquote ifdhc%20v2_6_10%2C%20ifdhc_config%20v2_6_15 --self_destruct_timer 700 --debug --getconfig --limit 1 --appvers v1_1 --metadata_extractor hypot_metadata_extractor --addoutput gen.troot --rename unique --dest /pnfs/fermilab/users/mengel/dropbox --add_location --declare_metadata --addoutput1 hist_gen.troot --rename1 unique --dest1 /pnfs/fermilab/users/mengel/dropbox --add_location1 --declare_metadata1 --exe hypot.exe -- -o gen.troot -c hist_gen.troot
+arguments          = --find_setups --prescript-unquote echo%20JOBSUBJOBSECTION%20is%20%24%7BJOBSUBJOBSECTION%7D --setup-unquote hypotcode%20v1_1 --setup-unquote ifdhc%20v2_6_10%2C%20ifdhc_config%20v2_6_15 --self_destruct_timer 700 --debug --getconfig --limit 1 --appvers v1_1 --metadata_extractor hypot_metadata_extractor --addoutput gen.troot --rename unique --dest /pnfs/fermilab/users/$ENV(USER)/dropbox --add_location --declare_metadata --addoutput1 hist_gen.troot --rename1 unique --dest1 /pnfs/fermilab/users/$ENV(USER)/dropbox --add_location1 --declare_metadata1 --exe hypot.exe -- -o gen.troot -c hist_gen.troot
 
 output             = fife_wrap2023_12_18_11225571a1aea7-4417-446c-920c-d3042a8f2b4bcluster.$(Cluster).$(Process).out
 error              = fife_wrap2023_12_18_11225571a1aea7-4417-446c-920c-d3042a8f2b4bcluster.$(Cluster).$(Process).err
@@ -88,7 +88,7 @@ fermilab_oauth_permissions_b355f5a23c = " compute.read compute.create compute.ca
 
 
 
-+x509userproxy = "x509up_fermilab_Analysis_1733"
++x509userproxy = "x509up_fermilab_Analysis_$ENV(UID)"
 
 delegate_job_GSI_credentials_lifetime = 0
 
