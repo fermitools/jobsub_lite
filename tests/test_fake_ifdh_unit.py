@@ -39,8 +39,7 @@ def clear_token():
 
 
 @pytest.fixture
-def fermilab_token(clear_token):
-    os.environ["GROUP"] = "fermilab"
+def fermilab_token(clear_token, set_group_fermilab):
     return fake_ifdh.getToken("Analysis")
 
 
@@ -53,15 +52,15 @@ def test_getTmp():
 
 
 @pytest.mark.unit
-def test_getTmp_override():
-    os.environ["TMPDIR"] = "/var/tmp"
+def test_getTmp_override(monkeypatch):
+    monkeypatch.setenv("TMPDIR", "/var/tmp")
     res = fake_ifdh.getTmp()
     assert res == "/var/tmp"
 
 
 @pytest.mark.unit
-def test_getExp_GROUP():
-    os.environ["GROUP"] = "samdev"
+def test_getExp_GROUP(monkeypatch):
+    monkeypatch.setenv("GROUP", "samdev")
     res = fake_ifdh.getExp()
     assert res == "samdev"
 
@@ -250,7 +249,9 @@ class TestGetToken:
             fake_ifdh.getToken("Analysis")
 
     @pytest.mark.unit
-    def test_bearer_token_file_good(self, monkeypatch, clear_bearer_token_file):
+    def test_bearer_token_file_good(
+        self, monkeypatch, clear_bearer_token_file, set_group_fermilab
+    ):
         monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab.token")
         assert fake_ifdh.getToken() == os.environ["BEARER_TOKEN_FILE"]
 
@@ -289,24 +290,31 @@ class TestGetToken:
 
 class TestGetProxy:
     @pytest.mark.unit
-    def test_getProxy_good(check_user_kerberos_creds, clear_token):
-        os.environ["GROUP"] = "fermilab"
+    def test_getProxy_good(check_user_kerberos_creds, clear_token, set_group_fermilab):
         proxy = fake_ifdh.getProxy("Analysis")
         assert os.path.exists(proxy)
 
     @pytest.mark.unit
     def test_getProxy_override(
-        check_user_kerberos_creds, clear_x509_user_proxy, clear_token, tmp_path
+        check_user_kerberos_creds,
+        clear_x509_user_proxy,
+        clear_token,
+        set_group_fermilab,
+        monkeypatch,
+        tmp_path,
     ):
         fake_path = tmp_path / "test_proxy"
-        os.environ["X509_USER_PROXY"] = str(fake_path)
-        os.environ["GROUP"] = "fermilab"
+        monkeypatch.setenv("X509_USER_PROXY", str(fake_path))
         proxy = fake_ifdh.getProxy("Analysis")
         assert proxy == str(fake_path)
 
     @pytest.mark.unit
     def test_getProxy_fail(
-        check_user_kerberos_creds, clear_x509_user_proxy, clear_token, tmp_path
+        check_user_kerberos_creds,
+        clear_x509_user_proxy,
+        clear_token,
+        monkeypatch,
+        tmp_path,
     ):
         fake_path = tmp_path / "test_proxy"
         if os.path.exists(fake_path):
@@ -314,8 +322,8 @@ class TestGetProxy:
                 os.unlink(fake_path)
             except:
                 pass
-        os.environ["X509_USER_PROXY"] = str(fake_path)
-        os.environ["GROUP"] = "bozo"
+        monkeypatch.setenv("X509_USER_PROXY", str(fake_path))
+        monkeypatch.setenv("GROUP", "bozo")
         with pytest.raises(PermissionError):
             fake_ifdh.getProxy("Analysis")
 
