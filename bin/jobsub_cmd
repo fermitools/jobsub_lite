@@ -47,18 +47,19 @@ class StoreGroupinEnvironment(argparse.Action):
 
     # pylint: disable=too-few-public-methods
 
-    def __call__(self, parser, namespace, values, option_string):  # type: ignore
+    def __call__(self, parser, namespace, values, option_string=None):  # type: ignore
         os.environ["GROUP"] = values
         setattr(namespace, self.dest, values)
 
 
-verbose = 0
+verbose = 0  # pylint: disable=invalid-name
 
 
+# pylint: disable=too-many-locals,too-many-branches,too-many-statements
 @as_span(os.path.basename(sys.argv[0]), is_main=True)
 def main() -> None:
     """main line of code, proces args, etc."""
-    global verbose
+    global verbose  # pylint: disable=invalid-name,global-statement
     parser = get_parser.get_jobid_parser(add_condor_epilog=True)
     parser.add_argument("-name", help="Set schedd name", default=None)
     parser.add_argument(
@@ -169,7 +170,7 @@ def main() -> None:
     # and find the wrapped command name
     cmd = os.path.basename(sys.argv[0])
 
-    # TODO:  This patch is to fix a small bug when condor_q is used directly.
+    # TODO:  This patch is to fix a small bug when condor_q is used directly. #pylint: disable=fixme
     # We're trying to combine totals because of the clause at the end of this
     # function that calculates totals.  So this is a patch until we can figure
     # out how we want to handle it properly
@@ -273,7 +274,7 @@ def main() -> None:
 if __name__ == "__main__":
     try:
         main()
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         if verbose:
             raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")

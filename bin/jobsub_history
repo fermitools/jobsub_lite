@@ -22,7 +22,6 @@
 """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 
-import argparse
 import os
 import sys
 import re
@@ -35,15 +34,15 @@ if os.environ.get("LD_LIBRARY_PATH", ""):
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
 
-import fake_ifdh
 import get_parser
 
-verbose = 0
+verbose = 0  # pylint: disable=invalid-name
 
 
+# pylint: disable=too-many-branches
 def main() -> None:
     """main line of code, proces args, etc."""
-    global verbose
+    global verbose  # pylint: disable=invalid-name,global-statement
     parser = get_parser.get_jobid_parser(add_condor_epilog=True)
     parser.add_argument("--user", help="Set username to look at", default="")
     parser.add_argument(
@@ -164,7 +163,7 @@ def main() -> None:
 if __name__ == "__main__":
     try:
         main()
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         if verbose:
             raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
