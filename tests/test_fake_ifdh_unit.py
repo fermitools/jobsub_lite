@@ -1,5 +1,7 @@
+import grp
 import os
 import pathlib
+import pwd
 import shutil
 import sys
 import tempfile
@@ -58,11 +60,21 @@ def test_getTmp_override(monkeypatch):
     assert res == "/var/tmp"
 
 
-@pytest.mark.unit
-def test_getExp_GROUP(monkeypatch):
-    monkeypatch.setenv("GROUP", "samdev")
-    res = fake_ifdh.getExp()
-    assert res == "samdev"
+class TestGetExp:
+    @pytest.mark.unit
+    def test_getExp_GROUP(self, monkeypatch):
+        monkeypatch.setenv("GROUP", "samdev")
+        res = fake_ifdh.getExp()
+        assert res == "samdev"
+
+    @pytest.mark.unit
+    def test_getExp_no_GROUP(self, monkeypatch):
+        monkeypatch.delenv("GROUP", raising=False)
+        # Adapted from https://stackoverflow.com/a/9324811
+        user = pwd.getpwuid(os.getuid()).pw_name
+        gid = pwd.getpwnam(user).pw_gid
+        expected_group = grp.getgrgid(gid).gr_name
+        assert fake_ifdh.getExp() == expected_group
 
 
 # Various getRole tests

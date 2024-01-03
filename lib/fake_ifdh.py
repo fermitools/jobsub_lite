@@ -121,7 +121,7 @@ def getExp() -> str:
     # otherwise guess primary group...
     exp: str
     with os.popen("id -gn", "r") as f:
-        exp = f.read()
+        exp = f.read().strip()
     return exp
 
 
