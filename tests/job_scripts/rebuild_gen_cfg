@@ -37,7 +37,7 @@ do
      "create_date": "2016-10-11T15:49:15+00:00",
      "user": "$USER",
      "update_date": "2018-09-11T15:30:42+00:00",
-     "update_user": "$USERl",
+     "update_user": "$USER",
      "file_size": $filesize,
      "checksum": $checksum,
      "content_status": "good",
