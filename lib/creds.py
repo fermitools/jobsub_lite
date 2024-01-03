@@ -32,7 +32,7 @@ class CredentialSet:
     """Class to hold credential paths for supported auth methods.  The __init__ method
     here defines what credentials we support"""
 
-    # TODO Add __iter__ method so that we can explicitly return the credentials in an iterator
+    # TODO Add __iter__ method so that we can explicitly return the credentials in an iterator # pylint: disable=fixme
     # rather than relying on the magic of vars()?
 
     # Environment Variables corresponding to each supported auth method
@@ -56,10 +56,11 @@ class CredentialSet:
 
 
 SUPPORTED_AUTH_METHODS = list(
-    set([cred_type for cred_type in vars(CredentialSet())] + REQUIRED_AUTH_METHODS)
+    set(list(vars(CredentialSet())) + REQUIRED_AUTH_METHODS)
 )  # Dynamically populate our SUPPORTED_AUTH_METHODS, and make sure it includes REQUIRED_AUTH_METHODS
 
-# pylint: disable-next=dangerous-default-value
+
+# pylint: disable=dangerous-default-value
 @as_span("get_creds")
 def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
     """get credentials for job operations"""

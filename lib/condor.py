@@ -16,20 +16,19 @@
 """ condor related routines """
 import os
 import sys
-import glob
 import re
 import random
-import shutil
 import subprocess
 from contextlib import contextmanager
 from typing import Dict, List, Any, Tuple, Optional, Union, Generator
 
+# pylint: disable=import-error
+import classad  # type: ignore
 import htcondor  # type: ignore
 import jinja2  # type: ignore
-import classad  # type: ignore
 
-import packages
 import fake_ifdh
+import packages
 from render_files import render_files
 from tracing import as_span
 
@@ -45,11 +44,11 @@ COLLECTOR_HOST = htcondor.param.get("COLLECTOR_HOST", None)
 __schedd_ads: Dict[str, classad.ClassAd] = {}
 
 
+# pylint: disable=invalid-name,too-many-branches
 @contextmanager
 def submit_vt(
     vo: str, role: str, schedd: str, verbose: int
 ) -> Generator[None, None, None]:
-
     """
     Rearrange vaulttoken files around a submit
     Rename them to keep timestamps, etc.
@@ -66,7 +65,7 @@ def submit_vt(
             vtname = f"{tmp}/vt_u{uid}-{vo}_{role}"
         else:
             vtname = f"{tmp}/vt_u{uid}-{vo}"
-        plainvtname = f"{tmp}/vt_u{uid}"
+        plainvtname = f"{tmp}/vt_u{uid}"  # pylint: disable=unused-variable
 
         if os.path.exists(vtname) and not os.access(vtname, os.W_OK):
             if verbose > 1:
@@ -87,7 +86,6 @@ def submit_vt(
         yield None
 
     finally:
-
         if os.path.exists(vtname) and not os.access(vtname, os.W_OK):
             if verbose > 1:
                 print("Not doing vault token renaming: readonly vault token")
@@ -105,7 +103,7 @@ def submit_vt(
                 print("vault tokens after post-submit renaming:")
                 os.system(f"ls -l {tmp}/vt_u{uid}*")
 
-        return None
+        return None  # pylint: disable=lost-exception
 
 
 # pylint: disable-next=no-member
@@ -117,13 +115,13 @@ def get_schedd_list(
     Get jobsub* schedd classads from collector.  Also, populate the in-memory store of the schedd
     classads
     """
-    global __schedd_ads
+    global __schedd_ads  # pylint: disable=global-statement
 
     # First, try to load schedd ads from memory
     if __schedd_ads and not refresh_schedd_ads and available_only:
         if vargs.get("verbose", 0) > 1:
             print("\nUsing cached schedd ads - NOT querying condor collector\n")
-        return [ad for ad in __schedd_ads.values()]
+        return list(__schedd_ads.values())
 
     # If schedd ads not in memory or refresh_schedd_ads is True, go ahead and get the classads from the collector
     if vargs.get("verbose", 0) > 1:
@@ -260,7 +258,7 @@ def load_submit_file(filename: str) -> Tuple[Any, Optional[int]]:
     return htcondor.Submit(res), nqueue
 
 
-# pylint: disable-next=dangerous-default-value
+# pylint: disable=dangerous-default-value,too-many-locals,too-many-branches
 @as_span("submit", arg_attrs=["*"])
 def submit(
     f: str, vargs: Dict[str, Any], schedd_name: str, cmd_args: List[str] = []

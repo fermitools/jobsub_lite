@@ -28,14 +28,16 @@ import sys
 import time
 from typing import Union, Optional, List, Dict, Tuple, Any
 
+# pylint: disable=import-error
 import jwt  # type: ignore
 import scitokens  # type: ignore
 
+# TODO: Do we need this anymore since we're IN lib?  # pylint: disable=fixme
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
 
-from tracing import as_span, add_event
-import htcondor  # type: ignore
+import htcondor  # type: ignore # pylint: disable=wrong-import-position
+from tracing import as_span, add_event  # pylint: disable=wrong-import-position
 
 VAULT_OPTS = htcondor.param.get("SEC_CREDENTIAL_GETTOKEN_OPTS", "")
 DEFAULT_ROLE = "Analysis"
@@ -67,7 +69,7 @@ def init_scitokens() -> None:
     if os.access(cfgfile, os.W_OK):
         os.utime(cfgfile)
     else:
-        with open(cfgfile, "w") as cff:
+        with open(cfgfile, "w") as cff:  # pylint: disable=unspecified-encoding
             cff.write(f"[scitokens]\ncache_location: {jstmpdir}\n")
 
     # in case moving it to /tmp doesn't fix the bug, check for zero length cache file
@@ -89,6 +91,7 @@ def getTmp() -> str:
     return os.environ.get("TMPDIR", "/tmp")
 
 
+# pylint: disable=anomalous-backslash-in-string
 def get_group_and_role_from_token_claim(
     wlcg_groups: List[str],
 ) -> Tuple[Union[str, Any], ...]:
@@ -125,6 +128,7 @@ def getExp() -> str:
     return exp
 
 
+# pylint: disable=unused-argument
 @as_span("getRole")
 def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     """get current role"""
@@ -142,7 +146,7 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
         fname = f"{prefix}jobsub_default_role_{group}_{uid}"
 
         if os.path.exists(fname) and os.stat(fname).st_uid == uid:
-            with open(fname, "r") as f:
+            with open(fname, "r") as f:  # pylint: disable=unspecified-encoding
                 role = f.read().strip()
             return role
 
@@ -248,7 +252,7 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
     except (ValueError, TypeError):
         # These are invalid token errors.  User asked to use this file specifically, so user should fix the token
         raise
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         # Something else is wrong with the token or it doesn't exist.  We should make a fresh one
         token_ok = False
 
@@ -272,6 +276,7 @@ def getToken(role: str = DEFAULT_ROLE, verbose: int = 0) -> str:
     return tokenfile
 
 
+# pylint: disable=too-many-locals
 @as_span("getProxy")
 def getProxy(
     role: str = DEFAULT_ROLE, verbose: int = 0, force_proxy: bool = False
@@ -286,13 +291,12 @@ def getProxy(
             # Equivalent of >&2
             sys.stderr.write(f"Running: {cmd_str}\n")
             return {"stdout": sys.stderr}
-        else:
-            # Caller that sets up command will write stdout to /dev/null, stderr to stdout
-            # Equivalent of >/dev/null 2>&1
-            return {
-                "stdout": subprocess.DEVNULL,
-                "stderr": subprocess.STDOUT,
-            }
+        # Caller that sets up command will write stdout to /dev/null, stderr to stdout
+        # Equivalent of >/dev/null 2>&1
+        return {
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.STDOUT,
+        }
 
     pid = os.getuid()
     tmp = getTmp()
@@ -325,6 +329,8 @@ def getProxy(
 
     if force_proxy or invalid_proxy:
         cigetcert_cmd_str = f"cigetcert -i 'Fermi National Accelerator Laboratory' -n --proxyhours 168 --minhours 167 -o {certfile}"
+        # pylint: disable=subprocess-run-check
+        # TODO:  See if we can put check in here, catch the error, and raise our Exception as below # pylint: disable=fixme
         cigetcert_cmd = subprocess.run(
             shlex.split(cigetcert_cmd_str),
             stdout=subprocess.PIPE,
@@ -359,6 +365,7 @@ def getProxy(
     return vomsfile
 
 
+# pylint: disable=invalid-name
 gfal_clean_env = (
     "unset PYTHONHOME PYTHONPATH LD_LIBRARY_PATH GFAL_PLUGIN_DIR GFAL_CONFIG_DIR"
 )
@@ -385,9 +392,9 @@ def chmod(dest: str, mode: int) -> None:
     # just try with the raw path, and ignore it if it doesn't work
     try:
         os.chmod(dest, mode)
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         pass
-    except PermissionError as e:
+    except PermissionError:
         pass
 
 
