@@ -125,12 +125,7 @@ def getExp() -> str:
     return exp
 
 
-@as_span("getRole")
-def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
-    """get current role"""
-    if role_override:
-        return role_override
-
+def getRole_from_default_role_file() -> Optional[str]:
     # if we have a default role pushed with a vault token, or $HOME/.jobsub_default... use that
     uid = os.getuid()
     environ_group = os.environ.get("GROUP")
@@ -143,7 +138,10 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
             with open(fname, "r") as f:
                 role = f.read().strip()
             return role
+    return None
 
+
+def getRole_from_valid_token() -> Optional[str]:
     # if there's a role in the wlcg.groups of the token, pick that
     if os.environ.get("BEARER_TOKEN_FILE", False) and os.path.exists(
         os.environ["BEARER_TOKEN_FILE"]
@@ -158,6 +156,29 @@ def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
         token_groups_roles = get_and_verify_wlcg_groups_from_token(token)
         _, token_role = get_group_and_role_from_token_claim(token_groups_roles)
         return token_role.capitalize()
+    return None
+
+
+@as_span("getRole")
+def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
+    """get current role.  Will check the following in order:
+    1. role_override
+    2. default role file
+    3. Existing valid token
+    4. Use default
+    """
+    if role_override:
+        return role_override
+
+    # Once we get to python 3.8, this can be changed to if (_role := getRole_from_default_role_file()): return _role,
+    # and same for getRole_from_valid_token.  IMO, that's a bit clearer than this loop
+    for role_location_try_func in (
+        getRole_from_default_role_file,
+        getRole_from_valid_token,
+    ):
+        _role = role_location_try_func()
+        if _role:
+            return _role
 
     return DEFAULT_ROLE
 

@@ -1,6 +1,8 @@
 import os
+import pathlib
 import shutil
 import sys
+import tempfile
 
 import pytest
 import jwt
@@ -62,6 +64,80 @@ def test_getExp_GROUP():
     os.environ["GROUP"] = "samdev"
     res = fake_ifdh.getExp()
     assert res == "samdev"
+
+
+# Various getRole tests
+
+
+@pytest.fixture
+def stage_existing_default_role_files(set_group_fermilab):
+    # If we already have a default role file, stage it somewhere else
+    staged_temp_files = {}
+
+    uid = os.getuid()
+    group = os.environ.get("GROUP")
+    filename = f"jobsub_default_role_{group}_{uid}"
+    file_locations = ["/tmp", f'{os.environ.get("HOME")}/.config']
+    try:
+        for file_location in file_locations:
+            file_dir = pathlib.Path(file_location)
+            filepath = file_dir / filename
+
+            if os.path.exists(filepath):
+                old_file_temp = tempfile.NamedTemporaryFile(delete=False)
+                os.rename(filepath, old_file_temp.name)
+                staged_temp_files[filepath] = old_file_temp.name
+
+        yield
+
+    finally:
+        # Put any staged files back
+        for filepath, staged_file in staged_temp_files.items():
+            os.rename(staged_file, filepath)
+
+
+@pytest.mark.parametrize("file_location", ["/tmp", f'{os.environ.get("HOME")}/.config'])
+@pytest.mark.unit
+def test_getRole_from_default_role_file(
+    file_location, stage_existing_default_role_files
+):
+    uid = os.getuid()
+    group = os.environ.get("GROUP")
+    filename = f"jobsub_default_role_{group}_{uid}"
+    file_dir = pathlib.Path(file_location)
+    file_dir.mkdir(exist_ok=True)
+    filepath = file_dir / filename
+    try:
+        filepath.write_text("testrole")
+        assert fake_ifdh.getRole_from_default_role_file() == "testrole"
+    finally:
+        os.unlink(filepath)
+
+
+@pytest.mark.unit
+def test_getRole_from_default_role_file_none(stage_existing_default_role_files):
+    assert not fake_ifdh.getRole_from_default_role_file()
+
+
+@pytest.mark.unit
+def test_getRole_from_valid_token(monkeypatch):
+    monkeypatch.setenv(
+        "BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab_production.token"
+    )
+    assert fake_ifdh.getRole_from_valid_token() == "Production"
+
+
+@pytest.mark.unit
+def test_getRole_from_valid_token_invalid(monkeypatch):
+    monkeypatch.setenv("BEARER_TOKEN_FILE", "fake_ifdh_tokens/malformed.token")
+    with pytest.raises(TypeError, match="malformed.*list"):
+        fake_ifdh.getRole_from_valid_token()
+
+
+@pytest.mark.unit
+def test_getRole_from_valid_token_none(monkeypatch):
+    monkeypatch.delenv("BEARER_TOKEN_FILE", raising=False)
+    assert not fake_ifdh.getRole_from_valid_token()
 
 
 @pytest.mark.unit
