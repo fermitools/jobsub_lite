@@ -25,9 +25,11 @@ import socket
 import logging
 from typing import Dict, Any, Callable, TypeVar, Optional, List
 
+
 # opentelemetry makes this obnoxious warning about nanosecond accuracy in python 3.6
 # squelch it before we import the modules
-class nanosecond_warning_filter(logging.Filter):
+class nanosecond_warning_filter(logging.Filter):  # pylint: disable=invalid-name
+    # pylint: disable=arguments-renamed
     def filter(self, lr: logging.LogRecord) -> bool:
         if str(lr).find("millisecond precision") > 0:
             return False
@@ -36,6 +38,7 @@ class nanosecond_warning_filter(logging.Filter):
 
 logging.getLogger("opentelemetry.util._time").addFilter(nanosecond_warning_filter())
 
+# pylint: disable=import-error
 try:
     # from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter # type: ignore
     # from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter # type: ignore
@@ -74,7 +77,7 @@ try:
         TraceContextTextMapPropagator().inject(carrier)
         return carrier
 
-except:
+except:  # pylint: disable=bare-except
     # if we can't import the stuff, here's a little mock so we don't crash
     print("Note: tracing not available here.")
     logging.exception("importing tracing")
@@ -92,11 +95,15 @@ except:
             pass
 
     class Tracer:
+        # pylint: disable=unused-argument,no-self-use
         def start_as_current_span(self, name: str) -> Context:
             return Context()
 
+        # pylint: disable=unused-argument,no-self-use
         def add_event(
-            self, name: str, attributes: Optional[Dict[str, str]] = None
+            self,
+            name: str,
+            attributes: Optional[Dict[str, str]] = None,
         ) -> None:
             return
 
@@ -112,7 +119,9 @@ except:
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def add_event(name: str, attributes: Optional[Dict[str, str]] = None) -> None:
+def add_event(
+    name: str, attributes: Optional[Dict[str, str]] = None
+) -> None:  # pylint: disable=unused-argument
     span = get_current_span()  # type: ignore
     span.add_event(name, attributes)
 
@@ -121,13 +130,13 @@ def start_as_current_span(name: str) -> Context:
     return tracer.start_as_current_span(name)
 
 
+# pylint: disable=dangerous-default-value
 def as_span(
     name: str,
     arg_attrs: List[str] = [],
     is_main: bool = False,
     return_attr: bool = True,
 ) -> Callable[[F], F]:
-
     """outer function returning the decorator,
     binds the name,is_main,arg_attrs,return_attr symbols"""
 

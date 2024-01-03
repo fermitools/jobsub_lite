@@ -13,20 +13,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=too-many-locals, invalid-name, raise-missing-from, unused-variable, consider-using-enumerate
 """ misc. utility functions """
 from collections import OrderedDict
-import classad  # type: ignore
 import datetime
 import os
 import os.path
 import re
+import shutil
 import socket
 import subprocess
 import sys
-import uuid
-import shutil
 import time
 from typing import Union, Dict, Any, NamedTuple, Tuple, List, Optional
+import uuid
+
+import classad  # type: ignore # pylint: disable=import-error
 from tracing import get_propagator_carrier
 
 from creds import CredentialSet
@@ -487,7 +490,7 @@ class SiteAndUsageModel(NamedTuple):
     usage_models: str = ""
 
 
-def resolve_site_and_usage_model(
+def resolve_site_and_usage_model(  # pylint: disable=dangerous-default-value
     given_sites: str = "",
     given_usage_model: str = "",
     resource_provides_quoted: List[str] = [""],
