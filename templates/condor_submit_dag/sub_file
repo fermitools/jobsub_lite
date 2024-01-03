@@ -1,5 +1,6 @@
 
 transfer_input_files = {{",".join(transfer_files)}}
+getenv             = SAM_PROJECT,USER,DN
 
 {% if clientdn is defined and clientdn %}+JobsubClientDN="{{clientdn}}"{% endif %}
 +JobsubClientIpAddress="{{ipaddr}}"

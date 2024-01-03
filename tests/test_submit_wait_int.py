@@ -224,6 +224,13 @@ class dircontext:
 
 def condor_dag_launch(dagfile, extra=""):
     """launch a dag from our dag test area"""
+
+    # need some environment variables to fill in the submit files...
+    proxy = fake_ifdh.getProxy("Analysis")
+    with os.popen(f"openssl x509 -subject -noout -in {proxy}") as subjin:
+        line = subjin.readline()
+        line = line.strip().replace("subject= ", "")
+        os.environ["DN"] = line
     os.environ["UID"] = str(os.getuid())
     if os.path.exists(f"{dagfile}.condor.sub"):
         os.unlink(f"{dagfile}.condor.sub")
