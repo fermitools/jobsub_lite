@@ -3,14 +3,101 @@
 condor_submit_dag
 
 .SH USAGE
-Traceback (most recent call last):
-  File "/home/mengel/jobsub_lite/bin/condor_submit_dag", line 66, in <module>
-    main()
-  File "/home/mengel/jobsub_lite/bin/condor_submit_dag", line 51, in main
-    proxy, token = get_creds(cmd_args)
-  File "/home/mengel/jobsub_lite/lib/creds.py", line 29, in get_creds
-    role = fake_ifdh.getRole(args.get("role", None))
-AttributeError: 'list' object has no attribute 'get'
+usage: condor_submit_dag [-h] [--auth-methods AUTH_METHODS] [-G GROUP]
+                         [--global-pool GLOBAL_POOL] [--role ROLE]
+                         [--subgroup SUBGROUP] [--verbose VERBOSE] [--debug]
+                         [--devserver] [--version] [--support-email]
+                         [--job-info JOB_INFO]
+                         [--need-storage-modify NEED_STORAGE_MODIFY]
+                         [--need-scope NEED_SCOPE]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --global-pool GLOBAL_POOL
+                        direct jobs/commands to a particular known global
+                        pool.Currently known pools are: dune
+  --devserver           Use jobsubdevgpvm01 etc. to submit
+  --job-info JOB_INFO   script to call with jobid and command line when job is
+                        submitted
+  --need-storage-modify NEED_STORAGE_MODIFY
+                        directories needing storage.modify scope in job tokens
+  --need-scope NEED_SCOPE
+                        scopes needed in job tokens
+
+general arguments:
+  --auth-methods AUTH_METHODS
+                        Authorization method to use for job management.
+                        Multiple values should be given in a comma-separated
+                        list, e.g. "token,proxy".Currently supported methods
+                        are ['proxy', 'token']. The current infrastructure
+                        requires the following auth methods: ['token']
+  -G GROUP, --group GROUP
+                        Group/Experiment/Subgroup for priorities and
+                        accounting
+  --role ROLE           VOMS Role for priorities and accounting
+  --subgroup SUBGROUP   Subgroup for priorities and accounting. See
+                        https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki/
+                        Jobsub_submit#Groups-Subgroups-Quotas-Priorities for
+                        more documentation on using --subgroup to set job
+                        quotas and priorities
+  --verbose VERBOSE     Turn on more information on internal state of program.
+                        --verbose 1 is the same as --debug
+  --debug               dump internal state of program (useful for debugging)
+  --version             version of jobsub_lite being used
+  --support-email       jobsub_lite support email
+
+(with single '-' or double '--' dashes)
+Usage: condor_submit_dag [options] dag_file [dag_file_2 ... dag_file_n]
+  where dag_file1, etc., is the name of a DAG input file
+  and where [options] is one or more of:
+    -help               (print usage info and exit)
+    -version            (print version and exit)
+    -dagman <path>      (Full path to an alternate condor_dagman executable)
+    -no_submit          (DAG is not submitted to HTCondor)
+    -verbose            (Verbose error messages from condor_submit_dag)
+    -force              (Overwrite files condor_submit_dag uses if they exist)
+    -r <schedd_name>    (Submit to the specified remote schedd)
+    -schedd-daemon-ad-file <path>  (Submit to the schedd who dropped the ad file)
+    -schedd-address-file <path>  (Submit to the schedd who dropped the address file)
+    -maxidle <number>   (Maximum number of idle nodes to allow)
+    -maxjobs <number>   (Maximum number of jobs ever submitted at once)
+    -MaxPre <number>    (Maximum number of PRE scripts to run at once)
+    -MaxPost <number>   (Maximum number of POST scripts to run at once)
+    -notification <value> (Determines how much email you get from HTCondor.
+        See the condor_submit man page for values.)
+    -NoEventChecks      (Now ignored -- use DAGMAN_ALLOW_EVENTS)
+    -DontAlwaysRunPost  (Don't run POST script if PRE script fails)
+    -AlwaysRunPost      (Run POST script if PRE script fails)
+    -AllowLogError      (Allows the DAG to attempt execution even if the log
+        reading code finds errors when parsing the submit files)
+        (-AllowLogError is no longer supported as of 8.5.5)
+    -UseDagDir          (Run DAGs in directories specified in DAG file paths)
+    -debug <number>     (Determines how verbosely DAGMan logs its work
+         about the life of the condor_dagman job.  'value' must be
+         an integer with a value of 0-7 inclusive.)
+    -outfile_dir <path> (Directory into which to put the dagman.out file,
+         instead of the default
+    -config <filename>  (Specify a DAGMan configuration file)
+    -append <command>   (Append specified command to .condor.sub file)
+    -insert_sub_file <filename>   (Insert specified file into .condor.sub file)
+    -batch-name <name>  (Set the batch name for the dag)
+    -AutoRescue 0|1     (whether to automatically run newest rescue DAG;
+         0 = false, 1 = true)
+    -DoRescueFrom <number>  (run rescue DAG of given number)
+    -AllowVersionMismatch (allow version mismatch between the
+         .condor.sub file and the condor_dagman binary)
+    -no_recurse         (don't recurse in nested DAGs)
+    -do_recurse         (do recurse in nested DAGs)
+    -update_submit      (update submit file if it exists)
+    -import_env         (explicitly import env into submit file)
+    -DumpRescue         (DAGMan dumps rescue DAG and exits)
+    -valgrind           (create submit file to run valgrind on DAGMan)
+    -priority <priority> (jobs will run with this priority by default)
+    -dont_use_default_node_log (Restore pre-7.9.0 behavior of using UserLog only)
+        (-dont_use_default_node_log is no longer allowed as of 8.3.1)
+    -suppress_notification (Set "notification = never" in all jobs submitted by this DAGMan)
+    -dont_suppress_notification (Allow jobs to specify notification)
+    -DoRecov            (run in recovery mode)
 
 .SH DESCRIPTION
 Jobsub_lite condor wrapper for condor_submit_dag.

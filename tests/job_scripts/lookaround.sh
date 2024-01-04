@@ -43,7 +43,7 @@ httokendecode .condor_creds/*.use
 echo "============"
 echo "ifdh ls"
 echo "============"
-ifdh ls --force=https /pnfs/fermilab/users/mengel
+ifdh ls --force=https /pnfs/fermilab/users/$USER
 echo "============"
 for f in $*
 do

@@ -206,6 +206,45 @@ def run_launch(cmd, expected_out=1, get_dir=False):
     return res == None
 
 
+class dircontext:
+    """class to change directories for a test using
+    with dircontext(dir):
+    """
+
+    def __init__(self, dirname):
+        self.dirname = dirname
+        self.returnto = os.getcwd()
+
+    def __enter__(self):
+        os.chdir(self.dirname)
+
+    def __exit__(self, a, b, c):
+        os.chdir(self.returnto)
+
+
+def condor_dag_launch(dagfile, extra=""):
+    """launch a dag from our dag test area"""
+
+    # need some environment variables to fill in the submit files...
+    proxy = fake_ifdh.getProxy("Analysis")
+    with os.popen(f"openssl x509 -subject -noout -in {proxy}") as subjin:
+        line = subjin.readline()
+        line = line.strip().replace("subject= ", "")
+        os.environ["DN"] = line
+    os.environ["UID"] = str(os.getuid())
+    if os.path.exists(f"{dagfile}.condor.sub"):
+        os.unlink(f"{dagfile}.condor.sub")
+    with dircontext(os.path.dirname(__file__) + "/data/condor_submit_dag"):
+        assert run_launch(f"condor_submit_dag --verbose 1 {extra} {dagfile}")
+
+
+@pytest.mark.integration
+def test_condor_submit_dag1(samdev):
+    condor_dag_launch(
+        "dataset.dag", f"-append environment=SAM_PROJECT=proj_{int(time.time())}"
+    )
+
+
 def lookaround_launch(extra, verify_files=""):
     """Simple submit of our lookaround script"""
     assert run_launch(
@@ -407,12 +446,12 @@ def fife_launch(extra):
             --metadata_extractor 'hypot_metadata_extractor' \
             --addoutput 'gen.troot' \
             --rename 'unique' \
-            --dest '/pnfs/%(exp)s/users/mengel/dropbox' \
+            --dest '/pnfs/%(exp)s/users/%(user)s/dropbox' \
             --add_location \
             --declare_metadata \
             --addoutput1 'hist_gen.troot' \
             --rename1 'unique' \
-            --dest1 '/pnfs/%(exp)s/users/mengel/dropbox' \
+            --dest1 '/pnfs/%(exp)s/users/%(user)s/dropbox' \
             --add_location1 \
             --declare_metadata1 \
             --exe  hypot.exe \
@@ -421,7 +460,7 @@ def fife_launch(extra):
               gen.troot \
               -c \
               hist_gen.troot """
-        % {"exp": os.environ["GROUP"], "extra": extra},
+        % {"exp": os.environ["GROUP"], "extra": extra, "user": os.environ["USER"]},
         expected_out=5,
     )
 
@@ -566,10 +605,14 @@ def test_fetch_output():
         group = group_for_job(jid)
         owd = tempfile.mkdtemp()
         outdirs[jid] = owd
-        subprocess.run(
-            ["jobsub_fetchlog", "--group", group, "--jobid", jid, "--destdir", owd],
-            check=True,
-        )
+        try:
+            subprocess.run(
+                ["jobsub_fetchlog", "--group", group, "--jobid", jid, "--destdir", owd],
+                check=True,
+            )
+        except:
+            print(f"Failed doing test {jid2test[jid]}'s jobsub_fetchlog {jid}:")
+            raise
 
 
 @pytest.mark.smoke

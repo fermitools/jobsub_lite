@@ -22,7 +22,7 @@ jobsub_submit \
     --find_setups \
     --export-unquote 'TIMESTAMP%3D%24%28date%20%2B%25Y%25m%25dT%25H%25M%25S%29' \
     --addoutput '*.txt' \
-    --dest '/pnfs/nova/scratch/users/mengel' \
+    --dest '/pnfs/nova/scratch/users/'$USER \
   --exe  /usr/bin/printenv \
   --exe  /bin/true \
   --exe  /bin/true \

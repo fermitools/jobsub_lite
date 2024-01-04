@@ -5,6 +5,5 @@
 
 
 # touch our transfer files so condor will copy them back
-(sleep 1; touch {%for f in transfer_files%}{{f}} {%endfor%}) &
 
 exec /usr/bin/condor_dagman "$@"

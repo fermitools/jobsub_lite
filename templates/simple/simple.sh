@@ -414,7 +414,7 @@ if [ "$JOBSUB_EXE_SCRIPT" = "" ]; then
      export JOBSUB_EXE_SCRIPT=$(find . -name {{executable|basename}} -print | head -1)
 fi
 chmod +x $JOBSUB_EXE_SCRIPT
-${JSB_TMP}/ifdh.sh log "mengel:$JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT   {{exe_arguments|join(" ")}} "
+${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID BEGIN EXECUTION $JOBSUB_EXE_SCRIPT   {{exe_arguments|join(" ")}} "
 
 export NODE_NAME=`hostname`
 export BOGOMIPS=`grep bogomips /proc/cpuinfo | tail -1 | cut -d ' ' -f2`

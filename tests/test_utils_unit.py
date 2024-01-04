@@ -231,7 +231,7 @@ class TestUtilsUnit:
     @pytest.mark.unit
     def test_cleanup_simple(self, test_job_dir):
         assert os.path.exists(f"{test_job_dir}/simple.cmd")
-        utils.cleanup({"submitdir": test_job_dir})
+        utils.cleanup({"submitdir": test_job_dir, "verbose": 1})
         assert not os.path.exists(f"{test_job_dir}/simple.cmd")
         assert not os.path.exists(test_job_dir)
 
@@ -242,7 +242,7 @@ class TestUtilsUnit:
         assert os.path.exists(f"{test_old_dir}/simple.cmd")
         assert os.path.exists(f"{oldd}/simple.cmd")
         assert os.path.exists(f"{newd}/simple.cmd")
-        utils.cleanup({"submitdir": test_old_dir})
+        utils.cleanup({"submitdir": test_old_dir, "verbose": 1})
         assert not os.path.exists(f"{test_old_dir}/simple.cmd")
         assert not os.path.exists(f"{oldd}/simple.cmd")
         assert os.path.exists(f"{newd}/simple.cmd")

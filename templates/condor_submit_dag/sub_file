@@ -1,0 +1,39 @@
+
+transfer_input_files = {{",".join(transfer_files)}}
+getenv             = SAM_PROJECT,USER,DN
+
+{% if clientdn is defined and clientdn %}+JobsubClientDN="{{clientdn}}"{% endif %}
++JobsubClientIpAddress="{{ipaddr}}"
++JobsubServerVersion="{{jobsub_version}}"
++JobsubClientVersion="{{jobsub_version}}"
++JobsubClientKerberosPrincipal="{{kerberos_principal}}"
+
+{% if subgroup is defined and subgroup %}
++AccountingGroup = "group_{{group}}.{{subgroup}}.{{user}}"
+{% else %}
++AccountingGroup = "group_{{group}}.{{user}}"
+{% endif %}
+
++Jobsub_Group="{{group}}"
++JobsubJobId="$(CLUSTER).$(PROCESS)@{{schedd}}"
++JobsubOutputURL="{{outurl}}"
++JobsubUUID="{{uuid}}"
+
+# Credentials
+{% if token is defined and token %}
+{% if role is defined and role != 'Analysis' %}
+use_oauth_services = {{group}}_{{role | lower}}
+{% if job_scope is defined and job_scope %}
+{{group}}_{{role | lower}}_oauth_permissions_{{oauth_handle}} = " {{job_scope}} "
+{% endif %}
+{% else %}
+use_oauth_services = {{group}}
+{% if job_scope is defined and job_scope %}
+{{group}}_oauth_permissions_{{oauth_handle}} = " {{job_scope}} "
+{% endif %}
+{% endif %}
+{% endif %}
+{% if role is defined and proxy is defined and proxy %}
++x509userproxy = "{{proxy}}"
+delegate_job_GSI_credentials_lifetime = 0
+{% endif %}

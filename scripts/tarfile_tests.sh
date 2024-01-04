@@ -13,5 +13,5 @@ do
     done
 done
 
-tft="--tar_file_name /pnfs/nova/scratch/users/mengel/prestuff.tgz"
+tft="--tar_file_name /pnfs/nova/scratch/users/$USER/prestuff.tgz"
 jobsub_submit $common $tft file://`pwd`/checktar.sh

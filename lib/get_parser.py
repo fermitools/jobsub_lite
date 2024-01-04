@@ -252,6 +252,18 @@ def get_submit_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParse
         default=[],
         help="script to call with jobid and command line when job is submitted",
     )
+    parser.add_argument(
+        "--need-storage-modify",
+        action="append",
+        default=[],
+        help="directories needing storage.modify scope in job tokens",
+    )
+    parser.add_argument(
+        "--need-scope",
+        action="append",
+        default=[],
+        help="scopes needed in job tokens",
+    )
     return parser
 
 
@@ -409,18 +421,6 @@ def get_parser() -> argparse.ArgumentParser:
         action="append",
         default=[""],
         help="Lines to append to the job file.",
-    )
-    parser.add_argument(
-        "--need-storage-modify",
-        action="append",
-        default=[],
-        help="directories needing storage.modify scope in job tokens",
-    )
-    parser.add_argument(
-        "--need-scope",
-        action="append",
-        default=[],
-        help="scopes needed in job tokens",
     )
     parser.add_argument(
         "--project-name",

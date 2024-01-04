@@ -30,7 +30,10 @@ import classad  # type: ignore
 
 import packages
 import fake_ifdh
+from render_files import render_files
 from tracing import as_span
+
+PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 random.seed()
 
@@ -369,6 +372,26 @@ def submit(
     #        return True
 
 
+def get_transfer_file_list(f: str) -> List[str]:
+    """read submit file, look for needed SCRIPT or JOB files"""
+    res = [f]
+    cmdlist = []
+    with open(f, "r") as inf:
+        for l in inf.readlines():
+            m = re.match(r"(JOB|SCRIPT).* (\S+) *$", l)
+            if m:
+                res.append(m.group(2))
+                if m.group(1) == "JOB":
+                    cmdlist.append(m.group(2))
+    for f in cmdlist:
+        with open(f, "r") as inf:
+            for l in inf.readlines():
+                m = re.match(r"(executable|transfer_input_files) *= *(\S+) *$", l)
+                if m and not m.group(2) in res:
+                    res.append(m.group(2))
+    return res
+
+
 # pylint: disable-next=dangerous-default-value
 def submit_dag(
     f: str, vargs: Dict[str, Any], schedd_name: str, cmd_args: List[str] = []
@@ -381,14 +404,40 @@ def submit_dag(
     """
     subfile = f"{f}.condor.sub"
     if not os.path.exists(subfile):
-        qargs = " ".join([f"'{x}'" for x in cmd_args])
+        # qargs = " ".join([f"'{x}'" for x in cmd_args])
+        qargs = " ".join(cmd_args)
+
+        vargs["transfer_files"] = vargs.get(
+            "transfer_files", []
+        ) + get_transfer_file_list(f)
+
+        d1 = os.path.join(PREFIX, "templates", "condor_submit_dag")
+        render_files(d1, vargs, vargs["outdir"], xfer=False)
+
+        for cf in vargs["transfer_files"] + [f]:
+            print(f"Copying file: {cf}")
+            dst = f"{vargs['outdir']}/{os.path.basename(cf)}"
+            if dst != cf:
+                shutil.copyfile(cf, dst)
+
+        os.chdir(vargs["outdir"])
+
+        f = os.path.basename(f)
+        subfile = os.path.basename(subfile)
+
         cmd = (
-            f"/usr/bin/condor_submit_dag -append"
-            f' "use_oauth_services = {vargs["group"]}" -no_submit {f} {qargs}'
+            f"/usr/bin/condor_submit_dag -insert_sub_file sub_file "
+            f"-no_submit -dagman dagman_wrapper.sh {qargs} {f} "
         )
 
-        if vargs.get("token", None) is not None:
-            cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
+        # if vargs.get("token", None) is not None:
+        #    cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
+
+        if vargs["outurl"]:
+            from submit_support import transfer_sandbox
+
+            transfer_sandbox(vargs["outdir"], vargs["outurl"])
+
         if vargs.get("verbose", 0) > 0:
             print(f"Running: {cmd}")
 
@@ -401,7 +450,7 @@ def submit_dag(
         except OSError as e:
             print("Execution failed: ", e)
 
-    return submit(subfile, vargs, schedd_name)
+    return submit(subfile, vargs, schedd_name=schedd_name)
 
 
 class JobIdError(Exception):

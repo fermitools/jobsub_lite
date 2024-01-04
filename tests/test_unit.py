@@ -1,4 +1,5 @@
 import os.path
+import os
 
 
 def getschedd(s):
@@ -45,6 +46,18 @@ class TestUnit:
         "token": "faketokenpathtomaketestwork",
         "proxy": "fakeproxypathtomaketestwork",
         "traceparent": "",
+        "date": "1970-01-01",
+        "datetime": "1970-01-01T00:00:00",
+        "ipaddr": "131.225.1.1",
+        "jobsub_version": "test",
+        "kerberos_principal": "testuser",
+        "outdir": f"/tmp/tst{os.getpid()}",
+        "submitdir": f"/tmp/tst{os.getpid()}",
+        "outurl": "http://nowhere.org",
+        "user": "nobody",
+        "uuid": "1234-uuid56-789",
+        "schedd": "fakeschedd.example.org",
+        "prefix": os.path.dirname(os.path.dirname(__file__)),
     }
     test_extra_template_args = {
         "role": test_role,
