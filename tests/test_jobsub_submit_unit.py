@@ -25,6 +25,7 @@ from test_unit import TestUnit
 
 from creds import CredentialSet
 import submit_support
+import render_files
 
 
 class TestJobsubSubmitUnit:
@@ -39,7 +40,7 @@ class TestJobsubSubmitUnit:
         """test the get_basefiles routine on our source directory,
         we should be in it"""
         dlist = [os.path.dirname(__file__)]
-        fl = submit_support.get_basefiles(dlist)
+        fl = render_files.get_basefiles(dlist)
         assert os.path.basename(__file__) in fl
 
     @pytest.mark.unit

@@ -14,12 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ condor related routines """
+from contextlib import contextmanager
 import os
 import sys
-import re
 import random
+import re
+import shutil
 import subprocess
-from contextlib import contextmanager
 from typing import Dict, List, Any, Tuple, Optional, Union, Generator
 
 # pylint: disable=import-error
@@ -374,15 +375,15 @@ def get_transfer_file_list(f: str) -> List[str]:
     """read submit file, look for needed SCRIPT or JOB files"""
     res = [f]
     cmdlist = []
-    with open(f, "r") as inf:
+    with open(f, "r") as inf:  # pylint: disable=unspecified-encoding
         for l in inf.readlines():
             m = re.match(r"(JOB|SCRIPT).* (\S+) *$", l)
             if m:
                 res.append(m.group(2))
                 if m.group(1) == "JOB":
                     cmdlist.append(m.group(2))
-    for f in cmdlist:
-        with open(f, "r") as inf:
+    for f in cmdlist:  # pylint: disable=redefined-argument-from-local
+        with open(f, "r") as inf:  # pylint: disable=unspecified-encoding
             for l in inf.readlines():
                 m = re.match(r"(executable|transfer_input_files) *= *(\S+) *$", l)
                 if m and not m.group(2) in res:
@@ -432,7 +433,10 @@ def submit_dag(
         #    cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
 
         if vargs["outurl"]:
-            from submit_support import transfer_sandbox
+            # pylint: disable=import-outside-toplevel
+            from submit_support import (
+                transfer_sandbox,
+            )
 
             transfer_sandbox(vargs["outdir"], vargs["outurl"])
 

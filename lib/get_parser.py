@@ -21,11 +21,11 @@ import re
 import sys
 from typing import Union, Any
 
-import pool
+from condor import get_schedd_names
 from creds import SUPPORTED_AUTH_METHODS, REQUIRED_AUTH_METHODS
+import pool
 from skip_checks import SupportedSkipChecks
 from utils import DEFAULT_USAGE_MODELS, DEFAULT_SINGULARITY_IMAGE
-from condor import get_schedd_names
 
 
 def verify_executable_starts_with_file_colon(s: str) -> str:

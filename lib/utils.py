@@ -43,7 +43,6 @@ DEFAULT_SINGULARITY_IMAGE = (
 
 
 def cleandir(d: str, verbose: int) -> None:
-
     if not os.path.exists(d):
         return
 
@@ -108,6 +107,7 @@ def backslash_escape_layer(argv: List[str]) -> None:
         argv[i] = re.sub(r"\\(.)", "\\1", argv[i])
 
 
+# pylint: disable=unused-argument
 def set_some_extras(
     args: Dict[str, Any],
     schedd_name: str,
