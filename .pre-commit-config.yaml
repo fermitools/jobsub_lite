@@ -15,18 +15,10 @@ repos:
         name: mypy (bin)
         files: bin/
         args: [ --scripts-are-modules,  --ignore-missing-imports ]
-  - repo: https://github.com/PyCQA/pylint # This is just to get pylint installed in the pre-commit CI container
+  - repo: https://github.com/PyCQA/pylint
     rev:  v2.13.9
     hooks:
       - id: pylint
-        args: [--disable=all]
-  - repo: local # This is where the checks are actually run
-    hooks:
-      - id: pylint
-        name: pylint (actual)
-        entry: pylint
-        language: system
-        types: [python]
         args: [--rcfile=.pylintrc] # Go through this.  Maybe we want to modify this list
   - repo: https://github.com/psf/black
     rev: 22.6.0
