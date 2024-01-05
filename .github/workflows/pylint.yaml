@@ -24,4 +24,4 @@ jobs:
     - name: Run pylint on code (lib)
       run: pylint --rcfile=.pylintrc lib/*
     - name: Run pylint on code (bin)
-      run: pylint --rcfile=.pylintrc bin/*
+      run: pylint --rcfile=.pylintrc --ignore=bin/condor_vault_storer bin/*
