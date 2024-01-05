@@ -21,6 +21,7 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         pip install pylint==$pylint_version
-    - name: Run pylint on code
-      run: |
-        pylint --rcfile=.pylintrc
+    - name: Run pylint on code (lib)
+      run: pylint --rcfile=.pylintrc lib/*
+    - name: Run pylint on code (bin)
+      run: pylint --rcfile=.pylintrc bin/*
