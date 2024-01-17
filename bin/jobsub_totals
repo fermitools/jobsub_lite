@@ -24,7 +24,7 @@ totals["T"] = 0
 for line in sys.stdin.readlines():
     print(line, end="")
     words = re.split(r"\s+", line)
-    if len(words) > 4:
+    if len(words) > 5:
         totals[words[5]] += 1
     totals["T"] += 1
 
