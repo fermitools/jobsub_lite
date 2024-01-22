@@ -23,10 +23,10 @@ totals["T"] = 0
 
 for line in sys.stdin.readlines():
     print(line, end="")
-    words = re.split(r"\s+", line)
-    if len(words) > 5:
-        totals[words[5]] += 1
-    totals["T"] += 1
+    m = re.match(r"\d+\.\d+@\S+(\s+\S+){4}\s+([CXIRHS])", line)
+    if m:
+        totals[m.group(2)] += 1
+        totals["T"] += 1
 
 for i in type_map:
     print(totals[i], type_map[i], end="")
