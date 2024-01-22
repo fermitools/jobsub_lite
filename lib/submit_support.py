@@ -1,37 +1,19 @@
+""" Code factored out of jobsub_submit """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
-import argparse
-import glob
-import hashlib
 import os
 import os.path
-import sys
-from typing import Union, List, Dict, Any
+from typing import List, Dict, Any
 
-import jinja2 as jinja  # type: ignore
-from get_parser import get_parser
-from condor import get_schedd, submit, submit_dag
+from condor import submit, submit_dag
 from dagnabbit import parse_dagnabbit
-from tarfiles import do_tarballs
-from tracing import as_span
-from utils import (
-    set_extras_n_fix_units,
-    cleanup,
-    backslash_escape_layer,
-    sanitize_lines,
-)
-from creds import get_creds
-from token_mods import get_job_scopes, use_token_copy
-from version import print_version, print_support_email
 from fake_ifdh import mkdir_p, cp
-import pool
-import skip_checks
-from render_files import render_files, get_basefiles
-
-""" Code factored out of jobsub_submit """
+from render_files import render_files
+from tracing import as_span
 
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+# pylint: disable=too-many-branches
 def do_dataset_defaults(varg: Dict[str, Any]) -> None:
     """
     make sure to pass appropriate SAM_* environment variables if we
@@ -91,7 +73,7 @@ def transfer_sandbox(src_dir: str, dest_url: str) -> None:
     print("Transferring files to web sandbox...")
     try:
         mkdir_p(dest_url)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         print(
             f"warning: error creating sandbox, web logs will not be available for this submission: {e}"
         )
@@ -99,7 +81,7 @@ def transfer_sandbox(src_dir: str, dest_url: str) -> None:
     for f in os.listdir(src_dir):
         try:
             cp(os.path.join(src_dir, f), os.path.join(dest_url, f))
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             print(
                 f"warning: error copying {f} to sandbox, will not be available through web logs: {e}"
             )

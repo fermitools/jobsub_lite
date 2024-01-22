@@ -19,13 +19,10 @@
 
 """ wrapper for condor_submit_dag """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
-import datetime
 import hashlib
 import sys
 import os
 import os.path
-import uuid
-import socket
 
 if os.environ.get("LD_LIBRARY_PATH", ""):
     del os.environ["LD_LIBRARY_PATH"]
@@ -43,8 +40,7 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 from condor import get_schedd, submit_dag
 from creds import get_creds, print_cred_paths_from_credset
 from token_mods import get_job_scopes, use_token_copy
-from utils import set_some_extras, cleanup
-import version
+from utils import set_some_extras
 
 import get_parser
 

@@ -13,9 +13,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=fixme
 """ tarfile upload related code """
 import argparse
 import hashlib
+import http.client
 import itertools
 import os
 import os.path
@@ -25,11 +28,12 @@ import sys
 import tarfile as tarfile_mod
 import time
 import traceback as tb
-from typing import Union, Dict, Tuple, Callable, List, Any, Iterator, Optional, BinaryIO
+from typing import Dict, Callable, List, Any, Iterator, Optional
 from urllib.parse import quote as _quote
-import http.client
-import requests  # type: ignore
-from requests.auth import AuthBase  # type: ignore
+
+
+import requests  # type: ignore # pylint: disable=import-error
+from requests.auth import AuthBase  # type: ignore # pylint: disable=import-error
 
 import fake_ifdh
 from creds import get_creds, CredentialSet
@@ -60,6 +64,7 @@ class TokenAuth(AuthBase):  # type: ignore
             self.token_string = f.read()
         self.token_string = self.token_string.strip()  # Drop \n at end of token_string
 
+    # pylint: disable=invalid-name
     def __call__(self, r: requests.Request) -> requests.Request:
         r.headers["Authorization"] = f"Bearer {self.token_string}"
         return r
@@ -174,6 +179,9 @@ def dcache_persistent_path(exp: str, filename: str) -> str:
     return res
 
 
+# TODO:  I've disabled too-many-statements, but it's a good indicator that this could be
+# cleaned up in the future
+# pylint: disable=too-many-statements
 @as_span("do_tarballs", arg_attrs=["*"])
 def do_tarballs(args: argparse.Namespace) -> None:
     """handle tarfile argument;  we could have:
@@ -194,9 +202,7 @@ def do_tarballs(args: argparse.Namespace) -> None:
 
     try:
         for fn in args.input_file:
-
             if fn.startswith("dropbox:"):
-
                 if fn.startswith("dropbox://"):
                     fn = fn.replace("//", "", 1)
 
@@ -246,7 +252,6 @@ def do_tarballs(args: argparse.Namespace) -> None:
                     res.append(location)
                     pnfs_classad_line.append(location)
                 else:
-
                     res.append(pfn)
             else:
                 res.append(fn)
@@ -300,6 +305,9 @@ def do_tarballs(args: argparse.Namespace) -> None:
         args.lines.append(f'+PNFS_INPUT_FILES="{",".join(pnfs_classad_line)}"')
 
 
+# TODO:  I've disabled too-many-statements and too-many-branches, but it's a good indicator that this could be
+# cleaned up in the future
+# pylint: disable=too-many-statements,too-many-branches
 def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
     """
     upload a tarfile to the dropbox, return its path there
@@ -350,7 +358,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
                     print(
                         f"Max retries {NUM_RETRIES} to find RCDS tarball at {cid} exceeded.  Exiting now."
                     )
-                    exit(1)
+                    sys.exit(1)
             else:
                 # Here, we don't wait for publish to happen, so we don't know the exact location of the tarball.
                 # We instead set the location to a glob that the wrapper has to handle later
@@ -390,6 +398,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
     return location
 
 
+# pylint: disable=too-many-instance-attributes
 class TarfilePublisherHandler:
     """Handler to publish tarballs via HTTP to RCDS (or future dropbox server)
 
@@ -429,9 +438,7 @@ class TarfilePublisherHandler:
         else:
             raise ValueError("No proxy or token provided to authenticate to RCDS.")
 
-        self.pubapi_base_url_formatter_full = (
-            f"https://{{dropbox_server}}/pubapi/{{endpoint}}"
-        )
+        self.pubapi_base_url_formatter_full = f"https://{{dropbox_server}}/pubapi/{{endpoint}}"  # pylint: disable=f-string-without-interpolation
         self.pubapi_base_url_formatter = self.pubapi_base_url_formatter_full
         self.pubapi_cid_url_formatter = (
             self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
@@ -457,6 +464,7 @@ class TarfilePublisherHandler:
             retry_count = itertools.count()
             while True:
                 try:
+                    # pylint: disable=protected-access
                     _dropbox_server = next(self._dropbox_server_selector)
                     if self.verbose > 0:
                         print(f"Using PubAPI server {_dropbox_server}")
@@ -492,7 +500,7 @@ class TarfilePublisherHandler:
         locations if known"""
 
         def wrapper(self, *args: Any, **kwargs: Any) -> Optional[str]:  # type: ignore
-            response = func(self, *args, **kwargs)
+            response = func(self, *args, **kwargs)  # pylint: disable=not-callable
             _match = self.check_tarball_present_re.match(response.text)
             if _match is not None:
                 return str(_match.group(1))

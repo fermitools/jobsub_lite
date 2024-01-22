@@ -22,11 +22,9 @@
 """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 
-import argparse
-from collections import defaultdict
 import os
 import sys
-import re
+from typing import List
 
 if os.environ.get("LD_LIBRARY_PATH", ""):
     del os.environ["LD_LIBRARY_PATH"]
@@ -35,11 +33,11 @@ if os.environ.get("LD_LIBRARY_PATH", ""):
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
 
-import fake_ifdh
-from creds import get_creds, CredentialSet
-import get_parser
 from condor import get_schedd_names
+from creds import get_creds
+import get_parser
 
+# pylint: disable=invalid-name
 notes = """
 
 BEARER_TOKEN_FILE=/tmp/bt_token... _condor_COLLECTOR_HOST=xxx _condor_CREDD_HOST=yyy condor_store_cred query-oauth
@@ -112,11 +110,11 @@ def main():
     varg = vars(args)
     nflag = args.no_delete
 
-    cs = get_creds(varg)
+    cs = get_creds(varg)  # pylint: disable=unused-variable
     schedd_list = get_schedd_names(varg)
     if args.name and args.name not in schedd_list:
         print(f"invalid schedd {args.name}")
-        exit(1)
+        sys.exit(1)
     if args.name and args.name in schedd_list:
         schedd_list = [args.name]
     print(f"Schedds to clean: {schedd_list}")

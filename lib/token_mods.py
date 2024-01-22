@@ -1,16 +1,17 @@
-import os
-import os.path
-import scitokens  # type: ignore
-import shutil
-import sys
-from typing import List, Set, Dict, Any
-
 """
     Routines to deal with token scopes (permissions) which
     are stored in the "scope": entry of the Scitoken, and
     are generally a space-separated list of group.property:path
     style entries, with the group and path optional
 """
+
+import os
+import os.path
+import shutil
+import sys
+from typing import List, Set
+
+import scitokens  # type: ignore # pylint: disable=import-error
 
 
 def get_job_scopes(
@@ -56,7 +57,7 @@ def use_token_copy(tokenfile: str) -> str:
 def get_token_scope(tokenfilename: str) -> List[str]:
     """get the list of scopes from our token file"""
 
-    with open(tokenfilename) as f:
+    with open(tokenfilename) as f:  # pylint: disable=unspecified-encoding
         token_encoded = f.read().strip()
         token = scitokens.SciToken.deserialize(token_encoded, insecure=True)
         scopelist = str(token.get("scope")).split(" ")
