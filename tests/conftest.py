@@ -56,3 +56,8 @@ def check_user_kerberos_creds():
         raise Exception(
             f"No kerberos credentials found.  Please run kinit and try again.  Error: {proc.stdout}"
         )
+
+
+@pytest.fixture
+def set_group_fermilab(monkeypatch):
+    monkeypatch.setenv("GROUP", "fermilab")
