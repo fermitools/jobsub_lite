@@ -128,15 +128,13 @@ def getExp() -> str:
 @as_span("getRole")
 def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     """get current role"""
-
     if role_override:
         return role_override
 
     # if we have a default role pushed with a vault token, or $HOME/.jobsub_default... use that
     uid = os.getuid()
-    # sometimes we're called before parsing args, so GROUP may not be
-    # set yet...
-    group = os.environ.get("GROUP", "unknown")
+    environ_group = os.environ.get("GROUP")
+    group = environ_group if environ_group else getExp()
 
     for prefix in ["/tmp/", f"{os.environ['HOME']}/.config/"]:
         fname = f"{prefix}jobsub_default_role_{group}_{uid}"

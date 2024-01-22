@@ -65,7 +65,7 @@ def test_getExp_GROUP():
 
 
 @pytest.mark.unit
-def test_getRole():
+def test_getRole(set_group_fermilab):
     res = fake_ifdh.getRole()
     assert res == fake_ifdh.DEFAULT_ROLE
 
