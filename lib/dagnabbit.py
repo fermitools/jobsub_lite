@@ -20,7 +20,7 @@ import os.path
 import re
 from typing import Dict, List, Any
 
-import jinja2 as jinja  # type: ignore
+import jinja2 as jinja  # type: ignore # pylint: disable=import-error
 
 import creds
 from get_parser import get_parser
@@ -53,7 +53,7 @@ def parse_dagnabbit(
     with open(dagfile, "r", encoding="UTF-8") as df, open(
         os.path.join(dest, "dag.dag"), "w", encoding="UTF-8"
     ) as of:
-        of.write(f"DOT dag.dot UPDATE\n")
+        of.write("DOT dag.dot UPDATE\n")
         in_parallel = False
         in_serial = False
         in_prescript = False
@@ -145,7 +145,6 @@ def parse_dagnabbit(
                 line = re.sub(f"\\b{count-1}\\s*$", "$(CM1)", line)
 
                 if line == prev_jobsub_line:
-
                     prevname = f"stage_{prev_jobsub_count}"
                     # if it is the same as the last jobsub line, just reuse the same cmd file, which
                     # uses the same wrapper script, etc.  This considerably trims, for example,the
@@ -156,7 +155,6 @@ def parse_dagnabbit(
                     )
 
                 else:
-
                     prev_jobsub_line = line
                     prev_jobsub_count = count
 
@@ -177,11 +175,11 @@ def parse_dagnabbit(
 
                     if res.need_storage_modify:
                         sys.stderr.write(f"Warning at file {dagfile} line {linenum}\n")
-                        sys.stderr.write(f"flag --need-storage-modify ignored in DAG\n")
+                        sys.stderr.write("flag --need-storage-modify ignored in DAG\n")
                         sys.stderr.flush()
                     if res.need_scope:
                         sys.stderr.write(f"Warning at file {dagfile} line {linenum}\n")
-                        sys.stderr.write(f"flag --need-scope ignored in DAG\n")
+                        sys.stderr.write("flag --need-scope ignored in DAG\n")
                         sys.stderr.flush()
 
                     do_tarballs(res)

@@ -3,14 +3,16 @@ pools:
     Info about what condor pools we know about.  However we don't actually store the info here,
     we just parse it out of the environment.
 """
+# pylint: disable=global-statement, global-variable-not-assigned
 import argparse
 import json
 import functools
 import os
+from typing import Any, Union
 import utils
+
 import condor
 import packages
-from typing import Dict, Any, Union
 
 
 @functools.lru_cache(1)

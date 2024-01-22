@@ -19,13 +19,13 @@ import argparse
 import os
 import re
 import sys
-from typing import Union, Any, List
+from typing import Union, Any
 
-import pool
+from condor import get_schedd_names
 from creds import SUPPORTED_AUTH_METHODS, REQUIRED_AUTH_METHODS
+import pool
 from skip_checks import SupportedSkipChecks
 from utils import DEFAULT_USAGE_MODELS, DEFAULT_SINGULARITY_IMAGE
-from condor import get_schedd_names
 
 
 def verify_executable_starts_with_file_colon(s: str) -> str:
@@ -278,6 +278,7 @@ def get_jobid_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser
     return parser
 
 
+# pylint: disable=too-many-statements
 def get_parser() -> argparse.ArgumentParser:
     """build the jobsub_submit argument parser and return it"""
     parser = get_submit_parser()
@@ -662,7 +663,7 @@ def get_condor_epilog() -> str:
     if condor_cmd == "condor_q":
         # condor_q's help says that it defaults to jobs for the current user,
         # but jobsub_q's default is jobs for the current group, so we adjust it here
-        for i in range(len(epilog_l)):
+        for i in range(len(epilog_l)):  # pylint: disable=consider-using-enumerate
             epilog_l[i] = epilog_l[i].replace(
                 "jobs owned by the current user",
                 "jobs owned by the current jobsub group",

@@ -1,14 +1,13 @@
+""" Code factored out of jobsub_submit """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 import glob
 import os
 import os.path
-import sys
 from typing import Union, List, Dict, Any
 from tracing import as_span
 
 import jinja2 as jinja  # type: ignore
 
-""" Code factored out of jobsub_submit """
 
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

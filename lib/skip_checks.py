@@ -63,13 +63,14 @@ class SupportedSkipChecks(Enum):
     Enum.member() function.  But for now, we need to have this workaround
     """
 
-    rcds = partial(_print_rcds_warning)
+    rcds = partial(_print_rcds_warning)  # pylint: disable=invalid-name
 
+    # pylint: disable=consider-iterating-dictionary
     @classmethod
     def get_all_checks(cls) -> List[str]:
         """Returns supported checks that can be skipped.  Mainly
         for outside callers"""
-        return [key for key in cls.__members__.keys()]
+        return list(cls.__members__.keys())
 
 
 def skip_check_setup(check_name: str, *args: Any, **kwargs: Any) -> Any:

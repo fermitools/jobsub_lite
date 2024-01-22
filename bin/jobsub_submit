@@ -19,13 +19,10 @@
 
 """ submit command for jobsub layer over condor """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
-import argparse
-import glob
 import hashlib
 import os
 import os.path
 import sys
-from typing import Union, List, Dict, Any
 
 if os.environ.get("LD_LIBRARY_PATH", ""):
     os.environ["HIDE_LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
@@ -42,46 +39,38 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # this means we don't need fancy ups dependencies..
 #
 sys.path.append(os.path.join(PREFIX, "lib"))
-from packages import pkg_find
-from tracing import as_span, log_host_time
 
-pkg_find("jinja")  # type: ignore
-import jinja2 as jinja
 
 #
 # import our local parts
 #
-from get_parser import get_parser
-from condor import get_schedd, submit, submit_dag
-from dagnabbit import parse_dagnabbit
-from tarfiles import do_tarballs
-from utils import (
-    set_extras_n_fix_units,
-    cleanup,
-    backslash_escape_layer,
-    sanitize_lines,
-)
+from condor import get_schedd
 from creds import get_creds, print_cred_paths_from_credset
-from token_mods import get_job_scopes, use_token_copy
-from version import print_version, print_support_email
-from fake_ifdh import mkdir_p, cp
+from get_parser import get_parser
 import pool
 import skip_checks
 from submit_support import (
-    get_basefiles,
-    render_files,
-    do_dataset_defaults,
-    transfer_sandbox,
     get_env_list,
     jobsub_submit_dag,
     jobsub_submit_dataset_definition,
     jobsub_submit_maxconcurrent,
     jobsub_submit_simple,
 )
+from tarfiles import do_tarballs
+from token_mods import get_job_scopes, use_token_copy
+from tracing import as_span, log_host_time
+from utils import (
+    set_extras_n_fix_units,
+    cleanup,
+    backslash_escape_layer,
+    sanitize_lines,
+)
+from version import print_version, print_support_email
 
-verbose = 0
+verbose = 0  # pylint: disable=invalid-name
 
 
+# pylint: disable=too-many-branches,too-many-statements
 @as_span("jobsub_submit", is_main=True)
 def main():
     """script mainline:
@@ -92,8 +81,7 @@ def main():
     - convert/render template files to submission files
     - launch
     """
-    global verbose
-    # pylint: disable=too-many-statements
+    global verbose  # pylint: disable=global-statement,invalid-name
     parser = get_parser()
 
     # Argument-checking code
@@ -234,7 +222,7 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         if verbose:
             raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")

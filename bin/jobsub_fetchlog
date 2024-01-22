@@ -17,20 +17,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
-import sys
 import os
+from pprint import pprint
 import subprocess
 import shutil
+import sys
 from typing import Optional
-import requests  # type: ignore
-from pprint import pprint
 
 if os.environ.get("LD_LIBRARY_PATH", ""):
     del os.environ["LD_LIBRARY_PATH"]
     os.execv(sys.argv[0], sys.argv)
 
+# pylint: disable=import-error,wrong-import-position
 import htcondor
+import requests  # type: ignore
 
 #
 # we are in prefix/bin/jobsub_fetchlog, so find our prefix
@@ -44,16 +44,16 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 
 #
 # import our local parts
-#
+# pylint: disable=wrong-import-position
 import creds
 from get_parser import get_jobid_parser
 from condor import Job
 from utils import cleanup
 from version import print_version, print_support_email
-from tracing import as_span, add_event, log_host_time
+from tracing import as_span, log_host_time
 
 
-verbose = 0
+verbose = 0  # pylint: disable=invalid-name
 
 # environment variable containing base fetchlog server url
 _FETCHLOG_URL_ENV = "JOBSUB_FETCHLOG_URL"
@@ -61,6 +61,7 @@ _FETCHLOG_URL_ENV = "JOBSUB_FETCHLOG_URL"
 _CHUNK_SIZE = 1024 * 1024
 
 
+# pylint: disable=too-many-branches
 def fetch_from_condor(
     jobid: str, destdir: Optional[str], archive_format: str, partial: bool
 ):
@@ -121,9 +122,9 @@ def fetch_from_condor(
             raise Exception(f'unknown archive format "{archive_format}"')
         if verbose:
             print(f'running "{cmd}"')
-        p = subprocess.Popen(cmd)
+        p = subprocess.Popen(cmd)  # pylint: disable=consider-using-with
         if p.wait() != 0:
-            raise Exception(f"error creating archive")
+            raise Exception("error creating archive")
 
     cleanup({"submitdir": iwd})
 
@@ -131,6 +132,7 @@ def fetch_from_condor(
         print("Transfer may be incomplete.")
 
 
+# pylint: disable=too-many-locals,too-many-branches
 def fetch_from_landscape(
     jobid: str, destdir: Optional[str], archive_format: str, partial: bool
 ):
@@ -156,6 +158,7 @@ def fetch_from_landscape(
         except FileNotFoundError:
             os.makedirs(owd, mode=0o750)
 
+    # pylint: disable=unspecified-encoding
     with open(os.environ["BEARER_TOKEN_FILE"]) as f:
         tok = f.readline().strip()
     if verbose:
@@ -188,11 +191,10 @@ def fetch_from_landscape(
         # -f: filename
         if verbose:
             print(f'running "{cmd}"')
-        p = subprocess.Popen(cmd)
+        p = subprocess.Popen(cmd)  # pylint: disable=consider-using-with
         if p.wait() != 0:
             raise Exception(f"error extracting archive to {owd}. Archive left at {of}")
-        else:
-            os.unlink(of)
+        os.unlink(of)
 
 
 @as_span("transfer_data")
@@ -214,9 +216,9 @@ def main():
     - condor_transfer_data
     - make tarball
     """
-    global verbose
+    global verbose  # pylint: disable=global-statement,invalid-name
     parser = get_jobid_parser()
-    transfer_complete = False
+    transfer_complete = False  # pylint: disable=unused-variable
 
     parser.add_argument(
         "--destdir",
@@ -275,9 +277,7 @@ def main():
         htcondor.enable_debug()
 
     if os.environ.get("GROUP", None) is None:
-        raise SystemExit(
-            "%s needs -G group or $GROUP in the environment." % sys.argv[0]
-        )
+        raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
     cred_set = creds.get_creds(vars(args))
     if args.verbose:
@@ -290,7 +290,7 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         if verbose:
             raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
