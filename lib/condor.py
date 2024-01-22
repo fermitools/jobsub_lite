@@ -33,6 +33,7 @@ import fake_ifdh
 import packages
 from render_files import render_files
 from tracing import as_span
+from transfer_sandbox import transfer_sandbox
 
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -434,11 +435,6 @@ def submit_dag(
         #    cmd = f"BEARER_TOKEN_FILE={os.environ['BEARER_TOKEN_FILE']} {cmd}"
 
         if vargs["outurl"]:
-            # pylint: disable=import-outside-toplevel
-            from submit_support import (
-                transfer_sandbox,
-            )
-
             transfer_sandbox(vargs["outdir"], vargs["outurl"])
 
         if vargs.get("verbose", 0) > 0:
