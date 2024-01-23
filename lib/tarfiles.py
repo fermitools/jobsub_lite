@@ -331,12 +331,15 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
         # cid looks something like dune/bf6a15b4238b72f82...(long hash)
         cid = f"{args.group}/{digest}"
 
-        publisher = TarfilePublisherHandler(cid, cred_set, args.verbose)
+        publisher = TarfilePublisherHandler(
+            cid=cid, cred_set=cred_set, fixed_server=True, verbose=args.verbose
+        )
         location = publisher.cid_exists()
         if location is None:
             if args.verbose:
                 print(f"\n\nUsing RCDS to publish tarball\ncid: {cid}")
             publisher.publish(tfn)
+            publisher.activate_server_switcher()
             if not getattr(args, "skip_check_rcds", False):
                 msg = "Checking to see if uploaded file is published on RCDS"
                 if args.verbose:
