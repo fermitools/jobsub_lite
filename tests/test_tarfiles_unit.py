@@ -1,3 +1,4 @@
+import importlib
 import os
 import sys
 import tarfile as tarfile_mod
@@ -27,6 +28,37 @@ import tarfiles
 import get_parser
 
 from test_unit import TestUnit
+
+
+@pytest.fixture
+def tarfiles_mod_end_reloader():
+    """Use this fixture to make sure we tarfiles module is reloaded after the test"""
+    yield
+    importlib.reload(tarfiles)
+
+
+@pytest.fixture
+def del_jobsub_dropbox_server_list(tarfiles_mod_end_reloader, monkeypatch):
+    monkeypatch.delenv("JOBSUB_DROPBOX_SERVER_LIST", raising=False)
+    importlib.reload(tarfiles)
+    yield
+
+
+@pytest.fixture
+def set_jobsub_dropbox_server_list(tarfiles_mod_end_reloader, monkeypatch):
+    monkeypatch.setenv("JOBSUB_DROPBOX_SERVER_LIST", "server1 server2")
+    importlib.reload(tarfiles)
+    yield
+
+
+@pytest.fixture
+def set_fake_args_to_tarfile_publisher_handler_test(tmp_path):
+    """Get a set of fake cid, fake credentials argument to use in invocation to tarfiles.TarfilePublisherHandler"""
+    fake_cid = f"{TestUnit.test_group}/12345abcde"
+    fake_location = tmp_path / "fake_location"
+    fake_location.touch()
+    fake_creds = CredentialSet(token=str(fake_location))
+    return fake_cid, fake_creds
 
 
 class TestTarfilesUnit:
@@ -220,14 +252,14 @@ class TestTarfilesUnit:
         assert re.match(expected_pattern, tfh.get_glob_path_for_cid())
 
     @pytest.mark.unit
-    def test_tarfile_publisher_cid_operation(self, tmp_path):
+    def test_tarfile_publisher_cid_operation(
+        self, set_fake_args_to_tarfile_publisher_handler_test
+    ):
         """Test the cid_operation decorator of the TarfilePublisherHandler."""
         from collections import namedtuple
 
-        fake_cid = f"{TestUnit.test_group}/12345abcde"
-        fake_location = tmp_path / "fake_location"
-        fake_location.touch()
-        fake_creds = CredentialSet(token=str(fake_location))
+        fake_cid, fake_creds = set_fake_args_to_tarfile_publisher_handler_test
+        fake_location = fake_creds.token
 
         # We have to use this fake object to mimic a requests.Response's structure:
         # specifically, we need to return an object which has a "text"
@@ -266,3 +298,127 @@ class TestTarfilesUnit:
         # The actual test
         with pytest.raises(tarfile_mod.TarError):
             tarfiles.tarchmod(str(tmp_file))
+
+    @pytest.mark.unit
+    def test_setup_fixed_server_no_server_set(
+        self,
+        del_jobsub_dropbox_server_list,
+        set_fake_args_to_tarfile_publisher_handler_test,
+    ):
+        fake_cid, fake_creds = set_fake_args_to_tarfile_publisher_handler_test
+        with pytest.raises(tarfiles.NoPublisherHandlerServerError):
+            _ = tarfiles.TarfilePublisherHandler(
+                cid=fake_cid, cred_set=fake_creds, fixed_server=True
+            )
+
+    @pytest.mark.unit
+    def test_setup_fixed_server(
+        self,
+        set_jobsub_dropbox_server_list,
+        set_fake_args_to_tarfile_publisher_handler_test,
+    ):
+        fake_cid, fake_creds = set_fake_args_to_tarfile_publisher_handler_test
+        tfh = tarfiles.TarfilePublisherHandler(
+            cid=fake_cid, cred_set=fake_creds, fixed_server=True
+        )
+        assert server_is_fixed(tfh)
+
+    @pytest.mark.unit
+    def test_setup_dropbox_server_selector_no_server_set(
+        self,
+        del_jobsub_dropbox_server_list,
+        set_fake_args_to_tarfile_publisher_handler_test,
+    ):
+        fake_cid, fake_creds = set_fake_args_to_tarfile_publisher_handler_test
+        with pytest.raises(tarfiles.NoPublisherHandlerServerError):
+            _ = tarfiles.TarfilePublisherHandler(cid=fake_cid, cred_set=fake_creds)
+
+    @pytest.mark.unit
+    def test_setup_dropbox_server_selector(
+        self,
+        set_jobsub_dropbox_server_list,
+        set_fake_args_to_tarfile_publisher_handler_test,
+    ):
+        fake_cid, fake_creds = set_fake_args_to_tarfile_publisher_handler_test
+        tfh = tarfiles.TarfilePublisherHandler(cid=fake_cid, cred_set=fake_creds)
+        assert server_switches(tfh)
+
+    @pytest.mark.unit
+    def test_activate_server_switcher_noop(
+        self,
+        set_jobsub_dropbox_server_list,
+        set_fake_args_to_tarfile_publisher_handler_test,
+    ):
+        fake_cid, fake_creds = set_fake_args_to_tarfile_publisher_handler_test
+        tfh = tarfiles.TarfilePublisherHandler(cid=fake_cid, cred_set=fake_creds)
+        assert server_switches(tfh)
+        tfh.activate_server_switcher()
+        assert server_switches(tfh)
+
+    @pytest.mark.unit
+    def test_activate_server_switcher(
+        self,
+        set_jobsub_dropbox_server_list,
+        set_fake_args_to_tarfile_publisher_handler_test,
+    ):
+        fake_cid, fake_creds = set_fake_args_to_tarfile_publisher_handler_test
+        tfh = tarfiles.TarfilePublisherHandler(
+            cid=fake_cid, cred_set=fake_creds, fixed_server=True
+        )
+        assert server_is_fixed(tfh)
+        tfh.activate_server_switcher()
+        assert server_switches(tfh)
+
+    @pytest.mark.unit
+    def test_deactivate_server_switcher_noop(
+        self,
+        set_jobsub_dropbox_server_list,
+        set_fake_args_to_tarfile_publisher_handler_test,
+    ):
+        fake_cid, fake_creds = set_fake_args_to_tarfile_publisher_handler_test
+        tfh = tarfiles.TarfilePublisherHandler(
+            cid=fake_cid, cred_set=fake_creds, fixed_server=True
+        )
+        assert server_is_fixed(tfh)
+        tfh.deactivate_server_switcher()
+        assert server_is_fixed(tfh)
+
+    @pytest.mark.unit
+    def test_deactivate_server_switcher(
+        self,
+        set_jobsub_dropbox_server_list,
+        set_fake_args_to_tarfile_publisher_handler_test,
+    ):
+        fake_cid, fake_creds = set_fake_args_to_tarfile_publisher_handler_test
+        tfh = tarfiles.TarfilePublisherHandler(cid=fake_cid, cred_set=fake_creds)
+        assert server_switches(tfh)
+        tfh.deactivate_server_switcher()
+        assert server_is_fixed(tfh)
+
+
+# Utility functions to use in tests
+
+
+def server_switches(tfh: tarfiles.TarfilePublisherHandler) -> bool:
+    """Function that checks if a TarfilePublisherHandler's server selector is switching
+    servers.  Returns True if switching is happening, False otherwise"""
+    dropbox_servers_env_dict = {
+        server: None for server in os.getenv("JOBSUB_DROPBOX_SERVER_LIST").split()
+    }
+    results = {}
+    for _ in range(len(dropbox_servers_env_dict)):
+        result_server = next(tfh._dropbox_server_selector)
+        results[result_server] = None
+    return results == dropbox_servers_env_dict
+
+
+def server_is_fixed(tfh: tarfiles.TarfilePublisherHandler) -> bool:
+    """Function that checks if a TarfilePublisherHandler's server selector always yields
+    the same server.  Returns True if server stays constant, False otherwise"""
+    picked_server = next(tfh._dropbox_server_selector)
+    if picked_server not in os.getenv("JOBSUB_DROPBOX_SERVER_LIST").split():
+        return False
+    for _ in range(10):
+        if next(tfh._dropbox_server_selector) != picked_server:
+            return False
+    return True

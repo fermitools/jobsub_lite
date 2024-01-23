@@ -400,12 +400,15 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
 
 # pylint: disable=too-many-instance-attributes
 class TarfilePublisherHandler:
-    """Handler to publish tarballs via HTTP to RCDS (or future dropbox server)
+    """Handler to publish tarballs via HTTP to RCDS (or future dropbox server).  By default, TarfilePublisherHandler will
+    cycle between different RCDS servers to run operations.  Disable this by setting fixed_server=True
 
     Args:
         object (_type_): _description_
         cid (str): unique group/hash combination that RCDS uses to locate tarballs
         cred_set (CredentialSet): Paths to various supported credentials to authenticate to RCDS
+        fixed_server (bool): Determines whether TarfilePublisherHandler should cycle between RCDS
+            servers or use a fixed server.  Defaults to False.
         verbose (int): Verbosity level
     """
 
@@ -418,6 +421,7 @@ class TarfilePublisherHandler:
         self,
         cid: str,
         cred_set: CredentialSet,
+        fixed_server: bool = False,
         verbose: int = 0,
     ):
         self.cid = cid
@@ -443,7 +447,11 @@ class TarfilePublisherHandler:
         self.pubapi_cid_url_formatter = (
             self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
         )
-        self._dropbox_server_selector = self.__setup_dropbox_server_selector()
+        self._dropbox_server_selector = (
+            self.__setup_dropbox_server_selector()
+            if not fixed_server
+            else self.__setup_fixed_dropbox_server()
+        )
 
     # pylint: disable-next=no-self-argument
     def pubapi_operation(func: Callable) -> Callable:  # type: ignore
@@ -566,6 +574,14 @@ class TarfilePublisherHandler:
         repos = _match.group(1) if _match is not None else DEFAULT_REPOS
         return f"/cvmfs/{{{repos}}}/sw/{self.cid}"
 
+    def activate_server_switcher(self) -> None:
+        """Change TarfilePublisherHandler so that it will try different PubAPI servers"""
+        self._dropbox_server_selector = self.__setup_dropbox_server_selector()
+
+    def deactivate_server_switcher(self) -> None:
+        """Change TarfilePublisherHandler so that it will try a single PubAPI repeatedly"""
+        self._dropbox_server_selector = self.__setup_fixed_dropbox_server()
+
     @pubapi_operation
     def _get_configured_pubapi_repos(self) -> requests.Response:
         url = self.pubapi_base_url_formatter.format(endpoint="config")
@@ -575,4 +591,28 @@ class TarfilePublisherHandler:
         """Return an infinite iterator of dropbox servers for client to upload tarball to"""
         dropbox_servers_working_list = self.dropbox_server_string.split()
         random.shuffle(dropbox_servers_working_list)
+        if len(dropbox_servers_working_list) == 0:
+            raise NoPublisherHandlerServerError(
+                "No server was specified to publish the tarball.  Please check to ensure that JOBSUB_DROPBOX_SERVER_LIST is set in the environment"
+            )
         return itertools.cycle(dropbox_servers_working_list)
+
+    def __setup_fixed_dropbox_server(self) -> Iterator[str]:
+        """Return an infinite iterator of a random selection of dropbox servers for client to upload tarball to.
+        e.g. if the possible dropbox servers are "server1,server2", then one will get selected at random (e.g. "server2")
+        and the iterator returned will look like ["server2", "server2", "server2", ...]
+        """
+        dropbox_servers_working_list = self.dropbox_server_string.split()
+        random.shuffle(dropbox_servers_working_list)
+        try:
+            _server_to_use = dropbox_servers_working_list.pop()
+            return itertools.repeat(_server_to_use)
+        except IndexError:
+            raise NoPublisherHandlerServerError(
+                "No server was specified to publish the tarball.  Please check to ensure that JOBSUB_DROPBOX_SERVER_LIST is set in the environment"
+            )
+
+
+class NoPublisherHandlerServerError(Exception):
+    """Exception to be raised when there are no servers available for the TarfilePublisherHandler to communicate with to either
+    query or publish tarballs"""
