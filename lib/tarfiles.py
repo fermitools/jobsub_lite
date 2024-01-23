@@ -477,8 +477,13 @@ class TarfilePublisherHandler:
 
                 # After this request, restore the appropriate fixed_server behavior
                 # pylint: disable=protected-access
+                __fixed_server = next(self._dropbox_server_selector)
+                __fixed_server_func: Callable[
+                    ..., Iterator[str]
+                ] = lambda: itertools.repeat(__fixed_server)
+                # pylint: disable=protected-access
                 restore_fixed_server_behavior_func = (
-                    self.deactivate_server_switcher
+                    __fixed_server_func
                     if self._fixed_server
                     else self.activate_server_switcher
                 )
