@@ -430,6 +430,7 @@ def get_client_dn(proxy: Union[None, str] = None) -> Union[str, Any]:
             uid = str(os.getuid())
             proxy = f"/tmp/x509up_u{uid}"
 
+    # pylint: disable=unsubscriptable-object
     executables: OrderedDict[str, Dict[str, Any]] = OrderedDict(
         (
             (
