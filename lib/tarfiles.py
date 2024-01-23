@@ -353,10 +353,11 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
                         print("Found uploaded file on RCDS.")
                         break
                     if i < (NUM_RETRIES - 1):
+                        _retry_interval_sec = 0 if i == 0 else RETRY_INTERVAL_SEC
                         print(
-                            f"Could not locate uploaded file on RCDS.  Will retry in {RETRY_INTERVAL_SEC} seconds."
+                            f"Could not locate uploaded file on RCDS.  Will retry in {_retry_interval_sec} seconds."
                         )
-                        time.sleep(RETRY_INTERVAL_SEC)
+                        time.sleep(_retry_interval_sec)
                 else:
                     print(
                         f"Max retries {NUM_RETRIES} to find RCDS tarball at {cid} exceeded.  Exiting now."
