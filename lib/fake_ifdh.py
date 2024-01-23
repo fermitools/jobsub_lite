@@ -162,6 +162,7 @@ def getRole_from_valid_token() -> Optional[str]:
     return None
 
 
+# pylint: disable=unused-argument
 @as_span("getRole")
 def getRole(role_override: Optional[str] = None, verbose: int = 0) -> str:
     """get current role.  Will check the following in order:
