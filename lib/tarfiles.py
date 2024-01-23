@@ -450,60 +450,84 @@ class TarfilePublisherHandler:
         self.pubapi_cid_url_formatter = (
             self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
         )
+        self._fixed_server = fixed_server
         self._dropbox_server_selector = (
             self.__setup_dropbox_server_selector()
-            if not fixed_server
+            if not self._fixed_server
             else self.__setup_fixed_dropbox_server()
         )
 
     # pylint: disable-next=no-self-argument
-    def pubapi_operation(func: Callable) -> Callable:  # type: ignore
-        """Wrap various PubAPI operations, setting dropbox server and handling retries"""
+    def pubapi_operation(always_switch_servers: bool = False) -> Callable:  # type: ignore
+        # pylint: disable-next=no-self-argument
+        def _pubapi_operation(func: Callable) -> Callable:  # type: ignore
+            """Wrap various PubAPI operations, setting dropbox server and handling retries"""
 
-        class SafeDict(dict):  # type: ignore
-            """Use this object to allow us to not need all keys of dict when
-            running str.format_map method to do string interpolation.
-            Taken from https://stackoverflow.com/a/17215533"""
+            class SafeDict(dict):  # type: ignore
+                """Use this object to allow us to not need all keys of dict when
+                running str.format_map method to do string interpolation.
+                Taken from https://stackoverflow.com/a/17215533"""
 
-            def __missing__(self, key: str) -> str:
-                """missing item handler"""
-                return f"{{{key}}}"  # "{<key>}"
+                def __missing__(self, key: str) -> str:
+                    """missing item handler"""
+                    return f"{{{key}}}"  # "{<key>}"
 
-        def wrapper(self, *args: Any, **kwargs: Any) -> requests.Response:  # type: ignore
-            """wrapper function for decorator"""
-            # pylint: disable-next=protected-access
-            retry_count = itertools.count()
-            while True:
-                try:
-                    # pylint: disable=protected-access
-                    _dropbox_server = next(self._dropbox_server_selector)
-                    if self.verbose > 0:
-                        print(f"Using PubAPI server {_dropbox_server}")
-                    self.pubapi_base_url_formatter = (
-                        self.pubapi_base_url_formatter_full.format_map(
-                            SafeDict(dropbox_server=_dropbox_server)
+            def wrapper(self, *args: Any, **kwargs: Any) -> requests.Response:  # type: ignore
+                """wrapper function for decorator"""
+
+                # After this request, restore the appropriate fixed_server behavior
+                # pylint: disable=protected-access
+                restore_fixed_server_behavior_func = (
+                    self.deactivate_server_switcher
+                    if self._fixed_server
+                    else self.activate_server_switcher
+                )
+
+                _retry_interval_sec = 0  # First retry immediately, and then we can wait the retry interval
+                # pylint: disable-next=protected-access
+                retry_count = itertools.count(1)
+
+                while True:
+                    try:
+                        # pylint: disable=protected-access
+                        _dropbox_server = next(self._dropbox_server_selector)
+                        if self.verbose > 0:
+                            print(f"Using PubAPI server {_dropbox_server}")
+                        self.pubapi_base_url_formatter = (
+                            self.pubapi_base_url_formatter_full.format_map(
+                                SafeDict(dropbox_server=_dropbox_server)
+                            )
                         )
-                    )
-                    self.pubapi_cid_url_formatter = (
-                        self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
-                    )
-                    # pylint: disable-next=not-callable
-                    response = func(self, *args, **kwargs)
-                    response.raise_for_status()
-                except:  # pylint: disable=bare-except
-                    # Note:  This retry loop is in case the request itself fails.  Not
-                    # if we couldn't find the tarball!
-                    tb.print_exc()
-                    if next(retry_count) == NUM_RETRIES:
-                        print(f"Max retries {NUM_RETRIES} exceeded.  Exiting now.")
-                        raise
-                    print(f"Will retry in {RETRY_INTERVAL_SEC} seconds")
-                    time.sleep(RETRY_INTERVAL_SEC)
-                else:
-                    break
-            return response
+                        self.pubapi_cid_url_formatter = (
+                            self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
+                        )
+                        # pylint: disable-next=not-callable
+                        response = func(self, *args, **kwargs)
+                        response.raise_for_status()
+                    except:  # pylint: disable=bare-except
+                        # Note:  This retry loop is in case the request itself fails.  Not
+                        # if we couldn't find the tarball!
+                        tb.print_exc()
+                        next_retry_count = next(retry_count)
+                        if next_retry_count == NUM_RETRIES:
+                            print(f"Max retries {NUM_RETRIES} exceeded.  Exiting now.")
+                            raise
 
-        return wrapper
+                        # If always_switch_servers is True, we should override the fixed_server setting for the duration of this request
+                        if next_retry_count == 1 and always_switch_servers:
+                            self.activate_server_switcher()
+
+                        print(f"Will retry in {_retry_interval_sec} seconds")
+                        time.sleep(_retry_interval_sec)
+                        _retry_interval_sec = RETRY_INTERVAL_SEC
+                    else:
+                        restore_fixed_server_behavior_func()
+                        break
+                return response
+
+            return wrapper
+
+        return _pubapi_operation
 
     # pylint: disable-next=no-self-argument
     def cid_operation(func: Callable) -> Callable:  # type: ignore
@@ -520,7 +544,7 @@ class TarfilePublisherHandler:
         return wrapper
 
     @cid_operation
-    @pubapi_operation
+    @pubapi_operation()
     def update_cid(self) -> requests.Response:
         """Make PubAPI update call to update the last-accessed timestamp on
         this tarfile
@@ -534,11 +558,13 @@ class TarfilePublisherHandler:
             print(f"Calling URL {url}")
         return requests.get(url, **self.__auth_kwargs)
 
+    # pylint: disable=redundant-keyword-arg
     @cid_operation
     @as_span("publish", arg_attrs=["*"])
-    @pubapi_operation
+    @pubapi_operation(always_switch_servers=True)
     def publish(self, tarfilename: str) -> requests.Response:
-        """Make PubAPI publish call to upload this tarfile
+        """Make PubAPI publish call to upload this tarfile.  In the case of failure, if there are multiple
+        dropbox servers, we will always retry with a different server
 
         Args:
             tarfilename: filename to open for tarfile
@@ -556,7 +582,7 @@ class TarfilePublisherHandler:
 
     @cid_operation
     @as_span("cid_exists")
-    @pubapi_operation
+    @pubapi_operation()
     def cid_exists(self) -> requests.Response:
         """Make PubAPI update call to check if we already have this tarfile
 
@@ -579,13 +605,15 @@ class TarfilePublisherHandler:
 
     def activate_server_switcher(self) -> None:
         """Change TarfilePublisherHandler so that it will try different PubAPI servers"""
+        self._fixed_server = False
         self._dropbox_server_selector = self.__setup_dropbox_server_selector()
 
     def deactivate_server_switcher(self) -> None:
         """Change TarfilePublisherHandler so that it will try a single PubAPI repeatedly"""
+        self._fixed_server = True
         self._dropbox_server_selector = self.__setup_fixed_dropbox_server()
 
-    @pubapi_operation
+    @pubapi_operation()
     def _get_configured_pubapi_repos(self) -> requests.Response:
         url = self.pubapi_base_url_formatter.format(endpoint="config")
         return requests.get(url, **self.__auth_kwargs)
