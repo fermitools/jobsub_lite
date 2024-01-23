@@ -28,7 +28,6 @@ import classad  # type: ignore
 import htcondor  # type: ignore
 import jinja2  # type: ignore
 
-# pylint: disable=cyclic-import
 import fake_ifdh
 import packages
 from render_files import render_files
