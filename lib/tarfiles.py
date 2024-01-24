@@ -331,12 +331,15 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
         # cid looks something like dune/bf6a15b4238b72f82...(long hash)
         cid = f"{args.group}/{digest}"
 
-        publisher = TarfilePublisherHandler(cid, cred_set, args.verbose)
+        publisher = TarfilePublisherHandler(
+            cid=cid, cred_set=cred_set, fixed_server=True, verbose=args.verbose
+        )
         location = publisher.cid_exists()
         if location is None:
             if args.verbose:
                 print(f"\n\nUsing RCDS to publish tarball\ncid: {cid}")
             publisher.publish(tfn)
+            publisher.activate_server_switcher()
             if not getattr(args, "skip_check_rcds", False):
                 msg = "Checking to see if uploaded file is published on RCDS"
                 if args.verbose:
@@ -350,10 +353,11 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
                         print("Found uploaded file on RCDS.")
                         break
                     if i < (NUM_RETRIES - 1):
+                        _retry_interval_sec = 0 if i == 0 else RETRY_INTERVAL_SEC
                         print(
-                            f"Could not locate uploaded file on RCDS.  Will retry in {RETRY_INTERVAL_SEC} seconds."
+                            f"Could not locate uploaded file on RCDS.  Will retry in {_retry_interval_sec} seconds."
                         )
-                        time.sleep(RETRY_INTERVAL_SEC)
+                        time.sleep(_retry_interval_sec)
                 else:
                     print(
                         f"Max retries {NUM_RETRIES} to find RCDS tarball at {cid} exceeded.  Exiting now."
@@ -400,12 +404,15 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
 
 # pylint: disable=too-many-instance-attributes
 class TarfilePublisherHandler:
-    """Handler to publish tarballs via HTTP to RCDS (or future dropbox server)
+    """Handler to publish tarballs via HTTP to RCDS (or future dropbox server).  By default, TarfilePublisherHandler will
+    cycle between different RCDS servers to run operations.  Disable this by setting fixed_server=True
 
     Args:
         object (_type_): _description_
         cid (str): unique group/hash combination that RCDS uses to locate tarballs
         cred_set (CredentialSet): Paths to various supported credentials to authenticate to RCDS
+        fixed_server (bool): Determines whether TarfilePublisherHandler should cycle between RCDS
+            servers or use a fixed server.  Defaults to False.
         verbose (int): Verbosity level
     """
 
@@ -418,6 +425,7 @@ class TarfilePublisherHandler:
         self,
         cid: str,
         cred_set: CredentialSet,
+        fixed_server: bool = False,
         verbose: int = 0,
     ):
         self.cid = cid
@@ -443,56 +451,119 @@ class TarfilePublisherHandler:
         self.pubapi_cid_url_formatter = (
             self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
         )
-        self._dropbox_server_selector = self.__setup_dropbox_server_selector()
+        self._fixed_server = fixed_server
+        self._dropbox_server_selector = (
+            self.__setup_dropbox_server_selector()
+            if not self._fixed_server
+            else self.__setup_fixed_dropbox_server()
+        )
+        self.__last_server = next(self._dropbox_server_selector)
 
     # pylint: disable-next=no-self-argument
-    def pubapi_operation(func: Callable) -> Callable:  # type: ignore
-        """Wrap various PubAPI operations, setting dropbox server and handling retries"""
+    def pubapi_operation(always_switch_servers: bool = False) -> Callable:  # type: ignore
+        # pylint: disable-next=no-self-argument
+        def _pubapi_operation(func: Callable) -> Callable:  # type: ignore
+            """Wrap various PubAPI operations, setting dropbox server and handling retries"""
 
-        class SafeDict(dict):  # type: ignore
-            """Use this object to allow us to not need all keys of dict when
-            running str.format_map method to do string interpolation.
-            Taken from https://stackoverflow.com/a/17215533"""
+            class SafeDict(dict):  # type: ignore
+                """Use this object to allow us to not need all keys of dict when
+                running str.format_map method to do string interpolation.
+                Taken from https://stackoverflow.com/a/17215533"""
 
-            def __missing__(self, key: str) -> str:
-                """missing item handler"""
-                return f"{{{key}}}"  # "{<key>}"
+                def __missing__(self, key: str) -> str:
+                    """missing item handler"""
+                    return f"{{{key}}}"  # "{<key>}"
 
-        def wrapper(self, *args: Any, **kwargs: Any) -> requests.Response:  # type: ignore
-            """wrapper function for decorator"""
-            # pylint: disable-next=protected-access
-            retry_count = itertools.count()
-            while True:
-                try:
-                    # pylint: disable=protected-access
-                    _dropbox_server = next(self._dropbox_server_selector)
-                    if self.verbose > 0:
-                        print(f"Using PubAPI server {_dropbox_server}")
-                    self.pubapi_base_url_formatter = (
-                        self.pubapi_base_url_formatter_full.format_map(
-                            SafeDict(dropbox_server=_dropbox_server)
+            def wrapper(self, *args: Any, **kwargs: Any) -> requests.Response:  # type: ignore
+                """wrapper function for decorator"""
+
+                # After this request, restore the appropriate fixed_server behavior
+                # pylint: disable=protected-access
+                # Logic here:
+                # 1. If self._fixed_server and always_switch_servers, we want to switch servers for only this request, and we should restore the behavior afterwards
+                # 2. If not self._fixed_server and always_switch_servers, everything is already set correctly.  Do nothing, restore nothing.
+                # 3. If self._fixed_server and not always_switch_servers, everything else already set correctly.  Do nothing, restore nothing.
+                # 4. If not self._fixed_server and not always_switch_servers, then we respect the self._fixed_server setting, and do nothing and restore nothing.
+                should_change_selector_behavior = (
+                    self._fixed_server and always_switch_servers
+                )
+
+                # Default value for restore_func.  In reality we won't use this value at all if should_change_selector_behavior is False
+                restore_func: Callable[
+                    ..., Iterator[str]
+                ] = lambda: self._dropbox_server_selector  # type: ignore
+
+                if should_change_selector_behavior:
+                    restore_func = (
+                        self.__restore_fixed_server_behavior_func()
+                    )  # Evaluate this now so that when we restore the dropbox_server_selector, the resultant iterator is giving us the correct server
+                    if self.verbose:
+                        print(
+                            "TarfilePublisherHandler is configured to use a fixed RCDS server, however this is being overridden "
+                            "for the duration of the current request."
                         )
-                    )
-                    self.pubapi_cid_url_formatter = (
-                        self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
-                    )
-                    # pylint: disable-next=not-callable
-                    response = func(self, *args, **kwargs)
-                    response.raise_for_status()
-                except:  # pylint: disable=bare-except
-                    # Note:  This retry loop is in case the request itself fails.  Not
-                    # if we couldn't find the tarball!
-                    tb.print_exc()
-                    if next(retry_count) == NUM_RETRIES:
-                        print(f"Max retries {NUM_RETRIES} exceeded.  Exiting now.")
-                        raise
-                    print(f"Will retry in {RETRY_INTERVAL_SEC} seconds")
-                    time.sleep(RETRY_INTERVAL_SEC)
-                else:
-                    break
-            return response
 
-        return wrapper
+                _retry_interval_sec = 0  # First retry immediately, and then we can wait the retry interval
+                # pylint: disable-next=protected-access
+                retry_count = itertools.count(1)
+
+                while True:
+                    try:
+                        # pylint: disable=protected-access
+                        _dropbox_server = next(self._dropbox_server_selector)
+
+                        # If we're supposed to be switching servers, make sure we are actually switching servers
+                        if (
+                            len(self.dropbox_server_string.split()) > 1
+                            and not self._fixed_server
+                            and _dropbox_server == self.__last_server
+                        ):
+                            _dropbox_server = next(self._dropbox_server_selector)
+
+                        self.__last_server = _dropbox_server
+
+                        if self.verbose > 0:
+                            print(f"Using PubAPI server {_dropbox_server}")
+                        self.pubapi_base_url_formatter = (
+                            self.pubapi_base_url_formatter_full.format_map(
+                                SafeDict(dropbox_server=_dropbox_server)
+                            )
+                        )
+                        self.pubapi_cid_url_formatter = (
+                            self.pubapi_base_url_formatter + f"?cid={self.cid_url}"
+                        )
+                        # pylint: disable-next=not-callable
+                        response = func(self, *args, **kwargs)
+                        response.raise_for_status()
+                    except:  # pylint: disable=bare-except
+                        # Note:  This retry loop is in case the request itself fails.  Not
+                        # if we couldn't find the tarball!
+                        tb.print_exc()
+                        next_retry_count = next(retry_count)
+                        if next_retry_count == NUM_RETRIES:
+                            print(f"Max retries {NUM_RETRIES} exceeded.  Exiting now.")
+                            raise
+
+                        # If always_switch_servers is True, we should override the fixed_server setting for the duration of this request
+                        if next_retry_count == 1 and should_change_selector_behavior:
+                            self.activate_server_switcher()
+
+                        print(f"Will retry in {_retry_interval_sec} seconds")
+                        time.sleep(_retry_interval_sec)
+                        _retry_interval_sec = RETRY_INTERVAL_SEC
+                    else:
+                        if should_change_selector_behavior:
+                            if self.verbose:
+                                print(
+                                    "Restoring fixed server behavior of TarfilePublisherHandler"
+                                )
+                            self._dropbox_server_selector = restore_func()
+                        break
+                return response
+
+            return wrapper
+
+        return _pubapi_operation
 
     # pylint: disable-next=no-self-argument
     def cid_operation(func: Callable) -> Callable:  # type: ignore
@@ -509,7 +580,7 @@ class TarfilePublisherHandler:
         return wrapper
 
     @cid_operation
-    @pubapi_operation
+    @pubapi_operation()
     def update_cid(self) -> requests.Response:
         """Make PubAPI update call to update the last-accessed timestamp on
         this tarfile
@@ -523,11 +594,13 @@ class TarfilePublisherHandler:
             print(f"Calling URL {url}")
         return requests.get(url, **self.__auth_kwargs)
 
+    # pylint: disable=redundant-keyword-arg
     @cid_operation
     @as_span("publish", arg_attrs=["*"])
-    @pubapi_operation
+    @pubapi_operation(always_switch_servers=True)
     def publish(self, tarfilename: str) -> requests.Response:
-        """Make PubAPI publish call to upload this tarfile
+        """Make PubAPI publish call to upload this tarfile.  In the case of failure, if there are multiple
+        dropbox servers, we will always retry with a different server
 
         Args:
             tarfilename: filename to open for tarfile
@@ -545,7 +618,7 @@ class TarfilePublisherHandler:
 
     @cid_operation
     @as_span("cid_exists")
-    @pubapi_operation
+    @pubapi_operation()
     def cid_exists(self) -> requests.Response:
         """Make PubAPI update call to check if we already have this tarfile
 
@@ -566,7 +639,17 @@ class TarfilePublisherHandler:
         repos = _match.group(1) if _match is not None else DEFAULT_REPOS
         return f"/cvmfs/{{{repos}}}/sw/{self.cid}"
 
-    @pubapi_operation
+    def activate_server_switcher(self) -> None:
+        """Change TarfilePublisherHandler so that it will try different PubAPI servers"""
+        self._fixed_server = False
+        self._dropbox_server_selector = self.__setup_dropbox_server_selector()
+
+    def deactivate_server_switcher(self) -> None:
+        """Change TarfilePublisherHandler so that it will try a single PubAPI server repeatedly"""
+        self._fixed_server = True
+        self._dropbox_server_selector = self.__setup_fixed_dropbox_server()
+
+    @pubapi_operation()
     def _get_configured_pubapi_repos(self) -> requests.Response:
         url = self.pubapi_base_url_formatter.format(endpoint="config")
         return requests.get(url, **self.__auth_kwargs)
@@ -575,4 +658,55 @@ class TarfilePublisherHandler:
         """Return an infinite iterator of dropbox servers for client to upload tarball to"""
         dropbox_servers_working_list = self.dropbox_server_string.split()
         random.shuffle(dropbox_servers_working_list)
+        if len(dropbox_servers_working_list) == 0:
+            raise NoPublisherHandlerServerError(
+                "No server was specified to publish the tarball.  Please check to ensure that JOBSUB_DROPBOX_SERVER_LIST is set in the environment"
+            )
         return itertools.cycle(dropbox_servers_working_list)
+
+    def __setup_fixed_dropbox_server(self) -> Iterator[str]:
+        """Return an infinite iterator of a random selection of dropbox servers for client to upload tarball to.
+        e.g. if the possible dropbox servers are "server1,server2", then one will get selected at random (e.g. "server2")
+        and the iterator returned will look like ["server2", "server2", "server2", ...]
+        """
+        dropbox_servers_working_list = self.dropbox_server_string.split()
+        random.shuffle(dropbox_servers_working_list)
+        try:
+            _server_to_use = dropbox_servers_working_list.pop()
+            return itertools.repeat(_server_to_use)
+        except IndexError:
+            raise NoPublisherHandlerServerError(
+                "No server was specified to publish the tarball.  Please check to ensure that JOBSUB_DROPBOX_SERVER_LIST is set in the environment"
+            )
+
+    def __restore_fixed_server_behavior_func(self) -> Callable[..., Iterator[str]]:
+        """This function is meant to be used when restoring the behavior
+        of yielding a fixed dropbox server after activating the dropbox server switcher.
+
+        It returns a function that will set self._fixed_server to True and will
+        return an infinite iterator that repeatedly generates the value given by
+        self._dropbox_server_selector at the time this function is called,
+        mimicking the behavior of __setup_fixed_dropbox_server, but ensuring
+        that the yielded values are the same value as before the dropbox
+        server switcher was activated.
+
+        The following is how it should generally be used within the class:
+
+            def func(self):
+                restore_func = self.__restore_fixed_server_behavior_func() # Evaluate this now so that the correct server is saved
+                self.activate_server_switcher()
+                do_stuff()
+                restore_func()
+        """
+        __fixed_server = next(self._dropbox_server_selector)
+
+        def return_func() -> Iterator[str]:
+            self._fixed_server = True
+            return itertools.repeat(__fixed_server)
+
+        return return_func
+
+
+class NoPublisherHandlerServerError(Exception):
+    """Exception to be raised when there are no servers available for the TarfilePublisherHandler to communicate with to either
+    query or publish tarballs"""
