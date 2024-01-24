@@ -485,6 +485,125 @@ def get_client_dn(proxy: Union[None, str] = None) -> Union[str, Any]:
     return ""
 
 
+# pylint: disable=chained-comparison,too-many-return-statements,too-many-branches,too-many-statements
+def check_space(
+    path: str, min_kblocks: int = 100, min_files: int = 20, verbose: int = 0
+) -> bool:
+    """check if there is room / quota in location"""
+
+    cmd = f"df -k {path}"
+    # sample out:
+    # ====================
+    # Filesystem                      1K-blocks        Used Available Use% Mounted on
+    # if-nas-0.fnal.gov:/lbnewc/app 21474836480 20932591360 542245120  98% /dune/app
+    # ====================
+    # we want the Available and Mounted columns...
+    fs = ""
+    avail = -1
+    if verbose > 1:
+        sys.stderr.write(f"running: {cmd}\n")
+    with os.popen(cmd) as pfd:
+        out = pfd.read()
+    lines = re.split("\n", out)
+    headers = re.split(r"\s+", lines[0].strip())
+    availcol = headers.index("Available")
+    mountcol = headers.index("Mounted")
+
+    if verbose > 1:
+        sys.stderr.write(f"headers: {repr(headers)}\n")
+    for line in lines:
+        fields = re.split(r"\s+", line.strip())
+        if verbose > 1:
+            sys.stderr.write(f"fields: {repr(fields)}\n")
+        print(line, fields)
+        if len(fields) < mountcol:
+            continue
+        if fields[0] == headers[0]:
+            # header, skip
+            continue
+        fs = fields[mountcol]
+        avail = int(fields[availcol])
+
+    if avail == -1 or fs == "":
+        # could not parse df output? then we cannot tell...
+        if verbose:
+            sys.stderr.write(
+                f"Warning: could not get disk space info for {path} from df\n"
+            )
+        return True
+
+    # if df says there isn't enough space, look no further
+    if avail < min_kblocks:
+        return False
+
+    # now check quotas
+
+    # use -w and -p to quota to get parseable output...
+    cmd = f"quota -wp -ug -f  {fs} 2>/dev/null"
+    if verbose > 1:
+        sys.stderr.write(f"running: {cmd}\n")
+    with os.popen(cmd) as pfd:
+        out = pfd.read()
+
+    if out == "":
+        # no quota data...
+        return True
+
+    # sample output
+    # ===================
+    # Disk quotas for user mengel (uid 1733):
+    #    Filesystem  blocks   quota   limit   grace                      files   quota   limit   grace
+    # if-nas-0.fnal.gov:/lbnewc/app 15565312       0 115343360       0 60616888       0       0       0
+    # Disk quotas for group dune (gid 9010):
+    #    Filesystem  blocks   quota   limit   grace                           files   quota   limit   grace
+    # if-nas-0.fnal.gov:/lbnewc/app 20932855424       0 21474836480       0 60616888       0       0       0
+    # Disk quotas for group lbnf (gid 9960):
+    #    Filesystem  blocks   quota   limit   grace                            files   quota   limit   grace
+    # if-nas-0.fnal.gov:/lbnewc/app 20932855424       0 21474836480       0 60616888       0       0       0
+    # ===================
+    # we want to check the "limit" columns for blocks and files
+
+    lines = re.split("\n", out)
+    if lines[0].find(" quotas ") < 0:
+        # cannot tell
+        if verbose:
+            sys.stderr.write(
+                f"Warning: could not parse quota info for {path} from quota\n"
+            )
+        return True
+
+    headers = re.split(r"\s+", lines[1].strip())
+    if verbose > 1:
+        sys.stderr.write(f"headers: {repr(headers)}\n")
+    blimitcol = headers.index("limit")
+    flimitcol = headers.index("limit", blimitcol + 1)
+
+    for line in lines:
+        fields = re.split(r"\s+", line.strip())
+        if verbose > 1:
+            sys.stderr.write(f"fields: {repr(fields)}\n")
+        print(line, fields)
+
+        if len(fields) < flimitcol:
+            # short/empty line, skip
+            continue
+        if fields[0] in [headers[0], "Disk"]:
+            # header, skip
+            continue
+
+        blimit = int(fields[blimitcol])
+        flimit = int(fields[flimitcol])
+
+        if blimit > 0 and blimit < min_kblocks:
+            return False
+
+        # we need min_files file slots...
+        if flimit > 0 and flimit < min_files:
+            return False
+
+    return True
+
+
 class SiteAndUsageModel(NamedTuple):
     # A simple namedtuple subclass that is meant to encapsulate the sites and usage_model pairing
     sites: str = ""
