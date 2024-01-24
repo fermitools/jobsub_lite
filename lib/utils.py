@@ -43,6 +43,7 @@ DEFAULT_SINGULARITY_IMAGE = (
 
 
 def cleandir(d: str, verbose: int) -> None:
+    """clean directory out"""
     if not os.path.exists(d):
         return
 
@@ -485,12 +486,31 @@ def get_client_dn(proxy: Union[None, str] = None) -> Union[str, Any]:
     return ""
 
 
-# pylint: disable=chained-comparison,too-many-return-statements,too-many-branches,too-many-statements
+# # py li nt: disable=chained-comparison,too-many-return-statements,too-many-branches,too-many-statements
 def check_space(
     path: str, min_kblocks: int = 100, min_files: int = 20, verbose: int = 0
 ) -> bool:
     """check if there is room / quota in location"""
+    fs: str = ""
+    d_ok: bool = False
 
+    fs, d_ok = check_space_df(path, min_kblocks, min_files, verbose)
+
+    if verbose > 1:
+        sys.stderr.write(f"df check: {d_ok}, fs: '{fs}'\n")
+
+    if fs and d_ok:
+        q_ok = check_space_quota(path, fs, min_kblocks, min_files, verbose)
+    else:
+        q_ok = True
+
+    return d_ok and q_ok
+
+
+def check_space_df(
+    path: str, min_kblocks: int = 100, min_files: int = 20, verbose: int = 0
+) -> Tuple[str, bool]:
+    """check for enough disk space at path, also return fs mountpoint"""
     cmd = f"df -k {path}"
     # sample out:
     # ====================
@@ -530,14 +550,15 @@ def check_space(
             sys.stderr.write(
                 f"Warning: could not get disk space info for {path} from df\n"
             )
-        return True
+        return "", True
 
-    # if df says there isn't enough space, look no further
-    if avail < min_kblocks:
-        return False
+    return fs, avail >= min_kblocks
 
-    # now check quotas
 
+def check_space_quota(
+    path: str, fs: str, min_kblocks: int = 100, min_files: int = 20, verbose: int = 0
+) -> bool:
+    """check for enough qutoa at path/fs location"""
     # use -w and -p to quota to get parseable output...
     cmd = f"quota -wp -ug -f  {fs} 2>/dev/null"
     if verbose > 1:
@@ -594,11 +615,11 @@ def check_space(
         blimit = int(fields[blimitcol])
         flimit = int(fields[flimitcol])
 
-        if blimit > 0 and blimit < min_kblocks:
+        if 0 < blimit < min_kblocks:
             return False
 
         # we need min_files file slots...
-        if flimit > 0 and flimit < min_files:
+        if 0 < flimit < min_files:
             return False
 
     return True
