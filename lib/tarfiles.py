@@ -457,6 +457,7 @@ class TarfilePublisherHandler:
             if not self._fixed_server
             else self.__setup_fixed_dropbox_server()
         )
+        self.__last_server = next(self._dropbox_server_selector)
 
     # pylint: disable-next=no-self-argument
     def pubapi_operation(always_switch_servers: bool = False) -> Callable:  # type: ignore
@@ -478,15 +479,13 @@ class TarfilePublisherHandler:
 
                 # After this request, restore the appropriate fixed_server behavior
                 # pylint: disable=protected-access
-                __fixed_server = next(self._dropbox_server_selector)
-                __fixed_server_func: Callable[
-                    ..., Iterator[str]
-                ] = lambda: itertools.repeat(__fixed_server)
-                # pylint: disable=protected-access
-                restore_fixed_server_behavior_func = (
-                    __fixed_server_func
-                    if self._fixed_server
-                    else self.activate_server_switcher
+                # Logic here:
+                # 1. If self._fixed_server and always_switch_servers, we want to switch servers for only this request, and we should restore the behavior afterwards
+                # 2. If not self._fixed_server and always_switch_servers, everything is already set correctly.  Do nothing, restore nothing.
+                # 3. If self._fixed_server and not always_switch_servers, everything else already set correctly.  Do nothing, restore nothing.
+                # 4. If not self._fixed_server and not always_switch_servers, then we respect the self._fixed_server setting, and do nothing and restore nothing.
+                should_change_selector_behavior = (
+                    self._fixed_server and always_switch_servers
                 )
 
                 _retry_interval_sec = 0  # First retry immediately, and then we can wait the retry interval
@@ -497,6 +496,17 @@ class TarfilePublisherHandler:
                     try:
                         # pylint: disable=protected-access
                         _dropbox_server = next(self._dropbox_server_selector)
+
+                        # If we're supposed to be switching servers, make sure we are
+                        if (
+                            len(self.dropbox_server_string.split()) > 1
+                            and not self._fixed_server
+                            and _dropbox_server == self.__last_server
+                        ):
+                            _dropbox_server = next(self._dropbox_server_selector)
+
+                        self.__last_server = _dropbox_server
+
                         if self.verbose > 0:
                             print(f"Using PubAPI server {_dropbox_server}")
                         self.pubapi_base_url_formatter = (
@@ -520,14 +530,15 @@ class TarfilePublisherHandler:
                             raise
 
                         # If always_switch_servers is True, we should override the fixed_server setting for the duration of this request
-                        if next_retry_count == 1 and always_switch_servers:
+                        if next_retry_count == 1 and should_change_selector_behavior:
                             self.activate_server_switcher()
 
                         print(f"Will retry in {_retry_interval_sec} seconds")
                         time.sleep(_retry_interval_sec)
                         _retry_interval_sec = RETRY_INTERVAL_SEC
                     else:
-                        restore_fixed_server_behavior_func()
+                        if should_change_selector_behavior:
+                            self.restore_fixed_server_behavior_func()
                         break
                 return response
 
@@ -648,6 +659,13 @@ class TarfilePublisherHandler:
             raise NoPublisherHandlerServerError(
                 "No server was specified to publish the tarball.  Please check to ensure that JOBSUB_DROPBOX_SERVER_LIST is set in the environment"
             )
+
+    def restore_fixed_server_behavior_func(self) -> Callable[..., Iterator[str]]:
+        """This function is meant to be used when wanting to restore the behavior
+        of using a fixed dropbox server after activating the dropbox server switcher"""
+        __fixed_server = next(self._dropbox_server_selector)
+        self._fixed_server = True
+        return lambda: itertools.repeat(__fixed_server)
 
 
 class NoPublisherHandlerServerError(Exception):
