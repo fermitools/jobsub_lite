@@ -252,6 +252,20 @@ def set_extras_n_fix_units(
 
     if args.get("full_executable", False):
         dest = os.path.join(args["submitdir"], os.path.basename(args["executable"]))
+
+        # also make sure there is enough space...
+        statinfo = os.stat(args["full_executable"])
+        if statinfo:
+            need_blocks = int(statinfo.st_size / 1024) + 1
+            if not check_space(args["submitdir"], need_blocks):
+                raise RuntimeError(
+                    f"not enough free disk/quota in {args['submitdir']} to copy {args['full_executable']}."
+                )
+        else:
+            raise RuntimeError(
+                f"Cannot stat() executable {args['full_executable']}, does it exist?"
+            )
+
         if args["verbose"] > 1:
             sys.stderr.write(
                 f"copying  {repr(args.get('full_executable', None))} to {repr(dest)}\n"
