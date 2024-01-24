@@ -488,6 +488,12 @@ class TarfilePublisherHandler:
                     self._fixed_server and always_switch_servers
                 )
 
+                if should_change_selector_behavior and self.verbose:
+                    print(
+                        "TarfilePublisherHandler is configured to use a fixed RCDS server, however this is being overridden "
+                        "for the duration of the current request."
+                    )
+
                 _retry_interval_sec = 0  # First retry immediately, and then we can wait the retry interval
                 # pylint: disable-next=protected-access
                 retry_count = itertools.count(1)
@@ -538,6 +544,10 @@ class TarfilePublisherHandler:
                         _retry_interval_sec = RETRY_INTERVAL_SEC
                     else:
                         if should_change_selector_behavior:
+                            if self.verbose:
+                                print(
+                                    "Restoring fixed server behavior of TarfilePublisherHandler"
+                                )
                             self.__restore_fixed_server_behavior()
                         break
                 return response
