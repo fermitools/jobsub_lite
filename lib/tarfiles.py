@@ -538,7 +538,7 @@ class TarfilePublisherHandler:
                         _retry_interval_sec = RETRY_INTERVAL_SEC
                     else:
                         if should_change_selector_behavior:
-                            self.restore_fixed_server_behavior_func()
+                            self.__restore_fixed_server_behavior()
                         break
                 return response
 
@@ -660,7 +660,7 @@ class TarfilePublisherHandler:
                 "No server was specified to publish the tarball.  Please check to ensure that JOBSUB_DROPBOX_SERVER_LIST is set in the environment"
             )
 
-    def restore_fixed_server_behavior_func(self) -> Callable[..., Iterator[str]]:
+    def __restore_fixed_server_behavior(self) -> Callable[..., Iterator[str]]:
         """This function is meant to be used when wanting to restore the behavior
         of using a fixed dropbox server after activating the dropbox server switcher"""
         __fixed_server = next(self._dropbox_server_selector)
