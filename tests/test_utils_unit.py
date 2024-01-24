@@ -56,6 +56,11 @@ def test_old_dir(test_job_dir):
     return test_job_dir
 
 
+def test_check_space1():
+    assert utils.check_space(os.environ["HOME"], 10, verbose=2)
+    assert not utils.check_space("/tmp", 100000000, verbose=2)
+
+
 def site_and_usage_model_test_data():
     """Pull in site and usage model test data from data file and
     return a list of test data for use in test"""

@@ -38,6 +38,7 @@ from requests.auth import AuthBase  # type: ignore # pylint: disable=import-erro
 import fake_ifdh
 from creds import get_creds, CredentialSet
 from tracing import as_span, add_event
+import utils
 
 try:
     _NUM_RETRIES_ENV = os.getenv("JOBSUB_UPLOAD_NUM_RETRIES", "20")
@@ -87,6 +88,18 @@ def tarchmod(tfn: str) -> str:
     """
     ofn = os.path.basename(f"{tfn}{os.getpid()}.tbz2")
     check_we_can_write()
+
+    # also make sure there is enough space...
+    statinfo = os.stat(tfn)
+    if statinfo:
+        need_blocks = int(statinfo.st_size / 1024) + 1
+        if not utils.check_space(".", need_blocks):
+            raise RuntimeError(
+                f"not enough free disk/quota in current directory to rewrite {tfn}."
+            )
+    else:
+        raise RuntimeError(f"Cannot stat() tarfile {tfn}, does it exist?")
+
     try:
         with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(
             ofn, "w|bz2"
