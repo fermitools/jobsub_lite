@@ -80,7 +80,7 @@ def check_we_can_write() -> None:
         sys.exit(1)
 
 
-def tarchmod(tfn: str) -> str:
+def tarchmod(tfn: str, check_for_space: bool = True) -> str:
     """
     copy a tarfile to a compressed tarfile, while:
     * changing modes of contents to 755
@@ -90,15 +90,16 @@ def tarchmod(tfn: str) -> str:
     check_we_can_write()
 
     # also make sure there is enough space...
-    statinfo = os.stat(tfn)
-    if statinfo:
-        need_blocks = int(statinfo.st_size / 1024) + 1
-        if not utils.check_space(".", need_blocks):
-            raise RuntimeError(
-                f"not enough free disk/quota in current directory to rewrite {tfn}."
-            )
-    else:
-        raise RuntimeError(f"Cannot stat() tarfile {tfn}, does it exist?")
+    if check_for_space:
+        statinfo = os.stat(tfn)
+        if statinfo:
+            need_blocks = int(statinfo.st_size / 1024) + 1
+            if not utils.check_space(".", need_blocks):
+                raise RuntimeError(
+                    f"not enough free disk/quota in current directory to rewrite {tfn}."
+                )
+        else:
+            raise RuntimeError(f"Cannot stat() tarfile {tfn}, does it exist?")
 
     try:
         with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(
@@ -331,7 +332,11 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
         http.client.HTTPConnection.debuglevel = 5
 
     # redo tarfile to have contents with world read perms before publishing
-    tfn = tarchmod(origtfn)
+    check_for_space = not getattr(args, "skip_check_disk_space", False)
+    if not check_for_space and (getattr(args, "verbose", 0) > 0):
+        print("Skipping disk_space check for processing tarball")
+
+    tfn = tarchmod(origtfn, check_for_space)
 
     location: Optional[str] = ""
     if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
