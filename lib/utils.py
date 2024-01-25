@@ -43,6 +43,7 @@ DEFAULT_SINGULARITY_IMAGE = (
 
 
 def cleandir(d: str, verbose: int) -> None:
+    """clean directory out"""
     if not os.path.exists(d):
         return
 
@@ -251,6 +252,20 @@ def set_extras_n_fix_units(
 
     if args.get("full_executable", False):
         dest = os.path.join(args["submitdir"], os.path.basename(args["executable"]))
+
+        # also make sure there is enough space...
+        statinfo = os.stat(args["full_executable"])
+        if statinfo:
+            need_blocks = int(statinfo.st_size / 1024) + 1
+            if not check_space(args["submitdir"], need_blocks):
+                raise RuntimeError(
+                    f"not enough free disk/quota in {args['submitdir']} to copy {args['full_executable']}."
+                )
+        else:
+            raise RuntimeError(
+                f"Cannot stat() executable {args['full_executable']}, does it exist?"
+            )
+
         if args["verbose"] > 1:
             sys.stderr.write(
                 f"copying  {repr(args.get('full_executable', None))} to {repr(dest)}\n"
@@ -483,6 +498,145 @@ def get_client_dn(proxy: Union[None, str] = None) -> Union[str, Any]:
         "message in the ticket."
     )
     return ""
+
+
+# # py li nt: disable=chained-comparison,too-many-return-statements,too-many-branches,too-many-statements
+def check_space(
+    path: str, min_kblocks: int = 100, min_files: int = 20, verbose: int = 0
+) -> bool:
+    """check if there is room / quota in location"""
+    fs: str = ""
+    d_ok: bool = False
+
+    fs, d_ok = check_space_df(path, min_kblocks, min_files, verbose)
+
+    if verbose > 1:
+        sys.stderr.write(f"df check: {d_ok}, fs: '{fs}'\n")
+
+    if fs and d_ok:
+        q_ok = check_space_quota(path, fs, min_kblocks, min_files, verbose)
+    else:
+        q_ok = True
+
+    return d_ok and q_ok
+
+
+def check_space_df(
+    path: str, min_kblocks: int = 100, min_files: int = 20, verbose: int = 0
+) -> Tuple[str, bool]:
+    """check for enough disk space at path, also return fs mountpoint"""
+    cmd = f"df -k {path}"
+    # sample out:
+    # ====================
+    # Filesystem                      1K-blocks        Used Available Use% Mounted on
+    # hostname.domain:/lbnewc/app 21474836480 20932591360 542245120  98% /dune/app
+    # ====================
+    # we want the Available and Mounted columns...
+    fs = ""
+    avail = -1
+    if verbose > 1:
+        sys.stderr.write(f"running: {cmd}\n")
+    with os.popen(cmd) as pfd:
+        out = pfd.read()
+    lines = re.split("\n", out)
+    headers = re.split(r"\s+", lines[0].strip())
+    availcol = headers.index("Available")
+    mountcol = headers.index("Mounted")
+
+    if verbose > 1:
+        sys.stderr.write(f"headers: {repr(headers)}\n")
+    for line in lines:
+        fields = re.split(r"\s+", line.strip())
+        if verbose > 1:
+            sys.stderr.write(f"fields: {repr(fields)}\n")
+        print(line, fields)
+        if len(fields) < mountcol:
+            continue
+        if fields[0] == headers[0]:
+            # header, skip
+            continue
+        fs = fields[mountcol]
+        avail = int(fields[availcol])
+
+    if avail == -1 or fs == "":
+        # could not parse df output? then we cannot tell...
+        if verbose:
+            sys.stderr.write(
+                f"Warning: could not get disk space info for {path} from df\n"
+            )
+        return "", True
+
+    return fs, avail >= min_kblocks
+
+
+def check_space_quota(
+    path: str, fs: str, min_kblocks: int = 100, min_files: int = 20, verbose: int = 0
+) -> bool:
+    """check for enough qutoa at path/fs location"""
+    # use -w and -p to quota to get parseable output...
+    cmd = f"quota -wp -ug -f  {fs} 2>/dev/null"
+    if verbose > 1:
+        sys.stderr.write(f"running: {cmd}\n")
+    with os.popen(cmd) as pfd:
+        out = pfd.read()
+
+    if out == "":
+        # no quota data...
+        return True
+
+    # sample output
+    # ===================
+    # Disk quotas for user mengel (uid 1733):
+    #    Filesystem  blocks   quota   limit   grace                     files   quota   limit   grace
+    # hostname.domain:/lbnewc/app 15565312       0 115343360       0 60616888       0       0       0
+    # Disk quotas for group dune (gid 9010):
+    #    Filesystem  blocks   quota   limit   grace                          files   quota   limit   grace
+    # hostname.domain:/lbnewc/app 20932855424       0 21474836480       0 60616888       0       0       0
+    # Disk quotas for group lbnf (gid 9960):
+    #    Filesystem  blocks   quota   limit   grace                          files   quota   limit   grace
+    # hostname.domain:/lbnewc/app 20932855424       0 21474836480       0 60616888       0       0       0
+    # ===================
+    # we want to check the "limit" columns for blocks and files
+
+    lines = re.split("\n", out)
+    if lines[0].find(" quotas ") < 0:
+        # cannot tell
+        if verbose:
+            sys.stderr.write(
+                f"Warning: could not parse quota info for {path} from quota\n"
+            )
+        return True
+
+    headers = re.split(r"\s+", lines[1].strip())
+    if verbose > 1:
+        sys.stderr.write(f"headers: {repr(headers)}\n")
+    blimitcol = headers.index("limit")
+    flimitcol = headers.index("limit", blimitcol + 1)
+
+    for line in lines:
+        fields = re.split(r"\s+", line.strip())
+        if verbose > 1:
+            sys.stderr.write(f"fields: {repr(fields)}\n")
+        print(line, fields)
+
+        if len(fields) < flimitcol:
+            # short/empty line, skip
+            continue
+        if fields[0] in [headers[0], "Disk"]:
+            # header, skip
+            continue
+
+        blimit = int(fields[blimitcol])
+        flimit = int(fields[flimitcol])
+
+        if 0 < blimit < min_kblocks:
+            return False
+
+        # we need min_files file slots...
+        if 0 < flimit < min_files:
+            return False
+
+    return True
 
 
 class SiteAndUsageModel(NamedTuple):
