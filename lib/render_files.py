@@ -55,8 +55,14 @@ def render_files(
     values["cwd"] = dest
 
     # make sure we have enough disk space...
-    if not utils.check_space(dest, min_kblocks=6 * len(flist), min_files=len(flist)):
-        raise RuntimeError(f"Not enough disk space/quota in {dest} to submit job")
+    if not values.get("skip_check_disk_space", False):
+        if not utils.check_space(
+            dest, min_kblocks=6 * len(flist), min_files=len(flist)
+        ):
+            raise RuntimeError(f"Not enough disk space/quota in {dest} to submit job")
+    else:
+        if getattr(values, "verbose", 0) > 0:
+            print(f"Skipping disk_space check in {dest}")
 
     for f in flist:
         if values["verbose"] > 0:
