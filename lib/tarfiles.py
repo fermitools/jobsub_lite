@@ -95,7 +95,7 @@ def tarchmod(tfn: str) -> str:
         need_blocks = int(statinfo.st_size / 1024) + 1
         if not utils.check_space(".", need_blocks):
             raise RuntimeError(
-                f"not enough free disk/quota in current directory to rewrite {tfn}."
+                f"Not enough disk space / quota in current directory to rewrite {tfn}."
             )
     else:
         raise RuntimeError(f"Cannot stat() tarfile {tfn}, does it exist?")
@@ -144,6 +144,22 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
 
     tarfile = os.path.basename(f"{directory}{os.getpid()}.tgz")
     check_we_can_write()
+
+    # check for space for tarfile
+    with os.popen(f"du -sk {directory}/{file}", "r") as fdu:
+        s = fdu.read()
+        m = re.match(r"(\d+)", s)
+        if m:
+            blocks = int(m.group(1))
+        else:
+            blocks = 1
+    if not utils.check_space(
+        ".", int(blocks / 2) + 1
+    ):  # assuming gzip gets 50% compression...
+        raise RuntimeError(
+            f"Not enough disk space / quota in current directory to create tarfile of {directory}/{file}."
+        )
+
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
     excludes = f"--exclude-from {excludes} --exclude {tarfile}"

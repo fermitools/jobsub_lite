@@ -259,7 +259,7 @@ def set_extras_n_fix_units(
             need_blocks = int(statinfo.st_size / 1024) + 1
             if not check_space(args["submitdir"], need_blocks):
                 raise RuntimeError(
-                    f"not enough free disk/quota in {args['submitdir']} to copy {args['full_executable']}."
+                    f"Not enough disk space / quota in {args['submitdir']} to copy {args['full_executable']}."
                 )
         else:
             raise RuntimeError(
