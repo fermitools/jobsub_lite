@@ -72,6 +72,7 @@ def check_for(cmd, string):
         assert string in out
 
 
+@pytest.mark.integration
 def test_1(tiny_home):
     os.system(f"ls -la $HOME")
     os.system(f"df -h $HOME")
