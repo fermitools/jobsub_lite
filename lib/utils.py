@@ -529,7 +529,7 @@ def check_space_df(
     # sample out:
     # ====================
     # Filesystem                      1K-blocks        Used Available Use% Mounted on
-    # if-nas-0.fnal.gov:/lbnewc/app 21474836480 20932591360 542245120  98% /dune/app
+    # hostname.domain:/lbnewc/app 21474836480 20932591360 542245120  98% /dune/app
     # ====================
     # we want the Available and Mounted columns...
     fs = ""
@@ -587,14 +587,14 @@ def check_space_quota(
     # sample output
     # ===================
     # Disk quotas for user mengel (uid 1733):
-    #    Filesystem  blocks   quota   limit   grace                      files   quota   limit   grace
-    # if-nas-0.fnal.gov:/lbnewc/app 15565312       0 115343360       0 60616888       0       0       0
+    #    Filesystem  blocks   quota   limit   grace                     files   quota   limit   grace
+    # hostname.domain:/lbnewc/app 15565312       0 115343360       0 60616888       0       0       0
     # Disk quotas for group dune (gid 9010):
-    #    Filesystem  blocks   quota   limit   grace                           files   quota   limit   grace
-    # if-nas-0.fnal.gov:/lbnewc/app 20932855424       0 21474836480       0 60616888       0       0       0
+    #    Filesystem  blocks   quota   limit   grace                          files   quota   limit   grace
+    # hostname.domain:/lbnewc/app 20932855424       0 21474836480       0 60616888       0       0       0
     # Disk quotas for group lbnf (gid 9960):
-    #    Filesystem  blocks   quota   limit   grace                            files   quota   limit   grace
-    # if-nas-0.fnal.gov:/lbnewc/app 20932855424       0 21474836480       0 60616888       0       0       0
+    #    Filesystem  blocks   quota   limit   grace                          files   quota   limit   grace
+    # hostname.domain:/lbnewc/app 20932855424       0 21474836480       0 60616888       0       0       0
     # ===================
     # we want to check the "limit" columns for blocks and files
 
