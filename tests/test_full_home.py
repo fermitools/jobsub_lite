@@ -36,7 +36,7 @@ else:
     )
 
 if 0 != os.system("ksu -e /bin/true"):
-    pytest.skip("cannot ksu to make test filesystem here")
+    pytest.skip("cannot ksu to make test filesystem here", allow_module_level=True)
 
 
 @pytest.fixture
