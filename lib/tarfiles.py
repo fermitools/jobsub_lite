@@ -96,7 +96,7 @@ def tarchmod(tfn: str, check_for_space: bool = True) -> str:
             need_blocks = int(statinfo.st_size / 1024) + 1
             if not utils.check_space(".", need_blocks):
                 raise RuntimeError(
-                    f"not enough free disk/quota in current directory to rewrite {tfn}."
+                    f"Not enough disk space / quota in current directory to rewrite {tfn}."
                 )
         else:
             raise RuntimeError(f"Cannot stat() tarfile {tfn}, does it exist?")
@@ -131,7 +131,9 @@ def tarchmod(tfn: str, check_for_space: bool = True) -> str:
 
 
 @as_span("tar_up", arg_attrs=["*"])
-def tar_up(directory: str, excludes: str, file: str = ".") -> str:
+def tar_up(
+    directory: str, excludes: str, file: str = ".", check_for_space: bool = True
+) -> str:
     """build directory.tar from path/to/directory"""
     if not directory:
         directory = "."
@@ -145,6 +147,24 @@ def tar_up(directory: str, excludes: str, file: str = ".") -> str:
 
     tarfile = os.path.basename(f"{directory}{os.getpid()}.tgz")
     check_we_can_write()
+
+    if check_for_space:
+        # check for space for tarfile
+        with os.popen(f"du -sk {directory}/{file}", "r") as fdu:
+            s = fdu.read()
+            m = re.match(r"(\d+)", s)
+            if m:
+                blocks = int(m.group(1))
+            else:
+                blocks = 1
+
+        if not utils.check_space(
+            ".", int(blocks / 2) + 1
+        ):  # assuming gzip gets 50% compression...
+            raise RuntimeError(
+                f"Not enough disk space / quota in current directory to create tarfile of {directory}/{file}."
+            )
+
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
     excludes = f"--exclude-from {excludes} --exclude {tarfile}"
@@ -214,6 +234,8 @@ def do_tarballs(args: argparse.Namespace) -> None:
 
     pnfs_classad_line: List[str] = []
 
+    check_for_space = not getattr(args, "skip_check_disk_space", False)
+
     try:
         for fn in args.input_file:
             if fn.startswith("dropbox:"):
@@ -237,7 +259,10 @@ def do_tarballs(args: argparse.Namespace) -> None:
                     except OSError:
                         pass
                     tarfile = tar_up(
-                        os.path.dirname(pfn), "/dev/null", os.path.basename(pfn)
+                        os.path.dirname(pfn),
+                        "/dev/null",
+                        os.path.basename(pfn),
+                        check_for_space=check_for_space,
                     )
                     try:
                         os.chmod(pfn, savemode)
@@ -287,7 +312,11 @@ def do_tarballs(args: argparse.Namespace) -> None:
 
             if tfn.startswith("tardir:"):
                 # tar it up, pretend they gave us dropbox:
-                tarfile = tar_up(tfn[7:], args.tarball_exclusion_file)
+                tarfile = tar_up(
+                    tfn[7:],
+                    args.tarball_exclusion_file,
+                    check_for_space=check_for_space,
+                )
                 tfn = f"dropbox:{tarfile}"
                 clean_up.append(tarfile)
 
