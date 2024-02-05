@@ -1,0 +1,51 @@
+name: build-al9
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types:
+      - closed
+  workflow_dispatch:
+
+jobs:
+  pr_merge:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    name: "Build master with merged PR in AL9 container"
+    container:
+      image: almalinux:9.3-minimal
+    steps:
+      - name: Install tar and gzip
+        run: |
+          microdnf install -y tar
+          microdnf install -y gzip
+      - name: Check out jobsub_lite in runner
+        uses: actions/checkout@v4
+      - name: Check out jobsub_lite_config in runner
+        uses: actions/checkout@v4
+        with:
+          repository: fermitools/jobsub_lite_config
+          path: config
+          token: ${{ secrets.ACCESS_JOBSUB_LITE_CONFIG }}
+      - uses: ./.github/actions/build-with-make
+  pushed_commit:
+    runs-on: ubuntu-latest
+    name: "Build master after push in AL9 container"
+    container:
+      image: almalinux:9.3-minimal
+    steps:
+      - name: Install tar and gzip
+        run: |
+          microdnf install -y tar
+          microdnf install -y gzip
+      - name: Check out jobsub_lite in runner
+        uses: actions/checkout@v4
+      - name: Check out jobsub_lite_config in runner
+        uses: actions/checkout@v4
+        with:
+          repository: fermitools/jobsub_lite_config
+          path: config
+          token: ${{ secrets.ACCESS_JOBSUB_LITE_CONFIG }}
+      - uses: ./.github/actions/build-with-make
