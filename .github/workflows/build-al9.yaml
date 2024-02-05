@@ -4,39 +4,48 @@ on:
   push:
     branches:
       - master
-  pull-request:
+  pull_request:
     types:
       - closed
   workflow_dispatch:
 
 jobs:
-  if_merged:
+  pr_merge:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    name: "Build master with merged PR in AL9 container"
     container:
       image: almalinux:9.3-minimal
     steps:
-    - name: Install tar and gzip
-      run: |
-        microdnf install -y tar
-        microdnf install -y gzip
-    - name: Check out jobsub_lite in runner
-      uses: actions/checkout@v4
-    - name: Check out jobsub_lite_config in runner
-      uses: actions/checkout@v4
-      with:
-        repository: fermitools/jobsub_lite_config
-        path: config
-        token: ${{ secrets.ACCESS_JOBSUB_LITE_CONFIG }}
-    - name: Install rpm-build
-      run: microdnf install -y rpm-build
-    - name: Create RPM directories
-      run: mkdir -p ${HOME}/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-    - name: Install make
-      run: microdnf install -y make
-    - name: Install python3
-      run: microdnf install -y python3
-    - name: Run make
-      run: make
-    - name: Verify that RPM was generated
-      run: ls -1 jobsub_lite-*.rpm
+      - name: Install tar and gzip
+        run: |
+          microdnf install -y tar
+          microdnf install -y gzip
+      - name: Check out jobsub_lite in runner
+        uses: actions/checkout@v4
+      - name: Check out jobsub_lite_config in runner
+        uses: actions/checkout@v4
+        with:
+          repository: fermitools/jobsub_lite_config
+          path: config
+          token: ${{ secrets.ACCESS_JOBSUB_LITE_CONFIG }}
+      - uses: ./.github/actions/build-with-make
+  pushed_commit:
+    runs-on: ubuntu-latest
+    name: "Build master after push in AL9 container"
+    container:
+      image: almalinux:9.3-minimal
+    steps:
+      - name: Install tar and gzip
+        run: |
+          microdnf install -y tar
+          microdnf install -y gzip
+      - name: Check out jobsub_lite in runner
+        uses: actions/checkout@v4
+      - name: Check out jobsub_lite_config in runner
+        uses: actions/checkout@v4
+        with:
+          repository: fermitools/jobsub_lite_config
+          path: config
+          token: ${{ secrets.ACCESS_JOBSUB_LITE_CONFIG }}
+      - uses: ./.github/actions/build-with-make
