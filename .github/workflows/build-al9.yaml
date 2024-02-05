@@ -17,7 +17,18 @@ jobs:
     container:
       image: almalinux:9.3-minimal
     steps:
-      - uses: ./.github/actions/prepare-al9-container-with-repo
+      - name: Install tar and gzip
+        run: |
+          microdnf install -y tar
+          microdnf install -y gzip
+      - name: Check out jobsub_lite in runner
+        uses: actions/checkout@v4
+      - name: Check out jobsub_lite_config in runner
+        uses: actions/checkout@v4
+        with:
+          repository: fermitools/jobsub_lite_config
+          path: config
+          token: ${{ secrets.ACCESS_JOBSUB_LITE_CONFIG }}
       - uses: ./.github/actions/build-with-make
   pushed_commit:
     runs-on: ubuntu-latest
@@ -25,5 +36,16 @@ jobs:
     container:
       image: almalinux:9.3-minimal
     steps:
-      - uses: ./.github/actions/prepare-al9-container-with-repo
+      - name: Install tar and gzip
+        run: |
+          microdnf install -y tar
+          microdnf install -y gzip
+      - name: Check out jobsub_lite in runner
+        uses: actions/checkout@v4
+      - name: Check out jobsub_lite_config in runner
+        uses: actions/checkout@v4
+        with:
+          repository: fermitools/jobsub_lite_config
+          path: config
+          token: ${{ secrets.ACCESS_JOBSUB_LITE_CONFIG }}
       - uses: ./.github/actions/build-with-make
