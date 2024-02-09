@@ -25,4 +25,4 @@ jobs:
           repository: fermitools/jobsub_lite_config
           path: config
           token: ${{ secrets.ACCESS_JOBSUB_LITE_CONFIG }}
-      - uses: ./.github/actions/build-with-make
+      - uses: ./.github/actions/build-with-make-al9
