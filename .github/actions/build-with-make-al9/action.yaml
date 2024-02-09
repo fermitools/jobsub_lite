@@ -1,5 +1,5 @@
-name: "Build with Make"
-description: "Build the jobsub_lite RPM using repo makefile"
+name: "Build with Make AL9"
+description: "Build the jobsub_lite RPM using repo makefile for AL9"
 runs:
   using: "composite"
   steps:
