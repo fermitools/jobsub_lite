@@ -1,0 +1,23 @@
+name: "Build with Make - SL7"
+description: "Build the jobsub_lite RPM using repo makefile for SL7"
+runs:
+  using: "composite"
+  steps:
+    - name: Install rpm-build
+      shell: bash
+      run: yum install -y rpm-build
+    - name: Create RPM directories
+      shell: bash
+      run: mkdir -p ${HOME}/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+    - name: Install make
+      shell: bash
+      run: yum install -y make
+    - name: Install python3
+      shell: bash
+      run: yum install -y python3
+    - name: Run make
+      shell: bash
+      run: make
+    - name: Verify that RPM was generated
+      shell: bash
+      run: ls -1 jobsub_lite-*.rpm
