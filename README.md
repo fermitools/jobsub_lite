@@ -1,4 +1,5 @@
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/shreyb/jobsub_lite/master.svg)](https://results.pre-commit.ci/latest/github/shreyb/jobsub_lite/master)
+[![build-sl7-push](https://github.com/fermitools/jobsub_lite/actions/workflows/build-sl7-push.yaml/badge.svg)](https://github.com/fermitools/jobsub_lite/actions/workflows/build-sl7-push.yaml)
 [![build-al9-push](https://github.com/fermitools/jobsub_lite/actions/workflows/build-al9-push.yaml/badge.svg)](https://github.com/fermitools/jobsub_lite/actions/workflows/build-al9-push.yaml)
 
 #  `jobsub_lite` Overview
