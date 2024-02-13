@@ -268,6 +268,27 @@ class TestCheckTokenRightGroupAndRole:
         fake_ifdh.checkToken_right_group_and_role(token, group)
 
     @pytest.mark.unit
+    def test_good_with_role(self, clear_bearer_token_file, monkeypatch):
+        monkeypatch.setenv(
+            "BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab_production.token"
+        )
+        group = "fermilab"
+        role = "production"
+        token = scitokens.SciToken.discover(insecure=True)
+        fake_ifdh.checkToken_right_group_and_role(token, group, role)
+
+    @pytest.mark.unit
+    def test_good_with_role_different_case(self, clear_bearer_token_file, monkeypatch):
+        """Should still pass because we should be case-insensitive"""
+        monkeypatch.setenv(
+            "BEARER_TOKEN_FILE", "fake_ifdh_tokens/fermilab_production.token"
+        )
+        group = "fermilab"
+        role = "Production"
+        token = scitokens.SciToken.discover(insecure=True)
+        fake_ifdh.checkToken_right_group_and_role(token, group, role)
+
+    @pytest.mark.unit
     def test_bad(self, bad_checkToken_test_case, clear_bearer_token_file, monkeypatch):
         monkeypatch.setenv("BEARER_TOKEN_FILE", bad_checkToken_test_case.token_location)
         group = bad_checkToken_test_case.group
