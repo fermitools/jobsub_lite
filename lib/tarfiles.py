@@ -80,7 +80,7 @@ def check_we_can_write() -> None:
         sys.exit(1)
 
 
-def tarchmod(tfn: str, check_for_space: bool = True) -> str:
+def tarchmod(tfn: str, check_for_space: bool = True, verbose: int = 0) -> str:
     """
     copy a tarfile to a compressed tarfile, while:
     * changing modes of contents to 755
@@ -94,7 +94,9 @@ def tarchmod(tfn: str, check_for_space: bool = True) -> str:
         statinfo = os.stat(tfn)
         if statinfo:
             need_blocks = int(statinfo.st_size / 1024) + 1
-            if not utils.check_space(".", need_blocks):
+            if not utils.check_space(
+                path=".", min_kblocks=need_blocks, verbose=verbose
+            ):
                 raise RuntimeError(
                     f"Not enough disk space / quota in current directory to rewrite {tfn}."
                 )
@@ -132,7 +134,11 @@ def tarchmod(tfn: str, check_for_space: bool = True) -> str:
 
 @as_span("tar_up", arg_attrs=["*"])
 def tar_up(
-    directory: str, excludes: str, file: str = ".", check_for_space: bool = True
+    directory: str,
+    excludes: str,
+    file: str = ".",
+    check_for_space: bool = True,
+    verbose: int = 0,
 ) -> str:
     """build directory.tar from path/to/directory"""
     if not directory:
@@ -159,7 +165,9 @@ def tar_up(
                 blocks = 1
 
         if not utils.check_space(
-            ".", int(blocks / 2) + 1
+            path=".",
+            min_kblocks=int(blocks / 2) + 1,
+            verbose=verbose,
         ):  # assuming gzip gets 50% compression...
             raise RuntimeError(
                 f"Not enough disk space / quota in current directory to create tarfile of {directory}/{file}."
@@ -263,6 +271,7 @@ def do_tarballs(args: argparse.Namespace) -> None:
                         "/dev/null",
                         os.path.basename(pfn),
                         check_for_space=check_for_space,
+                        verbose=getattr(args, "verbose", 0),
                     )
                     try:
                         os.chmod(pfn, savemode)
@@ -365,7 +374,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
     if not check_for_space and (getattr(args, "verbose", 0) > 0):
         print("Skipping disk_space check for processing tarball")
 
-    tfn = tarchmod(origtfn, check_for_space)
+    tfn = tarchmod(origtfn, check_for_space, getattr(args, "verbose", 0))
 
     location: Optional[str] = ""
     if args.use_dropbox == "cvmfs" or args.use_dropbox is None:

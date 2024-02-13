@@ -550,7 +550,8 @@ def check_space_df(
         fields = re.split(r"\s+", line.strip())
         if verbose > 1:
             sys.stderr.write(f"fields: {repr(fields)}\n")
-        print(line, fields)
+        if verbose:
+            print(line, fields)
         if len(fields) < mountcol:
             continue
         if fields[0] == headers[0]:
@@ -618,7 +619,8 @@ def check_space_quota(
         fields = re.split(r"\s+", line.strip())
         if verbose > 1:
             sys.stderr.write(f"fields: {repr(fields)}\n")
-        print(line, fields)
+        if verbose:
+            print(line, fields)
 
         if len(fields) < flimitcol:
             # short/empty line, skip
