@@ -215,7 +215,7 @@ def checkToken_right_group_and_role(
     """Check if token in $BEARER_TOKEN_FILE is for right experiment"""
     token_groups_roles = get_and_verify_wlcg_groups_from_token(token)
     token_group, token_role = get_group_and_role_from_token_claim(token_groups_roles)
-    if token_group != group or token_role != role:
+    if token_group.lower() != group.lower() or token_role.lower() != role.lower():
         raise ValueError(
             "BEARER_TOKEN_FILE contains a token with the wrong group or role. "
             f"jobsub expects a token with group {group} and role {role}. "
