@@ -1,4 +1,5 @@
 """ Code factored out of jobsub_submit """
+
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 import glob
 import os
@@ -57,15 +58,18 @@ def render_files(
     # make sure we have enough disk space...
     if not values.get("skip_check_disk_space", False):
         if not utils.check_space(
-            dest, min_kblocks=6 * len(flist), min_files=len(flist)
+            dest,
+            min_kblocks=6 * len(flist),
+            min_files=len(flist),
+            verbose=values.get("verbose", 0),
         ):
             raise RuntimeError(f"Insufficient disk space/quota in {dest} to submit job")
     else:
-        if getattr(values, "verbose", 0) > 0:
+        if values.get("verbose", 0) > 0:
             print(f"Skipping disk_space check in {dest}")
 
     for f in flist:
-        if values["verbose"] > 0:
+        if values.get("verbose", 0) > 0:
             print(f"rendering: {f}")
         bf = os.path.basename(f)
         rendered_file = os.path.join(dest, bf)
