@@ -98,7 +98,7 @@ def tarchmod(tfn: str, check_for_space: bool = True, verbose: int = 0) -> str:
                 path=".", min_kblocks=need_blocks, verbose=verbose
             ):
                 raise RuntimeError(
-                    f"not enough free disk/quota in current directory to rewrite {tfn}."
+                    f"Not enough disk space / quota in current directory to rewrite {tfn}."
                 )
         else:
             raise RuntimeError(f"Cannot stat() tarfile {tfn}, does it exist?")

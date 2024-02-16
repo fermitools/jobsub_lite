@@ -63,7 +63,7 @@ def render_files(
             min_files=len(flist),
             verbose=values.get("verbose", 0),
         ):
-            raise RuntimeError(f"Insufficient disk space/quota in {dest} to submit job")
+            raise RuntimeError(f"Not enough disk space/quota in {dest} to submit job")
     else:
         if values.get("verbose", 0) > 0:
             print(f"Skipping disk_space check in {dest}")
