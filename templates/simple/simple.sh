@@ -167,20 +167,9 @@ cat << '_HEREDOC_' > ${JSB_TMP}/ifdh.sh
 which ifdh > /dev/null 2>&1
 has_ifdh=$?
 if [ "$has_ifdh" -ne "0" ] ; then
-    unset PRODUCTS
-    for setup_file in /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups /grid/fermiapp/products/common/etc/setups.sh /fnal/ups/etc/setups.sh ; do
-      if [ -e "$setup_file" ] && [ "$has_ifdh" -ne "0" ]; then
-         source $setup_file
-         ups exist ifdhc $IFDH_VERSION
-         has_ifdh=$?
-         if [ "$has_ifdh" = "0" ] ; then
-             setup ifdhc $IFDH_VERSION
-             break
-         else
-            unset PRODUCTS
-         fi
-     fi
-   done
+    . /cvmfs/fermilab.opensciencegrid.org/packages/common/setup-env.sh
+    sos=$(spack arch --operating-system)
+    spack env activate jobsub_env_$sos_${IFDH_VERSION:-current}
 fi
 which ifdh > /dev/null 2>&1
 if [ "$?" -ne "0" ] ; then
