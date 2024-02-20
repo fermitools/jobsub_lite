@@ -19,7 +19,7 @@ __title__ = "jobsub_lite"
 __summary__ = "The local HTCondor job submission software for Fermilab users to submit jobs to local FermiGrid resources and to the Open Science Grid."
 __uri__ = "https://fifewiki.fnal.gov/wiki/Jobsub_Lite"
 
-__version__ = "1.5.1"
+__version__ = "1.6"
 __email__ = "jobsub-support@fnal.gov"
 
 __license__ = "Apache License, Version 2.0"
