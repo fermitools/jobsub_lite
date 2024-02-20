@@ -169,7 +169,7 @@ has_ifdh=$?
 if [ "$has_ifdh" -ne "0" ] ; then
     . /cvmfs/fermilab.opensciencegrid.org/packages/common/setup-env.sh
     sos=$(spack arch --operating-system)
-    spack env activate jobsub_env_$sos_${IFDH_VERSION:-current}
+    spack env activate jobsub_env_${sos}_${IFDH_VERSION:-current}
 fi
 which ifdh > /dev/null 2>&1
 if [ "$?" -ne "0" ] ; then
