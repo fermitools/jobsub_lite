@@ -61,6 +61,15 @@ def test_check_space1():
     assert not utils.check_space("/tmp", 100000000, verbose=2)
 
 
+def test_check_space2():
+    save = os.environ["PATH"]
+    os.environ["PATH"] = f"{DATADIR}/bad_cmd_bin:{os.environ['PATH']}"
+    assert utils.check_space(os.environ["HOME"], 10, verbose=2)
+    # this will return true, because df is broken
+    assert utils.check_space("/tmp", 100000000, verbose=2)
+    os.environ["PATH"] = save
+
+
 def site_and_usage_model_test_data():
     """Pull in site and usage model test data from data file and
     return a list of test data for use in test"""
