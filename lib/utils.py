@@ -526,7 +526,8 @@ def check_space_df(
     path: str, min_kblocks: int = 100, min_files: int = 20, verbose: int = 0
 ) -> Tuple[str, bool]:
     """check for enough disk space at path, also return fs mountpoint"""
-    cmd = f"df -k {path}"
+    # pylint: disable=too-many-branches,too-many-statements
+    cmd = f"LC_ALL=C df -k {path}"
     # sample out:
     # ====================
     # Filesystem                      1K-blocks        Used Available Use% Mounted on
@@ -540,9 +541,24 @@ def check_space_df(
     with os.popen(cmd) as pfd:
         out = pfd.read()
     lines = re.split("\n", out)
+
+    if not lines:
+        if verbose:
+            sys.stderr.write(
+                f"Warning: could not get disk space info for {path} from df\n"
+            )
+        return "", True
+
     headers = re.split(r"\s+", lines[0].strip())
-    availcol = headers.index("Available")
-    mountcol = headers.index("Mounted")
+    try:
+        availcol = headers.index("Available")
+        mountcol = headers.index("Mounted")
+    except ValueError:
+        if verbose:
+            sys.stderr.write(
+                f"Warning: could not get disk space info for {path} from df\n"
+            )
+        return "", True
 
     if verbose > 1:
         sys.stderr.write(f"headers: {repr(headers)}\n")
@@ -575,8 +591,9 @@ def check_space_quota(
     path: str, fs: str, min_kblocks: int = 100, min_files: int = 20, verbose: int = 0
 ) -> bool:
     """check for enough qutoa at path/fs location"""
+    # pylint: disable=too-many-branches,too-many-statements
     # use -w and -p to quota to get parseable output...
-    cmd = f"quota -wp -ug -f  {fs} 2>/dev/null"
+    cmd = f"LC_ALL=C quota -wp -ug -f  {fs} 2>/dev/null"
     if verbose > 1:
         sys.stderr.write(f"running: {cmd}\n")
     with os.popen(cmd) as pfd:
@@ -612,8 +629,15 @@ def check_space_quota(
     headers = re.split(r"\s+", lines[1].strip())
     if verbose > 1:
         sys.stderr.write(f"headers: {repr(headers)}\n")
-    blimitcol = headers.index("limit")
-    flimitcol = headers.index("limit", blimitcol + 1)
+    try:
+        blimitcol = headers.index("limit")
+        flimitcol = headers.index("limit", blimitcol + 1)
+    except ValueError:
+        if verbose:
+            sys.stderr.write(
+                f"Warning: could not parse quota info for {path} from quota\n"
+            )
+        return True
 
     for line in lines:
         fields = re.split(r"\s+", line.strip())
