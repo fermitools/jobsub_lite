@@ -1,12 +1,12 @@
 [
     {
-        "singularity_image_arg": "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
+        "singularity_image_arg": "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest",
         "lines_arg": [
             "key1=value1",
             "key2=value2",
             "key3=value3"
         ],
-        "expected_singularity_image": "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
+        "expected_singularity_image": "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest",
         "expected_lines": [
             "key1=value1",
             "key2=value2",
@@ -15,7 +15,7 @@
         "helptext": "--singularity_image=DEFAULT_SINGULARITY_IMAGE, --lines does not have SingularityImage:  DEFAULT_SINGULARITY_IMAGE, lines=old lines"
     },
     {
-        "singularity_image_arg": "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
+        "singularity_image_arg": "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest",
         "lines_arg": [
             "key1=value1",
             "key2=value2",
