@@ -628,7 +628,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--apptainer-image",
         default=DEFAULT_SINGULARITY_IMAGE,
         help="Singularity image to run jobs in.  Default is "
-        "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest",
+        "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest",
     )
     singularity_group.add_argument(
         "--no-singularity",

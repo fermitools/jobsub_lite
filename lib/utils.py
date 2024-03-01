@@ -38,7 +38,7 @@ import version
 ONSITE_SITE_NAME = "FermiGrid"
 DEFAULT_USAGE_MODELS = ["DEDICATED", "OPPORTUNISTIC", "OFFSITE"]
 DEFAULT_SINGULARITY_IMAGE = (
-    "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest"
+    "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest"
 )
 
 
@@ -823,10 +823,10 @@ def resolve_singularity_image(
 
     # Parse lines.
     # Look for something like:
-    #     '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\\\"'
+    #     '+SingularityImage=\\\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest\\\"'
     # in lines and remove it while setting lines_singularity_image
     # In the above example, if there were such a line, lines_singularity_image would be set to
-    # "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest"
+    # "/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-el9:latest"
     for line in lines:
         m = lines_singularity_re.match(line)
         if m:
