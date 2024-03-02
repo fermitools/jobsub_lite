@@ -6,7 +6,6 @@ import os
 import os.path
 from typing import Union, List, Dict, Any
 from tracing import as_span
-import utils
 
 import jinja2 as jinja  # type: ignore
 
@@ -54,19 +53,6 @@ def render_files(
 
     # add destination dir to values for template
     values["cwd"] = dest
-
-    # make sure we have enough disk space...
-    if not values.get("skip_check_disk_space", False):
-        if not utils.check_space(
-            dest,
-            min_kblocks=6 * len(flist),
-            min_files=len(flist),
-            verbose=values.get("verbose", 0),
-        ):
-            raise RuntimeError(f"Not enough disk space/quota in {dest} to submit job")
-    else:
-        if values.get("verbose", 0) > 0:
-            print(f"Skipping disk_space check in {dest}")
 
     for f in flist:
         if values.get("verbose", 0) > 0:
