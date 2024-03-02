@@ -25,7 +25,17 @@ def get_basefiles(dlist: List[str]) -> List[str]:
 
 
 @as_span(name="render_files", arg_attrs=["*"])
-def render_files(  # pylint: disable=too-many-branches
+def render_files(
+    srcdir: str,
+    values: Dict[str, Any],
+    dest: str,
+    dlist: Union[None, List[str]] = None,
+    xfer: bool = True,
+) -> None:
+    _render_files(srcdir, values, dest, dlist, xfer)
+
+
+def _render_files(  # pylint: disable=too-many-branches
     srcdir: str,
     values: Dict[str, Any],
     dest: str,

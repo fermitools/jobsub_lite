@@ -61,3 +61,10 @@ def check_user_kerberos_creds():
 @pytest.fixture
 def set_group_fermilab(monkeypatch):
     monkeypatch.setenv("GROUP", "fermilab")
+
+
+# fs here is referring to a pyfakefs fake file system.  pyfakefs is a pytest plugin.
+# By running "pip install pyfakefs", we can use the "fs" fixture in pytest tests and fixtures
+@pytest.fixture
+def fakefs(fs):
+    yield fs
