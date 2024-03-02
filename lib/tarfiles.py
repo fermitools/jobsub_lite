@@ -17,6 +17,7 @@
 # pylint: disable=fixme
 """ tarfile upload related code """
 import argparse
+import errno
 import hashlib
 import http.client
 import itertools
@@ -115,6 +116,13 @@ def tarchmod(tfn: str, verbose: int = 0) -> str:
                 "please use the -f option.\n"
             )
         raise
+    except OSError:
+        print(
+            f"There was an error compressing the tarfile {tfn} and changing the permissions of the contents. "
+            "This is most likely because there is not enough disk space in the the staging directory "
+            f"{os.path.dirname(ofn)}"
+        )
+        raise
     return ofn
 
 
@@ -144,9 +152,18 @@ def tar_up(
     excludes = f"--exclude-from {excludes} --exclude {tarfile}"
     # note: the TZ=UTC stops tar from whining about the date format
     # if we are doing the --mtime flag, above...
-    os.system(
-        f"TZ=UTC GZIP=-n tar czvf {tarfile} {excludes} {mtime} --directory {directory} {file}"
-    )
+    try:
+        os.system(
+            f"TZ=UTC GZIP=-n tar czvf {tarfile} {excludes} {mtime} --directory {directory} {file}"
+        )
+    except OSError as e:
+        if e.errno == errno.ENOSPC:
+            print(
+                f"There was an error tarring up the requested directory {directory}. "
+                "This is most likely because there is not enough disk space in the the staging directory "
+                f"{os.path.dirname(file)}"
+            )
+        raise
     return tarfile
 
 
