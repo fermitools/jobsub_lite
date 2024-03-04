@@ -74,6 +74,10 @@ def check_for(cmd, string):
 
 @pytest.mark.integration
 def test_1(tiny_home):
+    # TODO:  These should be split out into a series of tests in the future.
+    # When tarfiles.tar_up transitions from using os.system to subprocess.run/call,
+    # We need to change the expected text for the --tar_file_name tardir:// test cases
+    # to "No space left on device"
     os.system(f"ls -la $HOME")
     os.system(f"df -h $HOME")
     print("With disk totally full:")
@@ -88,7 +92,8 @@ def test_1(tiny_home):
     )
     check_for(
         f"cd $HOME; jobsub_submit -G fermilab --tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit file:///bin/true",
-        "RuntimeError: Not enough disk space ",
+        # "No space left on device",
+        "Tarring up the directory",
     )
     os.system(f"rm $HOME/f3k")
     print("===================")
@@ -97,7 +102,7 @@ def test_1(tiny_home):
     os.system(f"df -h $HOME")
     check_for(
         f"cd $HOME; jobsub_submit -G fermilab file:///bin/true",
-        "RuntimeError: Not enough disk space ",
+        "No space left on device",
     )
     check_for(
         f"cd $HOME; jobsub_submit -G fermilab --tar_file_name {os.path.dirname(__file__)}/data/tiny.tar file:///bin/true",
@@ -105,15 +110,17 @@ def test_1(tiny_home):
     )
     check_for(
         f"cd $HOME; jobsub_submit -G fermilab --tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit file:///bin/true",
-        "RuntimeError: Not enough disk space ",
+        # "No space left on device",
+        "Tarring up the directory",
     )
     os.system(f"rm $HOME/f16k")
     print("===================")
     print("With 18k free:")
     print("===================")
     os.system(f"df -h $HOME")
+    # Note:  Here, the tarball creation will work, but there won't be space to copy in the submit files
     check_for(
         f"cd $HOME; jobsub_submit -G fermilab --tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit file:///bin/true",
-        "RuntimeError: Not enough disk space ",
+        "No space left on device",
     )
     print("===================")

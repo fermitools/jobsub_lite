@@ -152,10 +152,23 @@ def tar_up(
     excludes = f"--exclude-from {excludes} --exclude {tarfile}"
     # note: the TZ=UTC stops tar from whining about the date format
     # if we are doing the --mtime flag, above...
+
+    # TODO Right now, the except OSError doesn't actually catch the error, since os.system
+    # never raises the exception.  However, we need to carefully move this over to using
+    # subprocess.call or subprocess.run, and then the except clause should work as needed
     try:
-        os.system(
+        cmd_status = os.system(
             f"TZ=UTC GZIP=-n tar czvf {tarfile} {excludes} {mtime} --directory {directory} {file}"
         )
+        # This part is needed only until we transition away from os.system() here
+        exit_status: int = 0
+        if os.WIFEXITED(cmd_status):
+            exit_status = os.WEXITSTATUS(cmd_status)
+        if exit_status > 0:
+            # This will get caught by the general except Exception
+            raise Exception(
+                f"Tarring up the directory {directory} returned a non-zero exit code"
+            )
     except OSError as e:
         if e.errno == errno.ENOSPC:
             print(
@@ -163,6 +176,9 @@ def tar_up(
                 "This is most likely because there is not enough disk space in the the staging directory "
                 f"{os.path.dirname(file)}"
             )
+        raise
+    except Exception as e:
+        print(f"There was an error tarring up the directory {directory}: {e}.")
         raise
     return tarfile
 
