@@ -56,11 +56,6 @@ def test_old_dir(test_job_dir):
     return test_job_dir
 
 
-def test_check_space1():
-    assert utils.check_space(os.environ["HOME"], 10, verbose=2)
-    assert not utils.check_space("/tmp", 100000000, verbose=2)
-
-
 def site_and_usage_model_test_data():
     """Pull in site and usage model test data from data file and
     return a list of test data for use in test"""
@@ -275,7 +270,7 @@ class TestUtilsUnit:
         # I honestly can't think of any combos that don't work/won't get corrected before we get to validation,
         # but I'm leaving this here unless I missed something
         _should_not_work = []
-        for (sites, usage_model, resource_provides_quoted) in _should_not_work:
+        for sites, usage_model, resource_provides_quoted in _should_not_work:
             with pytest.raises(
                 utils.SiteAndUsageModelConflictError, match="are in conflict"
             ):

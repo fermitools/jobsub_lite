@@ -1,15 +1,15 @@
 """ Code factored out of jobsub_submit """
 
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
+import errno
 import glob
 import os
 import os.path
+import sys
 from typing import Union, List, Dict, Any
 from tracing import as_span
-import utils
 
 import jinja2 as jinja  # type: ignore
-
 
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -26,6 +26,16 @@ def get_basefiles(dlist: List[str]) -> List[str]:
 
 @as_span(name="render_files", arg_attrs=["*"])
 def render_files(
+    srcdir: str,
+    values: Dict[str, Any],
+    dest: str,
+    dlist: Union[None, List[str]] = None,
+    xfer: bool = True,
+) -> None:
+    _render_files(srcdir, values, dest, dlist, xfer)
+
+
+def _render_files(  # pylint: disable=too-many-branches
     srcdir: str,
     values: Dict[str, Any],
     dest: str,
@@ -55,19 +65,7 @@ def render_files(
     # add destination dir to values for template
     values["cwd"] = dest
 
-    # make sure we have enough disk space...
-    if not values.get("skip_check_disk_space", False):
-        if not utils.check_space(
-            dest,
-            min_kblocks=6 * len(flist),
-            min_files=len(flist),
-            verbose=values.get("verbose", 0),
-        ):
-            raise RuntimeError(f"Not enough disk space/quota in {dest} to submit job")
-    else:
-        if values.get("verbose", 0) > 0:
-            print(f"Skipping disk_space check in {dest}")
-
+    rendered_file_list: List[str] = []
     for f in flist:
         if values.get("verbose", 0) > 0:
             print(f"rendering: {f}")
@@ -84,8 +82,23 @@ in its entirety.
 """
             print(err)
             raise
+        except OSError as e:
+            if e.errno == errno.ENOSPC:
+                print(
+                    f"There was no space in {dest} to write the necessary submission "
+                    f"files: {os.strerror(e.errno)}.  Please check the available disk "
+                    "space in your submission directory."
+                )
+                # Clean up files that created within this function call's scope
+                for _f in rendered_file_list:
+                    if values.get("verbose", 0) > 0:
+                        sys.stderr.write(f"cleaning file: {_f}")
+                    os.unlink(_f)
+            raise
+
         if rendered_file.endswith(".sh"):
             os.chmod(rendered_file, 0o755)
         else:
             if values.get("verbose", 0) > 0:
                 print(f"Created file {rendered_file}")
+            rendered_file_list.append(rendered_file)

@@ -300,6 +300,27 @@ class TestTarfilesUnit:
             tarfiles.tarchmod(str(tmp_file))
 
     @pytest.mark.unit
+    def test_tarchmod_full_disk(self, fakefs):
+        """Test that if we try to compress a tarfile where there
+        is no space, we fail with the right error"""
+        _prefix = os.path.dirname(
+            os.path.abspath(__file__)
+        )  # /path/to/jobsub_lite_repo/tests/
+        source_tarball_path = os.path.join(_prefix, "data", "tiny.tar")
+
+        # Figure out how much space we need for our fake FS and set it up
+        fakefs.pause()
+        source_tarball_stat = os.stat(source_tarball_path)
+        fakefs.set_disk_usage(source_tarball_stat.st_size)
+        fakefs.resume()
+
+        fakefs.add_real_file(source_tarball_path, True, "/tiny.tar")
+
+        # The actual test
+        with pytest.raises(OSError, match="No space left on device"):
+            tarfiles.tarchmod("/tiny.tar")
+
+    @pytest.mark.unit
     def test_setup_fixed_server_no_server_set(
         self,
         del_jobsub_dropbox_server_list,

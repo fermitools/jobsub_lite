@@ -17,6 +17,7 @@
 # pylint: disable=fixme
 """ tarfile upload related code """
 import argparse
+import errno
 import hashlib
 import http.client
 import itertools
@@ -38,7 +39,6 @@ from requests.auth import AuthBase  # type: ignore # pylint: disable=import-erro
 import fake_ifdh
 from creds import get_creds, CredentialSet
 from tracing import as_span, add_event
-import utils
 
 try:
     _NUM_RETRIES_ENV = os.getenv("JOBSUB_UPLOAD_NUM_RETRIES", "20")
@@ -80,7 +80,8 @@ def check_we_can_write() -> None:
         sys.exit(1)
 
 
-def tarchmod(tfn: str, check_for_space: bool = True, verbose: int = 0) -> str:
+# pylint: disable=unused-argument
+def tarchmod(tfn: str, verbose: int = 0) -> str:
     """
     copy a tarfile to a compressed tarfile, while:
     * changing modes of contents to 755
@@ -88,20 +89,6 @@ def tarchmod(tfn: str, check_for_space: bool = True, verbose: int = 0) -> str:
     """
     ofn = os.path.basename(f"{tfn}{os.getpid()}.tbz2")
     check_we_can_write()
-
-    # also make sure there is enough space...
-    if check_for_space:
-        statinfo = os.stat(tfn)
-        if statinfo:
-            need_blocks = int(statinfo.st_size / 1024) + 1
-            if not utils.check_space(
-                path=".", min_kblocks=need_blocks, verbose=verbose
-            ):
-                raise RuntimeError(
-                    f"Not enough disk space / quota in current directory to rewrite {tfn}."
-                )
-        else:
-            raise RuntimeError(f"Cannot stat() tarfile {tfn}, does it exist?")
 
     try:
         with tarfile_mod.open(tfn, "r|*") as fin, tarfile_mod.open(
@@ -129,6 +116,13 @@ def tarchmod(tfn: str, check_for_space: bool = True, verbose: int = 0) -> str:
                 "please use the -f option.\n"
             )
         raise
+    except OSError:
+        print(
+            f"There was an error compressing the tarfile {tfn} and changing the permissions of the contents. "
+            "This is most likely because there is not enough disk space in the the staging directory "
+            f"{os.path.dirname(ofn)}"
+        )
+        raise
     return ofn
 
 
@@ -137,8 +131,7 @@ def tar_up(
     directory: str,
     excludes: str,
     file: str = ".",
-    check_for_space: bool = True,
-    verbose: int = 0,
+    verbose: int = 0,  # pylint: disable=unused-argument
 ) -> str:
     """build directory.tar from path/to/directory"""
     if not directory:
@@ -154,33 +147,39 @@ def tar_up(
     tarfile = os.path.basename(f"{directory}{os.getpid()}.tgz")
     check_we_can_write()
 
-    if check_for_space:
-        # check for space for tarfile
-        with os.popen(f"du -sk {directory}/{file}", "r") as fdu:
-            s = fdu.read()
-            m = re.match(r"(\d+)", s)
-            if m:
-                blocks = int(m.group(1))
-            else:
-                blocks = 1
-
-        if not utils.check_space(
-            path=".",
-            min_kblocks=int(blocks / 2) + 1,
-            verbose=verbose,
-        ):  # assuming gzip gets 50% compression...
-            raise RuntimeError(
-                f"Not enough disk space / quota in current directory to create tarfile of {directory}/{file}."
-            )
-
     if not excludes:
         excludes = os.path.dirname(__file__) + "/../etc/excludes"
     excludes = f"--exclude-from {excludes} --exclude {tarfile}"
     # note: the TZ=UTC stops tar from whining about the date format
     # if we are doing the --mtime flag, above...
-    os.system(
-        f"TZ=UTC GZIP=-n tar czvf {tarfile} {excludes} {mtime} --directory {directory} {file}"
-    )
+
+    # TODO Right now, the except OSError doesn't actually catch the error, since os.system
+    # never raises the exception.  However, we need to carefully move this over to using
+    # subprocess.call or subprocess.run, and then the except clause should work as needed
+    try:
+        cmd_status = os.system(
+            f"TZ=UTC GZIP=-n tar czvf {tarfile} {excludes} {mtime} --directory {directory} {file}"
+        )
+        # This part is needed only until we transition away from os.system() here
+        exit_status: int = 0
+        if os.WIFEXITED(cmd_status):
+            exit_status = os.WEXITSTATUS(cmd_status)
+        if exit_status > 0:
+            # This will get caught by the general except Exception
+            raise Exception(
+                f"Tarring up the directory {directory} returned a non-zero exit code"
+            )
+    except OSError as e:
+        if e.errno == errno.ENOSPC:
+            print(
+                f"There was an error tarring up the requested directory {directory}. "
+                "This is most likely because there is not enough disk space in the the staging directory "
+                f"{os.path.dirname(file)}"
+            )
+        raise
+    except Exception as e:
+        print(f"There was an error tarring up the directory {directory}: {e}.")
+        raise
     return tarfile
 
 
@@ -242,8 +241,6 @@ def do_tarballs(args: argparse.Namespace) -> None:
 
     pnfs_classad_line: List[str] = []
 
-    check_for_space = not getattr(args, "skip_check_disk_space", False)
-
     try:
         for fn in args.input_file:
             if fn.startswith("dropbox:"):
@@ -270,7 +267,6 @@ def do_tarballs(args: argparse.Namespace) -> None:
                         os.path.dirname(pfn),
                         "/dev/null",
                         os.path.basename(pfn),
-                        check_for_space=check_for_space,
                         verbose=getattr(args, "verbose", 0),
                     )
                     try:
@@ -324,7 +320,6 @@ def do_tarballs(args: argparse.Namespace) -> None:
                 tarfile = tar_up(
                     tfn[7:],
                     args.tarball_exclusion_file,
-                    check_for_space=check_for_space,
                 )
                 tfn = f"dropbox:{tarfile}"
                 clean_up.append(tarfile)
@@ -370,11 +365,7 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
         http.client.HTTPConnection.debuglevel = 5
 
     # redo tarfile to have contents with world read perms before publishing
-    check_for_space = not getattr(args, "skip_check_disk_space", False)
-    if not check_for_space and (getattr(args, "verbose", 0) > 0):
-        print("Skipping disk_space check for processing tarball")
-
-    tfn = tarchmod(origtfn, check_for_space, getattr(args, "verbose", 0))
+    tfn = tarchmod(origtfn, getattr(args, "verbose", 0))
 
     location: Optional[str] = ""
     if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
