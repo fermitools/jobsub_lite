@@ -3,6 +3,7 @@ pools:
     Info about what condor pools we know about.  However we don't actually store the info here,
     we just parse it out of the environment.
 """
+
 # pylint: disable=global-statement, global-variable-not-assigned
 import argparse
 import json
@@ -33,6 +34,7 @@ def set_pool(name: str) -> None:
         raise KeyError(
             f"--global-pool value must be one of ({', '.join(poolmap.keys())})"
         )
+    packages.SAVED_ENV = os.environ.copy()  # Build on top of the old environment
     os.environ["_condor_COLLECTOR_HOST"] = poolmap[name]["collector"]
     packages.SAVED_ENV["_condor_COLLECTOR_HOST"] = poolmap[name]["collector"]
     if not SAVE_COLLECTOR_HOST:
