@@ -295,12 +295,15 @@ def submit(
     # the updated one in the condor release
     #
     jldir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    _sec_cred_storer_val = (
-        f"{jldir}/bin/condor_vault_storer"
-        if not vargs.get("verbose")
-        else f'"{jldir}/bin/condor_vault_storer -v"'
-    )
-    cmd = f"_condor_SEC_CREDENTIAL_STORER={_sec_cred_storer_val} {cmd}"
+
+    _sec_cred_storer_val = os.environ.get("_condor_SEC_CREDENTIAL_STORER", None)
+    if _sec_cred_storer_val is None:
+        _sec_cred_storer_val = (
+            f"{jldir}/bin/condor_vault_storer"
+            if not vargs.get("verbose")
+            else f"{jldir}/bin/condor_vault_storer -v"
+        )
+    cmd = f'_condor_SEC_CREDENTIAL_STORER="{_sec_cred_storer_val}" {cmd}'
 
     packages.orig_env()
     verbose = int(vargs.get("verbose", 0))
