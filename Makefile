@@ -3,7 +3,7 @@ NAME = jobsub_lite
 # In most cases, these two lines should be ALL that need to be changed
 # Warning:  Make sure there is NO trailing whitespace in either of these lines!!
 # Set RC to 0 for final release
-VERSION = v1.6
+VERSION = v1.7
 RC = 0
 ### End expected changes
 
