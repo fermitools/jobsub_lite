@@ -1,4 +1,5 @@
 # pylint: disable=line-too-long
+import copy
 import os
 import sys
 import pytest
@@ -168,6 +169,33 @@ class TestCondorUnit:
         res = condor.submit(get_submit_file, TestUnit.test_vargs, TestUnit.test_schedd)
         print("got: ", res)
         assert res
+
+    @pytest.mark.unit
+    def test_submit_sec_cred_storer_predefined(
+        self, get_submit_file, needs_credentials, capsys, monkeypatch
+    ):
+        """actually submit a job with condor_submit"""
+        """Make sure that if we have _condor_SEC_CREDENTIAL_STORER defined before we run
+        condor_submit, we coerce it to the correct value.  This is how all POMS submissions expect
+        to operate"""
+        monkeypatch.setenv("_condor_SEC_CREDENTIAL_STORER", "/bin/true")
+        vargs = copy.deepcopy(TestUnit.test_vargs)
+        vargs["verbose"] = 1
+        res = condor.submit(get_submit_file, vargs, TestUnit.test_schedd)
+        print("got: ", res)
+        assert res  # Did submission succeed?
+
+        jl_condor_vault_storer_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "bin", "condor_vault_storer"
+        )
+        captured = capsys.readouterr()
+        # Make sure our submission used the correct _condor_SEC_CREDENTIAL_STORER
+        assert (
+            f'_condor_SEC_CREDENTIAL_STORER="{jl_condor_vault_storer_path} -v"'
+            in captured.out
+        )
+        # ...but that the overall environment was unchanged
+        assert os.getenv("_condor_SEC_CREDENTIAL_STORER") == "/bin/true"
 
     @pytest.mark.unit
     def test_submit_too_many_procs(self, get_submit_file, needs_credentials, capsys):
