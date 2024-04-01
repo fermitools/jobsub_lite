@@ -20,7 +20,7 @@ transfer_error     = True
 transfer_executable= True
 transfer_output_files=.empty_file
 when_to_transfer_output = ON_EXIT_OR_EVICT
-request_memory = 100mb
+request_memory = 500mb
 
 +JobsubClientDN="$ENV(DN)"
 +JobsubClientIpAddress="131.225.60.169"
