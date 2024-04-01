@@ -296,13 +296,17 @@ def submit(
     #
     jldir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    _sec_cred_storer_val = os.environ.get("_condor_SEC_CREDENTIAL_STORER", None)
-    if _sec_cred_storer_val is None:
-        _sec_cred_storer_val = (
-            f"{jldir}/bin/condor_vault_storer"
-            if not vargs.get("verbose")
-            else f"{jldir}/bin/condor_vault_storer -v"
-        )
+    # Set the _condor_SEC_CREDENTIAL_STORER environment variable to the path of the
+    # correct vault token storer script
+    # In the condor_vault_storer output, debug gives us more output than verbose,
+    # so make that mapping from our verbose/output to condor_vault_storer's
+    _sec_cred_storer_val = f"{jldir}/bin/condor_vault_storer"
+    if vargs.get("verbose", 0) == 1:
+        # Verbose
+        _sec_cred_storer_val = f"{_sec_cred_storer_val} -v"
+    elif vargs.get("verbose", 0) > 1:
+        # Debug
+        _sec_cred_storer_val = f"{_sec_cred_storer_val} -d"
     cmd = f'_condor_SEC_CREDENTIAL_STORER="{_sec_cred_storer_val}" {cmd}'
 
     packages.orig_env()
