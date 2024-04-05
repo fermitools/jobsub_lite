@@ -385,9 +385,7 @@ def getProxy(
 
 
 # pylint: disable=invalid-name
-gfal_clean_env = (
-    "unset PYTHONHOME PYTHONPATH LD_LIBRARY_PATH GFAL_PLUGIN_DIR GFAL_CONFIG_DIR"
-)
+gfal_clean_env = "unset PYTHONHOME PYTHONPATH LD_LIBRARY_PATH GFAL_PLUGIN_DIR GFAL_CONFIG_DIR;  [ -s ${BEARER_TOKEN_FILE:-/dev/null} ] && export BEARER_TOKEN=`cat ${BEARER_TOKEN_FILE}`"
 
 
 def fix_pnfs(path: str) -> str:
