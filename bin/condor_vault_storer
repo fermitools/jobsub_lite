@@ -4,13 +4,10 @@
 # Can be run automatically from condor_submit when configured as
 #   SEC_CREDENTIAL_STORER.
 
-# debugging -- turn on by uncommenting
-#lf=/tmp/csv_$$.log
-#exec 2> $lf
-#set -x
-#echo
-#echo condor_vault_storer: debug log on $lf
-#echo
+ME="${0##*/}"
+
+ARGS=("$@")
+
 # putting this here for now, but POMS should do this for us -- mengel
 if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" -a \
      -z "$CONDOR_VAULT_STORER_ID" -a -z "$CONDOR_VAULT_STORER_USER" ]; then
@@ -20,18 +17,6 @@ if [ `id -u` = 55218 -a -n "$POMS4_SUBMISSION_ID" -a \
    cp $vtk /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
    chmod 400 /tmp/vt_$CONDOR_VAULT_STORER_ID-$JOBSUB_GROUP
 fi
-
-condor_user() {
-  : credd ${_condor_CREDD_HOST}
-  if [ -n "${CONDOR_VAULT_STORER_USER:-}" ]
-  then
-     echo "-u ${CONDOR_VAULT_STORER_USER}"
-  fi
-}
-
-ME="${0##*/}"
-
-ARGS=("$@")
 
 # When condor_submit launches this the cursor is not at the beginning
 #   of a new line, so always send a newline before anything else to
@@ -78,14 +63,21 @@ verbose()
     fi >&2
 }
 
+CONDOROPTS="`condor_config_val SEC_CREDENTIAL_VAULT_STORER_OPTS 2>/dev/null`"
 VERBOSE=
-while getopts "dv" opt; do
-    case ${opt} in
-        d) VERBOSE="-d";;
-        v) VERBOSE="-v";;
-        \?) usage;;
-    esac
-done
+parseopts()
+{
+    unset OPTIND
+    while getopts "dv" opt; do
+        case ${opt} in
+            d) VERBOSE="-d";;
+            v) VERBOSE="-v";;
+            \?) usage;;
+        esac
+    done
+}
+parseopts $CONDOROPTS
+parseopts "$@"
 shift $((OPTIND -1))
 
 if [ "$#" = 0 ]; then
@@ -197,6 +189,7 @@ for REQUEST; do
     HANDLESERVICE=""
     HANDLESTOREOPTS=("${STOREOPTS[@]}")
     HANDLEOPTS=("${OPTS[@]}")
+    REDUCED=false
     for PART in "${PARTS[@]:1}"; do
         VAL="${PART#*=}"
         case "$PART" in
@@ -207,14 +200,19 @@ for REQUEST; do
             scopes=*)
                 HANDLESTOREOPTS+=("-S" "$VAL")
                 HANDLEOPTS+=("--scopes=$VAL")
+                REDUCED=true
                 ;;
             audience=*)
                 HANDLESTOREOPTS+=("-A" "$VAL")
                 HANDLEOPTS+=("--audience=$VAL")
+                REDUCED=true
                 ;;
         esac
     done
 
+    if $REDUCED && [ -z "$HANDLE" ]; then
+        fatal "reduced scopes or audience require a handle"
+    fi
 
     if [ -n "$BTOKEN" ]; then
         OPTS=("-o" "$BTOKEN-$SERVICE" "${OPTS[@]}")
@@ -344,8 +342,12 @@ for REQUEST; do
     fi
 
     if [ -n "$HANDLE" ]; then
-        querycred $HANDLESERVICE "${HANDLESTOREOPTS[@]}"
-        VAULTURL="$HANDLEURL"
-        storecred $HANDLESERVICE "${HANDLESTOREOPTS[@]}"
+        if  $STOREVAULTTOKEN || ! querycred $HANDLESERVICE "${HANDLESTOREOPTS[@]}"; then
+            # There's not really a need to store this because of
+            #  $STOREVAULTTOKEN but that's rare enough that we might
+            #  as well, just in case the URL changes or something.
+            VAULTURL="$HANDLEURL"
+            storecred $HANDLESERVICE "${HANDLESTOREOPTS[@]}"
+        fi
     fi
 done
