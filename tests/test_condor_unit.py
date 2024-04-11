@@ -190,9 +190,10 @@ class TestCondorUnit:
         captured = capsys.readouterr()
         # Make sure our submission used the correct _condor_SEC_CREDENTIAL_STORER
         assert (
-            f'_condor_SEC_CREDENTIAL_STORER="{jl_condor_vault_storer_path} -v"'
+            f'_condor_SEC_CREDENTIAL_STORER="{jl_condor_vault_storer_path}"'
             in captured.out
         )
+        assert f'_condor_SEC_CREDENTIAL_VAULT_STORER_OPTS="-v"' in captured.out
         # ...but that the overall environment was unchanged
         assert os.getenv("_condor_SEC_CREDENTIAL_STORER") == "/bin/true"
 
@@ -216,9 +217,10 @@ class TestCondorUnit:
         captured = capsys.readouterr()
         # Make sure our submission used the correct _condor_SEC_CREDENTIAL_STORER
         assert (
-            f'_condor_SEC_CREDENTIAL_STORER="{jl_condor_vault_storer_path} -d"'
+            f'_condor_SEC_CREDENTIAL_STORER="{jl_condor_vault_storer_path}"'
             in captured.out
         )
+        assert f'_condor_SEC_CREDENTIAL_VAULT_STORER_OPTS="-d"' in captured.out
         # ...but that the overall environment was unchanged
         assert os.getenv("_condor_SEC_CREDENTIAL_STORER") == "/bin/true"
 
