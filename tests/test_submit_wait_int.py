@@ -231,7 +231,6 @@ def condor_dag_launch(dagfile, extra=""):
         line = subjin.readline()
         line = line.strip().replace("subject= ", "")
         os.environ["DN"] = line
-    os.environ["UID"] = str(os.getuid())
     if os.path.exists(f"{dagfile}.condor.sub"):
         os.unlink(f"{dagfile}.condor.sub")
     with dircontext(os.path.dirname(__file__) + "/data/condor_submit_dag"):
@@ -240,9 +239,10 @@ def condor_dag_launch(dagfile, extra=""):
 
 @pytest.mark.integration
 def test_condor_submit_dag1(samdev):
-    condor_dag_launch(
-        "dataset.dag", f"-append environment=SAM_PROJECT=proj_{int(time.time())}"
-    )
+    os.environ["SAM_PROJECT"] = "p" + str(int(time.time()))
+    os.environ["UID"] = str(os.getuid())
+    os.environ["USER"] = os.environ.get("USER", "sam")
+    condor_dag_launch("dataset.dag", f"-append getenv=UID,SAM_PROJECT,USER")
 
 
 def lookaround_launch(extra, verify_files=""):
