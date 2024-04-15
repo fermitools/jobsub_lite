@@ -31,6 +31,7 @@ import uuid
 
 import classad  # type: ignore # pylint: disable=import-error
 from tracing import get_propagator_carrier
+import token_mods
 
 from creds import CredentialSet
 import version
@@ -67,6 +68,11 @@ def cleanup(varg: Dict[str, Any]) -> None:
             sb = os.stat(entry.name)
             if entry.name.startswith("js_") and time.time() - sb.st_mtime > 604800:
                 cleandir(entry.name, verbose=varg["verbose"])
+
+    # if our BEARER_TOKEN_FILE ends with our pid, then we copied it and should
+    # clean it up...
+    if token_mods.is_copied_token(os.environ["BEARER_TOKEN_FILE"]):
+        os.unlink(os.environ["BEARER_TOKEN_FILE"])
 
 
 def sanitize_lines(linelist: List[str]) -> None:
