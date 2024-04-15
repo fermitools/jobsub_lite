@@ -301,13 +301,13 @@ def submit(
     # In the condor_vault_storer output, debug gives us more output than verbose,
     # so make that mapping from our verbose/output to condor_vault_storer's
     _sec_cred_storer_val = f"{jldir}/bin/condor_vault_storer"
+    cmd = f'_condor_SEC_CREDENTIAL_STORER="{_sec_cred_storer_val}" {cmd}'
     if vargs.get("verbose", 0) == 1:
         # Verbose
-        _sec_cred_storer_val = f"{_sec_cred_storer_val} -v"
+        cmd = f'_condor_SEC_CREDENTIAL_VAULT_STORER_OPTS="-v" {cmd}'
     elif vargs.get("verbose", 0) > 1:
         # Debug
-        _sec_cred_storer_val = f"{_sec_cred_storer_val} -d"
-    cmd = f'_condor_SEC_CREDENTIAL_STORER="{_sec_cred_storer_val}" {cmd}'
+        cmd = f'_condor_SEC_CREDENTIAL_VAULT_STORER_OPTS="-d" {cmd}'
 
     packages.orig_env()
     verbose = int(vargs.get("verbose", 0))
