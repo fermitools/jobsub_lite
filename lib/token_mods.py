@@ -54,6 +54,11 @@ def use_token_copy(tokenfile: str) -> str:
     return copyto
 
 
+def is_copied_token(tokenfile: str) -> bool:
+    """check if the tokenfile is a copy we made."""
+    return tokenfile.endswith(str(os.getpid()))
+
+
 def get_token_scope(tokenfilename: str) -> List[str]:
     """get the list of scopes from our token file"""
 
