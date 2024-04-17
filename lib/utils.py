@@ -72,6 +72,8 @@ def cleanup(varg: Dict[str, Any]) -> None:
     # if our BEARER_TOKEN_FILE ends with our pid, then we copied it and should
     # clean it up...
     if token_mods.is_copied_token(os.environ["BEARER_TOKEN_FILE"]):
+        if varg["verbose"] > 0:
+            sys.stderr.write(f'cleaning token copy:{os.environ["BEARER_TOKEN_FILE"]}\n')
         os.unlink(os.environ["BEARER_TOKEN_FILE"])
 
 
