@@ -399,6 +399,8 @@ class TestGetProxy:
 @pytest.mark.unit
 def test_cp():
     dest = __file__ + ".copy"
+    if os.path.exists(dest):
+        os.unlink(dest)
     fake_ifdh.cp(__file__, dest)
     assert os.path.exists(dest)
     os.unlink(dest)
