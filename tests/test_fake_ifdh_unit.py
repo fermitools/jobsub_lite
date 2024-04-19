@@ -232,7 +232,7 @@ _BadCheckTokenTestCase = namedtuple(
 )
 _bad_checkToken_test_cases = (
     _BadCheckTokenTestCase(
-        "fake_ifdh_tokens/no_groups.token", "fermilab", TypeError, "wlcg\.groups", None
+        "fake_ifdh_tokens/no_groups.token", "fermilab", TypeError, r"wlcg\.groups", None
     ),
     _BadCheckTokenTestCase(
         "fake_ifdh_tokens/malformed.token",
@@ -410,7 +410,7 @@ def test_cp():
         (["/fermilab"], ("fermilab", "Analysis"), None, None),
         (["/fermilab/production", "/fermilab"], ("fermilab", "production"), None, None),
         (["/hypot"], ("hypot", "Analysis"), None, None),
-        (["hypot"], None, ValueError, "wlcg\.groups.*token.*malformed"),
+        (["hypot"], None, ValueError, r"wlcg\.groups.*token.*malformed"),
     ],
 )
 @pytest.mark.unit
