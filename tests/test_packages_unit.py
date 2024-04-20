@@ -94,3 +94,20 @@ class TestPackagesUnit:
         env2 = os.environ.copy()
         # should have put the environment back
         assert env1 != env2
+
+
+@pytest.mark.unit
+def test_add_to_SAVED_ENV_if_not_empty():
+    """This test tests the add_to_SAVED_ENV_if_not_empty function, which governs access to packages.SAVED_ENV"""
+    # Test when SAVED_ENV is empty
+    packages.SAVED_ENV = {}
+    packages.add_to_SAVED_ENV_if_not_empty("key", "value")
+    assert packages.SAVED_ENV == {}
+
+    # Test when SAVED_ENV is not empty
+    packages.SAVED_ENV = {"existing_key": "existing_value"}
+    packages.add_to_SAVED_ENV_if_not_empty("new_key", "new_value")
+    assert packages.SAVED_ENV == {
+        "existing_key": "existing_value",
+        "new_key": "new_value",
+    }
