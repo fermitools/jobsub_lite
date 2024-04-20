@@ -12,6 +12,7 @@ import sys
 from typing import List, Set
 
 import scitokens  # type: ignore # pylint: disable=import-error
+import packages
 
 
 def get_job_scopes(
@@ -51,6 +52,11 @@ def use_token_copy(tokenfile: str) -> str:
     copyto = f"{tokenfile}.{pid}"
     shutil.copy(tokenfile, copyto)
     os.environ["BEARER_TOKEN_FILE"] = copyto
+    # This needs to be added so that any credential we set stays in both the environment
+    # modified before use_token_copy() is called (such as the POMS pkg_find case) and the
+    # environment in which this function is called.  So far, that seems to only be the case
+    # for submissions that use the poms_client, so when that is moved to POMS, this can be removed.
+    packages.add_to_SAVED_ENV_if_not_empty("BEARER_TOKEN_FILE", copyto)
     return copyto
 
 

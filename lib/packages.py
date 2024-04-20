@@ -32,6 +32,14 @@ def orig_env() -> None:
         os.environ.update(SAVED_ENV)
 
 
+def add_to_SAVED_ENV_if_not_empty(key: str, value: str) -> None:
+    """Add environment variable to SAVED_ENV, checking
+    first if SAVED_ENV is populated.  We only want to add
+    anything to SAVED_ENV if it's already populated"""
+    if SAVED_ENV:
+        SAVED_ENV[key] = value
+
+
 def pkg_find(p: str, qual: str = "") -> None:
     """
     Use Spack or UPS to find the package mentioned and stuff its
