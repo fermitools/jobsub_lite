@@ -36,7 +36,9 @@ def set_pool(name: str) -> None:
         )
     packages.SAVED_ENV = os.environ.copy()  # Build on top of the old environment
     os.environ["_condor_COLLECTOR_HOST"] = poolmap[name]["collector"]
-    packages.SAVED_ENV["_condor_COLLECTOR_HOST"] = poolmap[name]["collector"]
+    packages.add_to_SAVED_ENV_if_not_empty(
+        "_condor_COLLECTOR_HOST", poolmap[name]["collector"]
+    )
     if not SAVE_COLLECTOR_HOST:
         SAVE_COLLECTOR_HOST = condor.COLLECTOR_HOST
         SAVE_ONSITE_SITE_NAME = utils.ONSITE_SITE_NAME

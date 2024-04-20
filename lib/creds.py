@@ -58,7 +58,7 @@ class CredentialSet:
                 # modified before get_creds() is called (such as the POMS pkg_find case) and the
                 # environment in which this function is called.  So far, that seems to only be the case
                 # for submissions that use the poms_client, so when that is moved to POMS, this can be removed.
-                packages.SAVED_ENV[environ_key] = cred_path
+                packages.add_to_SAVED_ENV_if_not_empty(environ_key, cred_path)
 
 
 SUPPORTED_AUTH_METHODS = list(
