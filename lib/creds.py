@@ -18,6 +18,7 @@ import os
 from typing import Any, Dict, Optional, List
 
 import fake_ifdh
+import packages
 from tracing import as_span
 
 
@@ -53,6 +54,12 @@ class CredentialSet:
             environ_key = getattr(self, self_key, None)
             if environ_key:
                 os.environ[environ_key] = cred_path
+                # This needs to be added so that any credential we set stays in both the environment
+                # modified before get_creds() is called (such as the POMS pkg_find case) and the
+                # environment in which this function is called.  So far, that seems to only be the case
+                # for submissions that use the poms_client, so when that is moved to POMS, this can be removed.
+                packages.SAVED_ENV[environ_key] = cred_path
+                print(f"Set {environ_key} to {cred_path}")
 
 
 SUPPORTED_AUTH_METHODS = list(
