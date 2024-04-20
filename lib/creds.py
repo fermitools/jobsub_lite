@@ -59,7 +59,6 @@ class CredentialSet:
                 # environment in which this function is called.  So far, that seems to only be the case
                 # for submissions that use the poms_client, so when that is moved to POMS, this can be removed.
                 packages.SAVED_ENV[environ_key] = cred_path
-                print(f"Set {environ_key} to {cred_path}")
 
 
 SUPPORTED_AUTH_METHODS = list(
