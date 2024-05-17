@@ -47,6 +47,26 @@ def fermilab_token(clear_token, set_group_fermilab):
     return fake_ifdh.getToken("Analysis")
 
 
+@pytest.fixture
+def fake_proxy_path(tmp_path):
+    fake_path = tmp_path / "test_proxy"
+    if os.path.exists(fake_path):
+        try:
+            os.unlink(fake_path)
+        except:
+            pass
+    return fake_path
+
+
+@pytest.fixture
+def switch_to_invalid_kerb_cache(monkeypatch, tmp_path):
+    # Set the environment variable to an invalid path
+    fakefile = tmp_path / "invalid_kerb_cache"
+    fakefile.touch()
+    monkeypatch.setenv("KRB5CCNAME", f"FILE:{fakefile}")
+    yield
+
+
 class TestGetTmp:
     @pytest.mark.unit
     def test_getTmp(self):
@@ -393,6 +413,43 @@ class TestGetProxy:
         monkeypatch.setenv("X509_USER_PROXY", str(fake_path))
         monkeypatch.setenv("GROUP", "bozo")
         with pytest.raises(PermissionError):
+            fake_ifdh.getProxy("Analysis")
+
+    @pytest.mark.unit
+    def test_getProxy_fail_cigetcert_kerberos(
+        self,
+        switch_to_invalid_kerb_cache,
+        clear_x509_user_proxy,
+        clear_token,
+        fake_proxy_path,
+        monkeypatch,
+        tmp_path,
+    ):
+        fake_path = fake_proxy_path
+        monkeypatch.setenv("X509_USER_PROXY", str(fake_path))
+        monkeypatch.setenv("GROUP", "bozo")
+
+        # Should fail because cigetcert fails for kerberos issue
+        with pytest.raises(Exception, match="kerberos issue"):
+            fake_ifdh.getProxy("Analysis")
+
+    @pytest.mark.unit
+    def test_getProxy_fail_cigetcert_other(
+        self,
+        clear_x509_user_proxy,
+        clear_token,
+        monkeypatch,
+        tmp_path,
+    ):
+        # We're trying to force a permission-denied error here.  So try to write to /dev/null/fake_file, which can never exist since /dev/null isn't a directory
+        monkeypatch.setenv("X509_USER_PROXY", "/dev/null/fake_file")
+        monkeypatch.setenv("GROUP", "bozo")
+
+        # Should fail because cigetcert fails for kerberos issue
+        with pytest.raises(
+            PermissionError,
+            match="Cigetcert failed to get a proxy due to an unspecified issue",
+        ):
             fake_ifdh.getProxy("Analysis")
 
 
