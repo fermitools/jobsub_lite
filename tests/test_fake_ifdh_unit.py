@@ -378,38 +378,39 @@ class TestGetToken:
 
 class TestGetProxy:
     @pytest.mark.unit
-    def test_getProxy_good(check_user_kerberos_creds, clear_token, set_group_fermilab):
+    def test_getProxy_good(
+        self, check_user_kerberos_creds, clear_token, set_group_fermilab
+    ):
         proxy = fake_ifdh.getProxy("Analysis")
         assert os.path.exists(proxy)
 
     @pytest.mark.unit
     def test_getProxy_override(
+        self,
         check_user_kerberos_creds,
         clear_x509_user_proxy,
         clear_token,
         set_group_fermilab,
+        fake_proxy_path,
         monkeypatch,
         tmp_path,
     ):
-        fake_path = tmp_path / "test_proxy"
+        fake_path = fake_proxy_path
         monkeypatch.setenv("X509_USER_PROXY", str(fake_path))
         proxy = fake_ifdh.getProxy("Analysis")
         assert proxy == str(fake_path)
 
     @pytest.mark.unit
     def test_getProxy_fail(
+        self,
         check_user_kerberos_creds,
         clear_x509_user_proxy,
         clear_token,
+        fake_proxy_path,
         monkeypatch,
         tmp_path,
     ):
-        fake_path = tmp_path / "test_proxy"
-        if os.path.exists(fake_path):
-            try:
-                os.unlink(fake_path)
-            except:
-                pass
+        fake_path = fake_proxy_path
         monkeypatch.setenv("X509_USER_PROXY", str(fake_path))
         monkeypatch.setenv("GROUP", "bozo")
         with pytest.raises(PermissionError):
