@@ -348,21 +348,26 @@ def getProxy(
 
     if force_proxy or invalid_proxy:
         cigetcert_cmd_str = f"cigetcert -i 'Fermi National Accelerator Laboratory' -n --proxyhours 168 --minhours 167 -o {certfile}"
-        # pylint: disable=subprocess-run-check
-        # TODO:  See if we can put check in here, catch the error, and raise our Exception as below # pylint: disable=fixme
         cigetcert_cmd = subprocess.run(
             shlex.split(cigetcert_cmd_str),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            check=False,
             encoding="UTF-8",
             env=os.environ,
         )
-        if cigetcert_cmd.returncode != 0:
+
+        try:
+            cigetcert_cmd.check_returncode()
+        except subprocess.CalledProcessError:
+            msg = f"Cigetcert failed to get a proxy due to an unspecified issue. Please inspect the output below.\n{cigetcert_cmd.stdout}"
             if "Kerberos initialization failed" in cigetcert_cmd.stdout:
-                raise Exception(
+                msg = (
                     "Cigetcert failed to get proxy due to kerberos issue.  Please ensure "
                     "you have valid kerberos credentials."
                 )
+            raise PermissionError(msg)
+
         voms_proxy_init_cmd_str = (
             f"voms-proxy-init -dont-verify-ac -valid 167:00 -rfc -noregen"
             f" -debug -cert {certfile} -key {certfile} -out {vomsfile} -vomslife 167:0"
