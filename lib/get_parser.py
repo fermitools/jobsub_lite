@@ -151,18 +151,9 @@ class CheckIfValidAuthMethod(argparse.Action):
 # Parsers
 
 
-def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
+def get_base_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """build the general jobsub command argument parser and return it"""
 
-    if add_condor_epilog:
-        apargs = {
-            "formatter_class": argparse.RawDescriptionHelpFormatter,
-            "epilog": get_condor_epilog(),
-        }
-    else:
-        apargs = {}
-
-    parser = argparse.ArgumentParser(**apargs)  # type: ignore
     group = parser.add_argument_group("general arguments")
 
     # default to JOBSUB_GROUP rather than GROUP if set
@@ -243,9 +234,11 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
     return parser
 
 
-def get_submit_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
+def get_submit_parser(
+    parser: argparse.ArgumentParser,
+) -> argparse.ArgumentParser:
     """build the jobsub argument parser for the condor_submit/condor_submit_dag commands and return it"""
-    parser = get_base_parser(add_condor_epilog=add_condor_epilog)
+    parser = get_base_parser(parser=parser)
     parser.add_argument(
         "--job-info",
         action="append",
@@ -267,9 +260,9 @@ def get_submit_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParse
     return parser
 
 
-def get_jobid_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
+def get_jobid_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """build the jobsub_cmd (jobsub_q, etc.) argument parser and return it"""
-    parser = get_base_parser(add_condor_epilog=add_condor_epilog)
+    parser = get_base_parser(parser=parser)
     parser.add_argument("-J", "--jobid", dest="jobid", help="job/submission ID")
     parser.add_argument(
         "--constraint",
@@ -279,9 +272,9 @@ def get_jobid_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser
 
 
 # pylint: disable=too-many-statements
-def get_parser() -> argparse.ArgumentParser:
+def get_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """build the jobsub_submit argument parser and return it"""
-    parser = get_submit_parser()
+    parser = get_submit_parser(parser)
     parser.add_argument(
         "-c",
         "--append_condor_requirements",
@@ -648,8 +641,7 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def get_condor_epilog() -> str:
-    condor_cmd = os.path.basename(sys.argv[0]).replace("jobsub_", "condor_")
+def get_condor_epilog(condor_cmd) -> str:
     epilog_l = []
 
     with os.popen(f"/usr/bin/{condor_cmd} -h 2>&1", "r") as fd:
