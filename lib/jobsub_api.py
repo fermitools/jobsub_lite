@@ -4,6 +4,7 @@
 # api -- calls for apis
 #
 
+
 """ python command  apis for jobsub """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 import argparse
@@ -14,8 +15,9 @@ import sys
 from pprint import pprint
 import subprocess
 import shutil
-from typing import Optional
-from condor import Job
+from typing import Optional, List
+import condor
+from token_mods import use_token_copy, get_job_scopes
 
 # bits that go in each file:
 if os.environ.get("LD_LIBRARY_PATH", ""):
@@ -28,11 +30,23 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
 from tracing import as_span, log_host_time
 import get_parser
+import pool
+from submit_support import *
+from utils import *
+from version import *
+from tarfiles import *
+import htcondor  # type: ignore # pylint: disable=wrong-import-position
+import creds
+import re
+import skip_checks
+from collections import defaultdict
+import requests
 
+verbose = 0
 
 # pylint: disable=too-many-branches,too-many-statements
 @as_span("jobsub_submit", is_main=True)
-def jobsub_submit_main(argv=sys.argv):
+def jobsub_submit_main(argv: List[str] = sys.argv) -> None:
     """script mainline:
     - parse args
     - get credentials
@@ -43,7 +57,7 @@ def jobsub_submit_main(argv=sys.argv):
     """
     global verbose  # pylint: disable=global-statement,invalid-name
 
-    parser = get_parser(argparse.ArgumentParser())
+    parser = get_parser.get_parser(argparse.ArgumentParser())
 
     # Argument-checking code
     # old jobsub_client commands got run through a shell that replaced \x with x
@@ -53,7 +67,14 @@ def jobsub_submit_main(argv=sys.argv):
     jobsub_submit_args(args)
 
 
-def jobsub_submit_args(args, passthru=None):
+def jobsub_submit_args(
+    args: argparse.Namespace, passthru: Optional[List[str]] = None
+) -> None:
+
+    global verbose
+
+    if passthru:
+        raise argparse.ArgumentError(None, f"unknown arguments: {repr(passthru)}")
 
     if not args.global_pool and os.environ.get("JOBSUB_GLOBAL_POOL", ""):
         pool.set_pool(os.environ["JOBSUB_GLOBAL_POOL"])
@@ -116,14 +137,14 @@ def jobsub_submit_args(args, passthru=None):
 
     varg = vars(args)
 
-    cred_set = get_creds(varg)
+    cred_set = creds.get_creds(varg)
     if args.verbose:
-        print_cred_paths_from_credset(cred_set)
+        creds.print_cred_paths_from_credset(cred_set)
 
     if args.verbose:
         sys.stderr.write(f"varg: {repr(varg)}\n")
 
-    schedd_add = get_schedd(varg)
+    schedd_add = condor.get_schedd(varg)
     schedd_name = schedd_add.eval("Machine")
 
     #
@@ -194,7 +215,9 @@ class StoreGroupinEnvironment(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def jobsub_cmd_parser(jobsub_q_flag: bool, parser: argparse.ArgumentParser):
+def jobsub_cmd_parser(
+    jobsub_q_flag: bool, parser: Optional[argparse.ArgumentParser]
+) -> argparse.ArgumentParser:
     parser = get_parser.get_jobid_parser(parser=parser)
     parser.add_argument("-name", help="Set schedd name", default=None)
     parser.add_argument(
@@ -210,7 +233,7 @@ def jobsub_cmd_parser(jobsub_q_flag: bool, parser: argparse.ArgumentParser):
     return parser
 
 
-def jobsub_cmd_main(argv=sys.argv) -> None:
+def jobsub_cmd_main(argv: List[str] = sys.argv) -> None:
     """main line of code, proces args, etc."""
     parser = jobsub_cmd_parser(
         argv[0].find("jobsub_q") >= 0, parser=argparse.ArgumentParser()
@@ -220,7 +243,7 @@ def jobsub_cmd_main(argv=sys.argv) -> None:
     jobsub_cmd_args(arglist, passthru)
 
 
-def jobsub_cmd_args(arglist, passthru):
+def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
     global verbose  # pylint: disable=invalid-name,global-statement
 
     verbose = arglist.verbose
@@ -232,9 +255,6 @@ def jobsub_cmd_args(arglist, passthru):
 
     if arglist.support_email:
         print_support_email()
-
-    if cmd != "jobsub_q":
-        arglist.user = None
 
     # Re-insert --debug/--verbose if it was given
     if arglist.verbose:
@@ -429,9 +449,9 @@ _CHUNK_SIZE = 1024 * 1024
 # pylint: disable=too-many-branches
 def fetch_from_condor(
     jobid: str, destdir: Optional[str], archive_format: str, partial: bool
-):
+) -> None:
     # find where the condor_transfer_data will put the output
-    j = Job(jobid)
+    j = condor.Job(jobid)
     iwd = j.get_attribute("SUBMIT_Iwd")
     if verbose:
         print(f"job output to {iwd}")
@@ -500,7 +520,7 @@ def fetch_from_condor(
 # pylint: disable=too-many-locals,too-many-branches
 def fetch_from_landscape(
     jobid: str, destdir: Optional[str], archive_format: str, partial: bool
-):
+) -> None:
     # landscape doesn't support zip, does anyone actually use it?
     if archive_format != "tar":
         raise Exception(f'unknown/unsupported archive format "{archive_format}"')
@@ -563,7 +583,7 @@ def fetch_from_landscape(
 
 
 @as_span("transfer_data")
-def traced_transfer_data(j: Job) -> None:
+def traced_transfer_data(j: condor.Job) -> None:
     j.transfer_data()
 
 
@@ -572,7 +592,7 @@ def traced_wait_archive(p: subprocess.Popen) -> int:
     return p.wait()
 
 
-def jobsub_fetchlog_parser(parser):
+def jobsub_fetchlog_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser = get_parser.get_jobid_parser(parser)
 
     parser.add_argument(
@@ -602,7 +622,7 @@ def jobsub_fetchlog_parser(parser):
     return parser
 
 
-def jobsub_fetchlog_main(args=sys.argv):
+def jobsub_fetchlog_main(args: List[str] = sys.argv):
     """script mainline:
     - parse args
     - get credentials
@@ -614,14 +634,19 @@ def jobsub_fetchlog_main(args=sys.argv):
     transfer_complete = False  # pylint: disable=unused-variable
 
     parser = argparse.ArgumentParser()
-    jobsub_fethlog_parser(parser)
+    parser = jobsub_fetchlog_parser(parser)
     args = parser.parse_args()
     jobsub_fetchlog_args(args)
 
 
-def jobsub_fetchlog_args(args, passthru=None):
+def jobsub_fetchlog_args(
+    args: argparse.Namespace, passthru: Optional[List[str]] = None
+) -> None:
 
     verbose = args.verbose
+
+    if passthru:
+        raise argparse.ArgumentError(None, f"unknown arguments: {repr(passthru)}")
 
     log_host_time(verbose)
 

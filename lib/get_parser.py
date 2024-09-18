@@ -19,7 +19,7 @@ import argparse
 import os
 import re
 import sys
-from typing import Union, Any
+from typing import Union, Any, Optional
 
 from condor import get_schedd_names
 from creds import SUPPORTED_AUTH_METHODS, REQUIRED_AUTH_METHODS
@@ -151,8 +151,13 @@ class CheckIfValidAuthMethod(argparse.Action):
 # Parsers
 
 
-def get_base_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+def get_base_parser(
+    parser: Optional[argparse.ArgumentParser] = None,
+) -> argparse.ArgumentParser:
     """build the general jobsub command argument parser and return it"""
+
+    if parser is None:
+        parser = argparse.ArgumentParser()
 
     group = parser.add_argument_group("general arguments")
 
@@ -235,7 +240,7 @@ def get_base_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 
 def get_submit_parser(
-    parser: argparse.ArgumentParser,
+    parser: Optional[argparse.ArgumentParser] = None,
 ) -> argparse.ArgumentParser:
     """build the jobsub argument parser for the condor_submit/condor_submit_dag commands and return it"""
     parser = get_base_parser(parser=parser)
@@ -260,7 +265,9 @@ def get_submit_parser(
     return parser
 
 
-def get_jobid_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+def get_jobid_parser(
+    parser: Optional[argparse.ArgumentParser] = None,
+) -> argparse.ArgumentParser:
     """build the jobsub_cmd (jobsub_q, etc.) argument parser and return it"""
     parser = get_base_parser(parser=parser)
     parser.add_argument("-J", "--jobid", dest="jobid", help="job/submission ID")
@@ -272,7 +279,9 @@ def get_jobid_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser
 
 
 # pylint: disable=too-many-statements
-def get_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+def get_parser(
+    parser: Optional[argparse.ArgumentParser] = None,
+) -> argparse.ArgumentParser:
     """build the jobsub_submit argument parser and return it"""
     parser = get_submit_parser(parser)
     parser.add_argument(
@@ -641,7 +650,7 @@ def get_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def get_condor_epilog(condor_cmd) -> str:
+def get_condor_epilog(condor_cmd: str) -> str:
     epilog_l = []
 
     with os.popen(f"/usr/bin/{condor_cmd} -h 2>&1", "r") as fd:
