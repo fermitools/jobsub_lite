@@ -23,8 +23,9 @@
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 
 import os
+import re
 import sys
-from typing import List
+from typing import List, Set
 
 if os.environ.get("LD_LIBRARY_PATH", ""):
     del os.environ["LD_LIBRARY_PATH"]
@@ -56,40 +57,55 @@ dune_ab0f4c39c0.use = 1682976330
 and:
 BEARER_TOKEN_FILE=/tmp/bt_token... _condor_COLLECTOR_HOST=xxx _condor_CREDD_HOST=yyy condor_store_cred delete-oauth -s credname
 will delete the one named 'credname' (i.e. either 'dune' or 'dune_ab0f4c39c0' in my example above).
+
+We need to also support non-Analysis role credentials, which will look like this:
+mu2e_production.top = 1727117911
+mu2e_production.use = 1727293653
+mu2e_production_03c3eee999.top = 1714853842
+mu2e_production_03c3eee999.use = 1727294084
+mu2e_production_23a032e37b.top = 1720436436
+mu2e_production_23a032e37b.use = 1727294082
+mu2e_production_2a9433c222.top = 1724808389
+mu2e_production_2a9433c222.use = 1727293453
+mu2e_production_3217a16627.top = 1714234004
+mu2e_production_3217a16627.use = 1727294085
 """
 
 
-def query_creds(schedd):
-    res: List[str] = []
+def query_creds(schedd) -> List[str]:
+    # For a line that matches the pattern, extract everything before the '.top|.use'
+    line_regex = re.compile(r"^([A-Za-z0-9_]+)\.(?:top|use)\s=\s[0-9]+$")
+
+    creds: Set[str] = set()
     os.environ["_condor_CREDD_HOST"] = schedd
-    parsing = False
     cmd = "condor_store_cred query-oauth"
-    last_tname = "xx"
     print(f"credentials on {schedd}:")
     with os.popen(cmd) as scf:
         for line in scf.readlines():
             line = line.strip()
-            if line == "Credential info:":
-                parsing = True
-                continue
-            if line and parsing:
+            m = line_regex.fullmatch(line)
+            if m is not None:
                 print(line)
-                tname, time = line.split("=")
-                tname = tname.strip().replace(".top", "").replace(".use", "")
-                time = time.strip()
-                if tname != last_tname:
-                    res.append(tname)
-                last_tname = tname
-    return res
+                token_name = m.group(1)
+                creds.add(token_name)
+    return list(creds)
 
 
-def del_cred(schedd, tname, no_delete=False):
+# TODO:  Parse out name and handle using regex
+def del_cred(schedd, token_name, no_delete=False):
     os.environ["_condor_CREDD_HOST"] = schedd
-    if tname.find("_") > 0:
-        tname, handle = tname.split("_")
-        cmd = f"condor_store_cred delete-oauth -s {tname} -H {handle}"
+
+    # Token names are in the form "service_handle", where service can be just "experiment" or
+    # "experiment_role".  So we need to allow for these cases:
+    # 1. experiment_handle
+    # 2. experiment_role_handle
+    # 3. experiment
+    if token_name.find("_") > 0:
+        token_name, handle = token_name.split("_")
+        # TODO Here we need to account for token_name_handle or token_name_role_handle
+        cmd = f"condor_store_cred delete-oauth -s {token_name} -H {handle}"
     else:
-        cmd = f"condor_store_cred delete-oauth -s {tname}"
+        cmd = f"condor_store_cred delete-oauth -s {token_name}"
     act = "I would run: " if no_delete else "Running:"
     print(f"{act} _condor_CREDD_HOST={schedd} {cmd}")
     if not no_delete:
