@@ -89,7 +89,7 @@ def query_creds(schedd: str) -> List[str]:
             line = line.strip()
             m = credential_infoline_regex.fullmatch(line)
             if m is not None:
-                print(line)
+                print(f"\t{line}")
                 token_name = m.group(1)
                 creds.add(token_name)
 
@@ -129,29 +129,30 @@ def del_cred(schedd: str, token_name: str, no_delete: bool = False) -> None:
 
     act = "I would run: " if no_delete else "Running:"
     # _condor_CREDD_HOST is already set in the environment, but this output is for the user to see which schedd was used
-    print(f"{act} _condor_CREDD_HOST={schedd} {cmd}")
+    print(f"{act} _condor_CREDD_HOST={schedd} {cmd}\n")
+    if no_delete:
+        return
 
-    if not no_delete:
-        try:
-            proc = subprocess.run(
-                shlex.split(cmd),
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                encoding="UTF-8",
-                env=os.environ,
-            )
-            print(proc.stdout)
-        except subprocess.CalledProcessError as e:
-            print(f"Attempt to delete credential failed: {e}")
-            raise e
-        except Exception as e:
-            print(f"Unknown error deleting credential: {e}")
-            raise e
-        finally:
-            # Make sure we set the env back before we either return or reraise the exception
-            if old_credd_host_setting is not None:
-                os.environ["_condor_CREDD_HOST"] = old_credd_host_setting
+    try:
+        proc = subprocess.run(
+            shlex.split(cmd),
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding="UTF-8",
+            env=os.environ,
+        )
+        print(proc.stdout)
+    except subprocess.CalledProcessError as exc:
+        print(f"Attempt to delete credential failed: {exc}")
+        raise exc
+    except Exception as exc:
+        print(f"Unknown error deleting credential: {exc}")
+        raise exc
+    finally:
+        # Make sure we set the env back before we either return or reraise the exception
+        if old_credd_host_setting is not None:
+            os.environ["_condor_CREDD_HOST"] = old_credd_host_setting
 
 
 def main():
@@ -181,7 +182,7 @@ def main():
 
     if not nflag and not args.force:
         response = input(
-            f"This will delete all of your tokens on the following schedds: {', '.join(schedd_list)}.\nAre you sure you want to proceed (Y/n)? "
+            f"This will delete all of your tokens on the following schedds: {', '.join(schedd_list)}.\nAre you sure you want to proceed (Y/[n])? "
         )
         if response != "Y":
             print("Not deleting tokens.")
@@ -201,16 +202,24 @@ def main():
                 failed = True
                 break
 
+    if nflag:
+        print("\n--no-delete was specified, so no credentials were deleted. Done.")
+        return
+
     print("After:")
     for schedd_host in schedd_list:
         query_creds(schedd_host)
 
     if failed:
         print("Done, with some failures.")
-        sys.exit(1)
+        raise Exception("Some credentials failed to delete.")
 
     print("Done.")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:  # pylint: disable=broad-except
+        sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
+        sys.exit(1)
