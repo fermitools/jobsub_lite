@@ -72,7 +72,7 @@ mu2e_production_3217a16627.use = 1727294085
 """
 
 
-def query_creds(schedd) -> List[str]:
+def query_creds(schedd: str) -> List[str]:
     # For a line that matches the pattern, extract everything before the '.top|.use'
     line_regex = re.compile(r"^([A-Za-z0-9_]+)\.(?:top|use)\s=\s[0-9]+$")
     creds: Set[str] = set()
@@ -91,7 +91,7 @@ def query_creds(schedd) -> List[str]:
     return list(creds)
 
 
-def del_cred(schedd, token_name, no_delete=False):
+def del_cred(schedd: str, token_name: str, no_delete: bool = False) -> None:
     os.environ["_condor_CREDD_HOST"] = schedd
     args: List[str] = []
 
@@ -116,7 +116,7 @@ def del_cred(schedd, token_name, no_delete=False):
     cmd = f"condor_store_cred delete-oauth {args_string}"
 
     act = "I would run: " if no_delete else "Running:"
-    # Note: _condor_CREDD_HOST is already set in the environment, but this output is for the user to see which schedd was used
+    # _condor_CREDD_HOST is already set in the environment, but this output is for the user to see which schedd was used
     print(f"{act} _condor_CREDD_HOST={schedd} {cmd}")
 
     if not no_delete:
