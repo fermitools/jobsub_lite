@@ -72,11 +72,11 @@ mu2e_production_2a9433c222.use = 1727293453
 mu2e_production_3217a16627.top = 1714234004
 mu2e_production_3217a16627.use = 1727294085
 """
+credential_infoline_regex = re.compile(r"^([A-Za-z0-9_]+)\.(?:top|use)\s=\s[0-9]+$")
 
 
 def query_creds(schedd: str) -> List[str]:
     # For a line that matches the pattern, extract everything before the '.top|.use'
-    line_regex = re.compile(r"^([A-Za-z0-9_]+)\.(?:top|use)\s=\s[0-9]+$")
     creds: Set[str] = set()
 
     old_credd_host_setting = os.environ.get("_condor_CREDD_HOST")
@@ -87,7 +87,7 @@ def query_creds(schedd: str) -> List[str]:
     with os.popen(cmd) as scf:
         for line in scf.readlines():
             line = line.strip()
-            m = line_regex.fullmatch(line)
+            m = credential_infoline_regex.fullmatch(line)
             if m is not None:
                 print(line)
                 token_name = m.group(1)
