@@ -23,11 +23,8 @@
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 
 import os
-import re
-import shlex
-import subprocess
 import sys
-from typing import List, Set
+from typing import List
 
 if os.environ.get("LD_LIBRARY_PATH", ""):
     del os.environ["LD_LIBRARY_PATH"]
@@ -59,107 +56,48 @@ dune_ab0f4c39c0.use = 1682976330
 and:
 BEARER_TOKEN_FILE=/tmp/bt_token... _condor_COLLECTOR_HOST=xxx _condor_CREDD_HOST=yyy condor_store_cred delete-oauth -s credname
 will delete the one named 'credname' (i.e. either 'dune' or 'dune_ab0f4c39c0' in my example above).
-
-We need to also support non-Analysis role credentials, which will look like this:
-mu2e_production.top = 1727117911
-mu2e_production.use = 1727293653
-mu2e_production_03c3eee999.top = 1714853842
-mu2e_production_03c3eee999.use = 1727294084
-mu2e_production_23a032e37b.top = 1720436436
-mu2e_production_23a032e37b.use = 1727294082
-mu2e_production_2a9433c222.top = 1724808389
-mu2e_production_2a9433c222.use = 1727293453
-mu2e_production_3217a16627.top = 1714234004
-mu2e_production_3217a16627.use = 1727294085
 """
-credential_infoline_regex = re.compile(r"^([A-Za-z0-9_]+)\.(?:top|use)\s=\s[0-9]+$")
 
 
-def query_creds(schedd: str) -> List[str]:
-    # For a line that matches the pattern, extract everything before the '.top|.use'
-    creds: Set[str] = set()
-
-    old_credd_host_setting = os.environ.get("_condor_CREDD_HOST")
+def query_creds(schedd):
+    res: List[str] = []
     os.environ["_condor_CREDD_HOST"] = schedd
-
+    parsing = False
     cmd = "condor_store_cred query-oauth"
+    last_tname = "xx"
     print(f"credentials on {schedd}:")
     with os.popen(cmd) as scf:
         for line in scf.readlines():
             line = line.strip()
-            m = credential_infoline_regex.fullmatch(line)
-            if m is not None:
-                print(f"\t{line}")
-                token_name = m.group(1)
-                creds.add(token_name)
+            if line == "Credential info:":
+                parsing = True
+                continue
+            if line and parsing:
+                print(line)
+                tname, time = line.split("=")
+                tname = tname.strip().replace(".top", "").replace(".use", "")
+                time = time.strip()
+                if tname != last_tname:
+                    res.append(tname)
+                last_tname = tname
+    return res
 
-    # Make sure we set the env back before we return
-    if old_credd_host_setting is not None:
-        os.environ["_condor_CREDD_HOST"] = old_credd_host_setting
 
-    return list(creds)
-
-
-def del_cred(schedd: str, token_name: str, no_delete: bool = False) -> None:
-    old_credd_host_setting = os.environ.get("_condor_CREDD_HOST")
+def del_cred(schedd, tname, no_delete=False):
     os.environ["_condor_CREDD_HOST"] = schedd
-
-    args: List[str] = []
-
-    # Token names can be:
-    # 1. experiment
-    # 2. experiment_handle
-    # 3. experiment_role_handle
-    token_name_parts = token_name.rsplit("_", maxsplit=1)
-    if len(token_name_parts) == 1:
-        # 1. experiment
-        service = token_name
-        args = ["-s", service]
-    elif len(token_name_parts) == 2:
-        # 2. experiment_handle or 3. experiment_role_handle
-        service, handle = token_name_parts
-        args = ["-s", service, "-H", handle]
+    if tname.find("_") > 0:
+        tname, handle = tname.split("_")
+        cmd = f"condor_store_cred delete-oauth -s {tname} -H {handle}"
     else:
-        print(
-            f"Invalid credential name: {token_name}. Not deleting credentials from {schedd}"
-        )
-        return
-
-    cmd = f"condor_store_cred delete-oauth {' '.join(args)}"
-
+        cmd = f"condor_store_cred delete-oauth -s {tname}"
     act = "I would run: " if no_delete else "Running:"
-    # _condor_CREDD_HOST is already set in the environment, but this output is for the user to see which schedd was used
-    print(f"{act} _condor_CREDD_HOST={schedd} {cmd}\n")
-    if no_delete:
-        return
-
-    try:
-        proc = subprocess.run(
-            shlex.split(cmd),
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            encoding="UTF-8",
-            env=os.environ,
-        )
-        print(proc.stdout)
-    except subprocess.CalledProcessError as exc:
-        print(f"Attempt to delete credential failed: {exc}")
-        raise exc
-    except Exception as exc:
-        print(f"Unknown error deleting credential: {exc}")
-        raise exc
-    finally:
-        # Make sure we set the env back before we either return or reraise the exception
-        if old_credd_host_setting is not None:
-            os.environ["_condor_CREDD_HOST"] = old_credd_host_setting
+    print(f"{act} _condor_CREDD_HOST={schedd} {cmd}")
+    if not no_delete:
+        os.system(cmd)
 
 
 def main():
-    parser = get_parser.get_jobid_parser(add_condor_epilog=False)
-    parser.add_argument(
-        "--force", help="Force deletion", default=False, action="store_true"
-    )
+    parser = get_parser.get_jobid_parser(add_condor_epilog=True)
     parser.add_argument("-name", help="Set schedd name", default=None)
     parser.add_argument(
         "-n",
@@ -172,54 +110,22 @@ def main():
     varg = vars(args)
     nflag = args.no_delete
 
-    get_creds(varg)  # pylint: disable=unused-variable
+    cs = get_creds(varg)  # pylint: disable=unused-variable
     schedd_list = get_schedd_names(varg)
     if args.name and args.name not in schedd_list:
         print(f"invalid schedd {args.name}")
         sys.exit(1)
     if args.name and args.name in schedd_list:
         schedd_list = [args.name]
-
-    if not nflag and not args.force:
-        response = input(
-            f"This will delete all of your tokens on the following schedds: {', '.join(schedd_list)}.\nAre you sure you want to proceed (Y/[n])? "
-        )
-        if response != "Y":
-            print("Not deleting tokens.")
-            sys.exit(0)
-
     print(f"Schedds to clean: {schedd_list}")
-    failed = False
     for schedd_host in schedd_list:
         for tname in query_creds(schedd_host):
-            try:
-                del_cred(schedd_host, tname, nflag)
-            except subprocess.CalledProcessError:
-                print("Will try to delete the next credential.")
-                failed = True
-            except Exception:  # pylint: disable=broad-except
-                print("Unknown error deleting credential.  Will stop here.")
-                failed = True
-                break
-
-    if nflag:
-        print("\n--no-delete was specified, so no credentials were deleted. Done.")
-        return
-
+            del_cred(schedd_host, tname, nflag)
     print("After:")
     for schedd_host in schedd_list:
         query_creds(schedd_host)
-
-    if failed:
-        print("Done, with some failures.")
-        raise Exception("Some credentials failed to delete.")
-
     print("Done.")
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:  # pylint: disable=broad-except
-        sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
-        sys.exit(1)
+    main()
