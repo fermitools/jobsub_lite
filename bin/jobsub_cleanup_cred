@@ -77,7 +77,9 @@ def query_creds(schedd: str) -> List[str]:
     line_regex = re.compile(r"^([A-Za-z0-9_]+)\.(?:top|use)\s=\s[0-9]+$")
     creds: Set[str] = set()
 
+    old_credd_host_setting = os.environ.get("_condor_CREDD_HOST")
     os.environ["_condor_CREDD_HOST"] = schedd
+
     cmd = "condor_store_cred query-oauth"
     print(f"credentials on {schedd}:")
     with os.popen(cmd) as scf:
@@ -88,6 +90,11 @@ def query_creds(schedd: str) -> List[str]:
                 print(line)
                 token_name = m.group(1)
                 creds.add(token_name)
+
+    # Make sure we set the env back before we return
+    if old_credd_host_setting is not None:
+        os.environ["_condor_CREDD_HOST"] = old_credd_host_setting
+
     return list(creds)
 
 
