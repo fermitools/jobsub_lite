@@ -24,6 +24,8 @@
 
 import os
 import re
+import shlex
+import subprocess
 import sys
 from typing import List, Set
 
@@ -99,7 +101,9 @@ def query_creds(schedd: str) -> List[str]:
 
 
 def del_cred(schedd: str, token_name: str, no_delete: bool = False) -> None:
+    old_credd_host_setting = os.environ.get("_condor_CREDD_HOST")
     os.environ["_condor_CREDD_HOST"] = schedd
+
     args: List[str] = []
 
     # Token names can be:
@@ -116,18 +120,38 @@ def del_cred(schedd: str, token_name: str, no_delete: bool = False) -> None:
         service, handle = token_name_parts
         args = ["-s", service, "-H", handle]
     else:
-        print(f"Invalid credential name: {token_name}. Not deleting credentials")
+        print(
+            f"Invalid credential name: {token_name}. Not deleting credentials from {schedd}"
+        )
         return
 
-    args_string = " ".join(args)
-    cmd = f"condor_store_cred delete-oauth {args_string}"
+    cmd = f"condor_store_cred delete-oauth {' '.join(args)}"
 
     act = "I would run: " if no_delete else "Running:"
     # _condor_CREDD_HOST is already set in the environment, but this output is for the user to see which schedd was used
     print(f"{act} _condor_CREDD_HOST={schedd} {cmd}")
 
     if not no_delete:
-        os.system(cmd)
+        try:
+            proc = subprocess.run(
+                shlex.split(cmd),
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                encoding="UTF-8",
+                env=os.environ,
+            )
+            print(proc.stdout)
+        except subprocess.CalledProcessError as e:
+            print(f"Attempt to delete credential failed: {e}")
+            raise e
+        except Exception as e:
+            print(f"Unknown error deleting credential: {e}")
+            raise e
+        finally:
+            # Make sure we set the env back before we either return or reraise the exception
+            if old_credd_host_setting is not None:
+                os.environ["_condor_CREDD_HOST"] = old_credd_host_setting
 
 
 def main():
@@ -164,12 +188,27 @@ def main():
             sys.exit(0)
 
     print(f"Schedds to clean: {schedd_list}")
+    failed = False
     for schedd_host in schedd_list:
         for tname in query_creds(schedd_host):
-            del_cred(schedd_host, tname, nflag)
+            try:
+                del_cred(schedd_host, tname, nflag)
+            except subprocess.CalledProcessError:
+                print("Will try to delete the next credential.")
+                failed = True
+            except Exception:  # pylint: disable=broad-except
+                print("Unknown error deleting credential.  Will stop here.")
+                failed = True
+                break
+
     print("After:")
     for schedd_host in schedd_list:
         query_creds(schedd_host)
+
+    if failed:
+        print("Done, with some failures.")
+        sys.exit(1)
+
     print("Done.")
 
 
