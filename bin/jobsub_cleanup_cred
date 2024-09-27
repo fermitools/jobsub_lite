@@ -75,8 +75,8 @@ mu2e_production_3217a16627.use = 1727294085
 def query_creds(schedd) -> List[str]:
     # For a line that matches the pattern, extract everything before the '.top|.use'
     line_regex = re.compile(r"^([A-Za-z0-9_]+)\.(?:top|use)\s=\s[0-9]+$")
-
     creds: Set[str] = set()
+
     os.environ["_condor_CREDD_HOST"] = schedd
     cmd = "condor_store_cred query-oauth"
     print(f"credentials on {schedd}:")
@@ -91,23 +91,34 @@ def query_creds(schedd) -> List[str]:
     return list(creds)
 
 
-# TODO:  Parse out name and handle using regex
 def del_cred(schedd, token_name, no_delete=False):
     os.environ["_condor_CREDD_HOST"] = schedd
+    args: List[str] = []
 
-    # Token names are in the form "service_handle", where service can be just "experiment" or
-    # "experiment_role".  So we need to allow for these cases:
-    # 1. experiment_handle
-    # 2. experiment_role_handle
-    # 3. experiment
-    if token_name.find("_") > 0:
-        token_name, handle = token_name.split("_")
-        # TODO Here we need to account for token_name_handle or token_name_role_handle
-        cmd = f"condor_store_cred delete-oauth -s {token_name} -H {handle}"
+    # Token names can be:
+    # 1. experiment
+    # 2. experiment_handle
+    # 3. experiment_role_handle
+    token_name_parts = token_name.rsplit("_", maxsplit=1)
+    if len(token_name_parts) == 1:
+        # 1. experiment
+        service = token_name
+        args = ["-s", service]
+    elif len(token_name_parts) == 2:
+        # 2. experiment_handle or 3. experiment_role_handle
+        service, handle = token_name_parts
+        args = ["-s", service, "-H", handle]
     else:
-        cmd = f"condor_store_cred delete-oauth -s {token_name}"
+        print(f"Invalid credential name: {token_name}. Not deleting credentials")
+        return
+
+    args_string = " ".join(args)
+    cmd = f"condor_store_cred delete-oauth {args_string}"
+
     act = "I would run: " if no_delete else "Running:"
+    # Note: _condor_CREDD_HOST is already set in the environment, but this output is for the user to see which schedd was used
     print(f"{act} _condor_CREDD_HOST={schedd} {cmd}")
+
     if not no_delete:
         os.system(cmd)
 
