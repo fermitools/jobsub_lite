@@ -125,6 +125,9 @@ def del_cred(schedd, token_name, no_delete=False):
 
 def main():
     parser = get_parser.get_jobid_parser(add_condor_epilog=True)
+    parser.add_argument(
+        "--force", help="Force deletion", default=False, action="store_true"
+    )
     parser.add_argument("-name", help="Set schedd name", default=None)
     parser.add_argument(
         "-n",
@@ -137,13 +140,22 @@ def main():
     varg = vars(args)
     nflag = args.no_delete
 
-    cs = get_creds(varg)  # pylint: disable=unused-variable
+    get_creds(varg)  # pylint: disable=unused-variable
     schedd_list = get_schedd_names(varg)
     if args.name and args.name not in schedd_list:
         print(f"invalid schedd {args.name}")
         sys.exit(1)
     if args.name and args.name in schedd_list:
         schedd_list = [args.name]
+
+    if not nflag and not args.force:
+        response = input(
+            f"This will delete all of your tokens on the following schedds: {', '.join(schedd_list)}.\nAre you sure you want to proceed (Y/n)? "
+        )
+        if response != "Y":
+            print("Not deleting tokens.")
+            sys.exit(0)
+
     print(f"Schedds to clean: {schedd_list}")
     for schedd_host in schedd_list:
         for tname in query_creds(schedd_host):
