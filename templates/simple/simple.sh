@@ -324,55 +324,7 @@ mkdir $CONDOR_DIR_{{pair[0]}}
 {%endfor%}
 
 # ==========
-{%if group == 'minos' %}
-    #Minos Preamble
-    if [ -d "/grid/fermiapp/minos/" ]; then
-        export MINOS_ENSTORE=/grid/fermiapp/minos/enstore
-        source /grid/fermiapp/minos/enstore/setup_aliases.sh
-        export PATH="/grid/fermiapp/minos/enstore:${PATH}"
-        export MINOS_GRIDDB=/grid/fermiapp/minos/griddb
-        export PATH="/grid/fermiapp/minos/griddb:${PATH}"
-      {%if r %}
-        export ENV_TSQL_URL=`/grid/fermiapp/minos/griddb/choose_db_server`
-        echo Setting database URL to $ENV_TSQL_URL
-        export MINOS_SETUP_DIR=/grid/fermiapp/minos/minossoft/setup
-        #unset SETUP_UPS SETUPS_DIR
-        #. /grid/fermiapp/nova/products/db/.upsfiles/configure/v4_7_4a_Linux+2_/setups.sh
-
-        setup_minos()
-             {
-               . $MINOS_SETUP_DIR/setup_minossoft_FNALU.sh $*
-             }
-        setup_minos -r {{r}}
-      {%endif%}
-      {%if t%}
-        if [ -d "{{t}}" ] then;
-                    echo Running 'srt_setup -a' in `relpathto {{t}}`
-            here=`/bin/pwd`
-            cd `relpathto {{t}}`
-            srt_setup -a
-            cd $here
-        fi
-      {%endif%}
-    fi
-
-{%elif group == 'nova' %}
-  # NOvA preamble
-  {%if r%}
-    source /grid/fermiapp/nova/novaart/novasvn/srt/srt.sh
-    export EXTERNALS=/nusoft/app/externals
-    source $SRT_DIST/setup/setup_novasoft.sh -r {{r}}
-  {%endif%}
-  {%if t%}
-    echo "Running 'srt_setup -a' in  %s"
-    here=`/bin/pwd`
-    cd {{t}}
-    srt_setup -a
-    cd $here
-  {%endif%}
-
-
-{%elif group == 'minerva' %}
+{%if group == 'minerva' %}
   # Minerva preamble
   {%if i%}
     source {{i}}/setup.sh -c {{cmtconfig}}

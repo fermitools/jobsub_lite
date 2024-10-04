@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. /grid/fermiapp/products/common/etc/setups.sh
+. /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh
 
 setup hypotcode
 
