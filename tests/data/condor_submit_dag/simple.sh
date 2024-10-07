@@ -276,7 +276,13 @@ JOB_RET_STATUS=$?
 cvmfs_info() {
     cvmfs_repo=${1}
     cvmfs_repo_type=${2}
-    echo "cvmfs info repo: ${cvmfs_repo}.${cvmfs_repo_type}.org" >&2
+    if test -d /cvmfs/${cvmfs_repo}.${cvmfs_repo_type}.org/;
+    then
+        echo "cvmfs info repo: ${cvmfs_repo}.${cvmfs_repo_type}.org" >&2
+    else
+        echo "cvmfs info repo: ${cvmfs_repo}.${cvmfs_repo_type}.org not present" >&2
+        return
+    fi
     # pick filter based on job status, whether we have multiple "switched to catalog revision" lines
     if [ $JOB_RET_STATUS = 0 ]
     then

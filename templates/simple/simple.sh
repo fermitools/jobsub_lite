@@ -39,12 +39,10 @@ fi
 
 # Set up parameters used by cvmfs_info function
 CVMFS_REPO_TYPE_LIST=(opensciencegrid osgstorage)
-{%if group in ('sbnd','icarus') %}
-CVMFS_REPO_LIST=({{group}} sbn)
-{% else %}
-CVMFS_REPO_LIST={{group}}
-{% endif %}
-
+CVMFS_REPO_LIST=({{group}}
+{%- if group in ('dune','sbnd','icarus','lariat','argoneut') %} larsoft{% endif -%}
+{%- if group in ('sbnd','icarus') %} sbn{% endif -%}
+)
 
 set_jobsub_debug(){
     export PS4='$LINENO:'
@@ -444,7 +442,13 @@ ${JSB_TMP}/ifdh.sh cp -D $CONDOR_DIR_{{pair[0]}}/* {{pair[1]}}
 cvmfs_info() {
     cvmfs_repo=${1}
     cvmfs_repo_type=${2}
-    echo "cvmfs info repo: ${cvmfs_repo}.${cvmfs_repo_type}.org" >&2
+    if test -d /cvmfs/${cvmfs_repo}.${cvmfs_repo_type}.org/;
+    then
+        echo "cvmfs info repo: ${cvmfs_repo}.${cvmfs_repo_type}.org" >&2
+    else
+        echo "cvmfs info repo: ${cvmfs_repo}.${cvmfs_repo_type}.org not present" >&2
+        return
+    fi
     # pick filter based on job status, whether we have multiple "switched to catalog revision" lines
     if [ $JOB_RET_STATUS = 0 ]
     then
@@ -474,7 +478,7 @@ cvmfs_info() {
         eval "$filter" |
         while read line
         do
-            ${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID cvmfs: $line"
+            IFDH_DEBUG=0 ${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID cvmfs: $line"
             echo $line >&2
         done
 }
