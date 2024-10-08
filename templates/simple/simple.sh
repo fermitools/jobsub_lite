@@ -37,6 +37,13 @@ export BEARER_TOKEN_FILE=$PWD/.condor_creds/{{group}}_{{oauth_handle}}.use
 
 fi
 
+# Set up parameters used by cvmfs_info function
+CVMFS_REPO_TYPE_LIST=(opensciencegrid osgstorage)
+CVMFS_REPO_LIST=({{group}}
+{%- if group in ('dune','sbnd','icarus','lariat','argoneut') %} larsoft{% endif -%}
+{%- if group in ('sbnd','icarus') %} sbn{% endif -%}
+)
+
 set_jobsub_debug(){
     export PS4='$LINENO:'
     set -xv
@@ -385,18 +392,26 @@ ${JSB_TMP}/ifdh.sh cp -D $CONDOR_DIR_{{pair[0]}}/* {{pair[1]}}
 # on job failure: everything after second-to-last "switched to catalog revision x"
 # on job success: last 'catalog revision n' line
 cvmfs_info() {
-    echo "cvmfs info:" >&2
+    cvmfs_repo=${1}
+    cvmfs_repo_type=${2}
+    if test -d /cvmfs/${cvmfs_repo}.${cvmfs_repo_type}.org/;
+    then
+        echo "cvmfs info repo: ${cvmfs_repo}.${cvmfs_repo_type}.org" >&2
+    else
+        echo "cvmfs info repo: ${cvmfs_repo}.${cvmfs_repo_type}.org not present" >&2
+        return
+    fi
     # pick filter based on job status, whether we have multiple "switched to catalog revision" lines
     if [ $JOB_RET_STATUS = 0 ]
     then
         filter="grep to.catalog.revision | tail -1"
     else
         dummyline="__dummy__to_catalog_revision"
-        second_latest_rev_re=$( echo "$dummyline"; attr -g logbuffer /cvmfs/dune.opensciencegrid.org/ |
-                               grep to.catalog.revision |
-                               tail -2 | head -1 |
-                               sed -e 's/[][\/\\]/\\&/g'  # backslash escape square brackets and slashes
-                           )
+        second_latest_rev_re=$( (echo "$dummyline"; attr -g logbuffer /cvmfs/${cvmfs_repo}.${cvmfs_repo_type}.org/) |
+                              grep to.catalog.revision |
+                              tail -2 | head -1 |
+                              sed -e 's/[][\/\\]/\\&/g'  # backslash escape square brackets and slashes
+                          )
 
         if [ "$second_latest_rev_re" = "$dummyline" ]
         then
@@ -410,17 +425,23 @@ cvmfs_info() {
 
     # now log filtered messages to ifdh, and into stderr
 
-    attr -g logbuffer /cvmfs/{{group}}.opensciencegrid.org/ |
+    attr -g logbuffer /cvmfs/${cvmfs_repo}.${cvmfs_repo_type}.org/ |
         grep -v '^$' |
         eval "$filter" |
         while read line
         do
-            ${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID cvmfs: $line"
+            IFDH_DEBUG=0 ${JSB_TMP}/ifdh.sh log "$JOBSUBJOBID cvmfs: $line"
             echo $line >&2
         done
 }
 
-cvmfs_info
+for CVMFS_REPO in ${CVMFS_REPO_LIST[@]}
+do
+    for CVMFS_REPO_TYPE in ${CVMFS_REPO_TYPE_LIST[@]}
+    do
+        cvmfs_info ${CVMFS_REPO} ${CVMFS_REPO_TYPE}
+    done
+done
 
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS
 echo `date` $JOBSUB_EXE_SCRIPT COMPLETED with exit status $JOB_RET_STATUS 1>&2
