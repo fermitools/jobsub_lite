@@ -206,11 +206,12 @@ def main() -> None:
                     "%-11s ",
                     'formatTime(QDate,"%m/%d %H:%M")',
                     "-format",  # RUNTIME
-                    # For running jobs, use ServerTime - ShadowBday.  Otherwise, use RemoteWallClockTime
+                    # For running jobs, use ServerTime - ShadowBday, and add it to the accumulated RemoteWallClockTime for previous executions
+                    # of the job.  Otherwise, use RemoteWallClockTime
                     # This is because RemoteWallClockTime is only updated when jobs stop running - either through
                     # completion, removal, or being held.
                     "%T ",
-                    "IfThenElse(JobStatus == 2, ServerTime - ShadowBday, RemoteWallClockTime)",
+                    "IfThenElse(JobStatus == 2, (ServerTime - ShadowBday) + RemoteWallClockTime, RemoteWallClockTime)",
                     "-format",  # ST
                     " %s ",
                     'substr("UIRXCHE",JobStatus,1)',
