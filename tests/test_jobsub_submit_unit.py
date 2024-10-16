@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 
 import pytest
@@ -115,3 +116,46 @@ class TestJobsubSubmitUnit:
         submit_support.do_dataset_defaults(varg)
         for var in ["PROJECT", "DATASET", "USER", "GROUP", "STATION"]:
             assert repr(varg["environment"]).find("SAM_%s" % var) > 0
+
+    @pytest.mark.unit
+    def test_do_gpus(self, tmp_path, monkeypatch):
+        """make sure --gpu NUMBER sets arguments it's supposed to"""
+        # Test parameters
+        num_gpus = 42
+        wanted_strings = ("request_GPUs = 42", "RequestGPUs = 42")
+
+        # Set up our temp test directories and copy the template file
+        temp_prefix = (
+            tmp_path / "indir"
+        )  # Root directory of template files.  Will be mock for submit_support.PREFIX
+        indir = (
+            temp_prefix / "templates" / "simple"
+        )  # Directory where the template file will be copied
+        indir.mkdir(parents=True)
+        shutil.copy(f"{submit_support.PREFIX}/templates/simple/simple.cmd", indir)
+
+        outdir = (
+            tmp_path / "outdir"
+        )  # Directory where the rendered template will be written
+        outdir.mkdir()
+
+        # Set up the vargs for our template
+        varg = TestUnit.test_vargs.copy()
+        varg.update(TestUnit.test_extra_template_args)
+        varg["gpu"] = num_gpus
+        varg["no_submit"] = True
+        varg["outdir"] = outdir
+
+        # Extra required arg for template to render
+        varg["mail"] = "Never"
+
+        # Render the template like in a real job submission, with PREFIX mocked
+        with monkeypatch.context() as m:
+            m.setattr(submit_support, "PREFIX", str(temp_prefix))
+            submit_support.jobsub_submit_simple(varg, "fakeschedd.example.org")
+
+        with open(outdir / "simple.cmd", "r") as f:
+            cmd_text = f.read()
+
+        for s in wanted_strings:
+            assert s in cmd_text
