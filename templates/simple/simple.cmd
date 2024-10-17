@@ -28,7 +28,7 @@ when_to_transfer_output = ON_EXIT_OR_EVICT
 {%if    cpu is defined and cpu %}request_cpus = {{cpu}}{%endif%}
 {%if    gpu is defined and gpu %}
 request_GPUs = {{gpu}}
-RequestGPUs = {{gpu}}
++RequestGPUs = {{gpu}}
 {%endif%}
 {%if memory is defined and memory %}request_memory = {{memory}}{%endif%}
 {%if   disk is defined and disk %}request_disk = {{disk}}KB{%endif%}

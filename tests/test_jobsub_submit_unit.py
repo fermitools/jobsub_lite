@@ -122,7 +122,7 @@ class TestJobsubSubmitUnit:
         """make sure --gpu NUMBER sets arguments it's supposed to"""
         # Test parameters
         num_gpus = 42
-        wanted_strings = ("request_GPUs = 42", "RequestGPUs = 42")
+        wanted_strings = ("request_GPUs = 42", "+RequestGPUs = 42")
 
         # Set up our temp test directories and copy the template file
         temp_prefix = (
