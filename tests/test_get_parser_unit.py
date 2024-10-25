@@ -176,6 +176,8 @@ def all_test_args():
         "--generate-email-summary",
         "--global-pool",
         "dune",
+        "--gpu",
+        "xxgpuxx",
         "--group",
         "xxgroupxx",
         "--job-info",
