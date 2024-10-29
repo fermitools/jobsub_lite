@@ -60,14 +60,22 @@ def cleandir(d: str, verbose: int) -> None:
 def cleanup(varg: Dict[str, Any]) -> None:
     """cleanup submit directory etc."""
     os.chdir(os.path.dirname(f'{varg["submitdir"]}'))
-    cleandir(varg["submitdir"], verbose=varg["verbose"])
+    try:
+        cleandir(
+            d=varg["submitdir"],
+            verbose=varg.get("verbose", 0),
+        )
+    except KeyError:
+        # submitdir isn't defined in varg.  Don't try to clean anything up
+        print("Warning:  submitdir not set.  Will abandon cleanup")
+        return
     # now clean up old submit directories that weren't
     # cleaned up by jobsub_submit at the time
     with os.scandir(".") as it:
         for entry in it:
             sb = os.stat(entry.name)
             if entry.name.startswith("js_") and time.time() - sb.st_mtime > 604800:
-                cleandir(entry.name, verbose=varg["verbose"])
+                cleandir(entry.name, verbose=varg.get("verbose", 0))
 
     # if our BEARER_TOKEN_FILE ends with our pid, then we copied it and should
     # clean it up...
