@@ -126,7 +126,7 @@ def fetch_from_condor(
         if p.wait() != 0:
             raise Exception("error creating archive")
 
-    cleanup({"submitdir": iwd})
+    cleanup({"submitdir": iwd, "verbose": verbose})
 
     if not transfer_complete:
         print("Transfer may be incomplete.")
