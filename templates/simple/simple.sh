@@ -157,6 +157,7 @@ trace_finish(){
     fi
     if (( is_set $OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ) && ( is_set $TRACEPARENT )); then
         export JSB_SPAN_END=`date +%s%N`
+        # example trace JSON https://github.com/open-telemetry/opentelemetry-proto/blob/v1.3.2/examples/trace.json
         payload=`cat << __HEREDOC__
 {"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"fife"}}]},
 "scopeSpans":[{"scope":{"name":"jobsub.wrapper","version":"1.0.0","attributes":[]},
