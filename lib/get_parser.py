@@ -240,6 +240,11 @@ def get_base_parser(add_condor_epilog: bool = False) -> argparse.ArgumentParser:
         action=CheckIfValidSchedd,
         help=argparse.SUPPRESS,
     )
+    group.add_argument(
+        "--traceparent",
+        help="Trace context",
+        default=os.environ.get("TRACEPARENT", None),
+    )
     return parser
 
 

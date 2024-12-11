@@ -30,7 +30,6 @@ from typing import Union, Dict, Any, NamedTuple, Tuple, List, Optional
 import uuid
 
 import classad  # type: ignore # pylint: disable=import-error
-from tracing import get_propagator_carrier
 import token_mods
 
 from creds import CredentialSet
@@ -198,18 +197,6 @@ def set_extras_n_fix_units(
         sys.stderr.write(f"entering set_extras... args: {repr(args)}\n")
 
     set_some_extras(args, schedd_name, cred_set)
-
-    #
-    # get tracing propagator traceparent id so we can use it in templates, etc.
-    #
-    carrier = get_propagator_carrier()
-    if carrier and "traceparent" in carrier:
-        args["traceparent"] = carrier["traceparent"]
-    else:
-        args["traceparent"] = ""
-
-    if args["verbose"] > 0:
-        sys.stderr.write(f"Setting traceparent: {args['traceparent']}\n")
 
     # Read in credentials
     for cred_type, cred_path in vars(cred_set).items():

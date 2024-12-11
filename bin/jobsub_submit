@@ -58,7 +58,7 @@ from submit_support import (
 )
 from tarfiles import do_tarballs
 from token_mods import get_job_scopes, use_token_copy
-from tracing import as_span, log_host_time
+from tracing import as_span, log_host_time, get_propagator_carrier
 from utils import (
     set_extras_n_fix_units,
     cleanup,
@@ -70,17 +70,9 @@ from version import print_version, print_support_email
 verbose = 0  # pylint: disable=invalid-name
 
 
-# pylint: disable=too-many-branches,too-many-statements
-@as_span("jobsub_submit", is_main=True)
+@as_span("jobsub", is_main=True)
 def main():
-    """script mainline:
-    - parse args
-    - get credentials
-    - handle tarfile options
-    - set added values from environment, etc.
-    - convert/render template files to submission files
-    - launch
-    """
+    """main entrypoint, handles basic arg parsing and creates parent span for submission"""
     global verbose  # pylint: disable=global-statement,invalid-name
     parser = get_parser()
 
@@ -104,8 +96,6 @@ def main():
 
     verbose = args.verbose
 
-    log_host_time(verbose)
-
     # if they were trying to pass LD_LIBRARY_PATH to the job, get it from HIDE_LD_LIBRARY_PATH
     if "LD_LIBRARY_PATH" in args.environment and os.environ.get(
         "HIDE_LD_LIBRARY_PATH", ""
@@ -114,6 +104,33 @@ def main():
             f"{x}={os.environ['HIDE_LD_LIBRARY_PATH']}" if x == "LD_LIBRARY_PATH" else x
             for x in args.environment
         ]
+
+    # get tracing propagator traceparent id so we can use it in templates, etc.
+    if args.traceparent is None:
+        carrier = get_propagator_carrier()
+        if carrier and "traceparent" in carrier:
+            args.traceparent = carrier["traceparent"]
+        else:
+            args.traceparent = ""
+
+        if verbose > 0:
+            sys.stderr.write(f"Setting traceparent: {args.traceparent}\n")
+
+    submit(args)
+
+
+# pylint: disable=too-many-branches,too-many-statements
+@as_span("jobsub_submit")
+def submit(args):
+    """script mainline:
+    - get credentials
+    - handle tarfile options
+    - set added values from environment, etc.
+    - convert/render template files to submission files
+    - launch
+    """
+
+    log_host_time(args.verbose)
 
     if args.version:
         print_version()
