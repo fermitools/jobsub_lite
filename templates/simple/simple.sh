@@ -135,8 +135,43 @@ redirect_output_finish(){
     {%endif%}
 }
 
+trace_start(){
+    if ( is_set $TRACEPARENT ); then
+        version="00"
+        export JSB_TRACE_ID=`echo $TRACEPARENT | cut -d'-' -f 2`
+        export JSB_PARENT_SPAN_ID=`echo $TRACEPARENT | cut -d'-' -f 3`
+        sample=`echo $TRACEPARENT | cut -d'-' -f 4`
+        # 8-byte random span ID e.g. adce7acee6441ec74
+        export JSB_SPAN_ID=`head -c8 /dev/urandom | hexdump -e '"%02x"'`
+        # epoch nanoseconds e.g. 1544712660000000000
+        export JSB_SPAN_START=`date +%s%N`
+        # create child span
+        export TRACEPARENT="$version-$JSB_TRACE_ID-$JSB_SPAN_ID-$sample"
+    fi
+}
+
+trace_finish(){
+    # TODO check some other env vars
+    if ( is_set $OTEL_EXPORTER_OTLP_ENDPOINT ); then
+        export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="$OTEL_EXPORTER_OTLP_ENDPOINT/v1/traces"
+    fi
+    if (( is_set $OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ) && ( is_set $TRACEPARENT )); then
+        export JSB_SPAN_END=`date +%s%N`
+        payload=`cat << __HEREDOC__
+{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"fife"}}]},
+"scopeSpans":[{"scope":{"name":"jobsub.wrapper","version":"1.0.0","attributes":[]},
+"spans":[{"traceId":"$JSB_TRACE_ID","spanId":"$JSB_SPAN_ID","parentSpanId":"$JSB_PARENT_SPAN_ID","name":"job","startTimeUnixNano":"$JSB_SPAN_START","endTimeUnixNano":"$JSB_SPAN_END","kind":1,
+          "attributes":[{"key":"hostname","value":{"stringValue":"$HOSTNAME"}},
+                        {"key":"job.id","value":{"stringValue":"$JOBSUBJOBID"}}]}]}]}]}
+__HEREDOC__`
+        echo $payload 1>&2
+        echo $payload | curl -s -k --data-binary @- -XPOST -H 'Content-Type: application/json' -H 'Accept: application/json' $OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+    fi
+}
+
 
 normal_exit(){
+    trace_finish
     redirect_output_finish
 
     # maybe don't cleanup so we can transfer files back...
@@ -202,6 +237,7 @@ touch .empty_file
 args="$@"
 set - ""
 [[ "$JOBSUB_DEBUG" ]] && set_jobsub_debug
+trace_start
 
 export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp
 mkdir -p $JSB_TMP
