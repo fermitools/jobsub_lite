@@ -432,10 +432,10 @@ def fife_launch(extra):
           --memory=500MB  \
           %(extra)s \
           --dataset-definition=gen_cfg  \
-          file://///grid/fermiapp/products/common/db/../prd/fife_utils/v3_3_2/NULL/libexec/fife_wrap \
+          file://$HOME/fife_wrap
             --find_setups \
             --setup-unquote 'hypotcode%%20v1_1' \
-            --setup-unquote 'ifdhc%%20v2_6_10,ifdhc_config%%20v2_6_15' \
+            --setup-unquote 'ifdhc%%20v2_7_2,ifdhc_config%%20v2_6_15' \
             --prescript-unquote 'ups%%20active' \
             --self_destruct_timer '1400' \
             --debug \

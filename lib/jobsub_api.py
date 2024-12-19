@@ -4,7 +4,6 @@
 # api -- calls for apis
 #
 
-
 """ python command  apis for jobsub """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 import argparse
@@ -31,20 +30,32 @@ sys.path.append(os.path.join(PREFIX, "lib"))
 from tracing import as_span, log_host_time
 import get_parser
 import pool
-from submit_support import *
-from utils import *
-from version import *
-from tarfiles import *
+from submit_support import (
+    get_env_list,
+    jobsub_submit_dag,
+    jobsub_submit_dataset_definition,
+    jobsub_submit_maxconcurrent,
+    jobsub_submit_simple,
+)
+
+from utils import (
+    cleanup,
+    sanitize_lines,
+    backslash_escape_layer,
+    set_extras_n_fix_units,
+)
+import version
+import tarfiles
 import htcondor  # type: ignore # pylint: disable=wrong-import-position
 import creds
 import re
 import skip_checks
 from collections import defaultdict
-import requests
+import requests  # type: ignore
 
-verbose = 0
+VERBOSE = 0
 
-# pylint: disable=too-many-branches,too-many-statements
+# pylint: disable=too-many-branches,too-many-statements,dangerous-default-value
 @as_span("jobsub_submit", is_main=True)
 def jobsub_submit_main(argv: List[str] = sys.argv) -> None:
     """script mainline:
@@ -55,7 +66,7 @@ def jobsub_submit_main(argv: List[str] = sys.argv) -> None:
     - convert/render template files to submission files
     - launch
     """
-    global verbose  # pylint: disable=global-statement,invalid-name
+    global VERBOSE  # pylint: disable=global-statement,invalid-name
 
     parser = get_parser.get_parser(argparse.ArgumentParser())
 
@@ -64,6 +75,7 @@ def jobsub_submit_main(argv: List[str] = sys.argv) -> None:
     # so we do that here for backwards compatability
     backslash_escape_layer(argv)
     args = parser.parse_args(argv)
+    VERBOSE = args.verbose
     jobsub_submit_args(args)
 
 
@@ -71,7 +83,7 @@ def jobsub_submit_args(
     args: argparse.Namespace, passthru: Optional[List[str]] = None
 ) -> None:
 
-    global verbose
+    global VERBOSE  # pylint: disable=global-statement
 
     if passthru:
         raise argparse.ArgumentError(None, f"unknown arguments: {repr(passthru)}")
@@ -88,9 +100,9 @@ def jobsub_submit_args(
 
     sanitize_lines(args.lines)
 
-    verbose = args.verbose
+    VERBOSE = args.verbose
 
-    log_host_time(verbose)
+    log_host_time(VERBOSE)
 
     # if they were trying to pass LD_LIBRARY_PATH to the job, get it from HIDE_LD_LIBRARY_PATH
     if "LD_LIBRARY_PATH" in args.environment and os.environ.get(
@@ -102,10 +114,10 @@ def jobsub_submit_args(
         ]
 
     if args.version:
-        print_version()
+        version.print_version()
 
     if args.support_email:
-        print_support_email()
+        version.print_support_email()
 
     if args.skip_check:
         if args.verbose:
@@ -126,7 +138,7 @@ def jobsub_submit_args(
     # Eventually, this arg and its support in the underlying libraries should be removed
     args.force_proxy = True
 
-    do_tarballs(args)
+    tarfiles.do_tarballs(args)
 
     if args.maxConcurrent and int(args.maxConcurrent) >= args.N and not args.dag:
         if args.verbose:
@@ -224,15 +236,13 @@ def jobsub_cmd_parser(
         "--jobsub_server", help="backwards compatability; ignored", default=None
     )
 
-    # and find the wrapped command name
-    cmd = os.path.basename(sys.argv[0])
-
     # combine jobsub_q as well
     if jobsub_q_flag:
         parser.add_argument("--user", help="username to query", default=None)
     return parser
 
 
+# pylint: disable=dangerous-default-value
 def jobsub_cmd_main(argv: List[str] = sys.argv) -> None:
     """main line of code, proces args, etc."""
     parser = jobsub_cmd_parser(
@@ -243,20 +253,21 @@ def jobsub_cmd_main(argv: List[str] = sys.argv) -> None:
     jobsub_cmd_args(arglist, passthru)
 
 
+# pylint: disable=too-many-locals
 def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
-    global verbose  # pylint: disable=invalid-name,global-statement
+    global VERBOSE  # pylint: disable=invalid-name,global-statement
 
-    verbose = arglist.verbose
+    VERBOSE = arglist.verbose
 
-    log_host_time(verbose)
+    log_host_time(VERBOSE)
 
     if arglist.version:
-        print_version()
+        version.print_version()
 
     if arglist.support_email:
-        print_support_email()
+        version.print_support_email()
 
-    # Re-insert --debug/--verbose if it was given
+    # Re-insert --debug/--VERBOSE if it was given
     if arglist.verbose:
         passthru.append("-debug")
     # if they gave us --jobid or --user put in the value plain, condor figures it out
@@ -339,6 +350,10 @@ def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
     # and find the wrapped command name
     cmd = os.path.basename(sys.argv[0])
 
+    # if using master jobsub command, paste verb on with an underscore.
+    if cmd == "jobsub":
+        cmd = "_".join([cmd, sys.argv[1]])
+
     # TODO:  This patch is to fix a small bug when condor_q is used directly. #pylint: disable=fixme
     # We're trying to combine totals because of the clause at the end of this
     # function that calculates totals.  So this is a patch until we can figure
@@ -409,7 +424,7 @@ def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
 
             # pipe our remaining output through sort (by date) and jobsub_totals next to us
             jobsub_totals_path = os.path.join(
-                os.path.dirname(__file__), "jobsub_totals"
+                os.path.dirname(__file__), "../bin/jobsub_totals"
             )
             totalsf = os.popen(f"sort -k 3,4 | {jobsub_totals_path}", "w")
             os.close(1)
@@ -421,13 +436,13 @@ def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
         # if no specific schedds given, get list of all...
         schedd_list = set(condor.get_schedd_names(vars(arglist)))
 
-    if verbose:
+    if VERBOSE:
         print("schedd list:", schedd_list)
 
     for schedd in schedd_list:
         os.environ["_condor_CREDD_HOST"] = schedd
         these_args = [cmd, "-name", schedd] + execargs + args_for_schedd.get(schedd, [])
-        if verbose:
+        if VERBOSE:
             print("running:", these_args)
         pid = os.fork()
         if pid:
@@ -453,7 +468,7 @@ def fetch_from_condor(
     # find where the condor_transfer_data will put the output
     j = condor.Job(jobid)
     iwd = j.get_attribute("SUBMIT_Iwd")
-    if verbose:
+    if VERBOSE:
         print(f"job output to {iwd}")
     # make sure it exists, create if not
     try:
@@ -505,7 +520,7 @@ def fetch_from_condor(
             # -q: quiet
         else:
             raise Exception(f'unknown archive format "{archive_format}"')
-        if verbose:
+        if VERBOSE:
             print(f'running "{cmd}"')
         p = subprocess.Popen(cmd)  # pylint: disable=consider-using-with
         if p.wait() != 0:
@@ -546,7 +561,7 @@ def fetch_from_landscape(
     # pylint: disable=unspecified-encoding
     with open(os.environ["BEARER_TOKEN_FILE"]) as f:
         tok = f.readline().strip()
-    if verbose:
+    if VERBOSE:
         print(f"making request for archive from {url}")
     r = requests.get(url, stream=True, headers={"Authorization": f"Bearer {tok}"})
     if r.status_code == 401:
@@ -559,13 +574,13 @@ def fetch_from_landscape(
     r.raise_for_status()
 
     of = os.path.join(owd, f"{jobid}.tgz")
-    if verbose:
+    if VERBOSE:
         print(f"downloading archive to {of}")
     with open(of, "wb") as fb:
         n = 0
         for chunk in r.iter_content(chunk_size=_CHUNK_SIZE):
             n += fb.write(chunk)
-    if verbose:
+    if VERBOSE:
         print(f"{n} bytes downloaded to {of}")
 
     if destdir is not None:
@@ -574,7 +589,7 @@ def fetch_from_landscape(
         # -x: extract
         # -z: gzip
         # -f: filename
-        if verbose:
+        if VERBOSE:
             print(f'running "{cmd}"')
         p = subprocess.Popen(cmd)  # pylint: disable=consider-using-with
         if p.wait() != 0:
@@ -588,7 +603,7 @@ def traced_transfer_data(j: condor.Job) -> None:
 
 
 @as_span("archive")
-def traced_wait_archive(p: subprocess.Popen) -> int:
+def traced_wait_archive(p: subprocess.Popen) -> int:  # type: ignore
     return p.wait()
 
 
@@ -622,7 +637,8 @@ def jobsub_fetchlog_parser(parser: argparse.ArgumentParser) -> argparse.Argument
     return parser
 
 
-def jobsub_fetchlog_main(args: List[str] = sys.argv):
+# pylint: disable=dangerous-default-value
+def jobsub_fetchlog_main(argv: List[str] = sys.argv) -> None:
     """script mainline:
     - parse args
     - get credentials
@@ -630,12 +646,13 @@ def jobsub_fetchlog_main(args: List[str] = sys.argv):
     - condor_transfer_data
     - make tarball
     """
-    global verbose  # pylint: disable=global-statement,invalid-name
+    global VERBOSE  # pylint: disable=global-statement,invalid-name
     transfer_complete = False  # pylint: disable=unused-variable
 
     parser = argparse.ArgumentParser()
     parser = jobsub_fetchlog_parser(parser)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    VERBOSE = args.verbose
     jobsub_fetchlog_args(args)
 
 
@@ -643,18 +660,19 @@ def jobsub_fetchlog_args(
     args: argparse.Namespace, passthru: Optional[List[str]] = None
 ) -> None:
 
-    verbose = args.verbose
+    global VERBOSE  # pylint: disable=global-statement
+    VERBOSE = args.verbose
 
     if passthru:
         raise argparse.ArgumentError(None, f"unknown arguments: {repr(passthru)}")
 
-    log_host_time(verbose)
+    log_host_time(VERBOSE)
 
     if args.version:
-        print_version()
+        version.print_version()
 
     if args.support_email:
-        print_support_email()
+        version.print_support_email()
 
     # jobsub_fetchlog only supports tokens
     if "token" not in args.auth_methods:

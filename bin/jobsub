@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -I
-import os
 import argparse
+import os
 import os.path
 import sys
 
@@ -12,10 +12,23 @@ if os.environ.get("LD_LIBRARY_PATH", ""):
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 sys.path.append(os.path.join(PREFIX, "lib"))
-from jobsub_api import *
-from get_parser import *
 
-verbose = 0
+# pylint: disable=wrong-import-position, ungrouped-imports
+from jobsub_api import (
+    jobsub_submit_args,
+    jobsub_cmd_args,
+    jobsub_fetchlog_args,
+    jobsub_cmd_parser,
+    jobsub_fetchlog_parser,
+)
+
+from get_parser import (
+    get_parser,
+    get_condor_epilog,
+)
+
+
+VERBOSE = 0
 
 if __name__ == "__main__":
     try:
@@ -45,7 +58,8 @@ if __name__ == "__main__":
         args.func(args, passthru)
 
     except Exception as e:  # pylint: disable=broad-except
-        # if verbose:
+        # if VERBOSE:
+        # pylint: disable=using-constant-test
         if True:
             raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
