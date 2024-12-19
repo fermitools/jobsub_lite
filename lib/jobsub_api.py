@@ -267,6 +267,8 @@ def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
     if arglist.support_email:
         version.print_support_email()
 
+    print("in josub_cmd_args...")
+
     # Re-insert --debug/--VERBOSE if it was given
     if arglist.verbose:
         passthru.append("-debug")
@@ -362,6 +364,8 @@ def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
     # combine jobsub_q as well
     if cmd == "jobsub_q":
         cmd_jobsub_q = True
+
+        print("josub_q case...", arglist)
 
         # add -schedd-constraint IsJobsubLite==True
         execargs.insert(0, "IsJobsubLite==True")
