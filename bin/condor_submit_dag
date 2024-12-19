@@ -59,7 +59,7 @@ def main():
     bindir = os.path.abspath(os.path.dirname(__file__))
     os.environ["_condor_SEC_CREDENTIAL_STORER"] = f"{bindir}/condor_vault_storer"
 
-    parser = get_parser.get_submit_parser(add_condor_epilog=True)
+    parser = get_parser.get_submit_parser()
 
     arglist, cmd_args = parser.parse_known_args()
 
