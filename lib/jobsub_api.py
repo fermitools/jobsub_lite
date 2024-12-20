@@ -45,7 +45,6 @@ jobsub_q_re = re.compile(
 
 
 def jobsub_call(argv: List[str], return_output: bool = False) -> Optional[str]:
-    print("here: jobsub_call")
     res = None
     if argv[0].find("_submit") > 0:
         func = jobsub_submit_main
@@ -53,7 +52,6 @@ def jobsub_call(argv: List[str], return_output: bool = False) -> Optional[str]:
         func = jobsub_fetchlog_main
     else:
         func = jobsub_cmd_main
-    print("here: picked ", func)
     try:
         with output_saver(return_output) as output:
             func(argv)
@@ -61,5 +59,4 @@ def jobsub_call(argv: List[str], return_output: bool = False) -> Optional[str]:
     except:
         print(f"Excepion in jobsub_call({argv})")
         raise
-    print("... and back:")
     return res

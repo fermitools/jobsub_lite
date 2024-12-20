@@ -120,9 +120,11 @@ def jobsub_submit_args(
 
     if args.version:
         version.print_version()
+        return
 
     if args.support_email:
         version.print_support_email()
+        return
 
     if args.skip_check:
         if args.verbose:
@@ -271,9 +273,11 @@ def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
 
     if arglist.version:
         version.print_version()
+        return
 
     if arglist.support_email:
         version.print_support_email()
+        return
 
     # Re-insert --debug/--VERBOSE if it was given
     if arglist.verbose:
@@ -693,9 +697,11 @@ def jobsub_fetchlog_args(
 
     if args.version:
         version.print_version()
+        return
 
     if args.support_email:
         version.print_support_email()
+        return
 
     # jobsub_fetchlog only supports tokens
     if "token" not in args.auth_methods:
