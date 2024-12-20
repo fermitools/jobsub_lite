@@ -238,7 +238,7 @@ def condor_dag_launch(dagfile, extra=""):
 
 
 @pytest.mark.integration
-def test_condor_submit_dag1(samdev):
+def test_2_condor_submit_dag1(samdev):
     os.environ["SAM_PROJECT"] = "p" + str(int(time.time()))
     os.environ["UID"] = str(os.getuid())
     os.environ["USER"] = os.environ.get("USER", "sam")
@@ -253,17 +253,17 @@ def lookaround_launch(extra, verify_files=""):
 
 
 @pytest.mark.smoke
-def test_launch_lookaround_samdev(samdev):
+def test_2_launch_lookaround_samdev(samdev):
     lookaround_launch("")
 
 
 @pytest.mark.integration
-def test_launch_lookaround_samdev_dev(samdev):
+def test_2_launch_lookaround_samdev_dev(samdev):
     lookaround_launch("--devserver")
 
 
 @pytest.mark.integration
-def test_no_submit_condor_submit(samdev):
+def test_2_no_submit_condor_submit(samdev):
     dir = run_launch(
         "jobsub submit --verbose=1 --no-submit "
         "file://`pwd`/job_scripts/lookaround.sh",
@@ -273,7 +273,7 @@ def test_no_submit_condor_submit(samdev):
 
 
 @pytest.mark.integration
-def test_launch_lookaround_ddir(samdev):
+def test_2_launch_lookaround_ddir(samdev):
     pid = os.getpid()
     ddir = f"/pnfs/fermilab/users/$USER/d{pid}"
     fake_ifdh.mkdir_p(ddir)
@@ -282,37 +282,37 @@ def test_launch_lookaround_ddir(samdev):
 
 
 @pytest.mark.integration
-def test_launch_lookaround_dune(dune):
+def test_2_launch_lookaround_dune(dune):
     lookaround_launch("--devserver")
 
 
 @pytest.mark.integration
-def test_launch_lookaround_dune_gp_poolflag(dune):
+def test_2_launch_lookaround_dune_gp_poolflag(dune):
     lookaround_launch("--global-pool=dune")
 
 
 @pytest.mark.integration
-def test_launch_lookaround_dune_gp(dune_gp):
+def test_2_launch_lookaround_dune_gp(dune_gp):
     lookaround_launch("")
 
 
 @pytest.mark.integration
-def test_maxconcurrent(samdev):
+def test_2_maxconcurrent(samdev):
     lookaround_launch("--maxConcurrent 2 -N 6 ")
 
 
 @pytest.mark.integration
-def test_dd_args(samdev):
+def test_2_dd_args(samdev):
     fife_launch(" --dd-percentage 50 " " --dd-extra-dataset mwm_out_1 ")
 
 
 @pytest.mark.integration
-def test_maxconcurrent_dataset(samdev):
+def test_2_maxconcurrent_dataset(samdev):
     fife_launch("--maxConcurrent 2")
 
 
 @pytest.mark.integration
-def test_dash_f_plain(dune_test_file):
+def test_2_dash_f_plain(dune_test_file):
     lookaround_launch(
         f"-f {dune_test_file}",
         f"\\$CONDOR_DIR_INPUT/{os.path.basename(dune_test_file)}",
@@ -320,7 +320,7 @@ def test_dash_f_plain(dune_test_file):
 
 
 @pytest.mark.integration
-def test_dash_f_sl6(dune_test_file):
+def test_2_dash_f_sl6(dune_test_file):
     lookaround_launch(
         f"-f {dune_test_file} "
         "--singularity=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl6:latest",
@@ -329,7 +329,7 @@ def test_dash_f_sl6(dune_test_file):
 
 
 @pytest.mark.integration
-def test_dash_f_dropbox_cvmfs(dune):
+def test_2_dash_f_dropbox_cvmfs(dune):
     lookaround_launch(
         f"-f dropbox://{__file__} --use-cvmfs-dropbox",
         f"\\$CONDOR_DIR_INPUT/{os.path.basename(__file__)}",
@@ -337,7 +337,7 @@ def test_dash_f_dropbox_cvmfs(dune):
 
 
 @pytest.mark.integration
-def test_tar_dir_cvmfs(dune, add_links):
+def test_2_tar_dir_cvmfs(dune, add_links):
     lookaround_launch(
         f"--tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit --use-cvmfs-dropbox",
         f"\\$INPUT_TAR_DIR_LOCAL/ckjobA.sh",
@@ -345,7 +345,7 @@ def test_tar_dir_cvmfs(dune, add_links):
 
 
 @pytest.mark.integration
-def test_tar_dir_pnfs(dune, add_links):
+def test_2_tar_dir_pnfs(dune, add_links):
     lookaround_launch(
         f"--tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit --use-pnfs-dropbox",
         f"\\$INPUT_TAR_DIR_LOCAL/ckjobA.sh",
@@ -353,7 +353,7 @@ def test_tar_dir_pnfs(dune, add_links):
 
 
 @pytest.mark.integration
-def test_dash_f_dropbox_pnfs(dune):
+def test_2_dash_f_dropbox_pnfs(dune):
     lookaround_launch(
         f"-f dropbox://{__file__} --use-pnfs-dropbox",
         f"\\$CONDOR_DIR_INPUT/{os.path.basename(__file__)}",
@@ -361,7 +361,7 @@ def test_dash_f_dropbox_pnfs(dune):
 
 
 @pytest.mark.integration
-def test_dash_f_dropbox_pnfs_exra_slashes(dune):
+def test_2_dash_f_dropbox_pnfs_exra_slashes(dune):
     lookaround_launch(
         f"-f dropbox:////{__file__} --use-pnfs-dropbox",
         f"\\$CONDOR_DIR_INPUT/{os.path.basename(__file__)}",
@@ -386,22 +386,22 @@ def dagnabbit_launch(extra, which="", nout_files=5):
 
 
 @pytest.mark.integration
-def test_launch_dagnabbit_simple(samdev):
+def test_2_launch_dagnabbit_simple(samdev):
     dagnabbit_launch("--devserver", "")
 
 
 @pytest.mark.integration
-def test_launch_dagnabbit_collapse(samdev):
+def test_2_launch_dagnabbit_collapse(samdev):
     dagnabbit_launch("--devserver", "HS", 12)
 
 
 @pytest.mark.integration
-def test_launch_dagnabbit_dropbox(samdev):
+def test_2_launch_dagnabbit_dropbox(samdev):
     dagnabbit_launch("--devserver", "Dropbox")
 
 
 @pytest.mark.integration
-def test_launch_dagnabbit_complex(samdev):
+def test_2_launch_dagnabbit_complex(samdev):
     os.environ["JOBSUB_EXPORTS"] = ""
     os.environ["SUBMIT_FLAGS"] = ""
 
@@ -432,7 +432,7 @@ def fife_launch(extra):
           --memory=500MB  \
           %(extra)s \
           --dataset-definition=gen_cfg  \
-          file://$HOME/fife_wrap
+          file://///cvmfs/fermilab.opensciencegrid.org/products/common/db/../prd/fife_utils/v3_3_2/NULL/libexec/fife_wrap \
             --find_setups \
             --setup-unquote 'hypotcode%%20v1_1' \
             --setup-unquote 'ifdhc%%20v2_7_2,ifdhc_config%%20v2_6_15' \
@@ -466,22 +466,22 @@ def fife_launch(extra):
 
 
 @pytest.mark.integration
-def test_samdev_fife_launch(samdev):
+def test_2_samdev_fife_launch(samdev):
     fife_launch("--devserver")
 
 
 @pytest.mark.integration
-def test_dune_fife_launch(dune):
+def test_2_dune_fife_launch(dune):
     fife_launch("--devserver")
 
 
 @pytest.mark.integration
-def test_nova_fife_launch(nova):
+def test_2_nova_fife_launch(nova):
     fife_launch("--devserver")
 
 
 @pytest.mark.integration
-def test_dune_gp_fife_launch(dune_gp):
+def test_2_dune_gp_fife_launch(dune_gp):
     fife_launch("")
 
 
@@ -553,7 +553,7 @@ def xx_test_jobsub_q_repetitions(samdev):
 
 @pytest.mark.smoke
 @pytest.mark.integration
-def test_wait_for_jobs():
+def test_2_wait_for_jobs():
     """Not really a test, but we have to wait for jobs to complete..."""
     count = 1
     print("Waiting for jobs: ", " ".join(joblist))
@@ -600,7 +600,7 @@ def test_wait_for_jobs():
 
 @pytest.mark.smoke
 @pytest.mark.integration
-def test_fetch_output():
+def test_2_fetch_output():
     for jid in joblist:
         group = group_for_job(jid)
         owd = tempfile.mkdtemp()
@@ -608,7 +608,8 @@ def test_fetch_output():
         try:
             subprocess.run(
                 [
-                    "jobsub" "fetchlog",
+                    "jobsub",
+                    "fetchlog",
                     "--group",
                     group,
                     "--jobid",
@@ -625,7 +626,7 @@ def test_fetch_output():
 
 @pytest.mark.smoke
 @pytest.mark.integration
-def test_check_job_output():
+def test_2_check_job_output():
     res = True
     for jid, ddir in ddirs.items():
         print(f"Checking {jid2test[jid]} {jid} -d tag  {ddir}...")
@@ -686,7 +687,7 @@ def test_check_job_output():
     "constraint_flag_and_arg",
     ["--constraint 'Owner==\"{user}\"'", "--constraint='Owner==\"{user}\"'"],
 )
-def test_valid_constraint(samdev, constraint_flag_and_arg):
+def test_2_valid_constraint(samdev, constraint_flag_and_arg):
     lookaround_launch("--devserver")
     if len(joblist) == 0:
         raise AssertionError("No jobs submitted")
@@ -708,7 +709,7 @@ def test_valid_constraint(samdev, constraint_flag_and_arg):
         "--constraint='thisisabadconstraintbutwillparse==true'",
     ],
 )
-def test_invalid_constraint(samdev, constraint_flag_and_arg):
+def test_2_invalid_constraint(samdev, constraint_flag_and_arg):
     cmd = f"jobsub q -G fermilab {constraint_flag_and_arg} -autoformat ClusterId"
     query = os.popen(cmd)
     output = query.readlines()

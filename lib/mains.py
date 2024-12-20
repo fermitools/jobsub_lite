@@ -69,7 +69,10 @@ def jobsub_submit_main(argv: List[str] = sys.argv) -> None:
     """
     global VERBOSE  # pylint: disable=global-statement,invalid-name
 
-    parser = get_parser.get_parser(argparse.ArgumentParser())
+    parser = argparse.ArgumentParser(
+        epilog=get_parser.get_condor_epilog("condor_submit")
+    )
+    parser = get_parser.get_parser(parser)
 
     # Argument-checking code
     # old jobsub_client commands got run through a shell that replaced \x with x
@@ -252,10 +255,11 @@ def jobsub_cmd_parser(
 # pylint: disable=dangerous-default-value
 @as_span("jobsub_cmd", is_main=True)
 def jobsub_cmd_main(argv: List[str] = sys.argv) -> None:
+
     """main line of code, proces args, etc."""
-    parser = jobsub_cmd_parser(
-        argv[0].find("jobsub_q") >= 0, parser=argparse.ArgumentParser()
-    )
+    condor_cmd = os.path.basename(argv[0]).replace("jobsub_", "condor_")
+    parser = argparse.ArgumentParser(epilog=get_parser.get_condor_epilog(condor_cmd))
+    parser = jobsub_cmd_parser(argv[0].find("jobsub_q") >= 0, parser=parser)
 
     parser.set_defaults(command=os.path.basename(argv[0]))
     arglist, passthru = parser.parse_known_args(argv[1:])
