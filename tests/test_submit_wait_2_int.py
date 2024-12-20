@@ -157,7 +157,7 @@ def run_launch(cmd, expected_out=1, get_dir=False):
     if os.environ.get("JOBSUB_TEST_SUBMIT_EXTRA", ""):
         # add extra submit flags, if available
         cmd = cmd.replace(
-            "jobsub_submit", "jobsub_submit " + os.environ["JOBSUB_TEST_SUBMIT_EXTRA"]
+            "jobsub submit", "jobsub submit " + os.environ["JOBSUB_TEST_SUBMIT_EXTRA"]
         )
 
     pf = os.popen(cmd + " 2>&1")
@@ -248,7 +248,7 @@ def test_condor_submit_dag1(samdev):
 def lookaround_launch(extra, verify_files=""):
     """Simple submit of our lookaround script"""
     assert run_launch(
-        f"jobsub_submit --mail-never --verbose=2 -e SAM_EXPERIMENT {extra} file://`pwd`/job_scripts/lookaround.sh {verify_files}"
+        f"jobsub submit --mail-never --verbose=2 -e SAM_EXPERIMENT {extra} file://`pwd`/job_scripts/lookaround.sh {verify_files}"
     )
 
 
@@ -265,7 +265,7 @@ def test_launch_lookaround_samdev_dev(samdev):
 @pytest.mark.integration
 def test_no_submit_condor_submit(samdev):
     dir = run_launch(
-        "jobsub_submit --verbose=1 --no-submit "
+        "jobsub submit --verbose=1 --no-submit "
         "file://`pwd`/job_scripts/lookaround.sh",
         get_dir=True,
     )
@@ -373,7 +373,7 @@ def dagnabbit_launch(extra, which="", nout_files=5):
     os.chdir(os.path.join(os.path.dirname(__file__), "dagnabbit"))
     res = run_launch(
         f"""
-        jobsub_submit \
+        jobsub submit \
           --mail-never \
           --verbose=2 \
           -e SAM_EXPERIMENT {extra} \
@@ -411,7 +411,7 @@ def test_launch_dagnabbit_complex(samdev):
 def fife_launch(extra):
     assert run_launch(
         """
-        jobsub_submit \
+        jobsub submit \
           --mail-never \
           --verbose=2 \
           -e EXPERIMENT \
@@ -432,7 +432,7 @@ def fife_launch(extra):
           --memory=500MB  \
           %(extra)s \
           --dataset-definition=gen_cfg  \
-          file://///cvmfs/fermilab.opensciencegrid.org/products/common/db/../prd/fife_utils/v3_3_2/NULL/libexec/fife_wrap \
+          file://$HOME/fife_wrap
             --find_setups \
             --setup-unquote 'hypotcode%%20v1_1' \
             --setup-unquote 'ifdhc%%20v2_7_2,ifdhc_config%%20v2_6_15' \
@@ -526,7 +526,7 @@ def xx_test_jobsub_q_repetitions(samdev):
             jobs_by_schedd[schedd] = [jid]
 
     print(f"jobs_by_schedd: {repr(jobs_by_schedd)}")
-    args = ["jobsub_q", "-G", "fermilab"]
+    args = ["jobsub", "q", "-G", "fermilab"]
     jcount = 0
     all_schedds_l = list(all_schedds)
     all_schedds_l.sort()
@@ -570,7 +570,7 @@ def test_wait_for_jobs():
         count = len(joblist)
         for jid in joblist:
             group = group_for_job(jid)
-            cmd = "jobsub_q -format '%%s' JobStatus -G %s %s" % (group, jid)
+            cmd = "jobsub q -format '%%s' JobStatus -G %s %s" % (group, jid)
             print("running: ", cmd)
             pf = os.popen(cmd)
             l = pf.readlines()
@@ -607,11 +607,19 @@ def test_fetch_output():
         outdirs[jid] = owd
         try:
             subprocess.run(
-                ["jobsub_fetchlog", "--group", group, "--jobid", jid, "--destdir", owd],
+                [
+                    "jobsub" "fetchlog",
+                    "--group",
+                    group,
+                    "--jobid",
+                    jid,
+                    "--destdir",
+                    owd,
+                ],
                 check=True,
             )
         except:
-            print(f"Failed doing test {jid2test[jid]}'s jobsub_fetchlog {jid}:")
+            print(f"Failed doing test {jid2test[jid]}'s jobsub fetchlog {jid}:")
             raise
 
 
@@ -634,7 +642,8 @@ def test_check_job_output():
             group = group_for_job(jid)
             subprocess.run(
                 [
-                    "jobsub_fetchlog",
+                    "jobsub",
+                    "fetchlog",
                     "--group",
                     group,
                     "--jobid",
@@ -684,7 +693,7 @@ def test_valid_constraint(samdev, constraint_flag_and_arg):
     jid = joblist[-1]
     group = group_for_job(jid)
     user = os.environ["USER"]
-    cmd = f"jobsub_q -G {group} {constraint_flag_and_arg} --jobid={jid} -format '%s' ClusterId"
+    cmd = f"jobsub q -G {group} {constraint_flag_and_arg} --jobid={jid} -format '%s' ClusterId"
     cmd = cmd.format(user=user)
     with os.popen(cmd) as query:
         output = query.readlines()
@@ -700,7 +709,7 @@ def test_valid_constraint(samdev, constraint_flag_and_arg):
     ],
 )
 def test_invalid_constraint(samdev, constraint_flag_and_arg):
-    cmd = f"jobsub_q -G fermilab {constraint_flag_and_arg} -autoformat ClusterId"
+    cmd = f"jobsub q -G fermilab {constraint_flag_and_arg} -autoformat ClusterId"
     query = os.popen(cmd)
     output = query.readlines()
     assert len(output) == 0
