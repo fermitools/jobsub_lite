@@ -18,19 +18,11 @@
 # limitations under the License.
 
 import os
-from pprint import pprint
-import subprocess
-import shutil
 import sys
-from typing import Optional
 
 if os.environ.get("LD_LIBRARY_PATH", ""):
     del os.environ["LD_LIBRARY_PATH"]
     os.execv(sys.argv[0], sys.argv)
-
-# pylint: disable=import-error,wrong-import-position
-import htcondor
-import requests  # type: ignore
 
 #
 # we are in prefix/bin/jobsub_fetchlog, so find our prefix
@@ -41,13 +33,14 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # find parts we need in package management
 #
 sys.path.append(os.path.join(PREFIX, "lib"))
-from jobsub_api import jobsub_fetchlog_main
+# pylint: disable=wrong-import-position
+from mains import jobsub_fetchlog_main, VERBOSE
 
 if __name__ == "__main__":
     try:
         jobsub_fetchlog_main()
     except Exception as e:  # pylint: disable=broad-except
-        if verbose:
+        if VERBOSE:
             raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
         sys.exit(1)

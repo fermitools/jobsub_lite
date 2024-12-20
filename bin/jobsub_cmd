@@ -22,11 +22,8 @@
 """
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 
-import argparse
-from collections import defaultdict
 import os
 import sys
-import re
 
 if os.environ.get("LD_LIBRARY_PATH", ""):
     del os.environ["LD_LIBRARY_PATH"]
@@ -35,22 +32,14 @@ if os.environ.get("LD_LIBRARY_PATH", ""):
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
 
-import creds
-import get_parser
-import condor
-from version import print_version, print_support_email
-from tracing import as_span, log_host_time
-from jobsub_api import jobsub_cmd_main
-
-verbose = 0
+from mains import jobsub_cmd_main, VERBOSE
 
 
 if __name__ == "__main__":
     try:
         jobsub_cmd_main()
     except Exception as e:  # pylint: disable=broad-except
-        # if verbose:
-        if True:
+        if VERBOSE:
             raise
         sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
         sys.exit(1)
