@@ -27,35 +27,40 @@ from get_parser import (
     get_parser,
     get_condor_epilog,
 )
+from tracing import as_span
+
+
+@as_span(os.path.basename(f"{sys.argv[0]}_{sys.argv[1]}"), is_main=True)
+def main():
+    top_parser = argparse.ArgumentParser()
+    subparsers = top_parser.add_subparsers()
+    for sc in ("submit", "submit_dag"):
+        sub_parser = get_parser(parser=subparsers.add_parser(sc))
+        sub_parser.set_defaults(command=f"jobsub_{sc}")
+        sub_parser.set_defaults(func=jobsub_submit_args)
+
+    for sc in ("q", "hold", "release", "rm", "wait"):
+        sub_parser = jobsub_cmd_parser(
+            sc == "q",
+            parser=subparsers.add_parser(
+                sc,
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                epilog=get_condor_epilog(f"condor_{sc}"),
+            ),
+        )
+        sub_parser.set_defaults(command=f"jobsub_{sc}")
+        sub_parser.set_defaults(func=jobsub_cmd_args)
+    sub_parser = jobsub_fetchlog_parser(parser=subparsers.add_parser("fetchlog"))
+    sub_parser.set_defaults(command="jobsub_fetchlog")
+    sub_parser.set_defaults(func=jobsub_fetchlog_args)
+
+    args, passthru = top_parser.parse_known_args()
+    args.func(args, passthru)
 
 
 if __name__ == "__main__":
     try:
-        top_parser = argparse.ArgumentParser()
-        subparsers = top_parser.add_subparsers()
-        for sc in ("submit", "submit_dag"):
-            sub_parser = get_parser(parser=subparsers.add_parser(sc))
-            sub_parser.set_defaults(command=f"jobsub_{sc}")
-            sub_parser.set_defaults(func=jobsub_submit_args)
-
-        for sc in ("q", "hold", "release", "rm", "wait"):
-            sub_parser = jobsub_cmd_parser(
-                sc == "q",
-                parser=subparsers.add_parser(
-                    sc,
-                    formatter_class=argparse.RawDescriptionHelpFormatter,
-                    epilog=get_condor_epilog(f"condor_{sc}"),
-                ),
-            )
-            sub_parser.set_defaults(command=f"jobsub_{sc}")
-            sub_parser.set_defaults(func=jobsub_cmd_args)
-        sub_parser = jobsub_fetchlog_parser(parser=subparsers.add_parser("fetchlog"))
-        sub_parser.set_defaults(command="jobsub_fetchlog")
-        sub_parser.set_defaults(func=jobsub_fetchlog_args)
-
-        args, passthru = top_parser.parse_known_args()
-        args.func(args, passthru)
-
+        main()
     except Exception as e:  # pylint: disable=broad-except
         if VERBOSE:
             raise

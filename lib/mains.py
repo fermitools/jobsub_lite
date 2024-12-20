@@ -248,6 +248,7 @@ def jobsub_cmd_parser(
 
 
 # pylint: disable=dangerous-default-value
+@as_span("jobsub_cmd", is_main=True)
 def jobsub_cmd_main(argv: List[str] = sys.argv) -> None:
     """main line of code, proces args, etc."""
     parser = jobsub_cmd_parser(
@@ -655,6 +656,7 @@ def jobsub_fetchlog_parser(parser: argparse.ArgumentParser) -> argparse.Argument
 
 
 # pylint: disable=dangerous-default-value
+@as_span("jobsub_fetchlog", is_main=True)
 def jobsub_fetchlog_main(argv: List[str] = sys.argv) -> None:
     """script mainline:
     - parse args
