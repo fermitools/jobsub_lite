@@ -3,7 +3,7 @@ NAME = jobsub_lite
 # In most cases, these two lines should be ALL that need to be changed
 # Warning:  Make sure there is NO trailing whitespace in either of these lines!!
 # Set RC to 0 for final release
-VERSION = v1.8
+VERSION = v1.9
 RC = 0
 ### End expected changes
 
@@ -24,34 +24,10 @@ RPMBUILD_DIR=${HOME}/rpmbuild
 specfile := $(ROOTDIR)/config/spec/$(NAME).spec
 versionfile := ${ROOTDIR}/lib/version.py
 tarball_dirs = bin lib etc man templates config # Dirs we need for the tarball
-OSR=$(shell /bin/sh -c ' . /etc/os-release; echo $$VERSION_ID | sed -e s/\..*//')
-
-
-
 
 .PHONY: all clean tarball set-version rpm clean-all
 
-ifeq ($(OSR), 7)
-
-# we only need the tracing-rpm on SL7/EL7
-
-all: tarball set-version tracing-rpm rpm clean
-tracing-name := $(NAME)_tracing_deps
-tracing-specfile := $(ROOTDIR)/config/spec/$(tracing-name).spec
-tracing-rpm: NOWFILE := $(shell mktemp)
-tracing-rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPECS
-tracing-rpm:
-	cp $(tracing-specfile) $(rpmSpecsDir)/
-	cd $(rpmSpecsDir); \
-	rpmbuild -ba $(tracing-name).spec
-	find $(RPMBUILD_DIR)/RPMS -type f -name "$(tracing-name)*.rpm" -newer $(NOWFILE) -exec cp {} $(ROOTDIR) \;
-	echo "Created RPM and copied it to current working directory"
-	((test -e $(NOWFILE)) && (rm $(NOWFILE)) && echo "Cleaned up tempfile") || echo "$(NOWFILE) does not exist.  Continuing anyway"
-else
-
 all: tarball set-version rpm clean
-
-endif
 
 rpm: rpmSourcesDir := $(RPMBUILD_DIR)/SOURCES
 rpm: rpmSpecsDir := $(RPMBUILD_DIR)/SPECS

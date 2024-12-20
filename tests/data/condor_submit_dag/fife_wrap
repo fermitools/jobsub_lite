@@ -68,7 +68,6 @@ class Wrapper:
             # just places where fife_utils is known to be up to date
             # experiments will source their favorite bits on top...
             "/cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups",
-            "/grid/fermiapp/products/common/etc/setups",
         ]
         os.setpgrp()
         self.ih = None
@@ -553,9 +552,6 @@ class Wrapper:
         scriptlist.append(
             '[ -z "$PRODUCTS" -a -r /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh ] && source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh'
         )
-        scriptlist.append(
-            '[ -z "$PRODUCTS" -a -r /grid/fermiapp/products/common/etc/setups.sh ] && source /grid/fermiapp/products/common/etc/setups.sh'
-        )
         scriptlist.append('[ -z "$IFDHC_DIR" ] && source `ups setup ifdhc`')
 
         if self.options.dry_run:
@@ -971,7 +967,7 @@ exit
            in the common products area and shove it in sys.path
         """
         pf = os.popen(
-            "for f in /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups /grid/fermiapp/products/common/etc/setups; do if [ -r $f ] ; then source $f; fi; done; source `ups setup ifdhc $IFDH_VERSION`; echo $IFDHC_DIR/lib/python; echo $IFDHC_CONFIG_DIR"
+            "for f in /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups; do if [ -r $f ] ; then source $f; fi; done; source `ups setup ifdhc $IFDH_VERSION`; echo $IFDHC_DIR/lib/python; echo $IFDHC_CONFIG_DIR"
         )
         l = pf.readlines()
         if len(l):

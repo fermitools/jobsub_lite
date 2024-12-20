@@ -6,6 +6,9 @@ from collections import defaultdict, OrderedDict
 import re
 import sys
 
+# clusterid.procid@schedd_name  owner submitted runtime st <rest of line that we're ignoring for this regex>
+line_regex = re.compile(r"\d+\.\d+@\S+(\s+\S+){4}\s+([CXIRHS])")
+
 type_map = OrderedDict(
     [
         ("T", "total; "),
@@ -23,9 +26,9 @@ totals["T"] = 0
 
 for line in sys.stdin.readlines():
     print(line, end="")
-    m = re.match(r"\d+\.\d+@\S+(\s+\S+){4}\s+([CXIRHS])", line)
+    m = line_regex.match(line)
     if m:
-        totals[m.group(2)] += 1
+        totals[m.group(2)] += 1  # Increment the count for the type of job
         totals["T"] += 1
 
 for i in type_map:

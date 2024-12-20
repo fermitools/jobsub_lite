@@ -18,7 +18,6 @@
 import argparse
 import os
 import re
-import sys
 from typing import Union, Any, Optional
 
 from condor import get_schedd_names
@@ -307,7 +306,9 @@ def get_parser(
         default=os.environ.get("CMTCONFIG", ""),
         help=" Set up minervasoft release built with cmt configuration. default is $CMTCONFIG",
     )
-    parser.add_argument("--cpu", help="request worker nodes have at least NUMBER cpus")
+    parser.add_argument(
+        "--cpu", metavar="NUMBER", help="Request worker nodes have at least NUMBER cpus"
+    )
     parser.add_argument(
         "--dag",
         help="submit and run a dagNabbit input file",
@@ -414,6 +415,9 @@ def get_parser(
         default=False,
         help="generate and mail a summary report of completed/failed/removed"
         " jobs in a DAG",
+    )
+    parser.add_argument(
+        "--gpu", metavar="NUMBER", help="request worker nodes have at least NUMBER cpus"
     )
     parser.add_argument(
         "-L", "--log-file", "--log_file", help="Log file to hold log output from job."

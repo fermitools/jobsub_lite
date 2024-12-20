@@ -17,7 +17,7 @@ echo "============"
 
 which gfal-ls
 
-for common_setup in /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh /grid/fermiapp/products/common/etc/setups.sh
+for common_setup in /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh
 do
 if [ -r $common_setup ]
 then

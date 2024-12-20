@@ -382,31 +382,35 @@ def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
             # default to old jobsub format
             execargs.extend(
                 [
-                    "-format",
+                    "-format",  # JOBSUBJOBID
                     "%-40s",
                     'strcat(split(GlobalJobId,"#")[1],"@",split(GlobalJobId,"#")[0])',
-                    "-format",
+                    "-format",  # OWNER
                     "%-10s\t",
                     """(DAGNodeName=!=''?strcat(" |-",DAGNodeName):Owner)""",
-                    "-format",
+                    "-format",  # SUBMITTED
                     "%-11s ",
                     'formatTime(QDate,"%m/%d %H:%M")',
-                    "-format",
+                    "-format",  # RUNTIME
+                    # For running jobs, use ServerTime - ShadowBday, and add it to the accumulated RemoteWallClockTime for previous executions
+                    # of the job.  Otherwise, use RemoteWallClockTime
+                    # This is because RemoteWallClockTime is only updated when jobs stop running - either through
+                    # completion, removal, or being held.
                     "%T ",
-                    "RemoteWallClockTime",
-                    "-format",
+                    "IfThenElse(JobStatus == 2, (ServerTime - ShadowBday) + RemoteWallClockTime, RemoteWallClockTime)",
+                    "-format",  # ST
                     " %s ",
                     'substr("UIRXCHE",JobStatus,1)',
-                    "-format",
+                    "-format",  # PRIO
                     " %3d ",
                     "JobPrio",
-                    "-format",
+                    "-format",  # SIZE
                     "%6.1f ",
                     "ImageSize/1024.0",
-                    "-format",
+                    "-format",  # COMMAND
                     "%s",
                     "JobsubCmd=!=''?JobsubCmd:Cmd",
-                    "-format",
+                    "-format",  # arguments after COMMAND
                     " %-.20s",
                     "Args",
                     "-format",
@@ -544,7 +548,7 @@ def fetch_from_condor(
         if p.wait() != 0:
             raise Exception("error creating archive")
 
-    cleanup({"submitdir": iwd})
+    cleanup({"submitdir": iwd, "verbose": VERBOSE})
 
     if not transfer_complete:
         print("Transfer may be incomplete.")

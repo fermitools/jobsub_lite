@@ -60,7 +60,7 @@ which ifdh > /dev/null 2>&1
 has_ifdh=$?
 if [ "$has_ifdh" -ne "0" ] ; then
     unset PRODUCTS
-    for setup_file in /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups /grid/fermiapp/products/common/etc/setups.sh /fnal/ups/etc/setups.sh ; do
+    for setup_file in /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups /fnal/ups/etc/setups.sh ; do
       if [ -e "$setup_file" ] && [ "$has_ifdh" -ne "0" ]; then
          source $setup_file
          ups exist ifdhc $IFDH_VERSION

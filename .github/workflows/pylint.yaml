@@ -10,12 +10,15 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       pylint_version: 2.13.9
+    strategy:
+      matrix:
+        py-version: [3.6, 3.7, 3.8, 3.9] # When EL8 is gone, we can remove everything up to 3.9
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.6 (until SL7 is gone)
+    - name: Set up Python 3.6-3.9
       uses: actions/setup-python@v3
       with:
-        python-version: 3.6.8
+        python-version: ${{ matrix.py-version }}
     - name: Install pylint
       run: |
         python3 -m pip install --upgrade pip

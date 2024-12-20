@@ -30,7 +30,6 @@ def setup_ups(monkeypatch):
     """
     ups_setup_script_locations = [
         "/cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh",
-        "/grid/fermiapp/products/common/etc/setups.sh",
     ]
     env_to_add = {}
 
