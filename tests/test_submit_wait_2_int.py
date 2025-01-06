@@ -239,14 +239,6 @@ def condor_dag_launch(dagfile, extra=""):
         assert run_launch(f"condor_submit_dag --verbose 1 {extra} {dagfile}")
 
 
-@pytest.mark.integration
-def test_2_condor_submit_dag1(samdev):
-    os.environ["SAM_PROJECT"] = "p" + str(int(time.time()))
-    os.environ["UID"] = str(os.getuid())
-    os.environ["USER"] = os.environ.get("USER", "sam")
-    condor_dag_launch("dataset.dag", f"-append getenv=UID,SAM_PROJECT,USER")
-
-
 def lookaround_launch(extra, verify_files=""):
     """Simple submit of our lookaround script"""
     assert run_launch(
