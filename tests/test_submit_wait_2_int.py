@@ -132,13 +132,13 @@ def dune_gp(dune):
     os.environ["_condor_COLLECTOR_HOST"] = get_collector()
 
 
-joblist = []
-jid2test = {}
-jid2nout = {}
-jid2group = {}
-jid2pool = {}
-outdirs = {}
-ddirs = {}
+joblist2 = []
+jid2test2 = {}
+jid2nout2 = {}
+jid2group2 = {}
+jid2pool2 = {}
+outdirs2 = {}
+ddirs2 = {}
 
 
 def run_launch(cmd, expected_out=1, get_dir=False):
@@ -184,12 +184,14 @@ def run_launch(cmd, expected_out=1, get_dir=False):
         if jobid and schedd and jobsubjobid and not added:
             added = True
             print("Found all three! ", jobid, schedd, jobsubjobid)
-            joblist.append("%s.0@%s" % (jobid, schedd))
+            joblist2.append("%s.0@%s" % (jobid, schedd))
             # note which test led to this jobid
-            jid2test["%s.0@%s" % (jobid, schedd)] = inspect.stack()[2][3]
-            jid2nout["%s.0@%s" % (jobid, schedd)] = expected_out
-            jid2group["%s.0@%s" % (jobid, schedd)] = os.environ.get("GROUP", "fermilab")
-            jid2pool["%s.0@%s" % (jobid, schedd)] = os.environ.get(
+            jid2test2["%s.0@%s" % (jobid, schedd)] = inspect.stack()[2][3]
+            jid2nout2["%s.0@%s" % (jobid, schedd)] = expected_out
+            jid2group2["%s.0@%s" % (jobid, schedd)] = os.environ.get(
+                "GROUP", "fermilab"
+            )
+            jid2pool2["%s.0@%s" % (jobid, schedd)] = os.environ.get(
                 "_condor_COLLECTOR_HOST", ""
             )
     res = pf.close()
@@ -273,30 +275,6 @@ def test_2_no_submit_condor_submit(samdev):
 
 
 @pytest.mark.integration
-def test_2_launch_lookaround_ddir(samdev):
-    pid = os.getpid()
-    ddir = f"/pnfs/fermilab/users/$USER/d{pid}"
-    fake_ifdh.mkdir_p(ddir)
-    lookaround_launch(f"--devserver -d D1 {ddir}")
-    ddirs[joblist[-1]] = ddir
-
-
-@pytest.mark.integration
-def test_2_launch_lookaround_dune(dune):
-    lookaround_launch("--devserver")
-
-
-@pytest.mark.integration
-def test_2_launch_lookaround_dune_gp_poolflag(dune):
-    lookaround_launch("--global-pool=dune")
-
-
-@pytest.mark.integration
-def test_2_launch_lookaround_dune_gp(dune_gp):
-    lookaround_launch("")
-
-
-@pytest.mark.integration
 def test_2_maxconcurrent(samdev):
     lookaround_launch("--maxConcurrent 2 -N 6 ")
 
@@ -345,25 +323,9 @@ def test_2_tar_dir_cvmfs(dune, add_links):
 
 
 @pytest.mark.integration
-def test_2_tar_dir_pnfs(dune, add_links):
-    lookaround_launch(
-        f"--tar_file_name tardir://{os.path.dirname(__file__)}/dagnabbit --use-pnfs-dropbox",
-        f"\\$INPUT_TAR_DIR_LOCAL/ckjobA.sh",
-    )
-
-
-@pytest.mark.integration
 def test_2_dash_f_dropbox_pnfs(dune):
     lookaround_launch(
         f"-f dropbox://{__file__} --use-pnfs-dropbox",
-        f"\\$CONDOR_DIR_INPUT/{os.path.basename(__file__)}",
-    )
-
-
-@pytest.mark.integration
-def test_2_dash_f_dropbox_pnfs_exra_slashes(dune):
-    lookaround_launch(
-        f"-f dropbox:////{__file__} --use-pnfs-dropbox",
         f"\\$CONDOR_DIR_INPUT/{os.path.basename(__file__)}",
     )
 
@@ -388,16 +350,6 @@ def dagnabbit_launch(extra, which="", nout_files=5):
 @pytest.mark.integration
 def test_2_launch_dagnabbit_simple(samdev):
     dagnabbit_launch("--devserver", "")
-
-
-@pytest.mark.integration
-def test_2_launch_dagnabbit_collapse(samdev):
-    dagnabbit_launch("--devserver", "HS", 12)
-
-
-@pytest.mark.integration
-def test_2_launch_dagnabbit_dropbox(samdev):
-    dagnabbit_launch("--devserver", "Dropbox")
 
 
 @pytest.mark.integration
@@ -470,29 +422,14 @@ def test_2_samdev_fife_launch(samdev):
     fife_launch("--devserver")
 
 
-@pytest.mark.integration
-def test_2_dune_fife_launch(dune):
-    fife_launch("--devserver")
-
-
-@pytest.mark.integration
-def test_2_nova_fife_launch(nova):
-    fife_launch("--devserver")
-
-
-@pytest.mark.integration
-def test_2_dune_gp_fife_launch(dune_gp):
-    fife_launch("")
-
-
 def group_for_job(jid):
 
-    group = jid2group.get(jid, "")
+    group = jid2group2.get(jid, "")
 
     if jid.find("dune") > 0:
         if not group:
             group = "dune"
-        if jid2pool.get(jid, ""):
+        if jid2pool2.get(jid, ""):
             os.environ["_condor_COLLECTOR_HOST"] = get_collector()
     else:
         if not group:
@@ -517,7 +454,7 @@ def xx_test_jobsub_q_repetitions(samdev):
     lookaround_launch("")
     jobs_by_schedd = {}
     all_schedds = set()
-    for jid in joblist:
+    for jid in joblist2:
         schedd = re.sub(r".*@", "", jid)
         all_schedds.add(schedd)
         if schedd in jobs_by_schedd:
@@ -556,19 +493,19 @@ def xx_test_jobsub_q_repetitions(samdev):
 def test_2_wait_for_jobs():
     """Not really a test, but we have to wait for jobs to complete..."""
     count = 1
-    print("Waiting for jobs: ", " ".join(joblist))
+    print("Waiting for jobs: ", " ".join(joblist2))
 
     # put the list somewhere so we can see what the test is waiting for
     # when not running with -s or whatever...
-    with open("/tmp/jobsub_lite_test_joblist", "w") as f:
-        f.write(" ".join(joblist))
+    with open("/tmp/jobsub_lite_test_joblist2", "w") as f:
+        f.write(" ".join(joblist2))
 
     repeats = 0
     while count > 0 and repeats < 3:
         if repeats == 0:
             time.sleep(20)
-        count = len(joblist)
-        for jid in joblist:
+        count = len(joblist2)
+        for jid in joblist2:
             group = group_for_job(jid)
             cmd = "jobsub q -format '%%s' JobStatus -G %s %s" % (group, jid)
             print("running: ", cmd)
@@ -601,10 +538,10 @@ def test_2_wait_for_jobs():
 @pytest.mark.smoke
 @pytest.mark.integration
 def test_2_fetch_output():
-    for jid in joblist:
+    for jid in joblist2:
         group = group_for_job(jid)
         owd = tempfile.mkdtemp()
-        outdirs[jid] = owd
+        outdirs2[jid] = owd
         try:
             subprocess.run(
                 [
@@ -620,7 +557,7 @@ def test_2_fetch_output():
                 check=True,
             )
         except:
-            print(f"Failed doing test {jid2test[jid]}'s jobsub fetchlog {jid}:")
+            print(f"Failed doing test {jid2test2[jid]}'s jobsub fetchlog {jid}:")
             raise
 
 
@@ -628,15 +565,15 @@ def test_2_fetch_output():
 @pytest.mark.integration
 def test_2_check_job_output():
     res = True
-    for jid, ddir in ddirs.items():
-        print(f"Checking {jid2test[jid]} {jid} -d tag  {ddir}...")
+    for jid, ddir in ddirs2.items():
+        print(f"Checking {jid2test2[jid]} {jid} -d tag  {ddir}...")
         fl = fake_ifdh.ls(ddir)
         res = res and bool(len(fl))
 
-    for jid, outdir in outdirs.items():
+    for jid, outdir in outdirs2.items():
         fl = glob.glob("%s/*[0-9].out" % outdir)
 
-        if len(fl) < jid2nout[jid]:
+        if len(fl) < jid2nout2[jid]:
             # if not enough files, try fetching again...
             # sometimes when we look later they're all there
             print(f"Notice: re-fetching {jid} logs...")
@@ -658,16 +595,16 @@ def test_2_check_job_output():
 
         # make sure we have enough output files
         print(
-            f"Checking out file count test {jid2test[jid]} {jid} expecting {jid2nout[jid]} actual count {len(fl)}"
+            f"Checking out file count test {jid2test2[jid]} {jid} expecting {jid2nout2[jid]} actual count {len(fl)}"
         )
-        if len(fl) >= jid2nout[jid]:
+        if len(fl) >= jid2nout2[jid]:
             print("-- ok")
         else:
             res = False
             print("-- bad")
 
         for f in fl:
-            print(f"Checking {jid2test[jid]} {jid} output file {f}...")
+            print(f"Checking {jid2test2[jid]} {jid} output file {f}...")
             fd = open(f, "r")
             f_ok = False
             ll = fd.readlines()
@@ -689,9 +626,9 @@ def test_2_check_job_output():
 )
 def test_2_valid_constraint(samdev, constraint_flag_and_arg):
     lookaround_launch("--devserver")
-    if len(joblist) == 0:
+    if len(joblist2) == 0:
         raise AssertionError("No jobs submitted")
-    jid = joblist[-1]
+    jid = joblist2[-1]
     group = group_for_job(jid)
     user = os.environ["USER"]
     cmd = f"jobsub q -G {group} {constraint_flag_and_arg} --jobid={jid} -format '%s' ClusterId"
