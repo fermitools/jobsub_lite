@@ -67,6 +67,8 @@ def main():
     if len(cmd_args):
         f = cmd_args[-1]
         cmd_args = cmd_args[:-1]
+    else:
+        raise SystemExit("Filename argument is required.")
 
     varg = vars(arglist)
     cred_set = get_creds(varg)
