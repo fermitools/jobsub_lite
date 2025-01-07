@@ -242,7 +242,9 @@ def test_condor_submit_dag1(samdev):
     os.environ["SAM_PROJECT"] = "p" + str(int(time.time()))
     os.environ["UID"] = str(os.getuid())
     os.environ["USER"] = os.environ.get("USER", "sam")
-    condor_dag_launch("dataset.dag", f"-append getenv=UID,SAM_PROJECT,USER")
+    condor_dag_launch(
+        "dataset.dag", f"-append getenv=UID,SAM_PROJECT,USER,DATE,UUID,DATETIME"
+    )
 
 
 def lookaround_launch(extra, verify_files=""):
