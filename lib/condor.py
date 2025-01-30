@@ -266,6 +266,7 @@ def ran_vault_storer_recently(schedd: str, handle: str, outbase: str) -> bool:
     and it was within the last week minus a bit"""
     try:
         sv = os.stat(f"{outbase}/.cvs_{schedd}_{handle}")
+        # print(f"saw cvs file, sv.st_mtime is {sv.st_mtime} check: {sv.st_mtime > time.time() - 604500}")
         # 1 week: 24 * 7 * 60 * 60 = 604800, les 5 minutes (300) -> 604500
         return sv.st_mtime > time.time() - 604500
     except FileNotFoundError:
@@ -277,6 +278,7 @@ def record_vault_storer_run(schedd: str, handle: str, outbase: str) -> None:
     # recreate/touch the file
     with open(f"{outbase}/.cvs_{schedd}_{handle}", "w", encoding="utf-8"):
         pass
+    # print("wrote cvs file...")
 
 
 # pylint: disable=dangerous-default-value,too-many-locals,too-many-branches,too-many-statements
@@ -385,10 +387,7 @@ def submit(
             )
             return None
 
-        if (
-            vargs["managed_token"]
-            and os.environ.get("_condor_SEC_CREDENTIAL_STORER", "unset") != "/bin/true"
-        ):
+        if vargs["managed_token"] and _sec_cred_storer_val != "/bin/true":
             record_vault_storer_run(
                 schedd_name, vargs["oauth_handle"], vargs["outbase"]
             )
