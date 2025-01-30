@@ -320,7 +320,7 @@ def submit(
     # In the condor_vault_storer output, debug gives us more output than verbose,
     # so make that mapping from our verbose/output to condor_vault_storer's
 
-    if vargs["managed_tokens"] and ran_vault_storer_recently(
+    if vargs["managed_token"] and ran_vault_storer_recently(
         schedd_name, vargs["oauth_handle"], vargs["outbase"]
     ):
         _sec_cred_storer_val = "/bin/true"
@@ -386,7 +386,7 @@ def submit(
             return None
 
         if (
-            vargs["managed_tokens"]
+            vargs["managed_token"]
             and os.environ.get("_condor_SEC_CREDENTIAL_STORER", "unset") != "/bin/true"
         ):
             record_vault_storer_run(

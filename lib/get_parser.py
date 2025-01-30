@@ -480,7 +480,7 @@ def get_parser() -> argparse.ArgumentParser:
         " this into account",
     )
     parser.add_argument(
-        "--manged-token",
+        "--managed-token",
         action="store_const",
         const=True,
         default=False,
