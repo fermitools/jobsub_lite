@@ -7,7 +7,7 @@ from mains import jobsub_submit_main, jobsub_fetchlog_main, jobsub_cmd_main
 
 
 @contextlib.contextmanager
-def output_saver(should_i: bool) -> Generator[StringIO, StringIO, StringIO]:
+def output_saver(should_i: bool) -> Generator[StringIO, bool, StringIO]:
     """
     context manager that optionally puts sys.stdio and sys.stderr into
     a StringIO() so you can look at them...
