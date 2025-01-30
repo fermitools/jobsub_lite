@@ -480,6 +480,13 @@ def get_parser() -> argparse.ArgumentParser:
         " this into account",
     )
     parser.add_argument(
+        "--manged-token",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Optimize calls to condor_vault_storer, etc.",
+    )
+    parser.add_argument(
         "--memory",
         default="2GB",
         help="Request worker nodes have at least NUMBER[UNITS] of memory."
