@@ -13,8 +13,8 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 sys.path.append(os.path.join(PREFIX, "lib"))
 
+# type: ignore[implicit-reexport]
 # pylint: disable=wrong-import-position,ungrouped-imports,import-error
-
 from mains import (
     jobsub_submit_args,
     jobsub_cmd_args,
