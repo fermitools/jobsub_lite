@@ -262,22 +262,38 @@ def load_submit_file(filename: str) -> Tuple[Any, Optional[int]]:
     return htcondor.Submit(res), nqueue
 
 
-def ran_vault_storer_recently(schedd: str, handle: str, outbase: str) -> bool:
+def vault_storer_record_filename(schedd: str, handle: str, outbase: str) -> str:
+    """compute filename for recording/checking condor_vault_storer calls"""
+    return f"{outbase}/.success_vt_store_{schedd}_{handle}"
+
+
+def ran_vault_storer_recently(
+    schedd: str, handle: str, outbase: str, verbose: int
+) -> bool:
     """See if we left a timestamp file from a previous run of jobsub_submit,
     and it was within the last week minus a bit"""
     try:
-        sv = os.stat(f"{outbase}/.success_vt_store_{schedd}_{handle}")
-        # print(f"saw cvs file, sv.st_mtime is {sv.st_mtime} check: {sv.st_mtime > time.time() - 518400}")
+        fname = vault_storer_record_filename(schedd, handle, outbase)
+        sv = os.stat(fname)
+        if verbose > 0:
+            print(
+                f"ran_vault_storer_recently: saw {fname}, sv.st_mtime is {sv.st_mtime} check: {sv.st_mtime > time.time() - 518400}"
+            )
         # 6 days: 24 * 6 * 60 * 60 = 518400
         return sv.st_mtime > time.time() - 518400
     except FileNotFoundError:
         return False
 
 
-def record_vault_storer_run(schedd: str, handle: str, outbase: str) -> None:
+def record_vault_storer_run(
+    schedd: str, handle: str, outbase: str, verbose: int
+) -> None:
     """touch a file to record when we last ran condor_vault_storer"""
+    fname = vault_storer_record_filename(schedd, handle, outbase)
     # recreate/touch the file
-    pathlib.Path(f"{outbase}/.success_vt_store_{schedd}_{handle}").touch(exist_ok=True)
+    if verbose > 0:
+        print(f"record_vault_storer: touching {fname}")
+    pathlib.Path(fname).touch(exist_ok=True)
 
 
 NO_OP_STORER = "/bin/true"
@@ -323,8 +339,10 @@ def submit(
     # In the condor_vault_storer output, debug gives us more output than verbose,
     # so make that mapping from our verbose/output to condor_vault_storer's
 
+    verbose = int(vargs.get("verbose", 0))
+
     if vargs["managed_token"] and ran_vault_storer_recently(
-        schedd_name, vargs["oauth_handle"], vargs["outbase"]
+        schedd_name, vargs["oauth_handle"], vargs["outbase"], verbose
     ):
         _sec_cred_storer_val = NO_OP_STORER
     else:
@@ -339,7 +357,6 @@ def submit(
         cmd = f'_condor_SEC_CREDENTIAL_VAULT_STORER_OPTS="-d" {cmd}'
 
     packages.orig_env()
-    verbose = int(vargs.get("verbose", 0))
     if verbose > 0:
         print(f"Running: {cmd}")
 
@@ -390,7 +407,7 @@ def submit(
 
         if vargs["managed_token"] and _sec_cred_storer_val != NO_OP_STORER:
             record_vault_storer_run(
-                schedd_name, vargs["oauth_handle"], vargs["outbase"]
+                schedd_name, vargs["oauth_handle"], vargs["outbase"], verbose
             )
 
         # If we had a successful submission, give the job id to the user
