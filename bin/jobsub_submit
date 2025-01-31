@@ -38,7 +38,7 @@ PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # this means we don't need fancy ups dependencies..
 #
 sys.path.append(os.path.join(PREFIX, "lib"))
-from mains import jobsub_submit_main, VERBOSE
+from mains.submit import jobsub_submit_main, VERBOSE
 
 if __name__ == "__main__":
     try:

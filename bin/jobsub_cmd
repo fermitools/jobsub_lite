@@ -32,7 +32,7 @@ if os.environ.get("LD_LIBRARY_PATH", ""):
 PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PREFIX, "lib"))
 
-from mains import jobsub_cmd_main, VERBOSE
+from mains.cmd import jobsub_cmd_main, VERBOSE
 
 
 if __name__ == "__main__":
