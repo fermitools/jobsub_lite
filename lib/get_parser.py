@@ -484,7 +484,7 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_const",
         const=True,
         default=False,
-        help="Optimize calls to condor_vault_storer, etc.",
+        help="Optimize calls to condor_vault_storer, etc. when using managed tokens",
     )
     parser.add_argument(
         "--memory",

@@ -16,11 +16,12 @@
 """ condor related routines """
 from contextlib import contextmanager
 import os
-import sys
+import pathlib
 import random
 import re
 import shutil
 import subprocess
+import sys
 import time
 from typing import Dict, List, Any, Tuple, Optional, Union, Generator
 
@@ -265,10 +266,10 @@ def ran_vault_storer_recently(schedd: str, handle: str, outbase: str) -> bool:
     """See if we left a timestamp file from a previous run of jobsub_submit,
     and it was within the last week minus a bit"""
     try:
-        sv = os.stat(f"{outbase}/.cvs_{schedd}_{handle}")
-        # print(f"saw cvs file, sv.st_mtime is {sv.st_mtime} check: {sv.st_mtime > time.time() - 604500}")
-        # 1 week: 24 * 7 * 60 * 60 = 604800, les 5 minutes (300) -> 604500
-        return sv.st_mtime > time.time() - 604500
+        sv = os.stat(f"{outbase}/.success_vt_store_{schedd}_{handle}")
+        # print(f"saw cvs file, sv.st_mtime is {sv.st_mtime} check: {sv.st_mtime > time.time() - 518400}")
+        # 6 days: 24 * 6 * 60 * 60 = 518400
+        return sv.st_mtime > time.time() - 518400
     except FileNotFoundError:
         return False
 
@@ -276,10 +277,10 @@ def ran_vault_storer_recently(schedd: str, handle: str, outbase: str) -> bool:
 def record_vault_storer_run(schedd: str, handle: str, outbase: str) -> None:
     """touch a file to record when we last ran condor_vault_storer"""
     # recreate/touch the file
-    with open(f"{outbase}/.cvs_{schedd}_{handle}", "w", encoding="utf-8"):
-        pass
-    # print("wrote cvs file...")
+    pathlib.Path(f"{outbase}/.success_vt_store_{schedd}_{handle}").touch(exist_ok=True)
 
+
+NO_OP_STORER = "/bin/true"
 
 # pylint: disable=dangerous-default-value,too-many-locals,too-many-branches,too-many-statements
 @as_span("submit", arg_attrs=["*"])
@@ -325,7 +326,7 @@ def submit(
     if vargs["managed_token"] and ran_vault_storer_recently(
         schedd_name, vargs["oauth_handle"], vargs["outbase"]
     ):
-        _sec_cred_storer_val = "/bin/true"
+        _sec_cred_storer_val = NO_OP_STORER
     else:
         _sec_cred_storer_val = f"{jldir}/bin/condor_vault_storer"
 
@@ -387,7 +388,7 @@ def submit(
             )
             return None
 
-        if vargs["managed_token"] and _sec_cred_storer_val != "/bin/true":
+        if vargs["managed_token"] and _sec_cred_storer_val != NO_OP_STORER:
             record_vault_storer_run(
                 schedd_name, vargs["oauth_handle"], vargs["outbase"]
             )
