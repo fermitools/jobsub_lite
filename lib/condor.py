@@ -16,11 +16,13 @@
 """ condor related routines """
 from contextlib import contextmanager
 import os
-import sys
+import pathlib
 import random
 import re
 import shutil
 import subprocess
+import sys
+import time
 from typing import Dict, List, Any, Tuple, Optional, Union, Generator
 
 # pylint: disable=import-error
@@ -260,7 +262,43 @@ def load_submit_file(filename: str) -> Tuple[Any, Optional[int]]:
     return htcondor.Submit(res), nqueue
 
 
-# pylint: disable=dangerous-default-value,too-many-locals,too-many-branches
+def vault_storer_record_filename(schedd: str, handle: str, outbase: str) -> str:
+    """compute filename for recording/checking condor_vault_storer calls"""
+    return f"{outbase}/.success_vt_store_{schedd}_{handle}"
+
+
+def ran_vault_storer_recently(
+    schedd: str, handle: str, outbase: str, verbose: int
+) -> bool:
+    """See if we left a timestamp file from a previous run of jobsub_submit,
+    and it was within the last week minus a bit"""
+    try:
+        fname = vault_storer_record_filename(schedd, handle, outbase)
+        sv = os.stat(fname)
+        if verbose > 0:
+            print(
+                f"ran_vault_storer_recently: saw {fname}, sv.st_mtime is {sv.st_mtime} check: {sv.st_mtime > time.time() - 518400}"
+            )
+        # 6 days: 24 * 6 * 60 * 60 = 518400
+        return sv.st_mtime > time.time() - 518400
+    except FileNotFoundError:
+        return False
+
+
+def record_vault_storer_run(
+    schedd: str, handle: str, outbase: str, verbose: int
+) -> None:
+    """touch a file to record when we last ran condor_vault_storer"""
+    fname = vault_storer_record_filename(schedd, handle, outbase)
+    # recreate/touch the file
+    if verbose > 0:
+        print(f"record_vault_storer: touching {fname}")
+    pathlib.Path(fname).touch(exist_ok=True)
+
+
+NO_OP_STORER = "/bin/true"
+
+# pylint: disable=dangerous-default-value,too-many-locals,too-many-branches,too-many-statements
 @as_span("submit", arg_attrs=["*"])
 def submit(
     f: str, vargs: Dict[str, Any], schedd_name: str, cmd_args: List[str] = []
@@ -300,7 +338,16 @@ def submit(
     # correct vault token storer script
     # In the condor_vault_storer output, debug gives us more output than verbose,
     # so make that mapping from our verbose/output to condor_vault_storer's
-    _sec_cred_storer_val = f"{jldir}/bin/condor_vault_storer"
+
+    verbose = int(vargs.get("verbose", 0))
+
+    if vargs["managed_token"] and ran_vault_storer_recently(
+        schedd_name, vargs["oauth_handle"], vargs["outbase"], verbose
+    ):
+        _sec_cred_storer_val = NO_OP_STORER
+    else:
+        _sec_cred_storer_val = f"{jldir}/bin/condor_vault_storer"
+
     cmd = f'_condor_SEC_CREDENTIAL_STORER="{_sec_cred_storer_val}" {cmd}'
     if vargs.get("verbose", 0) == 1:
         # Verbose
@@ -310,7 +357,6 @@ def submit(
         cmd = f'_condor_SEC_CREDENTIAL_VAULT_STORER_OPTS="-d" {cmd}'
 
     packages.orig_env()
-    verbose = int(vargs.get("verbose", 0))
     if verbose > 0:
         print(f"Running: {cmd}")
 
@@ -358,6 +404,11 @@ def submit(
                 f"{specific_error_msgs}{hl}\n"
             )
             return None
+
+        if vargs["managed_token"] and _sec_cred_storer_val != NO_OP_STORER:
+            record_vault_storer_run(
+                schedd_name, vargs["oauth_handle"], vargs["outbase"], verbose
+            )
 
         # If we had a successful submission, give the job id to the user
         m = re.search(r"\d+ job\(s\) submitted to cluster (\d+).", output.stdout)
