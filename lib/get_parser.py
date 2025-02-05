@@ -16,6 +16,7 @@
 """ argument parser, used multiple places, so defined here"""
 # pylint: disable=too-few-public-methods
 import argparse
+import difflib
 import os
 import re
 import sys
@@ -133,17 +134,31 @@ class CheckIfValidAuthMethod(argparse.Action):
             return
 
         # Check that the requested auth methods include the required auth methods
-        required_auth_methods = set(REQUIRED_AUTH_METHODS)
-        if len(required_auth_methods.intersection(set(check_values))) == 0:
-            raise TypeError(
+        if len(set(REQUIRED_AUTH_METHODS).intersection(set(check_values))) == 0:
+            msg_add = ""
+            for val in check_values:
+                close_match = difflib.get_close_matches(val, REQUIRED_AUTH_METHODS, n=1)
+                if len(close_match) > 0:
+                    msg_add = (
+                        f" You provided '{val}' - did you mean '{close_match[0]}'?"
+                    )
+            raise ValueError(
                 "The jobsub_lite infrastructure requires that the following "
-                f"authorization methods be present: {REQUIRED_AUTH_METHODS}"
+                f"authorization methods be present: {REQUIRED_AUTH_METHODS}.{msg_add}"
             )
 
         for value in check_values:
             if value not in SUPPORTED_AUTH_METHODS:
-                raise TypeError(
-                    f"Invalid auth method {value}.  Supported auth methods are {SUPPORTED_AUTH_METHODS}"
+                msg_add = ""
+                close_match = difflib.get_close_matches(
+                    value, SUPPORTED_AUTH_METHODS, n=1
+                )
+                if len(close_match) > 0:
+                    msg_add = (
+                        f" You provided '{value}' - did you mean '{close_match[0]}'?"
+                    )
+                raise ValueError(
+                    f"Invalid auth method {value}.  Supported auth methods are {SUPPORTED_AUTH_METHODS}.{msg_add}"
                 )
         setattr(namespace, self.dest, ",".join(check_values))
 
