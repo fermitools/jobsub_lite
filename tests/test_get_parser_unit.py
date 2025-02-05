@@ -619,7 +619,7 @@ class TestGetParserUnit:
         from creds import REQUIRED_AUTH_METHODS
 
         with pytest.raises(
-            TypeError,
+            ValueError,
             match=rf"({auth_methods_args_test_case.bad_auth_method}|{REQUIRED_AUTH_METHODS})",
         ):
             check_valid_auth_method_arg_parser.parse_args(
@@ -706,7 +706,10 @@ class TestGetParserUnit:
     )
     @pytest.mark.unit
     def test_CheckAuthMethod_diffs(
-        self, auth_arg, expected_error_context, check_valid_auth_method_arg_parser
+        self,
+        auth_arg,
+        expected_error_context,
+        check_valid_auth_method_arg_parser,
     ):
         """Check to see if we provide an auth method that's either valid or close to a valid one,
         do we either get no error raised or get the "Did you mean" message in the raised ValueError
