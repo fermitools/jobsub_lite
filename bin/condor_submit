@@ -75,7 +75,7 @@ def main():
     os.environ["_condor_SEC_CREDENTIAL_STORER"] = f"{bindir}/condor_vault_storer"
     # END PATCH
 
-    condor_parser = get_parser.get_submit_parser(add_condor_epilog=True)
+    condor_parser = get_parser.get_submit_parser()
 
     condor_parser.add_argument(
         "-spool",
