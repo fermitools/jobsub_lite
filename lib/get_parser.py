@@ -20,7 +20,7 @@ import difflib
 import os
 import re
 import sys
-from typing import Union, Any
+from typing import Union, Any, List
 
 from condor import get_schedd_names
 from creds import SUPPORTED_AUTH_METHODS, REQUIRED_AUTH_METHODS
@@ -152,7 +152,7 @@ class CheckIfValidAuthMethod(argparse.Action):
         setattr(namespace, self.dest, ",".join(check_values))
 
     @staticmethod
-    def __get_msg_from_close_val(value: str, valid_values: list[str]) -> str:
+    def __get_msg_from_close_val(value: str, valid_values: List[str]) -> str:
         """If our value is close to a valid value, return a message asking if the user meant
         the valid value.  Otherwise, return an empty string"""
         did_you_mean_str = " You provided '{value}' - did you mean '{close_match}'?"
