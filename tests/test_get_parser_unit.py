@@ -190,6 +190,7 @@ def all_test_args():
         "--mail-never",
         "--mail-on-error",
         "--mail-always",
+        "--managed-token",
         "--maxConcurrent",
         "xxmaxConcurrentxx",
         "--memory",
@@ -647,3 +648,25 @@ class TestGetParserUnit:
         finally:
             if old_auth_methods_env_value:
                 os.environ["JOBSUB_AUTH_METHODS"] = old_auth_methods_env_value
+
+    @pytest.mark.unit
+    def test_managed_token_flag_env_set_clean_env(self, monkeypatch):
+        """Check that a clean environment does not have the managed token flag set
+        after parsing args"""
+        old_managed_token_env_value = os.environ.get("JOBSUB_MANAGED_TOKEN", None)
+        monkeypatch.delenv("JOBSUB_MANAGED_TOKEN", raising=False)
+        args = get_parser.get_parser().parse_args([])
+        try:
+            assert not args.managed_token
+        finally:
+            if old_managed_token_env_value:
+                os.environ["JOBSUB_MANAGED_TOKEN"] = old_managed_token_env_value
+
+    @pytest.mark.unit
+    def test_managed_token_flag_env_set(self, monkeypatch):
+        """Check that we can set the managed token flag via the environment variable
+        JOBSUB_MANAGED_TOKEN."""
+        monkeypatch.setenv("JOBSUB_MANAGED_TOKEN", "1")
+
+        args = get_parser.get_parser().parse_args([])
+        assert args.managed_token

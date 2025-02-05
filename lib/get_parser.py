@@ -483,8 +483,10 @@ def get_parser() -> argparse.ArgumentParser:
         "--managed-token",
         action="store_const",
         const=True,
-        default=False,
-        help="Optimize calls to condor_vault_storer, etc. when using managed tokens",
+        default=os.environ.get("JOBSUB_MANAGED_TOKEN", None) is not None,
+        help="Will attempt to bypass calling condor_vault_storer during job submission. "
+        "Assumes that vault token is managed externally, so condor_vault_storer will "
+        "only be called once every six days.",
     )
     parser.add_argument(
         "--memory",
