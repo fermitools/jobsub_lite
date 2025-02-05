@@ -16,10 +16,11 @@
 """ argument parser, used multiple places, so defined here"""
 # pylint: disable=too-few-public-methods
 import argparse
+import difflib
 import os
 import re
 import sys
-from typing import Union, Any
+from typing import Union, Any, List
 
 from condor import get_schedd_names
 from creds import SUPPORTED_AUTH_METHODS, REQUIRED_AUTH_METHODS
@@ -133,19 +134,34 @@ class CheckIfValidAuthMethod(argparse.Action):
             return
 
         # Check that the requested auth methods include the required auth methods
-        required_auth_methods = set(REQUIRED_AUTH_METHODS)
-        if len(required_auth_methods.intersection(set(check_values))) == 0:
-            raise TypeError(
+        if len(set(REQUIRED_AUTH_METHODS).intersection(set(check_values))) == 0:
+            msg_add = ""
+            for val in check_values:
+                msg_add += self.__get_msg_from_close_val(val, REQUIRED_AUTH_METHODS)
+            raise ValueError(
                 "The jobsub_lite infrastructure requires that the following "
-                f"authorization methods be present: {REQUIRED_AUTH_METHODS}"
+                f"authorization methods be present: {REQUIRED_AUTH_METHODS}.{msg_add}"
             )
 
         for value in check_values:
             if value not in SUPPORTED_AUTH_METHODS:
-                raise TypeError(
-                    f"Invalid auth method {value}.  Supported auth methods are {SUPPORTED_AUTH_METHODS}"
+                msg_add = self.__get_msg_from_close_val(value, SUPPORTED_AUTH_METHODS)
+                raise ValueError(
+                    f"Invalid auth method {value}.  Supported auth methods are {SUPPORTED_AUTH_METHODS}.{msg_add}"
                 )
         setattr(namespace, self.dest, ",".join(check_values))
+
+    @staticmethod
+    def __get_msg_from_close_val(value: str, valid_values: List[str]) -> str:
+        """If our value is close to a valid value, return a message asking if the user meant
+        the valid value.  Otherwise, return an empty string"""
+        did_you_mean_str = " You provided '{value}' - did you mean '{close_match}'?"
+        close_match = difflib.get_close_matches(value, valid_values, n=1)
+        return (
+            did_you_mean_str.format(value=value, close_match=close_match[0])
+            if len(close_match) > 0
+            else ""
+        )
 
 
 # Parsers
