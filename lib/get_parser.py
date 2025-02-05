@@ -139,7 +139,7 @@ class CheckIfValidAuthMethod(argparse.Action):
             for val in check_values:
                 close_match = difflib.get_close_matches(val, REQUIRED_AUTH_METHODS, n=1)
                 if len(close_match) > 0:
-                    msg_add = (
+                    msg_add += (
                         f" You provided '{val}' - did you mean '{close_match[0]}'?"
                     )
             raise ValueError(
