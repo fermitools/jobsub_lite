@@ -483,7 +483,8 @@ def get_parser() -> argparse.ArgumentParser:
         "--managed-token",
         action="store_const",
         const=True,
-        default=os.environ.get("JOBSUB_MANAGED_TOKEN", None) is not None,
+        default=os.environ.get("JOBSUB_MANAGED_TOKEN", "").lower()
+        not in ["0", "false", "", "no"],
         help="Will attempt to bypass calling condor_vault_storer during job submission. "
         "Assumes that vault token is managed externally, so condor_vault_storer will "
         "only be called once every six days.",

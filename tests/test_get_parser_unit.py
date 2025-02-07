@@ -663,10 +663,25 @@ class TestGetParserUnit:
                 os.environ["JOBSUB_MANAGED_TOKEN"] = old_managed_token_env_value
 
     @pytest.mark.unit
-    def test_managed_token_flag_env_set(self, monkeypatch):
+    @pytest.mark.parametrize(
+        "env_value,expected_value",
+        [
+            ("1", True),
+            ("0", False),
+            ("", False),
+            ("true", True),
+            ("false", False),
+            ("True", True),
+            ("False", False),
+            ("foo", True),
+            ("No", False),
+            ("no", False),
+        ],
+    )
+    def test_managed_token_flag_env_set(self, env_value, expected_value, monkeypatch):
         """Check that we can set the managed token flag via the environment variable
         JOBSUB_MANAGED_TOKEN."""
-        monkeypatch.setenv("JOBSUB_MANAGED_TOKEN", "1")
+        monkeypatch.setenv("JOBSUB_MANAGED_TOKEN", env_value)
 
         args = get_parser.get_parser().parse_args([])
-        assert args.managed_token
+        assert args.managed_token == expected_value
