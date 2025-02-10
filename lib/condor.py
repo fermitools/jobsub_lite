@@ -298,6 +298,7 @@ def record_vault_storer_run(
 
 NO_OP_STORER = "/bin/true"
 
+
 # pylint: disable=dangerous-default-value,too-many-locals,too-many-branches,too-many-statements
 @as_span("submit", arg_attrs=["*"])
 def submit(
@@ -341,7 +342,7 @@ def submit(
 
     verbose = int(vargs.get("verbose", 0))
 
-    if vargs["managed_token"] and ran_vault_storer_recently(
+    if vargs.get("managed_token", False) and ran_vault_storer_recently(
         schedd_name, vargs["oauth_handle"], vargs["outbase"], verbose
     ):
         _sec_cred_storer_val = NO_OP_STORER
@@ -405,7 +406,7 @@ def submit(
             )
             return None
 
-        if vargs["managed_token"] and _sec_cred_storer_val != NO_OP_STORER:
+        if vargs.get("managed_token", False) and _sec_cred_storer_val != NO_OP_STORER:
             record_vault_storer_run(
                 schedd_name, vargs["oauth_handle"], vargs["outbase"], verbose
             )
