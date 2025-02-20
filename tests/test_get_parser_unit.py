@@ -1,7 +1,9 @@
+from contextlib import nullcontext as does_not_raise
 from collections import namedtuple
 import json
 import os
 import sys
+
 import pytest
 
 #
@@ -617,7 +619,7 @@ class TestGetParserUnit:
         from creds import REQUIRED_AUTH_METHODS
 
         with pytest.raises(
-            TypeError,
+            ValueError,
             match=rf"({auth_methods_args_test_case.bad_auth_method}|{REQUIRED_AUTH_METHODS})",
         ):
             check_valid_auth_method_arg_parser.parse_args(
@@ -685,3 +687,32 @@ class TestGetParserUnit:
 
         args = get_parser.get_parser().parse_args([])
         assert args.managed_token == expected_value
+
+    @pytest.mark.parametrize(
+        "auth_arg,expected_error_context",
+        [
+            ("token", does_not_raise()),  # Thanks https://stackoverflow.com/a/68012715
+            ("tokens", pytest.raises(ValueError, match=r".+requires.+did you mean.+")),
+            ("proxies", pytest.raises(ValueError, match=r".+requires.+")),
+            (
+                "token,proxies",
+                pytest.raises(ValueError, match=r".+Supported.+did you mean.+"),
+            ),
+            (
+                "tokens,proxies",
+                pytest.raises(ValueError, match=r".+requires.+did you mean.+"),
+            ),
+        ],
+    )
+    @pytest.mark.unit
+    def test_CheckAuthMethod_diffs(
+        self,
+        auth_arg,
+        expected_error_context,
+        check_valid_auth_method_arg_parser,
+    ):
+        """Check to see if we provide an auth method that's either valid or close to a valid one,
+        do we either get no error raised or get the "Did you mean" message in the raised ValueError
+        """
+        with expected_error_context:
+            check_valid_auth_method_arg_parser.parse_args(["--auth-methods", auth_arg])
