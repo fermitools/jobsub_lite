@@ -62,20 +62,11 @@ touch .empty_file
 which ifdh > /dev/null 2>&1
 has_ifdh=$?
 if [ "$has_ifdh" -ne "0" ] ; then
-    unset PRODUCTS
-    for setup_file in /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups /fnal/ups/etc/setups.sh ; do
-      if [ -e "$setup_file" ] && [ "$has_ifdh" -ne "0" ]; then
-         source $setup_file
-         ups exist ifdhc $IFDH_VERSION
-         has_ifdh=$?
-         if [ "$has_ifdh" = "0" ] ; then
-             setup ifdhc $IFDH_VERSION
-             break
-         else
-            unset PRODUCTS
-         fi
-     fi
-   done
+    . /cvmfs/fermilab.opensciencegrid.org/packages/common/setup-env.sh
+    sos=$(spack arch --operating-system)
+    spack env activate ifdh_env_${sos}_${IFDH_VERSION:-current} ||
+      echo Falling back to current ifdhc for this operation >&2 &&
+      spack env activate ifdh_env_${sos}_current
 fi
 which ifdh > /dev/null 2>&1
 if [ "$?" -ne "0" ] ; then
@@ -97,6 +88,7 @@ redirect_output_start
 setup_ifdh_env
 echo `date` BEGIN executing samend.sh
 >&2 echo `date` BEGIN executing samend.sh
+${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID BEGIN executing samend.sh"
 
 if [ "$SAM_PROJECT" = "" ]; then
 SAM_PROJECT=$1
@@ -113,9 +105,13 @@ if [ "${KRB5CCNAME}" != "" ]; then
    fi
 fi
 
+${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID samend.sh ending project $PRJ_NAME"
+
 CPURL=`${JSB_TMP}/ifdh.sh findProject $PRJ_NAME ''`
 ${JSB_TMP}/ifdh.sh  endProject $CPURL
 EXITSTATUS=$?
 echo `date` ifdh endProject $CPURL exited with status $EXITSTATUS
 >&2 echo `date` ifdh endProject $CPURL exited with status $EXITSTATUS
+${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID samend.sh exiting with status $EXITSTATUS"
+
 exit $EXITSTATUS
