@@ -62,20 +62,11 @@ touch .empty_file
 which ifdh > /dev/null 2>&1
 has_ifdh=$?
 if [ "$has_ifdh" -ne "0" ] ; then
-    unset PRODUCTS
-    for setup_file in /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups /fnal/ups/etc/setups.sh ; do
-      if [ -e "$setup_file" ] && [ "$has_ifdh" -ne "0" ]; then
-         source $setup_file
-         ups exist ifdhc $IFDH_VERSION
-         has_ifdh=$?
-         if [ "$has_ifdh" = "0" ] ; then
-             setup ifdhc $IFDH_VERSION
-             break
-         else
-            unset PRODUCTS
-         fi
-     fi
-   done
+    . /cvmfs/fermilab.opensciencegrid.org/packages/common/setup-env.sh
+    sos=$(spack arch --operating-system)
+    spack env activate ifdh_env_${sos}_${IFDH_VERSION:-current} ||
+      echo Falling back to current ifdhc for this operation >&2 &&
+      spack env activate ifdh_env_${sos}_current
 fi
 which ifdh > /dev/null 2>&1
 if [ "$?" -ne "0" ] ; then
@@ -89,6 +80,7 @@ fi
 _HEREDOC_
 chmod +x ${JSB_TMP}/ifdh.sh
 }
+
 
 ################################################################################
 ## main ()                                                            ##########
@@ -104,6 +96,7 @@ redirect_output_start
 setup_ifdh_env
 echo `date` BEGIN executing sambegin.sh
 >&2 echo `date` BEGIN executing sambegin.sh
+${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID BEGIN EXECUTION sambegin.sh"
 
 if [ "${KRB5CCNAME}" != "" ]; then
    BK=`basename ${KRB5CCNAME}`
@@ -139,6 +132,7 @@ do
 
     SAM_PROJECT=$SAM_PROJECT$suffix
 
+    ${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID sambegin.sh describing definition"
     ${JSB_TMP}/ifdh.sh describeDefinition $SAM_DATASET
 
 
@@ -151,6 +145,7 @@ do
     if [ "$JOBSUB_MAX_SAM_STAGE_MINUTES" != "" ]; then
         max_tries=$JOBSUB_MAX_SAM_STAGE_MINUTES
     fi
+    ${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID sambegin.sh starting project $SAM_PROJECT"
     try ${JSB_TMP}/ifdh.sh startProject $SAM_PROJECT $SAM_STATION $SAM_DATASET $SAM_USER $SAM_GROUP
     while true; do
         STATION_STATE=${JSB_TMP}/$SAM_STATION.`date '+%s'`
@@ -164,6 +159,7 @@ do
                 exit 111
             fi
             echo "attempt $num_tries of $max_tries: Sam Station $SAM_STATION still waiting for project $SAM_PROJECT, dataset $SAM_DATASET, sleeping 60 seconds"
+            ${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID sambegin.sh Waiting for $SAM_PROJECT $num_tries of $max_tries"
             sleep 60
             continue
         fi
@@ -184,11 +180,13 @@ do
 
         if [ $TOTAL_FILES -le 0 ]; then
             echo there are no files in $SAM_PROJECT! exiting....
+            ${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID sambegin.sh there are no files in $SAM_PROJECT! exiting...."
             cat $STATION_STATE
             exit 1
         fi
         if [ ! -s "$PROJECT_STATE" ]; then
             echo "$SAM_PROJECT" not found in  "$SAM_STATION" ! exiting....
+            ${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID sambegin.sh "$SAM_PROJECT" not found in  $SAM_STATION ! exiting...."
             cat $STATION_STATE
             exit 1
         fi
@@ -215,8 +213,11 @@ done
 # if we started extra projects to check amount staged, end them
 for PRJ_NAME in $extra_projects
 do
+    ${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID sambegin.sh ending $PRJ_NAME"
     CPURL=`${JSB_TMP}/ifdh.sh findProject $PRJ_NAME ''`
     try ${JSB_TMP}/ifdh.sh  endProject $CPURL && echo success!
 done
+
+${JSB_TMP}/ifdh.sh log "$USER:$JOBSUBJOBID sambegin.sh exiting 0"
 
 exit 0
