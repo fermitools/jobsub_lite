@@ -280,6 +280,10 @@ your job lands on runs all jobs in singularity
 containers, your job will also run in one. If the site
 does not run all jobs in singularity containers, your
 job will run outside a singularity container.
+.HP
+--managed-token       Will attempt to bypass calling condor_vault_storer during
+job submission. Assumes that vault token is managed externally, so
+condor_vault_storer will only be called once every six days.
 
 general arguments:
 .HP

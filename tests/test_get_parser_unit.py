@@ -1,7 +1,9 @@
+from contextlib import nullcontext as does_not_raise
 from collections import namedtuple
 import json
 import os
 import sys
+
 import pytest
 
 #
@@ -190,6 +192,7 @@ def all_test_args():
         "--mail-never",
         "--mail-on-error",
         "--mail-always",
+        "--managed-token",
         "--maxConcurrent",
         "xxmaxConcurrentxx",
         "--memory",
@@ -615,7 +618,7 @@ class TestGetParserUnit:
         from creds import REQUIRED_AUTH_METHODS
 
         with pytest.raises(
-            TypeError,
+            ValueError,
             match=rf"({auth_methods_args_test_case.bad_auth_method}|{REQUIRED_AUTH_METHODS})",
         ):
             check_valid_auth_method_arg_parser.parse_args(
@@ -646,3 +649,69 @@ class TestGetParserUnit:
         finally:
             if old_auth_methods_env_value:
                 os.environ["JOBSUB_AUTH_METHODS"] = old_auth_methods_env_value
+
+    @pytest.mark.unit
+    def test_managed_token_flag_env_set_clean_env(self, monkeypatch):
+        """Check that a clean environment does not have the managed token flag set
+        after parsing args"""
+        old_managed_token_env_value = os.environ.get("JOBSUB_MANAGED_TOKEN", None)
+        monkeypatch.delenv("JOBSUB_MANAGED_TOKEN", raising=False)
+        args = get_parser.get_parser().parse_args([])
+        try:
+            assert not args.managed_token
+        finally:
+            if old_managed_token_env_value:
+                os.environ["JOBSUB_MANAGED_TOKEN"] = old_managed_token_env_value
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "env_value,expected_value",
+        [
+            ("1", True),
+            ("0", False),
+            ("", False),
+            ("true", True),
+            ("false", False),
+            ("True", True),
+            ("False", False),
+            ("foo", True),
+            ("No", False),
+            ("no", False),
+        ],
+    )
+    def test_managed_token_flag_env_set(self, env_value, expected_value, monkeypatch):
+        """Check that we can set the managed token flag via the environment variable
+        JOBSUB_MANAGED_TOKEN."""
+        monkeypatch.setenv("JOBSUB_MANAGED_TOKEN", env_value)
+
+        args = get_parser.get_parser().parse_args([])
+        assert args.managed_token == expected_value
+
+    @pytest.mark.parametrize(
+        "auth_arg,expected_error_context",
+        [
+            ("token", does_not_raise()),  # Thanks https://stackoverflow.com/a/68012715
+            ("tokens", pytest.raises(ValueError, match=r".+requires.+did you mean.+")),
+            ("proxies", pytest.raises(ValueError, match=r".+requires.+")),
+            (
+                "token,proxies",
+                pytest.raises(ValueError, match=r".+Supported.+did you mean.+"),
+            ),
+            (
+                "tokens,proxies",
+                pytest.raises(ValueError, match=r".+requires.+did you mean.+"),
+            ),
+        ],
+    )
+    @pytest.mark.unit
+    def test_CheckAuthMethod_diffs(
+        self,
+        auth_arg,
+        expected_error_context,
+        check_valid_auth_method_arg_parser,
+    ):
+        """Check to see if we provide an auth method that's either valid or close to a valid one,
+        do we either get no error raised or get the "Did you mean" message in the raised ValueError
+        """
+        with expected_error_context:
+            check_valid_auth_method_arg_parser.parse_args(["--auth-methods", auth_arg])
