@@ -60,7 +60,7 @@ def test_fancy_api_demo():
         rs = job1.fetchlog(destdir="/tmp/test_fetch", verbose=1)
         print(f"fetchlog says: {rs}")
         sb = os.stat("/tmp/test_fetch/lookaround.sh")
-        assert time.time() - sb.mtime < 5
+        assert time.time() - sb.st_mtime < 5
         os.system("rm -rf /tmp/test_fetch")
     except RuntimeError:
         raise
