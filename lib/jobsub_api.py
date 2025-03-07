@@ -45,6 +45,15 @@ jobsub_q_re = re.compile(
 
 
 def jobsub_call(argv: List[str], return_output: bool = False) -> Optional[str]:
+    """
+    Low level API call for jobsub commands.
+
+    You pass it an argv list and a flag.  (i.e.
+          jobsub_call(["jobsub_submit","-G","fermilab","file://foo.sh"], True)
+
+    If the flag is True, it returns a string of the output of the jobsub command,
+    otherwise the output goes to stdout/stderr.
+    """
     res = None
     if argv[0].find("_submit") > 0:
         func = jobsub_submit_main
