@@ -8,6 +8,18 @@ from htcondor import JobStatus  # type: ignore #pylint: disable=import-error
 from mains import jobsub_submit_main, jobsub_fetchlog_main, jobsub_cmd_main
 from condor import Job
 
+__all__ = [
+    "JobStatus",
+    "Job",
+    "SubmittedJob",
+    "QResultJob",
+    "jobsub_call",
+    "jobsub_submit_re",
+    "jobsub_q_re",
+    "submit",
+    "q",
+]
+
 
 @contextlib.contextmanager
 def output_saver(should_i: bool) -> Generator[StringIO, bool, StringIO]:
@@ -17,19 +29,24 @@ def output_saver(should_i: bool) -> Generator[StringIO, bool, StringIO]:
     """
 
     output = StringIO()
-    if should_i:
-        # save initial stdout, stderr
-        save_out = sys.stdout
-        save_err = sys.stderr
-        # point them at our StringIO
-        sys.stdout = output
-        sys.stderr = output
-    yield output
-    if should_i:
-        # put them back
+    # save initial stdout, stderr
+    save_out = sys.stdout
+    save_err = sys.stderr
+    try:
+        if should_i:
+            # point them at our StringIO
+            sys.stdout = output
+            sys.stderr = output
+        yield output
+        if should_i:
+            # put them back
+            sys.stderr = save_err
+            sys.stdout = save_out
+        return output
+    except:
         sys.stderr = save_err
         sys.stdout = save_out
-    return output
+        raise
 
 
 # so clients can easily parse the result strings
