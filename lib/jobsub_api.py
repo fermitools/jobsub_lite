@@ -12,7 +12,6 @@ __all__ = [
     "JobStatus",
     "Job",
     "SubmittedJob",
-    "QResultJob",
     "jobsub_call",
     "jobsub_submit_re",
     "jobsub_q_re",
@@ -100,6 +99,7 @@ def optfix(s: Optional[str]) -> str:
     return s
 
 
+# pylint: disable=too-many-instance-attributes
 class SubmittedJob(Job):
     """result of fancier jobsub_submit call"""
 
@@ -114,15 +114,36 @@ class SubmittedJob(Job):
         submit_out: str = "",
     ) -> None:
         """save various job submission values to reuse for hold, queue, etc."""
+        Job.__init__(self, jobid)
         self.group = group
         self.pool = pool
         self.auth_methods = auth_methods
         self.role = role
         self.submit_out = submit_out
-        Job.__init__(self, jobid)
+        self.set_q_attrs()
+
+    def set_q_attrs(
+        self,
+        owner: str = "",
+        submitted: str = "",
+        runtime: str = "",
+        status: str = "",
+        prio: str = "",
+        size: str = "",
+        command: str = "",
+    ) -> None:
+        self.owner = owner
+        self.submitted = jsq_date_to_datetime(submitted) if submitted else None
+        self.runtime = jsq_runtime_to_timedelta(runtime) if runtime else None
+        self.status = JSMAP[status] if status else None
+        self.prio = float(prio) if prio else None
+        self.size = float(size) if size else None
+        self.command = command
 
     def _update_args(self, verbose: int, args: List[str]) -> None:
         """code adding common arguments to commands"""
+        args.append("-G")
+        args.append(self.group)
         if verbose:
             args.append("--verbose")
             args.append(str(verbose))
@@ -135,17 +156,18 @@ class SubmittedJob(Job):
         if self.role:
             args.append("--role")
             args.append(self.role)
+        args.append(self.id)
 
     def hold(self, verbose: int = 0) -> str:
         """Hold this job with jobsub_hold"""
-        args = ["jobsub_hold", "-G", self.group, self.id]
+        args = ["jobsub_hold"]
         self._update_args(verbose, args)
         rs = optfix(jobsub_call(args, True))
         return rs
 
     def release(self, verbose: int = 0) -> str:
         """Release this job with jobsub_release"""
-        args = ["jobsub_release", "-G", self.group, self.id]
+        args = ["jobsub_release"]
         self._update_args(verbose, args)
         rs = optfix(jobsub_call(args, True))
         return rs
@@ -153,7 +175,54 @@ class SubmittedJob(Job):
     # pylint: disable=invalid-name
     def rm(self, verbose: int = 0) -> str:
         """Remove this job with jobsub_rm"""
-        args = ["jobsub_rm", "-G", self.group, self.id]
+        args = ["jobsub_rm"]
+        self._update_args(verbose, args)
+        rs = optfix(jobsub_call(args, True))
+        return rs
+
+    def q(self, verbose: int = 0) -> None:
+        args = ["jobsub_q"]
+        self._update_args(verbose, args)
+        rs = optfix(jobsub_call(args, True))
+        line = rs.split("\n")[1]
+        m = jobsub_q_re.search(line)
+        if m:
+            self.set_q_attrs(
+                m.group("owner"),
+                m.group("submitted"),
+                m.group("runtime"),
+                m.group("status"),
+                m.group("prio"),
+                m.group("size"),
+                m.group("command"),
+            )
+        else:
+            raise RuntimeError(f"failed jobsub_q:\n {rs}")
+
+    def q_long(self, verbose: int = 0) -> Dict[str, str]:
+        args = ["jobsub_q", "--long"]
+        self._update_args(verbose, args)
+        rs = optfix(jobsub_call(args, True))
+        lines = rs.split("\n")[1]
+        res = {}
+        for line in lines:
+            k, v = line.split(" = ", 1)
+            if v[0] == '"':
+                v = v.strip('"')
+            res[k] = v
+        self.set_q_attrs(
+            res.get("Owner", ""),
+            res.get("QDate", ""),
+            res.get("RemoteWallClockTime", ""),
+            res.get("JobStatus", ""),
+            res.get("JobPrio", ""),
+            res.get("ExecutableSize", ""),
+            res.get("Cmd", ""),
+        )
+        return res
+
+    def q_analyze(self, verbose: int = 0) -> str:
+        args = ["jobsub_q", "--better-analyze"]
         self._update_args(verbose, args)
         rs = optfix(jobsub_call(args, True))
         return rs
@@ -173,6 +242,9 @@ class SubmittedJob(Job):
         # print(f"calling jobsub_call {repr(args)}")
         rs = optfix(jobsub_call(args, True))
         return rs
+
+    def __str__(self) -> str:
+        return f"{self.id:40} {self.owner:10} {str(self.submitted):19.19} {str(self.runtime):15} {str(self.status):10} {self.prio:6.1f} {self.size:6.1f} {self.command}"
 
 
 jobsub_required_args = ["group"]
@@ -380,37 +452,6 @@ def jsq_runtime_to_timedelta(s: str) -> timedelta:
     )
 
 
-class QResultJob(SubmittedJob):
-    # pylint: disable=too-many-arguments
-    def __init__(
-        self,
-        group: str,
-        jobid: str,
-        pool: str,
-        auth_methods: str,
-        role: str,
-        owner: str,
-        submitted: str,
-        runtime: str,
-        status: str,
-        prio: str,
-        size: str,
-        command: str,
-    ) -> None:
-        init_JSMAP()
-        SubmittedJob.__init__(self, group, jobid, pool, auth_methods, role)
-        self.owner = owner
-        self.submitted = jsq_date_to_datetime(submitted)
-        self.runtime = jsq_runtime_to_timedelta(runtime)
-        self.status = JSMAP[status]
-        self.prio = float(prio)
-        self.size = float(size)
-        self.command = command
-
-    def __str__(self) -> str:
-        return f"{self.id:40}  {self.owner:10} {str(self.submitted):11} {str(self.runtime):11} {str(self.status)} {self.prio:6.1f} {self.size:6.1f} {self.command}"
-
-
 JSMAP: Dict[str, JobStatus] = {}
 
 
@@ -440,9 +481,9 @@ qargs = [
 
 def q(
     *jobids: str, devserver: bool = False, verbose: int = 0, **kwargs: str
-) -> List[QResultJob]:
+) -> List[SubmittedJob]:
     """
-    Return list of QResultJob objects of running jobs
+    Return list of SubmittedJob objects of running jobs
 
     Keyword Arguments:
     devserver -- (bool) use development server
@@ -474,24 +515,25 @@ def q(
     for j in jobids:
         args.append(j)
     rs = optfix(jobsub_call(args, True))
-    res: List[QResultJob] = []
+    res: List[SubmittedJob] = []
     for line in rs.split("\n")[1:]:
         m = jobsub_q_re.search(line)
         if m:
-            res.append(
-                QResultJob(
-                    kwargs["group"],
-                    m.group("jobid"),
-                    kwargs.get("pool", ""),
-                    kwargs.get("auth_methods", ""),
-                    kwargs.get("role", ""),
-                    m.group("owner"),
-                    m.group("submitted"),
-                    m.group("runtime"),
-                    m.group("status"),
-                    m.group("prio"),
-                    m.group("size"),
-                    m.group("command"),
-                )
+            job = SubmittedJob(
+                kwargs["group"],
+                m.group("jobid"),
+                kwargs.get("pool", ""),
+                kwargs.get("auth_methods", ""),
+                kwargs.get("role", ""),
             )
+            job.set_q_attrs(
+                m.group("owner"),
+                m.group("submitted"),
+                m.group("runtime"),
+                m.group("status"),
+                m.group("prio"),
+                m.group("size"),
+                m.group("command"),
+            )
+            res.append(job)
     return res
