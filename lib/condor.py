@@ -477,6 +477,10 @@ def submit_dag(
 
         d1 = os.path.join(PREFIX, "templates", "condor_submit_dag")
         render_files(d1, vargs, vargs["outdir"], xfer=False)
+        # so cmd files can match jobsub...
+        os.environ["UUID"] = vargs["uuid"]
+        os.environ["DATE"] = vargs["date"]
+        os.environ["DATETIME"] = vargs["datetime"]
 
         for cf in vargs["transfer_files"] + [f]:
             print(f"Copying file: {cf}")

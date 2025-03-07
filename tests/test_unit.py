@@ -56,7 +56,7 @@ class TestUnit:
         "outurl": "http://nowhere.org",
         "user": "nobody",
         "uuid": "1234-uuid56-789",
-        "schedd": "fakeschedd.example.org",
+        "schedd": test_schedd,
         "prefix": os.path.dirname(os.path.dirname(__file__)),
     }
     test_extra_template_args = {
@@ -68,7 +68,7 @@ class TestUnit:
         "kerberos_principal": "test@FNAL.GOV",
         "lines": [],
         "subgroup": "test_subgroup",
-        "schedd": "test_schedd",
+        "schedd": test_schedd,
         "date": "test_date",
         "uuid": "test_FERRY_uuid",
         "dir": "test_dir",

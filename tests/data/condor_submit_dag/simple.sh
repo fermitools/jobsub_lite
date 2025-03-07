@@ -129,8 +129,8 @@ redirect_output_finish(){
     jobsub_truncate ${JSB_TMP}/JOBSUB_LOG_FILE
 
 
-    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_ERR_FILE.truncated https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2023_12_18/71a1aea7-4417-446c-920c-d3042a8f2b4b/fife_wrap2023_12_18_11225571a1aea7-4417-446c-920c-d3042a8f2b4bcluster.$CLUSTER.$PROCESS.err
-    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_LOG_FILE.truncated https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/2023_12_18/71a1aea7-4417-446c-920c-d3042a8f2b4b/fife_wrap2023_12_18_11225571a1aea7-4417-446c-920c-d3042a8f2b4bcluster.$CLUSTER.$PROCESS.out
+    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_ERR_FILE.truncated https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/${DATE}/${UUID}/fife_wrap${DATETIME}${UUID}cluster.$CLUSTER.$PROCESS.err
+    IFDH_CP_MAXRETRIES=1 ${JSB_TMP}/ifdh.sh cp ${JSB_TMP}/JOBSUB_LOG_FILE.truncated https://fndcadoor.fnal.gov:2880/fermigrid/jobsub/jobs/${DATE}/${UUID}/fife_wrap${DATETIME}${UUID}cluster.$CLUSTER.$PROCESS.out
 
 }
 

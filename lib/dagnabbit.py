@@ -75,11 +75,10 @@ def parse_dagnabbit(
 
             if line.find("<parallel>") >= 0:
                 if in_parallel:
-                    sys.stderr.write(
+                    raise RuntimeError(
                         f"Error: file {dagfile} line {linenum}: <parallel>"
                         f" inside <parallel> not currently supported\n"
                     )
-                    sys.exit(1)
                 if debug_comments:
                     of.write("# saw <parallel>\n")
                 in_parallel = True
@@ -252,11 +251,10 @@ def parse_dagnabbit(
                 if debug_comments:
                     of.write("# saw prescript\n")
                 if in_prescript:
-                    sys.stderr.write(
+                    raise RuntimeError(
                         f"Syntax Error: file {dagfile} line {linenum}\n"
                         f" only 1 prescript line per jobsub line is allowed\n"
                     )
-                    sys.exit(1)
                 in_prescript = True
                 name = f"stage_{count}"
                 parser = get_parser()
@@ -279,11 +277,10 @@ def parse_dagnabbit(
                 if debug_comments:
                     of.write("# saw postscript\n")
                 if in_postscript:
-                    sys.stderr.write(
+                    raise RuntimeError(
                         f"Syntax Error: file {dagfile} line {linenum}\n"
                         f" only 1 postscript line per jobsub line is allowed\n"
                     )
-                    sys.exit(1)
                 in_postscript = True
                 name = f"stage_{count}"
                 parser = get_parser()

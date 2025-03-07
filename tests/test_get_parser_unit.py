@@ -499,9 +499,8 @@ class TestGetParserUnit:
 
     @pytest.mark.unit
     def test_get_condor_epilog(self):
-        """make sure we get the condor_q help epilog if we are jobsub_q"""
-        sys.argv[0] = "/blah/blah/jobsub_q"
-        epilog = get_parser.get_condor_epilog()
+        """make sure we get the condor_q help epilog if we ask for it"""
+        epilog = get_parser.get_condor_epilog("condor_q")
         assert epilog.find("also condor_q arguments") == 0
         assert epilog.find("-better-analyze") > 0
 
