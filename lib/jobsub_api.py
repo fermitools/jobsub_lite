@@ -14,19 +14,24 @@ def output_saver(should_i: bool) -> Generator[StringIO, bool, StringIO]:
     """
 
     output = StringIO()
-    if should_i:
-        # save initial stdout, stderr
-        save_out = sys.stdout
-        save_err = sys.stderr
-        # point them at our StringIO
-        sys.stdout = output
-        sys.stderr = output
-    yield output
-    if should_i:
-        # put them back
+    # save initial stdout, stderr
+    save_out = sys.stdout
+    save_err = sys.stderr
+    try:
+        if should_i:
+            # point them at our StringIO
+            sys.stdout = output
+            sys.stderr = output
+        yield output
+        if should_i:
+            # put them back
+            sys.stderr = save_err
+            sys.stdout = save_out
+        return output
+    except:
         sys.stderr = save_err
         sys.stdout = save_out
-    return output
+        raise
 
 
 # so clients can easily parse the result strings
