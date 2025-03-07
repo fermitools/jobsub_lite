@@ -51,10 +51,16 @@ def test_fancy_api_demo():
     group = "fermilab"
     try:
         job1 = submit(group=group, executable="job_scripts/lookaround.sh", verbose=1)
+        print(f"submitted job: {job1.jobid()}")
+        print(f"submit output:\n=-=-=-=-=\n {job1.submit_out}")
+        print(f"\n=-=-=-=-=\n")
         qjobs = q(job1.jobid(), group=group)
         for qjob in qjobs:
             print(f"saw job {qjob.jobid()} status {qjob.status} ")
         rs = job1.fetchlog(destdir="/tmp/test_fetch", verbose=1)
         print(f"fetchlog says: {rs}")
+        sb = os.stat("/tmp/test_fetch/lookaround.sh")
+        assert time.time() - sb.mtime < 5
+        os.system("rm -rf /tmp/test_fetch")
     except RuntimeError:
         raise

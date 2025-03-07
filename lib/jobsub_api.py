@@ -2,7 +2,9 @@ from typing import Dict, List, Optional, Generator
 import re
 import sys
 import contextlib
+from datetime import datetime, timedelta
 from io import StringIO
+from htcondor import JobStatus  # type: ignore #pylint: disable=import-error
 from mains import jobsub_submit_main, jobsub_fetchlog_main, jobsub_cmd_main
 from condor import Job
 
@@ -344,6 +346,19 @@ def submit(
     raise RuntimeError("submission failed: {rs}")
 
 
+def jsq_date_to_datetime(s: str) -> datetime:
+    s = s.replace(" ", "T").replace("/", "-")
+    isos = f"{datetime.now().year}-{s}"
+    return datetime.fromisoformat(isos)
+
+
+def jsq_runtime_to_timedelta(s: str) -> timedelta:
+    days, hours, minutes, seconds = re.split("[+:]", s)
+    return timedelta(
+        days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(seconds)
+    )
+
+
 class QResultJob(SubmittedJob):
     # pylint: disable=too-many-arguments
     def __init__(
@@ -361,17 +376,33 @@ class QResultJob(SubmittedJob):
         size: str,
         command: str,
     ) -> None:
+        init_JSMAP()
         SubmittedJob.__init__(self, group, jobid, pool, auth_methods, role)
         self.owner = owner
-        self.submitted = submitted
-        self.runtime = runtime
-        self.status = status
+        self.submitted = jsq_date_to_datetime(submitted)
+        self.runtime = jsq_runtime_to_timedelta(runtime)
+        self.status = JSMAP[status]
         self.prio = prio
         self.size = size
         self.command = command
 
     def __str__(self) -> str:
-        return f"{self.jobid():40}  {self.owner:10} {self.submitted:11} {self.runtime:11} {self.status} {self.prio} {self.size:6.1} {self.command}"
+        return f"{self.jobid():40}  {self.owner:10} {str(self.submitted):11} {str(self.runtime):11} {str(self.status)} {self.prio} {self.size:6.1} {self.command}"
+
+
+JSMAP: Dict[str, JobStatus] = {}
+
+
+def init_JSMAP() -> None:
+    if len(JSMAP.keys()):
+        return
+    for k in JobStatus.__members__:
+        if k == "REMOVED":
+            jl = "X"
+        else:
+            jl = k[0]
+        if jl not in JSMAP:
+            JSMAP[jl] = JobStatus.__members__[k]
 
 
 qargs = [
