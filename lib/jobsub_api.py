@@ -104,7 +104,8 @@ class SubmittedJob(Job):
         self.submit_out = submit_out
         Job.__init__(self, jobid)
 
-    def update_args(self, verbose: int, args: List[str]) -> None:
+    def _update_args(self, verbose: int, args: List[str]) -> None:
+        """code adding common arguments to commands"""
         if verbose:
             args.append("--verbose")
             args.append(str(verbose))
@@ -120,23 +121,23 @@ class SubmittedJob(Job):
 
     def hold(self, verbose: int = 0) -> str:
         """Hold this job with jobsub_hold"""
-        args = ["jobsub_hold", "-G", self.group, self.jobid()]
-        self.update_args(verbose, args)
+        args = ["jobsub_hold", "-G", self.group, self.id]
+        self._update_args(verbose, args)
         rs = optfix(jobsub_call(args, True))
         return rs
 
     def release(self, verbose: int = 0) -> str:
         """Release this job with jobsub_release"""
-        args = ["jobsub_release", "-G", self.group, self.jobid()]
-        self.update_args(verbose, args)
+        args = ["jobsub_release", "-G", self.group, self.id]
+        self._update_args(verbose, args)
         rs = optfix(jobsub_call(args, True))
         return rs
 
     # pylint: disable=invalid-name
     def rm(self, verbose: int = 0) -> str:
         """Remove this job with jobsub_rm"""
-        args = ["jobsub_rm", "-G", self.group, self.jobid()]
-        self.update_args(verbose, args)
+        args = ["jobsub_rm", "-G", self.group, self.id]
+        self._update_args(verbose, args)
         rs = optfix(jobsub_call(args, True))
         return rs
 
@@ -145,13 +146,13 @@ class SubmittedJob(Job):
     ) -> str:
         """fetch job output either as tarfile or into directory"""
         args = ["jobsub_fetchlog", "-G", self.group]
-        self.update_args(verbose, args)
+        self._update_args(verbose, args)
         if destdir:
             args.append("--destdir")
             args.append(destdir)
         if condor:
             args.append("--condor")
-        args.append(self.jobid())
+        args.append(self.id)
         # print(f"calling jobsub_call {repr(args)}")
         rs = optfix(jobsub_call(args, True))
         return rs
@@ -159,6 +160,7 @@ class SubmittedJob(Job):
 
 jobsub_required_args = ["group"]
 
+# could we generate this from the option parser?
 jobsub_flags = {
     "dag": "--dag",
     "mail_always": "--mail_always",
@@ -171,6 +173,8 @@ jobsub_flags = {
     "use_cvmfs_dropbox": "--use-cvmfs-dropbox",
     "use_pnfs_dropbox": "--use-pnfs-dropbox",
 }
+
+# could we generate this from the option parser?
 jobsub_options = {
     "auth_methods": "--auth-methods",
     "blocklist": "--blocklist",
@@ -382,12 +386,12 @@ class QResultJob(SubmittedJob):
         self.submitted = jsq_date_to_datetime(submitted)
         self.runtime = jsq_runtime_to_timedelta(runtime)
         self.status = JSMAP[status]
-        self.prio = prio
-        self.size = size
+        self.prio = float(prio)
+        self.size = float(size)
         self.command = command
 
     def __str__(self) -> str:
-        return f"{self.jobid():40}  {self.owner:10} {str(self.submitted):11} {str(self.runtime):11} {str(self.status)} {self.prio} {self.size:6.1} {self.command}"
+        return f"{self.id:40}  {self.owner:10} {str(self.submitted):11} {str(self.runtime):11} {str(self.status)} {self.prio:6.1f} {self.size:6.1f} {self.command}"
 
 
 JSMAP: Dict[str, JobStatus] = {}

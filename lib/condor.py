@@ -564,9 +564,6 @@ class Job:
             raise JobIdError(f'error when parsing job id "{job_id}"') from e
 
     def __str__(self) -> str:
-        return self.jobid()
-
-    def jobid(self) -> str:
         if self.cluster:
             return f"{self.seq}@{self.schedd}"
         return f"{self.seq}.{self.proc}@{self.schedd}"
