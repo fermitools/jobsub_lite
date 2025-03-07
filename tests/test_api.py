@@ -42,3 +42,19 @@ def test_api_demo():
                 print(f"saw job {m.group('jobid')} command {m.group('command')}")
     else:
         print("submission failed: output:\n", out1)
+
+
+from jobsub_api import submit, q
+
+
+def test_fancy_api_demo():
+    group = "fermilab"
+    try:
+        job1 = submit(group=group, executable="job_scripts/lookaround.sh", verbose=1)
+        qjobs = q(job1.jobid(), group=group)
+        for qjob in qjobs:
+            print(f"saw job {qjob.jobid()} status {qjob.status} ")
+        rs = job1.fetchlog(destdir="/tmp/test_fetch", verbose=1)
+        print(f"fetchlog says: {rs}")
+    except RuntimeError:
+        raise

@@ -92,12 +92,14 @@ class SubmittedJob(Job):
         pool: str = "",
         auth_methods: str = "",
         role: str = "",
+        submit_out: str = "",
     ) -> None:
         """save various job submission values to reuse for hold, queue, etc."""
         self.group = group
         self.pool = pool
         self.auth_methods = auth_methods
         self.role = role
+        self.submit_out = submit_out
         Job.__init__(self, jobid)
 
     def update_args(self, verbose: int, args: List[str]) -> None:
@@ -140,18 +142,20 @@ class SubmittedJob(Job):
         self, destdir: str = "", condor: bool = False, verbose: int = 0
     ) -> str:
         """fetch job output either as tarfile or into directory"""
-        args = ["jobsub_fetchlog", "-G", self.group, self.jobid()]
+        args = ["jobsub_fetchlog", "-G", self.group]
         self.update_args(verbose, args)
         if destdir:
             args.append("--destdir")
             args.append(destdir)
         if condor:
             args.append("--condor")
+        args.append(self.jobid())
+        # print(f"calling jobsub_call {repr(args)}")
         rs = optfix(jobsub_call(args, True))
         return rs
 
 
-jobsub_required_args = ["group", "executable"]
+jobsub_required_args = ["group"]
 
 jobsub_flags = {
     "dag": "--dag",
@@ -182,7 +186,7 @@ jobsub_options = {
     "expected_lifetime": "--expected-lifetime",
     "f": "-f",
     "generate_email_summary": "--generate-email-summary",
-    "G": "-G",
+    "group": "-G",
     "global_pool": "--global-pool",
     "gpu": "--gpu",
     "i": "-i",
@@ -293,7 +297,7 @@ def submit(
     args = ["jobsub_submit"]
 
     for k in jobsub_required_args:
-        if not k in kwargs:
+        if k not in kwargs:
             raise TypeError(f"missing required argument {k}")
 
     for k in env:
@@ -316,7 +320,7 @@ def submit(
                 args.append(tag)
                 args.append(dest)
             else:
-                args.append(kwargs[k])
+                args.append(str(kwargs[k]))
         elif k in jobsub_flags:
             args.append(jobsub_flags[k])
         else:
@@ -325,6 +329,7 @@ def submit(
     args.append(f"file://{executable}")
     args.extend(exe_arguments)
 
+    # print(f"calling jobsub_call {repr(args)}")
     rs = optfix(jobsub_call(args, True))
     m = jobsub_submit_re.search(rs)
     if m:
@@ -334,6 +339,7 @@ def submit(
             kwargs.get("pool", ""),
             kwargs.get("auth_methods", ""),
             kwargs.get("role", ""),
+            rs,
         )
     raise RuntimeError("submission failed: {rs}")
 
@@ -344,6 +350,9 @@ class QResultJob(SubmittedJob):
         self,
         group: str,
         jobid: str,
+        pool: str,
+        auth_methods: str,
+        role: str,
         owner: str,
         submitted: str,
         runtime: str,
@@ -352,7 +361,7 @@ class QResultJob(SubmittedJob):
         size: str,
         command: str,
     ) -> None:
-        SubmittedJob.__init__(self, group, jobid)
+        SubmittedJob.__init__(self, group, jobid, pool, auth_methods, role)
         self.owner = owner
         self.submitted = submitted
         self.runtime = runtime
@@ -361,9 +370,12 @@ class QResultJob(SubmittedJob):
         self.size = size
         self.command = command
 
+    def __str__(self) -> str:
+        return f"{self.jobid():40}  {self.owner:10} {self.submitted:11} {self.runtime:11} {self.status} {self.prio} {self.size:6.1} {self.command}"
+
 
 qargs = [
-    "G",
+    "group",
     "auth_methods",
     "global_pool",
     "role",
@@ -383,7 +395,7 @@ def q(
     Keyword Arguments:
     devserver -- (bool) use development server
     verbose -- (int) verbosity
-    G -- group/experiment to authenticate under
+    group -- group/experiment to authenticate under
     auth_methods -- comma sep list from token,proxy
     global_pool -- alternate pool i.e. "dune"
     role -- role to authenticate under
@@ -395,7 +407,7 @@ def q(
     Remaining arguments are jobids to query
     """
     args = ["jobsub_q"]
-    if "G" not in kwargs:
+    if "group" not in kwargs:
         raise TypeError("G option is required")
     if devserver:
         args.append("--devserver")
@@ -416,8 +428,11 @@ def q(
         if m:
             res.append(
                 QResultJob(
-                    kwargs["G"],
+                    kwargs["group"],
                     m.group("jobid"),
+                    kwargs.get("pool", ""),
+                    kwargs.get("auth_methods", ""),
+                    kwargs.get("role", ""),
                     m.group("owner"),
                     m.group("submitted"),
                     m.group("runtime"),
