@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-
 __title__ = "jobsub_lite"
 __summary__ = "The local HTCondor job submission software for Fermilab users to submit jobs to local FermiGrid resources and to the Open Science Grid."
 __uri__ = "https://fifewiki.fnal.gov/wiki/Jobsub_Lite"
@@ -29,9 +27,7 @@ __copyright__ = f"2023 {__author__}"
 
 def print_version() -> None:
     print(f"{__title__} version {__version__}")
-    sys.exit()
 
 
 def print_support_email() -> None:
     print(f"Email {__email__} for help.")
-    sys.exit()
