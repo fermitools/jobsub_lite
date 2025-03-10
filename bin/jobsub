@@ -31,7 +31,12 @@ from get_parser import (
 from tracing import as_span
 
 
-@as_span(os.path.basename(f"{sys.argv[0]}_{sys.argv[1]}"), is_main=True)
+@as_span(
+    os.path.basename(
+        f"{sys.argv[0]}_{sys.argv[1]}" if len(sys.argv) > 1 else sys.argv[0]
+    ),
+    is_main=True,
+)
 def main():
     top_parser = argparse.ArgumentParser()
     subparsers = top_parser.add_subparsers()
