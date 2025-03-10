@@ -4,7 +4,7 @@
 # api -- calls for apis
 #
 
-""" python command  apis for jobsub """
+"""python command  apis for jobsub"""
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 import argparse
 import io
@@ -45,7 +45,7 @@ class StoreGroupinEnvironment(argparse.Action):
 
 
 def jobsub_cmd_parser(
-    jobsub_q_flag: bool, parser: Optional[argparse.ArgumentParser]
+    jobsub_q_flag: bool = False, parser: Optional[argparse.ArgumentParser] = None
 ) -> argparse.ArgumentParser:
     parser = get_parser.get_jobid_parser(parser=parser)
     parser.add_argument("-name", help="Set schedd name", default=None)
@@ -62,7 +62,6 @@ def jobsub_cmd_parser(
 # pylint: disable=dangerous-default-value
 @as_span("jobsub_cmd", is_main=True)
 def jobsub_cmd_main(argv: List[str] = sys.argv) -> None:
-
     """main line of code, proces args, etc."""
     condor_cmd = os.path.basename(argv[0]).replace("jobsub_", "condor_")
     parser = argparse.ArgumentParser(epilog=get_parser.get_condor_epilog(condor_cmd))

@@ -4,7 +4,7 @@
 # api -- calls for apis
 #
 
-""" python command  apis for jobsub """
+"""python command  apis for jobsub"""
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 import argparse
 import hashlib
@@ -48,6 +48,7 @@ import skip_checks
 
 from .common import VERBOSE
 
+
 # pylint: disable=too-many-branches,too-many-statements,dangerous-default-value
 @as_span("jobsub_submit", is_main=True)
 def jobsub_submit_main(argv: List[str] = sys.argv) -> None:
@@ -73,7 +74,8 @@ def jobsub_submit_main(argv: List[str] = sys.argv) -> None:
 
     args = parser.parse_args(argv[1:])
 
-    print("in jobsub_submit_main: args = ", args)
+    if args.verbose:
+        print("in jobsub_submit_main: args = ", args)
 
     VERBOSE = args.verbose
     jobsub_submit_args(args)
