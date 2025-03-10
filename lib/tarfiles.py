@@ -73,11 +73,10 @@ class TokenAuth(AuthBase):  # type: ignore
 
 def check_we_can_write() -> None:
     if not os.access(".", os.W_OK):
-        print(
+        raise RuntimeError(
             "jobsub_lite needs to create the tarball, or copy of the tarball you are attempting to upload"
             " in the current working directory, \nbut this directory is read-only."
         )
-        sys.exit(1)
 
 
 # pylint: disable=unused-argument
@@ -406,10 +405,9 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
                         )
                         time.sleep(_retry_interval_sec)
                 else:
-                    print(
+                    raise RuntimeError(
                         f"Max retries {NUM_RETRIES} to find RCDS tarball at {cid} exceeded.  Exiting now."
                     )
-                    sys.exit(1)
             else:
                 # Here, we don't wait for publish to happen, so we don't know the exact location of the tarball.
                 # We instead set the location to a glob that the wrapper has to handle later

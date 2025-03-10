@@ -156,7 +156,7 @@ def del_cred(schedd: str, token_name: str, no_delete: bool = False) -> None:
 
 
 def main():
-    parser = get_parser.get_jobid_parser(add_condor_epilog=False)
+    parser = get_parser.get_jobid_parser()
     parser.add_argument(
         "--force", help="Force deletion", default=False, action="store_true"
     )

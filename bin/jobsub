@@ -1,64 +1,69 @@
 #!/usr/bin/python3 -I
+import argparse
 import os
+import os.path
+import sys
 
-with os.popen(os.environ.get("PAGER", "less"), "w") as f:
-    print(
-        """
-Available jobsub_lite commands are:
+if os.environ.get("LD_LIBRARY_PATH", ""):
+    os.environ["HIDE_LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
+    del os.environ["LD_LIBRARY_PATH"]
+    os.execv(sys.argv[0], sys.argv)
 
-    jobsub_submit [-G experiment] [options] script-url [script arguments]
-        submit jobs/dags to the Grid
-    jobsub_q [-G experiment] [options]
-        show queued/running jobs
-    jobsub_fetchlog [-G experiment] [options] jobid ...
-         fetch job output logs
-    jobsub_history
-         show completed jobs
-    jobsub_hold
-    jobsub_release
-    jobsub_rm
-         Mangage job queue/abort jobs
-    decode_token.sh
-         Print JSON dump of token files
+PREFIX = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    All josub_lite commands will print usage with --help, and
-    "man jobsub_..." will give a manual page, or see:
-    https://fifewiki.fnal.gov/wiki/Jobsub_Lite#User_Documentation
+sys.path.append(os.path.join(PREFIX, "lib"))
 
-jobsub_lite also wraps the following condor commands to accept '-G group':
+# type: ignore[implicit-reexport]
+# pylint: disable=wrong-import-position,ungrouped-imports,import-error
+from mains import (
+    jobsub_submit_args,
+    jobsub_cmd_args,
+    jobsub_fetchlog_args,
+    jobsub_cmd_parser,
+    jobsub_fetchlog_parser,
+    VERBOSE,
+)
 
-    condor_q                condor_submit_dag
-    condor_release          condor_vault_storer
-    condor_rm               condor_wait
-    condor_submit           condor_transfer_data
+from get_parser import (
+    get_parser,
+    get_condor_epilog,
+)
+from tracing import as_span
 
-    All condor commands will print usage with -help and
-    "man condor_..." will give a manual page, or see:
-    https://htcondor.readthedocs.io/en/latest/man-pages/index.html
 
-jobsub_lite commands are affected by many environment variables, particularly:
+@as_span(os.path.basename(f"{sys.argv[0]}_{sys.argv[1]}"), is_main=True)
+def main():
+    top_parser = argparse.ArgumentParser()
+    subparsers = top_parser.add_subparsers()
+    for sc in ("submit", "submit_dag"):
+        sub_parser = get_parser(parser=subparsers.add_parser(sc))
+        sub_parser.set_defaults(command=f"jobsub_{sc}")
+        sub_parser.set_defaults(func=jobsub_submit_args)
 
-    BEARER_TOKEN_FILE
-       location of authentication token (SciToken)
-    CMTCONFIG
-       directory used for job submission sandboxes (default $HOME/.config)
-    GROUP
-       (or JOBSUB_GROUP) default value for -G flag
-    HOME
-       home directory
-    LD_LIBRARY_PATH
-       Generally ignored, but can crash /usr/bin/python3 in rare cases
-    OTEL_EXPORTER_JAEGER_ENDPOINT
-       Where to send debug traces
-    TMPDIR
-       Where to make temporary files
-    USER
-       Username
-    X509_USER_PROXY
-       Location of old globus grid proxy
+    for sc in ("q", "hold", "release", "rm", "wait"):
+        sub_parser = jobsub_cmd_parser(
+            sc == "q",
+            parser=subparsers.add_parser(
+                sc,
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                epilog=get_condor_epilog(f"condor_{sc}"),
+            ),
+        )
+        sub_parser.set_defaults(command=f"jobsub_{sc}")
+        sub_parser.set_defaults(func=jobsub_cmd_args)
+    sub_parser = jobsub_fetchlog_parser(parser=subparsers.add_parser("fetchlog"))
+    sub_parser.set_defaults(command="jobsub_fetchlog")
+    sub_parser.set_defaults(func=jobsub_fetchlog_args)
 
-    Numerous other environment variables starting with _condor_... or
-    JOBSUB_...  can affect job submission, specify default options, etc.
-""",
-        file=f,
-    )
+    args, passthru = top_parser.parse_known_args()
+    args.func(args, passthru)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:  # pylint: disable=broad-except
+        if VERBOSE:
+            raise
+        sys.stderr.write(f"\n\nError: {e.__class__.__name__}: {str(e)}\n\n")
+        sys.exit(1)
