@@ -4,7 +4,7 @@
 # api -- calls for apis
 #
 
-""" python command  apis for jobsub """
+"""python command  apis for jobsub"""
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 import argparse
 import os
@@ -250,6 +250,8 @@ def jobsub_fetchlog_args(
 
     log_host_time(VERBOSE)
 
+    # If called from jobsub or jobsub_* commands, this is redundant. However, we keep it in there
+    # for the case where the user imports this module and calls jobsub_cmd_args directly.
     if args.version:
         version.print_version()
         return

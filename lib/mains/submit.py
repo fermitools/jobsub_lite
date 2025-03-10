@@ -115,6 +115,8 @@ def jobsub_submit_args(
             for x in args.environment
         ]
 
+    # If called from jobsub or jobsub_* commands, this is redundant. However, we keep it in there
+    # for the case where the user imports this module and calls jobsub_submit_args directly.
     if args.version:
         version.print_version()
         return

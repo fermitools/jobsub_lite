@@ -20,6 +20,7 @@ import difflib
 import os
 import re
 from typing import Union, Any, Optional, List
+from version import version_string
 
 from condor import get_schedd_names
 from creds import SUPPORTED_AUTH_METHODS, REQUIRED_AUTH_METHODS
@@ -239,9 +240,8 @@ def get_base_parser(
     )
     group.add_argument(
         "--version",
-        action="store_true",
-        help="version of jobsub_lite being used",
-        default=False,
+        action="version",
+        version=version_string(),
     )
     group.add_argument(
         "--support-email",
