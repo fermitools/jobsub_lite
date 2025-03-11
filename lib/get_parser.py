@@ -13,13 +13,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" argument parser, used multiple places, so defined here"""
+"""argument parser, used multiple places, so defined here"""
 # pylint: disable=too-few-public-methods
 import argparse
 import difflib
 import os
 import re
 from typing import Union, Any, Optional, List
+from version import version_string
 
 from condor import get_schedd_names
 from creds import SUPPORTED_AUTH_METHODS, REQUIRED_AUTH_METHODS
@@ -169,7 +170,11 @@ class CheckIfValidAuthMethod(argparse.Action):
 def get_base_parser(
     parser: Optional[argparse.ArgumentParser] = None,
 ) -> argparse.ArgumentParser:
-    """build the general jobsub command argument parser and return it"""
+    """Build the general jobsub command argument parser and return it
+
+    If parser is given (not None), then this function will modify parser directly.
+    Otherwise, it will use a new argparse.ArgumentParser.
+    """
 
     if parser is None:
         parser = argparse.ArgumentParser()
@@ -235,9 +240,8 @@ def get_base_parser(
     )
     group.add_argument(
         "--version",
-        action="store_true",
-        help="version of jobsub_lite being used",
-        default=False,
+        action="version",
+        version=version_string(),
     )
     group.add_argument(
         "--support-email",
@@ -257,7 +261,11 @@ def get_base_parser(
 def get_submit_parser(
     parser: Optional[argparse.ArgumentParser] = None,
 ) -> argparse.ArgumentParser:
-    """build the jobsub argument parser for the condor_submit/condor_submit_dag commands and return it"""
+    """Build the jobsub argument parser for the condor_submit/condor_submit_dag commands and return it.
+
+    If parser is given (not None), then this function will modify parser directly.
+    Otherwise, it will use a new argparse.ArgumentParser.
+    """
     parser = get_base_parser(parser=parser)
     parser.add_argument(
         "--job-info",
@@ -283,7 +291,11 @@ def get_submit_parser(
 def get_jobid_parser(
     parser: Optional[argparse.ArgumentParser] = None,
 ) -> argparse.ArgumentParser:
-    """build the jobsub_cmd (jobsub_q, etc.) argument parser and return it"""
+    """Build the jobsub_cmd (jobsub_q, etc.) argument parser and return it.
+
+    If parser is given (not None), then this function will modify parser directly.
+    Otherwise, it will use a new argparse.ArgumentParser.
+    """
     parser = get_base_parser(parser=parser)
     parser.add_argument("-J", "--jobid", dest="jobid", help="job/submission ID")
     parser.add_argument(
@@ -297,7 +309,11 @@ def get_jobid_parser(
 def get_parser(
     parser: Optional[argparse.ArgumentParser] = None,
 ) -> argparse.ArgumentParser:
-    """build the jobsub_submit argument parser and return it"""
+    """Build the jobsub_submit argument parser and return it.
+
+    If parser is given (not None), then this function will modify parser directly.
+    Otherwise, it will use a new argparse.ArgumentParser.
+    """
     parser = get_submit_parser(parser)
     parser.add_argument(
         "-c",

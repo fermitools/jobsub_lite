@@ -422,6 +422,7 @@ class TestGetParserUnit:
             "--constraint",
             "--skip-check",  # Skipping this one because we do a special test later on for this
             "--schedd-for-testing",  # Skipping this one because we do a special test later on for this
+            "--version",  # Skipping this because we do a special test separately
         ]
 
         def filter_excluded(arg_list):
@@ -715,3 +716,13 @@ class TestGetParserUnit:
         """
         with expected_error_context:
             check_valid_auth_method_arg_parser.parse_args(["--auth-methods", auth_arg])
+
+    @pytest.mark.unit
+    def test_version(self, capsys):
+        """Make sure we can print the version"""
+        with pytest.raises(SystemExit):
+            parser = get_parser.get_parser()
+            parser.parse_args(["--version"])
+            captured = capsys.readouterr()
+            assert "jobsub_lite" in captured.out
+            assert "version" in captured.out
