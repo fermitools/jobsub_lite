@@ -84,8 +84,8 @@ def jobsub_submit_main(argv: List[str] = sys.argv) -> None:
 def jobsub_submit_args(
     args: argparse.Namespace, passthru: Optional[List[str]] = None
 ) -> None:
-
     global VERBOSE  # pylint: disable=global-statement
+    VERBOSE = getattr(args, "verbose", 0)
 
     if passthru:
         raise argparse.ArgumentError(None, f"unknown arguments: {repr(passthru)}")
@@ -123,8 +123,6 @@ def jobsub_submit_args(
 
     sanitize_lines(getattr(args, "lines", []))
 
-    VERBOSE = getattr(args, "verbose", 0)
-
     log_host_time(VERBOSE)
 
     # if they were trying to pass LD_LIBRARY_PATH to the job, get it from HIDE_LD_LIBRARY_PATH
@@ -147,7 +145,7 @@ def jobsub_submit_args(
         return
 
     if getattr(args, "skip_check", []):
-        if getattr(args, "verbose", 0):
+        if VERBOSE:
             print(f"Will skip these checks: {args.skip_check}")
         # Run all the setup items for each check to skip
         for check in args.skip_check:
