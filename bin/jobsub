@@ -4,6 +4,9 @@ import os
 import os.path
 import sys
 
+from functools import partial
+from typing import Callable, Type
+
 if os.environ.get("LD_LIBRARY_PATH", ""):
     os.environ["HIDE_LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
     del os.environ["LD_LIBRARY_PATH"]
@@ -29,6 +32,16 @@ from get_parser import (
     get_condor_epilog,
 )
 from tracing import as_span
+from version import version_string
+
+
+def _help_action_factory(help_func: Callable[[None], None]) -> Type[argparse.Action]:
+    class _HelpAction(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            help_func()
+            parser.exit()
+
+    return _HelpAction
 
 
 @as_span(
@@ -38,27 +51,62 @@ from tracing import as_span
     is_main=True,
 )
 def main():
-    top_parser = argparse.ArgumentParser()
+    top_parser = argparse.ArgumentParser(add_help=False)
     subparsers = top_parser.add_subparsers()
+    _subparsers = []  # collect all the subparsers as we define them
+
     for sc in ("submit", "submit_dag"):
-        sub_parser = get_parser(parser=subparsers.add_parser(sc))
+        sub_parser = subparsers.add_parser(sc)  # Get a subparser for the subcommand sc
+        sub_parser = get_parser(
+            parser=sub_parser
+        )  # Mutate sub_parser with get_parser()
         sub_parser.set_defaults(command=f"jobsub_{sc}")
         sub_parser.set_defaults(func=jobsub_submit_args)
+        _subparsers.append(sub_parser)
 
     for sc in ("q", "hold", "release", "rm", "wait"):
+        sub_parser = subparsers.add_parser(
+            sc,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=get_condor_epilog(f"condor_{sc}"),
+        )  # Get a subparser for the subcommand sc
         sub_parser = jobsub_cmd_parser(
-            sc == "q",
-            parser=subparsers.add_parser(
-                sc,
-                formatter_class=argparse.RawDescriptionHelpFormatter,
-                epilog=get_condor_epilog(f"condor_{sc}"),
-            ),
-        )
+            sc == "q", parser=sub_parser
+        )  # Mutate sub_parser with jobsub_cmd_parser()
         sub_parser.set_defaults(command=f"jobsub_{sc}")
         sub_parser.set_defaults(func=jobsub_cmd_args)
-    sub_parser = jobsub_fetchlog_parser(parser=subparsers.add_parser("fetchlog"))
-    sub_parser.set_defaults(command="jobsub_fetchlog")
-    sub_parser.set_defaults(func=jobsub_fetchlog_args)
+        _subparsers.append(sub_parser)
+
+    fetchlog_sub_parser = subparsers.add_parser("fetchlog")  # fetchlog subparser
+    fetchlog_sub_parser = jobsub_fetchlog_parser(
+        parser=fetchlog_sub_parser
+    )  # Mutate fetchlog_sub_parser with jobsub_fetchlog_parser()
+    fetchlog_sub_parser.set_defaults(command="jobsub_fetchlog")
+    fetchlog_sub_parser.set_defaults(func=jobsub_fetchlog_args)
+    _subparsers.append(fetchlog_sub_parser)
+
+    # Print all the help strings if nothing is given. Thanks to the various discussions
+    # at https://stackoverflow.com/questions/20094215/argparse-subparser-monolithic-help-output
+    _helps = [top_parser.format_help()] + [
+        p.format_help() for p in _subparsers
+    ]  # collect all the help strings
+    help_func = lambda x, y: print("\n\n".join(_helps))
+    help_action = _help_action_factory(partial(help_func, x=None, y=None))
+
+    top_parser.set_defaults(
+        func=help_func
+    )  # We take 2 arguments in the lambda because the call to args.func below passes 2 arguments
+    top_parser.add_argument(
+        "-h",
+        "--help",
+        action=help_action,
+        nargs=0,
+    )
+    top_parser.add_argument(
+        "--version",
+        action="version",
+        version=version_string(),
+    )
 
     args, passthru = top_parser.parse_known_args()
     args.func(args, passthru)
