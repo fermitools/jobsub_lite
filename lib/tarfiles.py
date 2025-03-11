@@ -165,7 +165,7 @@ def tar_up(
             exit_status = os.WEXITSTATUS(cmd_status)
         if exit_status > 0:
             # This will get caught by the general except Exception
-            raise Exception(
+            raise RuntimeError(
                 f"Tarring up the directory {directory} returned a non-zero exit code"
             )
     except OSError as e:

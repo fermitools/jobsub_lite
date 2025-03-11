@@ -86,9 +86,8 @@ def jobsub_call(argv: List[str], return_output: bool = False) -> Optional[str]:
         with output_saver(return_output) as output:
             func(argv)
             res = output.getvalue()
-    except:
-        print(f"Excepion in jobsub_call({argv})")
-        raise
+    except Exception as e:
+        raise RuntimeError(f"Excepion in jobsub_call({argv})") from e
     return res
 
 
