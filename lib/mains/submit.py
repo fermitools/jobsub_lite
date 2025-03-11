@@ -74,10 +74,10 @@ def jobsub_submit_main(argv: List[str] = sys.argv) -> None:
 
     args = parser.parse_args(argv[1:])
 
-    if args.verbose:
+    if getattr(args, "verbose", 0):
         print("in jobsub_submit_main: args = ", args)
 
-    VERBOSE = args.verbose
+    VERBOSE = getattr(args, "verbose", 0)
     jobsub_submit_args(args)
 
 
@@ -90,19 +90,40 @@ def jobsub_submit_args(
     if passthru:
         raise argparse.ArgumentError(None, f"unknown arguments: {repr(passthru)}")
 
-    if not args.global_pool and os.environ.get("JOBSUB_GLOBAL_POOL", ""):
+    if not getattr(args, "global_pool", "") and os.environ.get(
+        "JOBSUB_GLOBAL_POOL", ""
+    ):
         pool.set_pool(os.environ["JOBSUB_GLOBAL_POOL"])
 
     # Allow environment variables to append to some command lists to get rid of
     # need for poms_jobsub_wrapper to get in front of us on the path -- we will
     # just set these and have a job-info script report the job id, etc.
-    args.environment.extend(get_env_list("JOBSUB_EXTRA_ENVIRONMENT"))
-    args.lines.extend(get_env_list("JOBSUB_EXTRA_LINES"))
-    args.job_info.extend(get_env_list("JOBSUB_EXTRA_JOB_INFO"))
+    def _extend_args_attr_if_exists(
+        args: argparse.Namespace, attr: str, env_list: List[str]
+    ) -> argparse.Namespace:
+        # _list gets set to None if args.attr is not set or is None
+        _list = getattr(args, attr, None)
+        try:
+            assert _list is not None
+        except AssertionError:
+            _list = []
+        _list.extend(env_list)
+        setattr(args, attr, _list)
+        return args
 
-    sanitize_lines(args.lines)
+    args = _extend_args_attr_if_exists(
+        args, "environment", get_env_list("JOBSUB_EXTRA_ENVIRONMENT")
+    )
+    args = _extend_args_attr_if_exists(
+        args, "lines", get_env_list("JOBSUB_EXTRA_LINES")
+    )
+    args = _extend_args_attr_if_exists(
+        args, "job_info", get_env_list("JOBSUB_EXTRA_JOB_INFO")
+    )
 
-    VERBOSE = args.verbose
+    sanitize_lines(getattr(args, "lines", []))
+
+    VERBOSE = getattr(args, "verbose", 0)
 
     log_host_time(VERBOSE)
 
@@ -117,16 +138,16 @@ def jobsub_submit_args(
 
     # If called from jobsub or jobsub_* commands, this is redundant. However, we keep it in there
     # for the case where the user imports this module and calls jobsub_submit_args directly.
-    if args.version:
+    if getattr(args, "version", False):
         version.print_version()
         return
 
-    if args.support_email:
+    if getattr(args, "support_email", False):
         version.print_support_email()
         return
 
-    if args.skip_check:
-        if args.verbose:
+    if getattr(args, "skip_check", []):
+        if getattr(args, "verbose", 0):
             print(f"Will skip these checks: {args.skip_check}")
         # Run all the setup items for each check to skip
         for check in args.skip_check:
@@ -135,19 +156,23 @@ def jobsub_submit_args(
     # We want to push users to use jobsub_submit --dag, but there are still some legacy
     # users who use the old jobsub_submit_dag executable.  This patches that use case
     if os.path.basename(sys.argv[0]) == "jobsub_submit_dag":
-        args.dag = True
+        setattr(args, "dag", True)
 
     if os.environ.get("GROUP", None) is None:
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
     # While we're running in hybrid proxy/token mode, force us to get a new proxy every time we submit
     # Eventually, this arg and its support in the underlying libraries should be removed
-    args.force_proxy = True
+    setattr(args, "force_proxy", True)
 
     tarfiles.do_tarballs(args)
 
-    if args.maxConcurrent and int(args.maxConcurrent) >= args.N and not args.dag:
-        if args.verbose:
+    if (
+        getattr(args, "maxConcurrent", None)
+        and int(args.maxConcurrent) >= getattr(args, "N", 1)
+        and not getattr(args, "dag", False)
+    ):
+        if VERBOSE:
             sys.stderr.write(
                 f"Note: ignoring --maxConcurrent {args.maxConcurrent} for {args.N} jobs\n"
             )
@@ -156,10 +181,10 @@ def jobsub_submit_args(
     varg = vars(args)
 
     cred_set = creds.get_creds(varg)
-    if args.verbose:
+    if VERBOSE:
         creds.print_cred_paths_from_credset(cred_set)
 
-    if args.verbose:
+    if VERBOSE:
         sys.stderr.write(f"varg: {repr(varg)}\n")
 
     schedd_add = condor.get_schedd(varg)
@@ -184,7 +209,11 @@ def jobsub_submit_args(
     if cred_set.token:
         cred_set.token = use_token_copy(cred_set.token)
         varg["job_scope"] = " ".join(
-            get_job_scopes(cred_set.token, args.need_storage_modify, args.need_scope)
+            get_job_scopes(
+                cred_set.token,
+                getattr(args, "need_storage_modify", []),
+                getattr(args, "need_scope", []),
+            )
         )
         m = hashlib.sha256()
         m.update(varg["job_scope"].encode())
@@ -202,7 +231,7 @@ def jobsub_submit_args(
         else:
             jobsub_submit_simple(varg, schedd_name)
 
-        if args.verbose:
+        if VERBOSE:
             # remind folks where transferred data goes.
             for f in args.orig_input_file:
                 print(

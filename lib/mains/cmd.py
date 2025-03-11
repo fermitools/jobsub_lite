@@ -76,30 +76,32 @@ def jobsub_cmd_main(argv: List[str] = sys.argv) -> None:
 def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
     global VERBOSE  # pylint: disable=invalid-name,global-statement
 
-    VERBOSE = arglist.verbose
+    VERBOSE = getattr(arglist, "verbose", 0)
 
     log_host_time(VERBOSE)
     totalsf = None
 
-    if arglist.version:
+    # If called from jobsub or jobsub_* commands, this is redundant. However, we keep it in there
+    # for the case where the user imports this module and calls jobsub_cmd_args directly.
+    if getattr(arglist, "version", False):
         version.print_version()
         return
 
-    if arglist.support_email:
+    if getattr(arglist, "support_email", False):
         version.print_support_email()
         return
 
     # Re-insert --debug/--VERBOSE if it was given
-    if arglist.verbose:
+    if VERBOSE:
         passthru.append("-debug")
     # if they gave us --jobid or --user put in the value plain, condor figures it out
-    if arglist.jobid:
+    if getattr(arglist, "jobid", None):
         for jid in arglist.jobid.split(","):
             passthru.append(jid)
-    if hasattr(arglist, "user") and arglist.user:
+    if getattr(arglist, "user", None):
         passthru.append(arglist.user)
     # If they gave us --constraint, sanitize it and add to passthru
-    if arglist.constraint:
+    if getattr(arglist, "constraint", None):
         passthru.extend(["-constraint", arglist.constraint])
 
     if os.environ.get("GROUP", None) is None:
@@ -114,7 +116,7 @@ def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
     # save beginning of 1234@schedd in list of args for that schedd
     args_for_schedd = defaultdict(list)
 
-    if arglist.name:
+    if getattr(arglist, "name", None):
         schedd_list.add(arglist.name)
 
     default_formatting = True
