@@ -1,6 +1,8 @@
 from typing import Dict, List, Optional, Generator
+import os
 import re
 import sys
+import time
 import contextlib
 from datetime import datetime, timedelta
 from io import StringIO
@@ -94,6 +96,7 @@ def jobsub_call(argv: List[str], return_output: bool = False) -> Optional[str]:
 
 
 def optfix(s: Optional[str]) -> str:
+    """typing fix -- make string not Optional"""
     if not s:
         return ""
     return s
@@ -114,12 +117,13 @@ class SubmittedJob(Job):
         submit_out: str = "",
     ) -> None:
         """save various job submission values to reuse for hold, queue, etc."""
-        Job.__init__(self, jobid)
-        self.group = group
-        self.pool = pool
-        self.auth_methods = auth_methods
-        self.role = role
+        Job.__init__(self, jobid.strip())
+        self.group = group.strip()
+        self.pool = pool.strip()
+        self.auth_methods = auth_methods.strip()
+        self.role = role.strip()
         self.submit_out = submit_out
+        self.status = None
         self.set_q_attrs()
 
     def set_q_attrs(
@@ -128,10 +132,12 @@ class SubmittedJob(Job):
         submitted: str = "",
         runtime: str = "",
         status: str = "",
+        command: str = "",
         prio: str = "",
         size: str = "",
-        command: str = "",
     ) -> None:
+        """note values from jobsub_q output, owner, submitted, status, etc."""
+        init_JSMAP()
         self.owner = owner
         self.submitted = jsq_date_to_datetime(submitted) if submitted else None
         self.runtime = jsq_runtime_to_timedelta(runtime) if runtime else None
@@ -181,70 +187,102 @@ class SubmittedJob(Job):
         return rs
 
     def q(self, verbose: int = 0) -> None:
+        """run 'jobsub_q' on this job and update values, status"""
         args = ["jobsub_q"]
         self._update_args(verbose, args)
         rs = optfix(jobsub_call(args, True))
-        line = rs.split("\n")[1]
-        m = jobsub_q_re.search(line)
-        if m:
-            self.set_q_attrs(
-                m.group("owner"),
-                m.group("submitted"),
-                m.group("runtime"),
-                m.group("status"),
-                m.group("prio"),
-                m.group("size"),
-                m.group("command"),
-            )
-        else:
-            raise RuntimeError(f"failed jobsub_q:\n {rs}")
+        lines = rs.split("\n")
+        if len(lines) == 2 and self.status is not None:
+            # we saw it previously, and now it is not showing up..
+            self.status = JobStatus.COMPLETED
+            return
+        if len(lines) > 1:
+            line = rs.split("\n")[1]
+            m = jobsub_q_re.search(line)
+            if m:
+                self.set_q_attrs(
+                    m.group("owner"),
+                    m.group("submitted"),
+                    m.group("runtime"),
+                    m.group("status"),
+                    m.group("command"),
+                    m.group("prio"),
+                    m.group("size"),
+                )
+                return
+        raise RuntimeError(f"failed jobsub_q:\n {rs}")
 
     def q_long(self, verbose: int = 0) -> Dict[str, str]:
+        """run 'jobsub_q --long' on this job and update values, status,
+        and return the dictionary of name/value pairs from the ouput"""
         args = ["jobsub_q", "--long"]
         self._update_args(verbose, args)
         rs = optfix(jobsub_call(args, True))
-        lines = rs.split("\n")[1]
+        lines = rs.split("\n")
         res = {}
         for line in lines:
+            if not line.find(" = ") > 0:
+                continue
             k, v = line.split(" = ", 1)
             if v[0] == '"':
                 v = v.strip('"')
             res[k] = v
-        self.set_q_attrs(
-            res.get("Owner", ""),
-            res.get("QDate", ""),
-            res.get("RemoteWallClockTime", ""),
-            res.get("JobStatus", ""),
-            res.get("JobPrio", ""),
-            res.get("ExecutableSize", ""),
-            res.get("Cmd", ""),
-        )
+        if len(lines) == 1 and self.status is not None:
+            self.status = JobStatus.COMPLETED
+        else:
+            self.set_q_attrs(
+                res.get("Owner", ""),
+                res.get("QDate", ""),
+                res.get("RemoteWallClockTime", ""),
+                res.get("JobStatus", ""),
+                res.get("Cmd", ""),
+                res.get("JobPrio", ""),
+                res.get("ExecutableSize", ""),
+            )
         return res
 
     def q_analyze(self, verbose: int = 0) -> str:
+        """run jobsub_q --better-analyze on the job and return results"""
         args = ["jobsub_q", "--better-analyze"]
         self._update_args(verbose, args)
         rs = optfix(jobsub_call(args, True))
         return rs
 
+    def wait(self, howoften: int = 300, verbose: int = 0) -> None:
+        """poll with q() every howoften seconds until the job
+        is COMPLETED, HELD, or REMOVED"""
+        self.q()
+        while self.status not in (
+            JobStatus.COMPLETED,
+            JobStatus.HELD,
+            JobStatus.REMOVED,
+        ):
+            if verbose:
+                print(str(self), end="\r")
+            time.sleep(howoften)
+            self.q()
+
+        if verbose:
+            print("", end="\r")
+
     def fetchlog(
         self, destdir: str = "", condor: bool = False, verbose: int = 0
     ) -> str:
-        """fetch job output either as tarfile or into directory"""
-        args = ["jobsub_fetchlog", "-G", self.group]
-        self._update_args(verbose, args)
+        """fetch job output either as tarfile in current directory
+        or unpacked into directory destdir"""
+        args = ["jobsub_fetchlog"]
         if destdir:
             args.append("--destdir")
             args.append(destdir)
         if condor:
             args.append("--condor")
-        args.append(self.id)
-        # print(f"calling jobsub_call {repr(args)}")
+        self._update_args(verbose, args)
         rs = optfix(jobsub_call(args, True))
         return rs
 
     def __str__(self) -> str:
-        return f"{self.id:40} {self.owner:10} {str(self.submitted):19.19} {str(self.runtime):15} {str(self.status):10} {self.prio:6.1f} {self.size:6.1f} {self.command}"
+        """return jobsub_q style text line (slightly wider)"""
+        return f"{self.id:40} {self.owner:10.10} {str(self.submitted):19.19} {str(self.runtime):17} {str(self.status)[10:]:9} {self.prio:6.1f} {self.size:6.1f} {self.command}"
 
 
 jobsub_required_args = ["group"]
@@ -424,11 +462,10 @@ def submit(
     args.append(f"file://{executable}")
     args.extend(exe_arguments)
 
-    # print(f"calling jobsub_call {repr(args)}")
     rs = optfix(jobsub_call(args, True))
     m = jobsub_submit_re.search(rs)
     if m:
-        return SubmittedJob(
+        job = SubmittedJob(
             kwargs["group"],
             m.group("jobid"),
             kwargs.get("pool", ""),
@@ -436,26 +473,47 @@ def submit(
             kwargs.get("role", ""),
             rs,
         )
-    raise RuntimeError("submission failed: {rs}")
+        # we think we know some jobsub_q attrs due to having just launched
+        job.set_q_attrs(
+            os.environ["USER"],
+            str(int(time.time())),
+            "0.0",
+            "I",
+            executable,
+            "0.0",
+            "0.0",
+        )
+        return job
+    raise RuntimeError(f"submission failed: {rs}")
 
 
 def jsq_date_to_datetime(s: str) -> datetime:
-    s = s.replace(" ", "T").replace("/", "-")
-    isos = f"{datetime.now().year}-{s}"
-    return datetime.fromisoformat(isos)
+    """convert either jobsub_q start date or --long datestamp to datetime"""
+    if s.find("/") > 0:
+        s = s.replace(" ", "T").replace("/", "-")
+        isos = f"{datetime.now().year}-{s}"
+        return datetime.fromisoformat(isos)
+    return datetime.fromtimestamp(int(s))
 
 
 def jsq_runtime_to_timedelta(s: str) -> timedelta:
-    days, hours, minutes, seconds = re.split("[+:]", s)
-    return timedelta(
-        days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(seconds)
-    )
+    """convert jobsub_q runtime or --long float value to timedelta"""
+    if s.find(":") > 0:
+        days, hours, minutes, seconds = re.split("[+:]", s)
+        return timedelta(
+            days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(seconds)
+        )
+    return timedelta(seconds=int(float(s)))
 
 
 JSMAP: Dict[str, JobStatus] = {}
 
 
 def init_JSMAP() -> None:
+    """make a map that converts status strings to JobStatus values
+    from either jobsub_q status leters IRXH or --long 01245 values
+    by going through the htcondor.JobStatus enums class
+    """
     if len(JSMAP.keys()):
         return
     for k in JobStatus.__members__:
@@ -465,6 +523,7 @@ def init_JSMAP() -> None:
             jl = k[0]
         if jl not in JSMAP:
             JSMAP[jl] = JobStatus.__members__[k]
+            JSMAP[str(int(JobStatus.__members__[k]))] = JobStatus.__members__[k]
 
 
 qargs = [
@@ -531,9 +590,9 @@ def q(
                 m.group("submitted"),
                 m.group("runtime"),
                 m.group("status"),
+                m.group("command"),
                 m.group("prio"),
                 m.group("size"),
-                m.group("command"),
             )
             res.append(job)
     return res

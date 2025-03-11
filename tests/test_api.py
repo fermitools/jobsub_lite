@@ -62,5 +62,8 @@ def test_fancy_api_demo():
         sb = os.stat("/tmp/test_fetch/lookaround.sh")
         assert time.time() - sb.st_mtime < 5
         os.system("rm -rf /tmp/test_fetch")
+        data = job1.q_long()
+        print("after update, status: {str(job1.status)}")
+        assert "ClusterId" in data
     except RuntimeError:
         raise
