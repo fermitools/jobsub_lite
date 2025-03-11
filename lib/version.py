@@ -25,8 +25,12 @@ __author__ = "Fermi National Accelerator Laboratory"
 __copyright__ = f"2023 {__author__}"
 
 
+def version_string() -> str:
+    return f"{__title__} version {__version__}"
+
+
 def print_version() -> None:
-    print(f"{__title__} version {__version__}")
+    print(version_string())
 
 
 def print_support_email() -> None:

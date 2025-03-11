@@ -4,7 +4,7 @@
 # api -- calls for apis
 #
 
-""" python command  apis for jobsub """
+"""python command  apis for jobsub"""
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 import argparse
 import os
@@ -243,37 +243,38 @@ def jobsub_fetchlog_args(
 ) -> None:
 
     global VERBOSE  # pylint: disable=global-statement
-    VERBOSE = args.verbose
+    VERBOSE = getattr(args, "verbose", 0)
 
     if passthru:
         raise argparse.ArgumentError(None, f"unknown arguments: {repr(passthru)}")
 
     log_host_time(VERBOSE)
 
-    if args.version:
+    # If called from jobsub or jobsub_* commands, this is redundant. However, we keep it in there
+    # for the case where the user imports this module and calls jobsub_fetchlog_args directly.
+    if getattr(args, "version", False):
         version.print_version()
         return
 
-    if args.support_email:
+    if getattr(args, "support_email", False):
         version.print_support_email()
         return
 
     # jobsub_fetchlog only supports tokens
-    if "token" not in args.auth_methods:
+    if "token" not in getattr(args, "auth_methods", ["token"]):
         raise SystemExit(
             "jobsub_fetchlog only supports token authentication.  Please either omit the --auth-methods flag or make sure tokens is included in the value of that flag"
         )
 
-    if not args.jobid and not args.job_id:
-        raise SystemExit("jobid is required.")
-
-    if not args.jobid and args.job_id:
-        args.jobid = args.job_id
+    if not getattr(args, "jobid", None):
+        if getattr(args, "job_id", None) is None:
+            raise SystemExit("jobid is required.")
+        setattr(args, "jobid", args.job_id)
 
     # handle 1234.@jobsub0n.fnal.gov
     args.jobid = args.jobid.replace(".@", "@")
 
-    if args.verbose:
+    if VERBOSE:
         htcondor.set_subsystem("TOOL")
         htcondor.param["TOOL_DEBUG"] = "D_FULLDEBUG"
         htcondor.enable_debug()
@@ -282,8 +283,15 @@ def jobsub_fetchlog_args(
         raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
     cred_set = creds.get_creds(vars(args))
-    if args.verbose:
+    if VERBOSE:
         creds.print_cred_paths_from_credset(cred_set)
 
-    fetcher = fetch_from_condor if args.condor else fetch_from_landscape
-    fetcher(args.jobid, args.destdir, args.archive_format, args.partial)
+    fetcher = (
+        fetch_from_condor if getattr(args, "condor", False) else fetch_from_landscape
+    )
+    fetcher(
+        args.jobid,
+        getattr(args, "destdir", None),
+        getattr(args, "archive_format", "tar"),
+        getattr(args, "partial", False),
+    )
