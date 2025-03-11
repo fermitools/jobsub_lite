@@ -490,8 +490,18 @@ def submit(
 def jsq_date_to_datetime(s: str) -> datetime:
     """convert either jobsub_q start date or --long datestamp to datetime"""
     if s.find("/") > 0:
-        s = s.replace(" ", "T").replace("/", "-")
-        isos = f"{datetime.now().year}-{s}"
+        # near the year boundary the start date may be from last year
+        # indicated by a month larger than the current month (i.e
+        # start date month is in December but it is January
+        now = datetime.now()
+        sdmonth = int(s[:2])
+        year = now.year
+        if sdmonth > now.month:
+            year = year - 1
+        # convert to full iso date string dashes for month-day, T before time
+        isos = s.replace(" ", "T").replace("/", "-")
+        # and year in front
+        isos = f"{year}-{isos}"
         return datetime.fromisoformat(isos)
     return datetime.fromtimestamp(int(s))
 
