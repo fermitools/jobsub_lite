@@ -145,7 +145,7 @@ class SubmittedJob(Job):
         self.size = float(size) if size else None
         self.command = command
 
-    def _update_args(self, verbose: int, args: List[str]) -> None:
+    def _cmd(self, verbose: int, args: List[str]) -> str:
         """code adding common arguments to commands"""
         args.append("-G")
         args.append(self.group)
@@ -162,34 +162,25 @@ class SubmittedJob(Job):
             args.append("--role")
             args.append(self.role)
         args.append(self.id)
+        rs = optfix(jobsub_call(args, True))
+        return rs
 
     def hold(self, verbose: int = 0) -> str:
         """Hold this job with jobsub_hold"""
-        args = ["jobsub_hold"]
-        self._update_args(verbose, args)
-        rs = optfix(jobsub_call(args, True))
-        return rs
+        return self._cmd(verbose, ["jobsub_hold"])
 
     def release(self, verbose: int = 0) -> str:
         """Release this job with jobsub_release"""
-        args = ["jobsub_release"]
-        self._update_args(verbose, args)
-        rs = optfix(jobsub_call(args, True))
-        return rs
+        return self._cmd(verbose, ["jobsub_release"])
 
     # pylint: disable=invalid-name
     def rm(self, verbose: int = 0) -> str:
         """Remove this job with jobsub_rm"""
-        args = ["jobsub_rm"]
-        self._update_args(verbose, args)
-        rs = optfix(jobsub_call(args, True))
-        return rs
+        return self._cmd(verbose, ["jobsub_rm"])
 
     def q(self, verbose: int = 0) -> None:
         """run 'jobsub_q' on this job and update values, status"""
-        args = ["jobsub_q"]
-        self._update_args(verbose, args)
-        rs = optfix(jobsub_call(args, True))
+        rs = self._cmd(verbose, ["jobsub_q"])
         lines = rs.split("\n")
         if len(lines) == 2 and self.status is not None:
             # we saw it previously, and now it is not showing up..
@@ -214,9 +205,7 @@ class SubmittedJob(Job):
     def q_long(self, verbose: int = 0) -> Dict[str, str]:
         """run 'jobsub_q --long' on this job and update values, status,
         and return the dictionary of name/value pairs from the ouput"""
-        args = ["jobsub_q", "--long"]
-        self._update_args(verbose, args)
-        rs = optfix(jobsub_call(args, True))
+        rs = self._cmd(verbose, ["jobsub_q", "--long"])
         lines = rs.split("\n")
         res = {}
         for line in lines:
@@ -242,10 +231,7 @@ class SubmittedJob(Job):
 
     def q_analyze(self, verbose: int = 0) -> str:
         """run jobsub_q --better-analyze on the job and return results"""
-        args = ["jobsub_q", "--better-analyze"]
-        self._update_args(verbose, args)
-        rs = optfix(jobsub_call(args, True))
-        return rs
+        return self._cmd(verbose, ["jobsub_q", "--better-analyze"])
 
     def wait(self, howoften: int = 300, verbose: int = 0) -> None:
         """poll with q() every howoften seconds until the job
@@ -275,9 +261,7 @@ class SubmittedJob(Job):
             args.append(destdir)
         if condor:
             args.append("--condor")
-        self._update_args(verbose, args)
-        rs = optfix(jobsub_call(args, True))
-        return rs
+        return self._cmd(verbose, args)
 
     def __str__(self) -> str:
         """return jobsub_q style text line (slightly wider)"""
