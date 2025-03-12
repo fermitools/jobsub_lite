@@ -184,6 +184,11 @@ class SubmittedJob(Job):
         lines = rs.split("\n")
         if len(lines) == 2 and self.status is not None:
             # we saw it previously, and now it is not showing up..
+            # -- we got just the column header and an empty string
+            # from the split() so len(lines)=2.
+            # we assume it completed, but it could have been
+            # removed...
+            # This lets wait() complete when the job disappears.
             self.status = JobStatus.COMPLETED
             return
         if len(lines) > 1:
@@ -216,6 +221,11 @@ class SubmittedJob(Job):
                 v = v.strip('"')
             res[k] = v
         if len(lines) == 1 and self.status is not None:
+            # we saw it previously, and now it is not showing up..
+            # we got just a newline goint into the split() so len(lines)=1.
+            # we assume it completed, but it could have been
+            # removed...
+            # This lets wait() complete when the job disappears.
             self.status = JobStatus.COMPLETED
         else:
             self.set_q_attrs(
