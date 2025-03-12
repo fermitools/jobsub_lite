@@ -2,7 +2,7 @@
 
 . /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh
 
-setup fife_utils v3_2_5
+setup fife_utils
 setup hypotcode
 
 for e in samdev nova dune
@@ -13,7 +13,6 @@ do
    esac
 
    echo "checking $e files in $g..."
-
 
     srcf=$HYPOTCODE_DIR/fcl/gen_nova.fcl
     ddir=/pnfs/$g/$USER/poms_test/gen_cfg
