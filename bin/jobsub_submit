@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" submit command for jobsub layer over condor """
+"""submit command for jobsub layer over condor"""
 # pylint: disable=wrong-import-position,wrong-import-order,import-error
 import hashlib
 import os
@@ -147,7 +147,7 @@ def main():
             sys.stderr.write(
                 f"Note: ignoring --maxConcurrent {args.maxConcurrent} for {args.N} jobs\n"
             )
-        args.maxConcurrent = None
+        args.maxConcurrent = 0
 
     varg = vars(args)
 
