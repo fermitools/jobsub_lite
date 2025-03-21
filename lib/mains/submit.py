@@ -147,7 +147,7 @@ def jobsub_submit_args(
             sys.stderr.write(
                 f"Note: ignoring --maxConcurrent {args.maxConcurrent} for {args.N} jobs\n"
             )
-        args.maxConcurrent = None
+        args.maxConcurrent = 0
 
     varg = vars(args)
 
