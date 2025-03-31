@@ -105,7 +105,7 @@ def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
         passthru.extend(["-constraint", arglist.constraint])
 
     if os.environ.get("GROUP", None) is None:
-        raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
+        raise NameError(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
     # make list of arguments to pass to condor command:
     # - the passthru arguments from above, except if we have
