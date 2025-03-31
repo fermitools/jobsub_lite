@@ -124,6 +124,7 @@ class SubmittedJob(Job):
         self.submit_out = submit_out
         self.status = None
         self.set_q_attrs()
+        self.dagjobs: List[SubmittedJob] = []
 
     def set_q_attrs(
         self,
@@ -259,6 +260,11 @@ class SubmittedJob(Job):
 
         if verbose:
             print("", end="\r")
+
+    def find_dag_jobs(self) -> None:
+        self.dagjobs = q(
+            group=self.group, name=self.schedd, constraint=f"DAGManJobId=={self.seq}"
+        )
 
     def fetchlog(
         self, destdir: str = "", condor: bool = False, verbose: int = 0
