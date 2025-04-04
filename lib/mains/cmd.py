@@ -248,7 +248,7 @@ def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
                 # pipe our remaining output through sort (by date) and jobsub_totals next to us
                 # ... if we're not collecting output for the API.
                 jobsub_totals_path = os.path.join(
-                    os.path.dirname(__file__), "../bin/jobsub_totals"
+                    os.path.dirname(__file__), "../../bin/jobsub_totals"
                 )
                 totalsf = os.popen(f"sort -k 3,4 | {jobsub_totals_path}", "w")
                 savout = os.dup(1)
