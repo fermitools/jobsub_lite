@@ -4,7 +4,7 @@ NAME = jobsub_lite
 # Warning:  Make sure there is NO trailing whitespace in either of these lines!!
 # Set RC to 0 for final release
 VERSION = v1.11
-RC = 1
+RC = 0
 ### End expected changes
 
 ROOTDIR = $(shell pwd)
