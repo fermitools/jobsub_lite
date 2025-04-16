@@ -497,6 +497,8 @@ def get_parser(
 
     parser.add_argument(
         "--maxConcurrent",
+        type=int,
+        default=0,
         help="max number of jobs running concurrently at given time.  Use in"
         " conjunction with -N option to protect a shared resource. Example:"
         " jobsub -N 1000 -maxConcurrent 20 will only run 20 jobs at a time"
