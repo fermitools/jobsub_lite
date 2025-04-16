@@ -4,18 +4,19 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   run_pylint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       pylint_version: 2.13.9
     strategy:
       matrix:
-        py-version: [3.6, 3.7, 3.8, 3.9] # When EL8 is gone, we can remove everything up to 3.9
+        py-version: [3.7, 3.8, 3.9] # When EL8 is gone, we can remove everything up to 3.9
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.6-3.9
+    - name: Set up Python 3.7-3.9
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.py-version }}
