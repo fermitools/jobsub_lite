@@ -26,8 +26,10 @@ from jobsub_api import jobsub_call, jobsub_submit_re, jobsub_q_re
 
 def test_api_demo():
     group = "fermilab"
+    testdir = os.path.dirname(__file__)
     out1 = jobsub_call(
-        ["jobsub_submit", "-G", group, "file://./job_scripts/lookaround.sh"], True
+        ["jobsub_submit", "-G", group, f"file://{testdir}/job_scripts/lookaround.sh"],
+        True,
     )
     m1 = jobsub_submit_re.search(out1)
     if m1:
@@ -49,8 +51,11 @@ from jobsub_api import submit, q
 
 def test_fancy_api_demo():
     group = "fermilab"
+    testdir = os.path.dirname(__file__)
     try:
-        job1 = submit(group=group, executable="job_scripts/lookaround.sh", verbose=1)
+        job1 = submit(
+            group=group, executable=f"{testdir}/job_scripts/lookaround.sh", verbose=1
+        )
         print(f"submitted job: {job1.id}")
         print(f"submit output:\n=-=-=-=-=\n {job1.submit_out}")
         print(f"\n=-=-=-=-=\n")
@@ -63,7 +68,7 @@ def test_fancy_api_demo():
         assert time.time() - sb.st_mtime < 5
         os.system("rm -rf /tmp/test_fetch")
         data = job1.q_long()
-        print("after update, status: {str(job1.status)}")
+        print(f"after update, status: {str(job1.status)}")
         assert "ClusterId" in data
     except RuntimeError:
         raise
