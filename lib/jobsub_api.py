@@ -209,8 +209,7 @@ class SubmittedJob(Job):
             if not line.find(" = ") > 0:
                 continue
             k, v = line.split(" = ", 1)
-            if v[0] == '"':
-                v = v.strip('"')
+            v = v.strip('"')
             res[k] = v
         if len(lines) == 1 and self.status is not None:
             # we saw it previously, and now it is not showing up..
