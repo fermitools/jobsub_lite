@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Generator
+from typing import Dict, List, Generator
 import os
 import re
 import sys
@@ -65,7 +65,7 @@ jobsub_q_re = re.compile(
 )
 
 
-def jobsub_call(argv: List[str], return_output: bool = False) -> Optional[str]:
+def jobsub_call(argv: List[str], return_output: bool = False) -> str:
     """
     Low level API call for jobsub commands.
 
@@ -75,7 +75,7 @@ def jobsub_call(argv: List[str], return_output: bool = False) -> Optional[str]:
     If the flag is True, it returns a string of the output of the jobsub command,
     otherwise the output goes to stdout/stderr.
     """
-    res = None
+    res = ""
     if argv[0].find("_submit") > 0:
         func = jobsub_submit_main
     elif argv[0].find("_fetchlog") > 0:
@@ -92,13 +92,6 @@ def jobsub_call(argv: List[str], return_output: bool = False) -> Optional[str]:
 
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-
-def optfix(s: Optional[str]) -> str:
-    """typing fix -- make string not Optional"""
-    if not s:
-        return ""
-    return s
 
 
 # pylint: disable=too-many-instance-attributes
@@ -163,7 +156,7 @@ class SubmittedJob(Job):
             args.append("--role")
             args.append(self.role)
         args.append(self.id)
-        rs = optfix(jobsub_call(args, True))
+        rs = jobsub_call(args, True)
         return rs
 
     def hold(self, verbose: int = 0) -> str:
@@ -479,7 +472,7 @@ def submit(
     args.append(f"file://{executable}")
     args.extend(exe_arguments)
 
-    rs = optfix(jobsub_call(args, True))
+    rs = jobsub_call(args, True)
     m = jobsub_submit_re.search(rs)
     if m:
         job = SubmittedJob(
@@ -600,7 +593,7 @@ def q(
             args.append(kwargs[k])
     for j in jobids:
         args.append(j)
-    rs = optfix(jobsub_call(args, True))
+    rs = jobsub_call(args, True)
     res: List[SubmittedJob] = []
     for line in rs.split("\n")[1:]:
         m = jobsub_q_re.search(line)
