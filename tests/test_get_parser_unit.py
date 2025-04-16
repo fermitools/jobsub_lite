@@ -194,7 +194,7 @@ def all_test_args():
         "--mail-always",
         "--managed-token",
         "--maxConcurrent",
-        "xxmaxConcurrentxx",
+        0,
         "--memory",
         "xxmemoryxx",
         "--need-storage-modify",
@@ -389,9 +389,14 @@ class TestGetParserUnit:
             assert arg in all_test_args
 
         for arg in all_test_args:
-            if arg[0] == "-":
-                arg = arg.lstrip("-")
-                assert arg in allargs
+            try:
+                if arg[0] == "-":
+                    arg = arg.lstrip("-")
+                    assert arg in allargs
+            except (
+                TypeError
+            ):  # We have some non-string argument values in all_test_args
+                pass
 
     @pytest.mark.unit
     def test_get_parser_all(self, find_all_arguments, all_test_args):
@@ -476,6 +481,8 @@ class TestGetParserUnit:
                 assert vres["global_pool"] == "dune"
             elif arg == "dd-percentage":
                 assert vres["dd_percentage"] == 50
+            elif arg == "maxConcurrent":
+                assert vres["maxConcurrent"] == 0
             elif arg in listargs:
                 # args are in a list, so look for list containing xxflagxx
                 if arg in ["lines"]:
