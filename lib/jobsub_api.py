@@ -348,12 +348,15 @@ jobsub_options = {
 }
 
 
-# pylint: disable=dangerous-default-value, too-many-branches
+# pylint: disable=dangerous-default-value, too-many-branches, too-many-arguments, invalid-name
 def submit(
     executable: str,
     exe_arguments: List[str] = [],
     lines: List[str] = [],
+    f: List[str] = [],
+    tar_file_name: List[str] = [],
     env: Dict[str, str] = {},
+    d: Dict[str, str] = {},
     **kwargs: str,
 ) -> SubmittedJob:
     """
@@ -375,8 +378,14 @@ def submit(
     Options taking lists of strings
         lines -- lines to append to job file
         exe_arguments -- command-line arguments to give to  executable
+        f -- input file to copy into job working directory
+        tar_file_name -- tarfile to send to job and unpack in $TAR_DIR_LOCAL
     Options taking a dictionary
         env environment variables and values to pass
+        d -- tag:destination string;
+             Writable directory $CONDOR_DIR_<tag>
+            will exist on the execution node. After job
+            completion, its contents will be moved to <dir>
     Options taking string values
         executable -- executable to run
         auth_methods -- comma separated list from toksn,proxy
@@ -389,14 +398,9 @@ def submit(
         dd_percentage -- Percentage staging to require in start job
         devserver -- use development schedd to submit
         disk -- disk space tor equest, with units from  KB,MB,GB,TB
-        d -- tag:destination string;
-             Writable directory $CONDOR_DIR_<tag>
-            will exist on the execution node. After job
-            completion, its contents will be moved to <dir>
         email_to -- email address for results
         expected_lifetime -- lifetime of job short,medium,long or digits and
             units from s,m,h,d
-        f -- input file to copy into job working directory
         generate_email_summary -- one mail for DAG jobs summary
         G -- group / experiment name
         global_pool -- global pool name if any (.ie. "dune")
@@ -421,7 +425,6 @@ def submit(
         skip_check -- skip checks done by default from rcds
         subgroup -- subgroup with role for permissions
         tarball_exclusion_file -- file exculsions for tarfile generation
-        tar_file_name -- tarfile to send to job and unpack in $TAR_DIR_LOCAL
         timeout -- end job if it runs longer than this units from ms,m,h,d
         t -- experiment test-relesase directory
         verbose -- verbosity, interger from 1 to 10
@@ -439,8 +442,23 @@ def submit(
         else:
             args.append(k)
 
+    for k in d:
+        args.append("-d")
+        if env[k]:
+            args.append(f"{k} {d[k]}")
+        else:
+            args.append(k)
+
     for k in lines:
         args.append("--lines")
+        args.append(k)
+
+    for k in f:
+        args.append("-f")
+        args.append(k)
+
+    for k in tar_file_name:
+        args.append("--tar-file-name")
         args.append(k)
 
     # pylint: disable=consider-using-dict-items
