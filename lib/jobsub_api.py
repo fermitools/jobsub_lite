@@ -211,11 +211,10 @@ class SubmittedJob(Job):
             k, v = line.split(" = ", 1)
             v = v.strip('"')
             res[k] = v
-        if len(lines) == 1 and self.status is not None:
+        if rs.find(self.id) < 0 and self.status is not None:
             # we saw it previously, and now it is not showing up..
-            # we got just a newline goint into the split() so len(lines)=1.
-            # we assume it completed, but it could have been
-            # removed...
+            # (our jobid isn't in the output)
+            # we assume it completed, but it could have been removed...
             # This lets wait() complete when the job disappears.
             self.status = JobStatus.COMPLETED
         else:
