@@ -175,8 +175,7 @@ class SubmittedJob(Job):
     def q(self, verbose: int = 0) -> None:
         """run 'jobsub_q' on this job and update values, status"""
         rs = self._cmd(verbose, ["jobsub_q"])
-        lines = rs.split("\n")
-        if len(lines) == 2 and self.status is not None:
+        if rs.find(self.id) < 0:
             # we saw it previously, and now it is not showing up..
             # -- we got just the column header and an empty string
             # from the split() so len(lines)=2.
@@ -185,20 +184,19 @@ class SubmittedJob(Job):
             # This lets wait() complete when the job disappears.
             self.status = JobStatus.COMPLETED
             return
-        if len(lines) > 1:
-            line = rs.split("\n")[1]
-            m = jobsub_q_re.search(line)
-            if m:
-                self.set_q_attrs(
-                    m.group("owner"),
-                    m.group("submitted"),
-                    m.group("runtime"),
-                    m.group("status"),
-                    m.group("command"),
-                    m.group("prio"),
-                    m.group("size"),
-                )
-                return
+        line = rs.split("\n")[1]
+        m = jobsub_q_re.search(line)
+        if m:
+            self.set_q_attrs(
+                m.group("owner"),
+                m.group("submitted"),
+                m.group("runtime"),
+                m.group("status"),
+                m.group("command"),
+                m.group("prio"),
+                m.group("size"),
+            )
+            return
         raise RuntimeError(f"failed jobsub_q:\n {rs}")
 
     def q_long(self, verbose: int = 0) -> Dict[str, str]:
