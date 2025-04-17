@@ -49,24 +49,35 @@ def test_api_demo():
 from jobsub_api import submit, q
 
 
-def test_fancy_api_demo():
+def test_fancy_api_demo(tmp_path):
     group = "fermilab"
     testdir = os.path.dirname(__file__)
     try:
+        # Submit a job. submit will raise if it doesn't succeed, so we don't need to assert success
         job1 = submit(
             group=group, executable=f"{testdir}/job_scripts/lookaround.sh", verbose=1
         )
         print(f"submitted job: {job1.id}")
         print(f"submit output:\n=-=-=-=-=\n {job1.submit_out}")
         print(f"\n=-=-=-=-=\n")
+
+        # Ensure that we can find the job in the queue
         qjobs = q(job1.id, group=group)
+        assert len(qjobs) == 1  # We should have gotten only one job back
+        assert (
+            qjobs[0].id == job1.id
+        )  # We should have gotten only an identical job to job1 back
         for qjob in qjobs:
             print(f"saw job {qjob.id} status {str(qjob.status)} ")
-        rs = job1.fetchlog(destdir="/tmp/test_fetch", verbose=1)
+
+        # Make sure that we can fetch job1's log
+        dest = tmp_path
+        rs = job1.fetchlog(destdir=str(dest.absolute()), verbose=1)
         print(f"fetchlog says: {rs}")
-        sb = os.stat("/tmp/test_fetch/lookaround.sh")
-        assert time.time() - sb.st_mtime < 5
-        os.system("rm -rf /tmp/test_fetch")
+        want_file_path = dest / "lookaround.sh"
+        assert want_file_path.exists()
+
+        # Make sure we can see the long form of the job's classad
         data = job1.q_long()
         print(f"after update, status: {str(job1.status)}")
         assert "ClusterId" in data
