@@ -21,6 +21,7 @@
 
 import argparse
 import os
+import io
 import re
 import shlex
 import subprocess
@@ -309,7 +310,9 @@ def getProxy(
             # Caller that sets up command will write stdout to stderr
             # Equivalent of >&2
             sys.stderr.write(f"Running: {cmd_str}\n")
-            return {"stdout": sys.stderr}
+            if not isinstance(sys.stderr, io.StringIO):
+                return {"stdout": sys.stderr}
+            return {}
         # Caller that sets up command will write stdout to /dev/null, stderr to stdout
         # Equivalent of >/dev/null 2>&1
         return {
