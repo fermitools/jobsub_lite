@@ -58,11 +58,13 @@ def fetch_from_condor(
         os.makedirs(iwd, mode=0o750)
 
     # get the output sandbox
+    transfer_complete = False
     try:
         j.transfer_data(partial)
-        transfer_complete = True
     except htcondor.HTCondorIOError as e1:
         print(f"Error in transfer_data(): {str(e1)}")
+    else:
+        transfer_complete = True
     files = os.listdir(iwd)
 
     if destdir is not None:
