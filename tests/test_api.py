@@ -70,5 +70,6 @@ def test_fancy_api_demo():
         data = job1.q_long()
         print(f"after update, status: {str(job1.status)}")
         assert "ClusterId" in data
-    except RuntimeError:
+    except RuntimeError as e:
+        print(f"failure: {repr(e)}")
         raise

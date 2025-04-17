@@ -178,7 +178,6 @@ class SubmittedJob(Job):
         if rs.find(self.id) < 0:
             # we saw it previously, and now it is not showing up..
             # -- we got just the column header and an empty string
-            # from the split() so len(lines)=2.
             # we assume it completed, but it could have been
             # removed...
             # This lets wait() complete when the job disappears.
