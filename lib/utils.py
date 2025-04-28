@@ -423,7 +423,7 @@ def fix_unit(
             else:
                 suff = ""
             ulist = [f"{a}{suff}" for a in table]
-            raise SystemExit(
+            raise ValueError(
                 f"{cmd}: error: unable to convert units on argument '{args[name]}', expected units from {repr(ulist)}"
             )
 
