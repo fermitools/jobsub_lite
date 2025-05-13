@@ -311,6 +311,7 @@ def getProxy(
             # Equivalent of >&2
             sys.stderr.write(f"Running: {cmd_str}\n")
             if isinstance(sys.stderr, io.StringIO):
+                # being called from jobsub_api...
                 return {}
             return {"stdout": sys.stderr}
         # Caller that sets up command will write stdout to /dev/null, stderr to stdout
