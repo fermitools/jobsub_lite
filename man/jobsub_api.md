@@ -1,7 +1,7 @@
 
-== Coding Example ==
+## Coding Example
 
-
+```
  import sys
  sys.path.append('/opt/jobsub_lite/lib')
  import jobsub_api
@@ -30,8 +30,9 @@
         assert "ClusterId" in data
     except RuntimeError as e:
         print(f"jobsub submit/q failure: {repr(e)}")
+```
 
-== Help on function q in module jobsub_api: ==
+## Help on function q in module jobsub_api:
 
  q(*jobids: str, devserver: bool = False, verbose: int = 0, **kwargs: str) -> List[jobsub_api.SubmittedJob]
 
@@ -50,7 +51,7 @@ Return list of SubmittedJob objects of running jobs
 **    user -- restrict to user's jobs
 **    Remaining arguments are jobids to query
 
-== Help on function submit in module jobsub_api: ==
+## Help on function submit in module jobsub_api:
 
   submit(executable: str, exe_arguments: List[str] = [], lines: List[str] = [], env: Dict[str, str] = {}, **kwargs: str) -> jobsub_api.SubmittedJob
 
@@ -136,7 +137,7 @@ based on the jobsub_submit script arguents, see that documentation for more deta
 **        t -- experiment test-relesase directory
 **        verbose -- verbosity, interger from 1 to 10
 
-== Submitted Job Objects ==
+## Submitted Job Objects
 
 Job objects  (existing in condor.py) have members
 * id for jobids
