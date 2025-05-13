@@ -38,7 +38,7 @@
 
 Return list of SubmittedJob objects of running jobs
 
-*    Keyword Arguments:
+* Keyword Arguments:
   * devserver -- (bool) use development server
   * verbose -- (int) verbosity
   * group -- group/experiment to authenticate under
@@ -58,7 +58,7 @@ Return list of SubmittedJob objects of running jobs
 Submit a Condor job with jobsub_submit.  Takes a plethora of arguments
 based on the jobsub_submit script arguents, see that documentation for more details.
 
-*    Booolean arguments:
+* Booolean arguments:
   * dag -- executable is a dagnabbit dag file, not a script
   * mail_always  -- when to send mail
   * mail_on_error
@@ -69,15 +69,15 @@ based on the jobsub_submit script arguents, see that documentation for more deta
   * offsite -- restrict job to offsite
   * use_cvmfs_dropbox -- use cvmfs RCDS service for dropbox files
   * use_pnfs_dropbox -- use DCahe for dropbox files
-*    Options taking lists of strings
+* Options taking lists of strings
   * lines -- lines to append to job file
   * f -- input file to copy into job working directory
   * tar_file_name -- tarfile to send to job and unpack in $TAR_DIR_LOCAL
   * exe_arguments -- command-line arguments to give to  executable
-*   Options taking a dictionary
+* Options taking a dictionary
   * env environment variables and values to pass
   * d -- tag:destination string;  Writable directory $CONDOR_DIR_<tag> will exist on the execution node. After job completion, its contents will be moved to <dir>
-*    Options taking string values
+* Options taking string values
   * executable -- executable to run
   * auth_methods -- comma separated list from toksn,proxy
   * blocklist -- comma separated list of sites to avoid
