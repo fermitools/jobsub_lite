@@ -157,7 +157,7 @@ def jobsub_submit_args(
         setattr(args, "dag", True)
 
     if os.environ.get("GROUP", None) is None:
-        raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
+        raise NameError(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
     # While we're running in hybrid proxy/token mode, force us to get a new proxy every time we submit
     # Eventually, this arg and its support in the underlying libraries should be removed
@@ -174,7 +174,7 @@ def jobsub_submit_args(
             sys.stderr.write(
                 f"Note: ignoring --maxConcurrent {args.maxConcurrent} for {args.N} jobs\n"
             )
-        args.maxConcurrent = None
+        args.maxConcurrent = 0
 
     varg = vars(args)
 

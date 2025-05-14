@@ -58,11 +58,13 @@ def fetch_from_condor(
         os.makedirs(iwd, mode=0o750)
 
     # get the output sandbox
+    transfer_complete = False
     try:
         j.transfer_data(partial)
-        transfer_complete = True
     except htcondor.HTCondorIOError as e1:
         print(f"Error in transfer_data(): {str(e1)}")
+    else:
+        transfer_complete = True
     files = os.listdir(iwd)
 
     if destdir is not None:
@@ -100,12 +102,12 @@ def fetch_from_condor(
             # -j: junk (don't record) directory names
             # -q: quiet
         else:
-            raise Exception(f'unknown archive format "{archive_format}"')
+            raise NameError(f'unknown archive format "{archive_format}"')
         if VERBOSE:
             print(f'running "{cmd}"')
         p = subprocess.Popen(cmd)  # pylint: disable=consider-using-with
         if p.wait() != 0:
-            raise Exception("error creating archive")
+            raise RuntimeError("error creating archive")
 
     cleanup({"submitdir": iwd, "verbose": VERBOSE})
 
@@ -119,10 +121,10 @@ def fetch_from_landscape(
 ) -> None:
     # landscape doesn't support zip, does anyone actually use it?
     if archive_format != "tar":
-        raise Exception(f'unknown/unsupported archive format "{archive_format}"')
+        raise NameError(f'unknown/unsupported archive format "{archive_format}"')
 
     if _FETCHLOG_URL_ENV not in os.environ:
-        raise Exception(
+        raise NameError(
             f"{_FETCHLOG_URL_ENV} not set in the environment. "
             "You may still be able to download with --condor"
         )
@@ -174,7 +176,9 @@ def fetch_from_landscape(
             print(f'running "{cmd}"')
         p = subprocess.Popen(cmd)  # pylint: disable=consider-using-with
         if p.wait() != 0:
-            raise Exception(f"error extracting archive to {owd}. Archive left at {of}")
+            raise RuntimeError(
+                f"error extracting archive to {owd}. Archive left at {of}"
+            )
         os.unlink(of)
 
 
@@ -262,13 +266,13 @@ def jobsub_fetchlog_args(
 
     # jobsub_fetchlog only supports tokens
     if "token" not in getattr(args, "auth_methods", ["token"]):
-        raise SystemExit(
+        raise NameError(
             "jobsub_fetchlog only supports token authentication.  Please either omit the --auth-methods flag or make sure tokens is included in the value of that flag"
         )
 
     if not getattr(args, "jobid", None):
         if getattr(args, "job_id", None) is None:
-            raise SystemExit("jobid is required.")
+            raise NameError("jobid is required.")
         setattr(args, "jobid", args.job_id)
 
     # handle 1234.@jobsub0n.fnal.gov
@@ -280,7 +284,7 @@ def jobsub_fetchlog_args(
         htcondor.enable_debug()
 
     if os.environ.get("GROUP", None) is None:
-        raise SystemExit(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
+        raise NameError(f"{sys.argv[0]} needs -G group or $GROUP in the environment.")
 
     cred_set = creds.get_creds(vars(args))
     if VERBOSE:
