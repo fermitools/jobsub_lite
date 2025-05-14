@@ -14,12 +14,17 @@ __all__ = [
     "JobStatus",
     "Job",
     "SubmittedJob",
+    "JobsubAPIError",
     "jobsub_call",
     "jobsub_submit_re",
     "jobsub_q_re",
     "submit",
     "q",
 ]
+
+
+class JobsubAPIError(RuntimeError):
+    pass
 
 
 @contextlib.contextmanager
@@ -87,7 +92,7 @@ def jobsub_call(argv: List[str], return_output: bool = False) -> str:
             func(argv)
             res = output.getvalue()
     except Exception as e:
-        raise RuntimeError(f"Excepion in jobsub_call({argv})") from e
+        raise JobsubAPIError(f"Excepion in jobsub_call({argv})") from e
     return res
 
 
@@ -196,7 +201,7 @@ class SubmittedJob(Job):
                 m.group("size"),
             )
             return
-        raise RuntimeError(f"failed jobsub_q:\n {rs}")
+        raise JobsubAPIError(f"failed jobsub_q:\n {rs}")
 
     def q_long(self, verbose: int = 0) -> Dict[str, str]:
         """run 'jobsub_q --long' on this job and update values, status,
@@ -266,6 +271,8 @@ class SubmittedJob(Job):
         if condor:
             args.append("--condor")
         return self._cmd(verbose, args)
+
+    header = "JOBID                                    OWNER      SUBMITTED           RUNTIME           STATUS      PRIO   SIZE COMMAND"
 
     def __str__(self) -> str:
         """return jobsub_q style text line (slightly wider)"""
@@ -489,7 +496,7 @@ def submit(
             "0.0",
         )
         return job
-    raise RuntimeError(f"submission failed: {rs}")
+    raise JobsubAPIError(f"submission failed: {rs}")
 
 
 def jsq_date_to_datetime(s: str) -> datetime:
