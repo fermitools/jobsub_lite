@@ -21,7 +21,7 @@ if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
 else:
     sys.path.append("../lib")
 
-from jobsub_api import jobsub_call, jobsub_submit_re, jobsub_q_re
+from jobsub_api import jobsub_call, jobsub_submit_re, jobsub_q_re, JobsubAPIError
 
 
 def test_api_demo():
@@ -70,6 +70,7 @@ def test_fancy_api_demo(tmp_path):
         for qjob in qjobs:
             print(f"saw job {qjob.id} status {str(qjob.status)} ")
 
+        time.sleep(1)
         # Make sure that we can fetch job1's log
         dest = tmp_path
         rs = job1.fetchlog(destdir=str(dest.absolute()), verbose=1)
@@ -81,6 +82,6 @@ def test_fancy_api_demo(tmp_path):
         data = job1.q_long()
         print(f"after update, status: {str(job1.status)}")
         assert "ClusterId" in data
-    except jobsub_api.JobsubAPIError as e:
+    except JobsubAPIError as e:
         print(f"failure: {repr(e)}")
         raise

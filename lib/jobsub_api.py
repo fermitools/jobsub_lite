@@ -279,8 +279,6 @@ class SubmittedJob(Job):
         return f"{self.id:40} {self.owner:10.10} {str(self.submitted):19.19} {str(self.runtime):17} {str(self.status)[10:]:9} {self.prio:6.1f} {self.size:6.1f} {self.command}"
 
 
-jobsub_required_args = ["group"]
-
 # could we generate this from the option parser?
 jobsub_flags = {
     "dag": "--dag",
@@ -343,10 +341,11 @@ jobsub_options = {
 }
 
 
-# pylint: disable=dangerous-default-value, too-many-branches, too-many-arguments, invalid-name
+# pylint: disable=dangerous-default-value, too-many-branches, too-many-arguments, invalid-name, too-many-locals
 def submit(
     executable: str,
     exe_arguments: List[str] = [],
+    group: str = os.environ.get("GROUP", ""),
     lines: List[str] = [],
     f: List[str] = [],
     tar_file_name: List[str] = [],
@@ -426,9 +425,11 @@ def submit(
     """
     args = ["jobsub_submit"]
 
-    for k in jobsub_required_args:
-        if k not in kwargs:
-            raise TypeError(f"missing required argument {k}")
+    if group:
+        args.append("--group")
+        args.append(group)
+    else:
+        raise TypeError("group option is required")
 
     for k in env:
         args.append("-e")
@@ -478,7 +479,7 @@ def submit(
     m = jobsub_submit_re.search(rs)
     if m:
         job = SubmittedJob(
-            kwargs["group"],
+            group,
             m.group("jobid"),
             kwargs.get("pool", ""),
             kwargs.get("auth_methods", ""),
@@ -561,7 +562,11 @@ qargs = [
 
 
 def q(
-    *jobids: str, devserver: bool = False, verbose: int = 0, **kwargs: str
+    *jobids: str,
+    group: str = os.environ.get("GROUP", ""),
+    devserver: bool = False,
+    verbose: int = 0,
+    **kwargs: str,
 ) -> List[SubmittedJob]:
     """
     Return list of SubmittedJob objects of running jobs
@@ -581,7 +586,10 @@ def q(
     Remaining arguments are jobids to query
     """
     args = ["jobsub_q"]
-    if "group" not in kwargs:
+    if group:
+        args.append("--group")
+        args.append(group)
+    else:
         raise TypeError("G option is required")
     if devserver:
         args.append("--devserver")
@@ -601,7 +609,7 @@ def q(
         m = jobsub_q_re.search(line)
         if m:
             job = SubmittedJob(
-                kwargs["group"],
+                group,
                 m.group("jobid"),
                 kwargs.get("pool", ""),
                 kwargs.get("auth_methods", ""),
