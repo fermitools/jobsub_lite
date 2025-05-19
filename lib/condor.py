@@ -190,7 +190,7 @@ def get_schedd(vargs: Dict[str, Any]) -> classad.ClassAd:
     """pick a jobsub* schedd name from collector"""
     schedds = get_schedd_list(vargs)
     if len(schedds) == 0:
-        raise Exception("Error: No schedds satisfying the constraint were found")
+        raise RuntimeError("Error: No schedds satisfying the constraint were found")
 
     # pick weights based on (inverse) of  duty cycle of schedd
     weights = []
@@ -572,7 +572,7 @@ class Job:
         c = htcondor.Collector(COLLECTOR_HOST)
         s = c.locate(htcondor.DaemonTypes.Schedd, self.schedd)
         if s is None:
-            raise Exception(f'unable to find schedd "{self.schedd}" in HTCondor pool')
+            raise NameError(f'unable to find schedd "{self.schedd}" in HTCondor pool')
         return htcondor.Schedd(s)
 
     def _constraint(self) -> str:
@@ -592,9 +592,9 @@ class Job:
         q = self._constraint()
         res = s.query(q, [attr], limit=1)
         if len(res) == 0:
-            raise Exception(f'job matching "{q}" not found on "{self.schedd}"')
+            raise NameError(f'job matching "{q}" not found on "{self.schedd}"')
         if attr not in res[0]:
-            raise Exception(f'attribute "{attr}" not found for job "{str(self)}"')
+            raise NameError(f'attribute "{attr}" not found for job "{str(self)}"')
         return res[0].eval(attr)
 
     def transfer_data(self, partial: bool = False) -> None:

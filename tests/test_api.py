@@ -21,13 +21,15 @@ if os.environ.get("JOBSUB_TEST_INSTALLED", "0") == "1":
 else:
     sys.path.append("../lib")
 
-from jobsub_api import jobsub_call, jobsub_submit_re, jobsub_q_re
+from jobsub_api import jobsub_call, jobsub_submit_re, jobsub_q_re, JobsubAPIError
 
 
 def test_api_demo():
     group = "fermilab"
+    testdir = os.path.dirname(__file__)
     out1 = jobsub_call(
-        ["jobsub_submit", "-G", group, "file://./job_scripts/lookaround.sh"], True
+        ["jobsub_submit", "-G", group, f"file://{testdir}/job_scripts/lookaround.sh"],
+        True,
     )
     m1 = jobsub_submit_re.search(out1)
     if m1:
@@ -42,3 +44,44 @@ def test_api_demo():
                 print(f"saw job {m.group('jobid')} command {m.group('command')}")
     else:
         print("submission failed: output:\n", out1)
+
+
+from jobsub_api import submit, q
+
+
+def test_fancy_api_demo(tmp_path):
+    group = "fermilab"
+    testdir = os.path.dirname(__file__)
+    try:
+        # Submit a job. submit will raise if it doesn't succeed, so we don't need to assert success
+        job1 = submit(
+            group=group, executable=f"{testdir}/job_scripts/lookaround.sh", verbose=1
+        )
+        print(f"submitted job: {job1.id}")
+        print(f"submit output:\n=-=-=-=-=\n {job1.submit_out}")
+        print(f"\n=-=-=-=-=\n")
+
+        # Ensure that we can find the job in the queue
+        qjobs = q(job1.id, group=group)
+        assert len(qjobs) == 1  # We should have gotten only one job back
+        assert (
+            qjobs[0].id == job1.id
+        )  # We should have gotten only an identical job to job1 back
+        for qjob in qjobs:
+            print(f"saw job {qjob.id} status {str(qjob.status)} ")
+
+        time.sleep(1)
+        # Make sure that we can fetch job1's log
+        dest = tmp_path
+        rs = job1.fetchlog(destdir=str(dest.absolute()), verbose=1)
+        print(f"fetchlog says: {rs}")
+        want_file_path = dest / "lookaround.sh"
+        assert want_file_path.exists()
+
+        # Make sure we can see the long form of the job's classad
+        data = job1.q_long()
+        print(f"after update, status: {str(job1.status)}")
+        assert "ClusterId" in data
+    except JobsubAPIError as e:
+        print(f"failure: {repr(e)}")
+        raise
