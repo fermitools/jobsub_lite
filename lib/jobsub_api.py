@@ -92,7 +92,7 @@ def jobsub_call(argv: List[str], return_output: bool = False) -> str:
             func(argv)
             res = output.getvalue()
     except Exception as e:
-        raise JobsubAPIError(f"Excepion in jobsub_call({argv})") from e
+        raise JobsubAPIError(f"Exception in jobsub_call({argv})") from e
     return res
 
 
