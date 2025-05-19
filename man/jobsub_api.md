@@ -153,18 +153,18 @@ based on the jobsub_submit script arguents, see that documentation for more deta
 * schedd -- schedd job was submitted to
 
 `jobsub_api.SubmittedJob` objects add
-* pool
-* group
-* role
-* auth_methods
-* submit_output (onlyt if the result of submit())
-* owner  (if jobsub_q output or q() methods called)
-* submitted (datetime.datetime) (default: `None`)
-* runtime (datetime.timedelta) (default: `None`)
-* status (htcondor.JobStatus) (default: `None`)
-* prio
-* size
-* command
+* pool (str)
+* group (str)
+* role (str)
+* auth_methods (str)(only if the result of submit())
+* submit_output (str) (only if the result of submit())
+* owner  (str) (default: None unless q() method called)
+* submitted (datetime.datetime) (default: None unless q() method called)
+* runtime (datetime.timedelta) (default: None unless q() method called)
+* status (htcondor.JobStatus) (default: None unless q() method called)
+* prio (float) (default: None unless q() method called)
+* size (int) (default: None unless q() method called)
+* command (str) (default: None unless q() method called)
 
 as well as methods:
 * hold()
