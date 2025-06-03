@@ -67,30 +67,23 @@ class TestTarfilesUnit:
     """
 
     dir_to_tar: tempfile.TemporaryDirectory = None
+    test_tarfile: pathlib.Path = None
 
     @classmethod
     def setup_class(cls):
         """Create our tar directory to tar up"""
-        cls.dir_to_tar = tempfile.TemporaryDirectory()
-        temp_path = pathlib.Path(cls.dir_to_tar.name)
-        subdir = temp_path / "subdir"
-        subdir.mkdir()
-        # Create test files to put in dir
-        for i in range(5):
-            filename = f"file_{i}"
-            writefile = temp_path / filename
-            writefile.write_text(f"This is file {i}")
-        subdir_file = subdir / "test_file"
-        subdir_file.write_text("This is a file in a subdirectory")
-        subdir_link = subdir / "test_link"
-        subdir_link.symlink_to(subdir_file)
-        subdir_hlink = subdir / "test_hlink"
-        os.link(str(subdir_file), str(subdir_hlink))
+        cls.dir_to_tar = (
+            cls.__create_dir_for_class()
+        )  # Class attribute for test dir to tar
+        cls.test_tarfile = (
+            cls.__create_tarfile_for_class()
+        )  # Class attribute for test tarfile
 
     @classmethod
     def teardown_class(cls):
         """Delete any test remnants"""
         cls.dir_to_tar.cleanup()
+        os.unlink(cls.test_tarfile)
 
     # lib/tarfiles.py routines...
     @pytest.mark.unit
@@ -135,9 +128,9 @@ class TestTarfilesUnit:
         assert path[:6] == "/pnfs/"
 
     @pytest.mark.unit
-    def test_tarfile_publisher_1(self, needs_credentials):
+    def test_tarfile_publisher_1(self, needs_token):
         """test the tarfile publisher object"""
-        cred_set = needs_credentials
+        cred_set = needs_token
         # need something to publish...
         tarfile = tarfiles.tar_up(self.dir_to_tar.name, None)
         digest = tarfiles.checksum_file(tarfile)
@@ -163,73 +156,98 @@ class TestTarfilesUnit:
         os.unlink(tarfile)
         assert location is not None
 
+    @pytest.mark.parametrize(
+        "dropbox_type",
+        [
+            "cvmfs",
+            "pnfs",
+        ],
+    )
     @pytest.mark.unit
-    def test_do_tarballs_1(self, needs_credentials):
-        """test that the do_tarballs method does a dropbox:path
+    def test_do_tarballs_tardir_uri(self, dropbox_type, set_temp_bearer_token_file):
+        """test that the do_tarballs method does a tardir:path
         processing"""
-        for dropbox_type in ["cvmfs", "pnfs"]:
-            argv = [
-                "--tar_file_name",
-                "tardir:{0}".format(self.dir_to_tar.name),
-                "--use-{0}-dropbox".format(dropbox_type),
-                "--group",
-                TestUnit.test_group,
-                "file:///bin/true",
-            ]
-            parser = get_parser.get_parser()
-            args = parser.parse_args(argv)
-            print(f"b: args.tar_file_name: {args.tar_file_name}")
-            before_len = len(args.tar_file_name)
-            tarfiles.do_tarballs(args)
-            print(f"a: args.tar_file_name: {args.tar_file_name}")
-            assert args.tar_file_name[0][:6] == "/{0}/".format(dropbox_type)[:6]
-            assert before_len == len(args.tar_file_name)
+        argv = [
+            "--auth-methods",
+            "token",
+            "--tar_file_name",
+            "tardir:{0}".format(self.dir_to_tar.name),
+            "--use-{0}-dropbox".format(dropbox_type),
+            "--group",
+            TestUnit.test_group,
+            "file:///bin/true",
+        ]
+        parser = get_parser.get_parser()
+        args = parser.parse_args(argv)
+        print(f"b: args.tar_file_name: {args.tar_file_name}")
+        before_len = len(args.tar_file_name)
+        tarfiles.do_tarballs(args)
+        print(f"a: args.tar_file_name: {args.tar_file_name}")
+        assert args.tar_file_name[0][:6] == "/{0}/".format(dropbox_type)[:6]
+        assert before_len == len(args.tar_file_name)
 
+    @pytest.mark.parametrize(
+        "dropbox_type",
+        [
+            "cvmfs",
+            "pnfs",
+        ],
+    )
     @pytest.mark.unit
-    def test_do_tarballs_2(self, needs_credentials):
+    def test_do_tarballs_dropbox_uri(self, dropbox_type, set_temp_bearer_token_file):
         """test that the do_tarballs method does a dropbox:path
         processing"""
-        for dropbox_type in ["cvmfs", "pnfs"]:
-            print(f"dropbox type: {dropbox_type}\n===============")
-            argv = [
-                "--tar_file_name",
-                "tardir://{0}".format(self.dir_to_tar.name),
-                "--use-{0}-dropbox".format(dropbox_type),
-                "--group",
-                TestUnit.test_group,
-                "file:///bin/true",
-            ]
-            parser = get_parser.get_parser()
-            args = parser.parse_args(argv)
-            print(f"b: args.tar_file_name: {args.tar_file_name}")
-            before_len = len(args.tar_file_name)
-            tarfiles.do_tarballs(args)
-            print(f"a: args.tar_file_name: {args.tar_file_name}")
-            assert args.tar_file_name[0][:6] == "/{0}/".format(dropbox_type)[:6]
-            assert before_len == len(args.tar_file_name)
+        print(f"dropbox type: {dropbox_type}\n===============")
+        argv = [
+            "--auth-methods",
+            "token",
+            "--tar_file_name",
+            "dropbox://{0}".format(str(self.test_tarfile.absolute())),
+            "--use-{0}-dropbox".format(dropbox_type),
+            "--group",
+            TestUnit.test_group,
+            "file:///bin/true",
+        ]
+        parser = get_parser.get_parser()
+        args = parser.parse_args(argv)
+        print(f"b: args.tar_file_name: {args.tar_file_name}")
+        before_len = len(args.tar_file_name)
+        tarfiles.do_tarballs(args)
+        print(f"a: args.tar_file_name: {args.tar_file_name}")
+        assert args.tar_file_name[0][:5] == "/{0}/".format(dropbox_type)[:5]
+        assert before_len == len(args.tar_file_name)
 
+    @pytest.mark.parametrize(
+        "dropbox_type",
+        [
+            "cvmfs",
+            "pnfs",
+        ],
+    )
     @pytest.mark.unit
-    def test_do_tarballs_3(self, needs_credentials):
+    def test_do_tarballs_dash_f(self, dropbox_type, set_temp_bearer_token_file):
         """test that the do_tarballs method does a dropbox:path
         processing"""
-        for dropbox_type in ["cvmfs", "pnfs"]:
-            print(f"dropbox type: {dropbox_type}\n===============")
-            argv = [
-                "-f",
-                "dropbox://{0}".format(__file__),
-                "--use-{0}-dropbox".format(dropbox_type),
-                "--group",
-                TestUnit.test_group,
-                "file:///bin/true",
-            ]
-            parser = get_parser.get_parser()
-            args = parser.parse_args(argv)
-            print(f"b: args.input_file: {args.tar_file_name}")
-            before_len = len(args.tar_file_name)
-            tarfiles.do_tarballs(args)
-            print(f"a: args.input_file: {args.tar_file_name}")
-            assert args.input_file[0][:6] == "/{0}/".format(dropbox_type)[:6]
-            assert before_len == len(args.tar_file_name)
+        # for dropbox_type in ["cvmfs", "pnfs"]:
+        print(f"dropbox type: {dropbox_type}\n===============")
+        argv = [
+            "--auth-methods",
+            "token",
+            "-f",
+            "dropbox://{0}".format(__file__),
+            "--use-{0}-dropbox".format(dropbox_type),
+            "--group",
+            TestUnit.test_group,
+            "file:///bin/true",
+        ]
+        parser = get_parser.get_parser()
+        args = parser.parse_args(argv)
+        print(f"b: args.input_file: {args.tar_file_name}")
+        before_len = len(args.tar_file_name)
+        tarfiles.do_tarballs(args)
+        print(f"a: args.input_file: {args.tar_file_name}")
+        assert args.input_file[0][:6] == "/{0}/".format(dropbox_type)[:6]
+        assert before_len == len(args.tar_file_name)
 
     def x_test_do_tarballs_4(self):
         # should have another one here to test dropbox:xxx
@@ -240,12 +258,12 @@ class TestTarfilesUnit:
         pass
 
     @pytest.mark.unit
-    def test_tarfile_publisher_glob_path(self, needs_credentials):
+    def test_tarfile_publisher_glob_path(self, needs_token):
         """Tests that the TarfilePublisherHandler glob path generator
         returns the expected glob for the CID given"""
         import re
 
-        cred_set = needs_credentials
+        cred_set = needs_token
         fake_cid = f"{TestUnit.test_group}/12345abcde"
         tfh = tarfiles.TarfilePublisherHandler(fake_cid, cred_set)
         expected_pattern = r"/cvmfs/{(.+)}/sw/" + fake_cid
@@ -415,6 +433,40 @@ class TestTarfilesUnit:
         assert server_switches(tfh)
         tfh.deactivate_server_switcher()
         assert server_is_fixed(tfh)
+
+    @classmethod
+    def __create_dir_for_class(cls):
+        """Create our tar directory to tar up"""
+        temp_dir = tempfile.TemporaryDirectory()
+        temp_path = pathlib.Path(temp_dir.name)
+        subdir = temp_path / "subdir"
+        subdir.mkdir()
+        # Create test files to put in dir
+        for i in range(5):
+            filename = f"file_{i}"
+            writefile = temp_path / filename
+            writefile.write_text(f"This is file {i}")
+        subdir_file = subdir / "test_file"
+        subdir_file.write_text("This is a file in a subdirectory")
+        subdir_link = subdir / "test_link"
+        subdir_link.symlink_to(subdir_file)
+        subdir_hlink = subdir / "test_hlink"
+        os.link(str(subdir_file), str(subdir_hlink))
+        return temp_dir
+
+    @classmethod
+    def __create_tarfile_for_class(cls):
+        """Create a tarfile to send with dropbox tests"""
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".tar")
+        with tarfile_mod.open(temp_file.name, "w") as t:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                for i in range(5):
+                    filename = f"file_{i}"
+                    writefile = pathlib.Path(os.path.join(temp_dir, filename))
+                    writefile.write_text(f"This is file {i}")
+                    t.add(str(writefile))
+
+        return pathlib.Path(temp_file.name)
 
 
 # Utility functions to use in tests
