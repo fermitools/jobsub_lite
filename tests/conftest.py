@@ -21,7 +21,7 @@ import creds
 
 
 @pytest.fixture
-def set_creds_dir(monkeypatch, tmp_path):
+def set_creds_dir(tmp_path):
     """
     Set the credentials directory to a temporary path for testing.
     """
