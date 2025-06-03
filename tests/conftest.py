@@ -21,9 +21,71 @@ import creds
 
 
 @pytest.fixture
-def needs_credentials(check_user_kerberos_creds):
-    os.environ["GROUP"] = TestUnit.test_group
-    return creds.get_creds({"role": "Analysis"})
+def set_creds_dir(monkeypatch, tmp_path):
+    """
+    Set the credentials directory to a temporary path for testing.
+    """
+    creds_dir = tmp_path / "creds"
+    creds_dir.mkdir()
+    yield creds_dir
+
+
+@pytest.fixture
+def set_temp_bearer_token_file(monkeypatch, set_creds_dir):
+    """
+    Set the BEARER_TOKEN_FILE env to a temporary path for testing.
+    """
+    monkeypatch.setenv("BEARER_TOKEN_FILE", str(set_creds_dir / "test_bearer_token"))
+    yield
+
+
+@pytest.fixture
+def set_temp_x509_user_proxy(monkeypatch, set_creds_dir):
+    """
+    Set the X509_USER_PROXY env to a temporary path for testing.
+    """
+    monkeypatch.setenv("X509_USER_PROXY", str(set_creds_dir / "test_x509_user_proxy"))
+    yield
+
+
+@pytest.fixture
+def needs_x509_user_proxy(
+    monkeypatch,
+    set_temp_x509_user_proxy,
+    check_user_kerberos_creds,
+):
+    """
+    Fixture to ensure that the X509_USER_PROXY is set and valid.
+    """
+    monkeypatch.setenv("GROUP", TestUnit.test_group)
+    yield creds.get_creds({"role": "Analysis", "auth_methods": "proxy"})
+
+
+@pytest.fixture
+def needs_token(
+    monkeypatch,
+    set_temp_bearer_token_file,
+    check_user_kerberos_creds,
+):
+    """
+    Fixture to ensure that the BEARER_TOKEN_FILE is set and valid.
+    """
+    monkeypatch.setenv("GROUP", TestUnit.test_group)
+    yield creds.get_creds({"role": "Analysis", "auth_methods": "token"})
+
+
+@pytest.fixture
+def needs_credentials(
+    monkeypatch,
+    needs_token,
+    needs_x509_user_proxy,
+    check_user_kerberos_creds,
+):
+    monkeypatch.setenv("GROUP", TestUnit.test_group)
+    # yield creds.get_creds({"role": "Analysis"})
+    cred_set_token = needs_token
+    cred_set_proxy = needs_x509_user_proxy
+    yield creds.CredentialSet(token=cred_set_token.token, proxy=cred_set_proxy.proxy)
 
 
 @pytest.fixture
