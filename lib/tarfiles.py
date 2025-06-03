@@ -15,7 +15,7 @@
 # limitations under the License.
 
 # pylint: disable=fixme
-""" tarfile upload related code """
+"""tarfile upload related code"""
 import argparse
 import errno
 import hashlib
@@ -280,6 +280,7 @@ def do_tarballs(args: argparse.Namespace) -> None:
                         res.append(pfn)
 
                 elif args.use_dropbox == "pnfs":
+                    get_creds(vars(args))
                     location = dcache_persistent_path(args.group, pfn)
                     existing = fake_ifdh.ls(location)
                     if existing:
@@ -366,10 +367,11 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
     # redo tarfile to have contents with world read perms before publishing
     tfn = tarchmod(origtfn, getattr(args, "verbose", 0))
 
+    cred_set = get_creds(vars(args))
+
     location: Optional[str] = ""
     if args.use_dropbox == "cvmfs" or args.use_dropbox is None:
         digest = checksum_file(tfn)
-        cred_set = get_creds(vars(args))
 
         if not args.group:
             raise ValueError("No --group specified!")
@@ -426,7 +428,6 @@ def tarfile_in_dropbox(args: argparse.Namespace, origtfn: str) -> Optional[str]:
             publisher.update_cid()
 
     elif args.use_dropbox == "pnfs":
-        cred_set = get_creds(vars(args))
         location = dcache_persistent_path(args.group, tfn)
         existing = fake_ifdh.ls(location)
         if existing:
