@@ -44,7 +44,7 @@ class TestCredUnit:
     def test_get_creds_default_role(self):
         """get credentials, make sure the credentials files returned
         exist"""
-        args = {"auth_methods": "token"}
+        args = {"auth_methods": os.environ.get("JOBSUB_AUTH_METHODS", "token")}
         os.environ["GROUP"] = TestUnit.test_group
         _ = creds.get_creds(args)
         assert args["role"] == "Analysis"
@@ -52,7 +52,7 @@ class TestCredUnit:
     @pytest.mark.unit
     def test_get_creds_token_only(self, clear_x509_user_proxy, clear_bearer_token_file):
         """Get only a token"""
-        args = {"auth_methods": "token"}
+        args = {"auth_methods": os.environ.get("JOBSUB_AUTH_METHODS", "token")}
         os.environ["GROUP"] = TestUnit.test_group
         cred_set = creds.get_creds(args)
         # Make sure we have a token and the env is set

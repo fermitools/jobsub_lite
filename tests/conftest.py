@@ -71,7 +71,12 @@ def needs_token(
     Fixture to ensure that the BEARER_TOKEN_FILE is set and valid.
     """
     monkeypatch.setenv("GROUP", TestUnit.test_group)
-    yield creds.get_creds({"role": "Analysis", "auth_methods": "token"})
+    yield creds.get_creds(
+        {
+            "role": "Analysis",
+            "auth_methods": os.environ.get("JOBSUB_AUTH_METHODS", "token"),
+        }
+    )
 
 
 @pytest.fixture
