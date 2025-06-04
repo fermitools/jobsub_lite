@@ -68,7 +68,7 @@ SUPPORTED_AUTH_METHODS = list(
 
 # pylint: disable=dangerous-default-value
 @as_span("get_creds")
-def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
+def get_creds(args: Dict[str, Any] = {"auth_methods": "token"}) -> CredentialSet:
     """get credentials for job operations"""
     role = fake_ifdh.getRole(args.get("role", None))
     args["role"] = role
