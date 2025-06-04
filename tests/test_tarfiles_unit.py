@@ -83,7 +83,7 @@ class TestTarfilesUnit:
     def teardown_class(cls):
         """Delete any test remnants"""
         cls.dir_to_tar.cleanup()
-        os.unlink(cls.test_tarfile)
+        cls.test_tarfile.unlink()
 
     # lib/tarfiles.py routines...
     @pytest.mark.unit
@@ -228,7 +228,6 @@ class TestTarfilesUnit:
     def test_do_tarballs_dash_f(self, dropbox_type, set_temp_bearer_token_file):
         """test that the do_tarballs method does a dropbox:path
         processing"""
-        # for dropbox_type in ["cvmfs", "pnfs"]:
         print(f"dropbox type: {dropbox_type}\n===============")
         argv = [
             "--auth-methods",
