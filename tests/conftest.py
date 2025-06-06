@@ -71,26 +71,21 @@ def needs_token(
     Fixture to ensure that the BEARER_TOKEN_FILE is set and valid.
     """
     monkeypatch.setenv("GROUP", TestUnit.test_group)
-    yield creds.get_creds(
-        {
-            "role": "Analysis",
-            "auth_methods": os.environ.get("JOBSUB_AUTH_METHODS", "token"),
-        }
-    )
+    yield creds.get_creds({"role": "Analysis", "auth_methods": "token"})
 
 
 @pytest.fixture
 def needs_credentials(
     monkeypatch,
     needs_token,
-    # needs_x509_user_proxy,
+    needs_x509_user_proxy,
     check_user_kerberos_creds,
 ):
     monkeypatch.setenv("GROUP", TestUnit.test_group)
-    # yield creds.get_creds({"role": "Analysis"})
+    yield creds.get_creds({"role": "Analysis"})
     cred_set_token = needs_token
-    # cred_set_proxy = needs_x509_user_proxy
-    # yield creds.CredentialSet(token=cred_set_token.token, proxy=cred_set_proxy.proxy)
+    cred_set_proxy = needs_x509_user_proxy
+    yield creds.CredentialSet(token=cred_set_token.token, proxy=cred_set_proxy.proxy)
     yield creds.CredentialSet(token=cred_set_token.token)
 
 
