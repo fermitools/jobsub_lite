@@ -169,7 +169,7 @@ class TestTarfilesUnit:
         processing"""
         argv = [
             "--auth-methods",
-            "token",
+            os.environ.get("JOBSUB_AUTH_METHODS", "token"),
             "--tar_file_name",
             "tardir:{0}".format(self.dir_to_tar.name),
             "--use-{0}-dropbox".format(dropbox_type),
@@ -200,7 +200,7 @@ class TestTarfilesUnit:
         print(f"dropbox type: {dropbox_type}\n===============")
         argv = [
             "--auth-methods",
-            "token",
+            os.environ.get("JOBSUB_AUTH_METHODS", "token"),
             "--tar_file_name",
             "dropbox://{0}".format(str(self.test_tarfile.absolute())),
             "--use-{0}-dropbox".format(dropbox_type),
@@ -231,7 +231,7 @@ class TestTarfilesUnit:
         print(f"dropbox type: {dropbox_type}\n===============")
         argv = [
             "--auth-methods",
-            "token",
+            os.environ.get("JOBSUB_AUTH_METHODS", "token"),
             "-f",
             "dropbox://{0}".format(__file__),
             "--use-{0}-dropbox".format(dropbox_type),

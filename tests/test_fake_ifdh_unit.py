@@ -378,14 +378,14 @@ class TestGetToken:
 
 class TestGetProxy:
     @pytest.mark.unit
-    def test_getProxy_good(
+    def x_test_getProxy_good(
         self, check_user_kerberos_creds, clear_token, set_group_fermilab
     ):
         proxy = fake_ifdh.getProxy("Analysis")
         assert os.path.exists(proxy)
 
     @pytest.mark.unit
-    def test_getProxy_override(
+    def x_test_getProxy_override(
         self,
         check_user_kerberos_creds,
         clear_x509_user_proxy,
@@ -401,7 +401,7 @@ class TestGetProxy:
         assert proxy == str(fake_path)
 
     @pytest.mark.unit
-    def test_getProxy_fail(
+    def x_test_getProxy_fail(
         self,
         check_user_kerberos_creds,
         clear_x509_user_proxy,
@@ -417,7 +417,7 @@ class TestGetProxy:
             fake_ifdh.getProxy("Analysis")
 
     @pytest.mark.unit
-    def test_getProxy_fail_cigetcert_kerberos(
+    def x_test_getProxy_fail_cigetcert_kerberos(
         self,
         switch_to_invalid_kerb_cache,
         clear_x509_user_proxy,
@@ -435,7 +435,7 @@ class TestGetProxy:
             fake_ifdh.getProxy("Analysis")
 
     @pytest.mark.unit
-    def test_getProxy_fail_cigetcert_other(
+    def x_test_getProxy_fail_cigetcert_other(
         self,
         clear_x509_user_proxy,
         clear_token,

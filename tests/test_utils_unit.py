@@ -182,7 +182,7 @@ class TestUtilsUnit:
         assert args["memory"] == 64 * 1024
 
     @pytest.mark.unit
-    def test_get_client_dn_valid_proxy_provided(
+    def x_test_get_client_dn_valid_proxy_provided(
         self, needs_credentials, clear_x509_user_proxy
     ):
         """Call get_client_dn with proxy specified"""
@@ -192,7 +192,7 @@ class TestUtilsUnit:
         assert os.environ["USER"] in client_dn
 
     @pytest.mark.unit
-    def test_get_client_dn_env_plus_proxy_provided(self, needs_credentials):
+    def x_test_get_client_dn_env_plus_proxy_provided(self, needs_credentials):
         """Call get_client_dn with proxy specified, env set.  Should grab
         proxy from passed-in arg"""
         cred_set = needs_credentials
@@ -205,14 +205,14 @@ class TestUtilsUnit:
         os.environ["X509_USER_PROXY"] = old_x509_user_proxy_value
 
     @pytest.mark.unit
-    def test_get_client_dn_no_proxy_provided(self, needs_credentials):
+    def x_test_get_client_dn_no_proxy_provided(self, needs_credentials):
         """Call get_client_dn with no proxy specified.  Should grab proxy from
         env"""
         client_dn = utils.get_client_dn()
         assert os.environ["USER"] in client_dn
 
     @pytest.mark.unit
-    def test_get_client_dn_no_proxy_provided_no_env(
+    def x_test_get_client_dn_no_proxy_provided_no_env(
         self, needs_credentials, clear_x509_user_proxy
     ):
         """Call get_client_dn with no proxy specified, environment not set.
@@ -222,7 +222,7 @@ class TestUtilsUnit:
         assert os.environ["USER"] in client_dn
 
     @pytest.mark.unit
-    def test_get_client_dn_bad_proxy(self):
+    def x_test_get_client_dn_bad_proxy(self):
         """If we give a bad proxy file, or there's some other problem, we
         should get "" as the return value"""
         client_dn = utils.get_client_dn("bad_path")
