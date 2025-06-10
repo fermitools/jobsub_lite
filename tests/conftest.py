@@ -86,7 +86,6 @@ def needs_credentials(
     cred_set_token = needs_token
     cred_set_proxy = needs_x509_user_proxy
     yield creds.CredentialSet(token=cred_set_token.token, proxy=cred_set_proxy.proxy)
-    yield creds.CredentialSet(token=cred_set_token.token)
 
 
 @pytest.fixture
