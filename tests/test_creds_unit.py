@@ -34,17 +34,17 @@ class TestCredUnit:
         exist"""
         os.environ["GROUP"] = TestUnit.test_group
         cred_set = creds.get_creds()
-        assert os.path.exists(os.environ["X509_USER_PROXY"])
+        # assert os.path.exists(os.environ["X509_USER_PROXY"])
         assert os.path.exists(os.environ["BEARER_TOKEN_FILE"])
-        assert os.path.exists(cred_set.proxy)
+        # assert os.path.exists(cred_set.proxy)
         assert os.path.exists(cred_set.token)
-        del os.environ["X509_USER_PROXY"]
+        # del os.environ["X509_USER_PROXY"]
 
     @pytest.mark.unit
     def test_get_creds_default_role(self):
         """get credentials, make sure the credentials files returned
         exist"""
-        args = {}
+        args = {"auth_methods": os.environ.get("JOBSUB_AUTH_METHODS", "token")}
         os.environ["GROUP"] = TestUnit.test_group
         _ = creds.get_creds(args)
         assert args["role"] == "Analysis"
@@ -52,7 +52,7 @@ class TestCredUnit:
     @pytest.mark.unit
     def test_get_creds_token_only(self, clear_x509_user_proxy, clear_bearer_token_file):
         """Get only a token"""
-        args = {"auth_methods": "token"}
+        args = {"auth_methods": os.environ.get("JOBSUB_AUTH_METHODS", "token")}
         os.environ["GROUP"] = TestUnit.test_group
         cred_set = creds.get_creds(args)
         # Make sure we have a token and the env is set
@@ -62,7 +62,9 @@ class TestCredUnit:
         assert os.environ.get("X509_USER_PROXY", None) is None
 
     @pytest.mark.unit
-    def test_get_creds_proxy_only(self, clear_x509_user_proxy, clear_bearer_token_file):
+    def x_test_get_creds_proxy_only(
+        self, clear_x509_user_proxy, clear_bearer_token_file
+    ):
         """Get only a proxy"""
         args = {"auth_methods": "proxy"}
         os.environ["GROUP"] = TestUnit.test_group

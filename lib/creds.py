@@ -74,6 +74,10 @@ def get_creds(args: Dict[str, Any] = {}) -> CredentialSet:
     args["role"] = role
 
     auth_methods: List[str] = SUPPORTED_AUTH_METHODS
+
+    if os.environ.get("JOBSUB_AUTH_METHODS", False):
+        auth_methods = os.environ["JOBSUB_AUTH_METHODS"].split(",")
+
     if args.get("auth_methods", None):
         auth_methods = str(args.get("auth_methods")).split(",")
 

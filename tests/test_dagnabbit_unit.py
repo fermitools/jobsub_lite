@@ -200,6 +200,7 @@ class TestDagnabbitUnit:
         varg = TestUnit.test_vargs.copy()
         if varg_update:
             varg.update(varg_update)
+        varg["auth_methods"] = os.environ.get("JOBSUB_AUTH_METHODS", "token")
         dest = "/tmp/dagout{0}".format(os.getpid())
         if os.path.exists(dest):
             os.system("rm -rf %s" % dest)

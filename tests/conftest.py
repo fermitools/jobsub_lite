@@ -82,7 +82,7 @@ def needs_credentials(
     check_user_kerberos_creds,
 ):
     monkeypatch.setenv("GROUP", TestUnit.test_group)
-    # yield creds.get_creds({"role": "Analysis"})
+    yield creds.get_creds({"role": "Analysis"})
     cred_set_token = needs_token
     cred_set_proxy = needs_x509_user_proxy
     yield creds.CredentialSet(token=cred_set_token.token, proxy=cred_set_proxy.proxy)
