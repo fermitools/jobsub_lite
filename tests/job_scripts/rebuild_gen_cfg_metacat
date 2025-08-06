@@ -1,8 +1,9 @@
 #!/bin/sh
 
-. /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups.sh
+. /cvmfs/fermilab.opensciencegrid.org/packages/common/setup-env.sh
 
-setup hypotcode
+spack load hypotcode@2.1
+spack load --first ifdhc@2.8.0 os=default_os
 
 export xDATA_DISPATCHER_URL=https://metacat.fnal.gov:9443/hypot_dd/data
 export xMETACAT_SERVER_URL=https://metacat.fnal.gov:9443/hypot_meta_dev/app
@@ -10,7 +11,7 @@ export xMETACAT_AUTH_SERVER_URL=https://metacat.fnal.gov:8143/auth/hypot_dev
 export xDATA_DISPATCHER_AUTH_URL=https://metacat.fnal.gov:8143/auth/hypot_dev
 
 
-. /scratch/mengel/packages/setup-env.sh
+#. /scratch/mengel/packages/setup-env.sh
 spack load r-m-dd-config experiment=hypot
 
 if [ "$xDATA_DISPATCHER_URL" != "$DATA_DISPATCHER_URL" ]

@@ -5,12 +5,23 @@
 setup fife_utils
 setup hypotcode
 
-for e in samdev nova dune
+if [ "$1" = "-n" ]
+then
+    do_declare=false
+else
+    do_declare=true
+fi
+
+for e in samdev nova dune hypot
 do
+   unset IFDH_BASE_URI
+   unset EXPERIMENT
    case $e in
    samdev) g=fermilab/users;;
+   hypot)  g=$e/scratch/users; export IFDH_BASE_URI=https://samdev.fnal.gov:8483/sam/samdev/api;;
    *)      g=$e/scratch/users;;
    esac
+   export EXPERIMENT=$e
 
    echo "checking $e files in $g..."
 
@@ -146,14 +157,20 @@ EOF
     }
 EOF
 
-    for i in a b c d e; do samweb -e $e declare-file $i.json; done
+    if $do_declare
+    then
+        for i in a b c d e; do samweb -e $e declare-file $i.json; done
+    fi
 
 
     export IFDH_CP_MAXRETRIES=0
     for f in $flist
     do
-       ifdh cp $srcf $ddir/$f
-       samweb -e $e add-file-location $f dcache:$ddir
+        ifdh cp $srcf $ddir/$f
+	if $do_declare
+	then
+	    samweb -e $e add-file-location $f dcache:$ddir
+	fi
     done
 
     sam_validate_dataset -e $e -n gen_cfg -v
