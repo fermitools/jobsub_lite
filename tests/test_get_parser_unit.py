@@ -544,8 +544,8 @@ class TestGetParserUnit:
     @pytest.mark.unit
     def test_verify_and_add_skip_check_single_invalid(self, skip_check_arg_parser):
         """This test makes sure that if we pass an invalid check to --skip-check, we
-        get a TypeError"""
-        with pytest.raises(TypeError, match="Invalid argument to flag --skip-check:"):
+        get a ValueError"""
+        with pytest.raises(ValueError, match="Invalid argument to flag --skip-check:"):
             skip_check_arg_parser.parse_args(["--skip-check", "ThisIsAFakeCheck"])
 
     @pytest.mark.unit
@@ -553,12 +553,12 @@ class TestGetParserUnit:
         self, skip_check_arg_parser, get_single_valid_check_to_skip
     ):
         """This test makes sure that if we pass a mix of valid and invalid checks
-        to --skip-check, we still get a TypeError"""
+        to --skip-check, we still get a ValueError"""
         valid_check = get_single_valid_check_to_skip
         if not valid_check:
             return
 
-        with pytest.raises(TypeError, match="Invalid argument to flag --skip-check:"):
+        with pytest.raises(ValueError, match="Invalid argument to flag --skip-check:"):
             skip_check_arg_parser.parse_args(
                 ["--skip-check", valid_check, "--skip-check", "ThisIsAFakeCheck"]
             )
@@ -584,8 +584,8 @@ class TestGetParserUnit:
     @pytest.mark.unit
     def test_schedd_for_testing_invalid(self, schedd_for_testing_arg_parser):
         """This test makes sure that if we give an invalid schedd to --schedd-for-testing,
-        we get a TypeError"""
-        with pytest.raises(TypeError, match="Invalid schedd specified"):
+        we get a ValueError"""
+        with pytest.raises(ValueError, match="Invalid schedd specified"):
             schedd_for_testing_arg_parser.parse_args(
                 ["--schedd-for-testing", "this_is_an_invalid_schedd.domain"]
             )
@@ -739,8 +739,8 @@ class TestGetParserUnit:
     @pytest.mark.unit
     def test_executable_arg_parser_invalid(self, executable_arg_parser):
         """This test makes sure that if we pass an invalid executable argument,
-        we get a TypeError"""
-        with pytest.raises(TypeError, match="executable must start with file://"):
+        we get a ValueError"""
+        with pytest.raises(ValueError, match="executable must start with file://"):
             executable_arg_parser.parse_args(["/bin/true"])
 
     @pytest.mark.unit

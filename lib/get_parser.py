@@ -73,7 +73,7 @@ class VerifyAndAddSkipCheck(argparse.Action):
     ) -> None:
         _supported_checks = SupportedSkipChecks.get_all_checks()
         if values not in _supported_checks:
-            raise TypeError(
+            raise ValueError(
                 f'Invalid argument to flag --skip-check: "{values}". Value must '
                 f"be one of the following: {_supported_checks}"
             )
@@ -99,7 +99,7 @@ class CheckIfValidSchedd(argparse.Action):
         vargs = {"group": group} if group is not None else {}
         valid_schedds = get_schedd_names(vargs, available_only=False)
         if values not in valid_schedds:
-            raise TypeError(
+            raise ValueError(
                 f"Invalid schedd specified: {values}.  Valid choices are {valid_schedds}"
             )
         setattr(namespace, self.dest, values)
@@ -167,7 +167,7 @@ class CheckExecutable(argparse.Action):
         regex = re.compile(r"file://(.+)")
         m = regex.match(str(values))
         if not m:
-            raise TypeError("executable must start with file://")
+            raise ValueError("executable must start with file://")
         executable_path = m.group(1)
         if not os.path.exists(executable_path):
             raise FileNotFoundError(
