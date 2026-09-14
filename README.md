@@ -11,7 +11,7 @@ authentication, etc.)
 
 The basic design of jobsub_lite is straightforward. It will:
 
-* obtain credentials (using cigetcert, htgettoken, etc.)
+* obtain credentials (using htgettoken, etc.)
 * parse command line arguments into a (Python) dictionary
 * optionally upload tarballs to the fast cvmfs distribution service
 * add other data to the dictionary from the environment, etc.
