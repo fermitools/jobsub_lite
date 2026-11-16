@@ -288,6 +288,7 @@ def jobsub_cmd_args(arglist: argparse.Namespace, passthru: List[str]) -> None:
         p.wait()
 
     if totalsf:
+        sys.stdout.flush()
         os.close(1)
         totalsf.close()
         os.dup2(savout, 1)
