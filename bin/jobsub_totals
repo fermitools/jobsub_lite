@@ -4,7 +4,10 @@
 
 from collections import defaultdict, OrderedDict
 import re
+import signal
 import sys
+
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # Exit quietly if pipe closes early eg. jobsub_q | head
 
 # clusterid.procid@schedd_name  owner submitted runtime st <rest of line that we're ignoring for this regex>
 line_regex = re.compile(r"\d+\.\d+@\S+(\s+\S+){4}\s+([CXIRHS])")
